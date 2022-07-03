@@ -4,14 +4,18 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
+use glam::Vec2;
 use thunderdome::Index;
 
 use crate::component::{Component, Props};
+use crate::dom::Dom;
+use crate::Constraints;
 
 #[derive(Clone, Copy)]
 pub struct ComponentImpl {
     pub new: fn(index: Index, &dyn Any) -> Box<dyn Any>,
     pub update: fn(&mut dyn Any, &dyn Any),
+    pub size: fn(&dyn Any, &Dom, Constraints) -> Vec2,
 
     pub debug: fn(&dyn Any) -> &dyn fmt::Debug,
     pub debug_props: fn(&dyn Any) -> &dyn fmt::Debug,
@@ -49,6 +53,7 @@ impl Registry {
             .or_insert(ComponentImpl {
                 new: new::<T>,
                 update: update::<T>,
+                size: size::<T>,
                 debug: debug::<T>,
                 debug_props: debug_props::<T::Props>,
             });
@@ -97,6 +102,17 @@ where
     });
 
     T::update(target, props);
+}
+
+fn size<T>(target: &dyn Any, dom: &Dom, constraints: Constraints) -> Vec2
+where
+    T: Component,
+{
+    let target = target
+        .downcast_ref::<T>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
+
+    target.size(dom, constraints)
 }
 
 fn debug<T>(target: &dyn Any) -> &dyn fmt::Debug

@@ -1,4 +1,4 @@
-use crate::component::{Component, Props};
+use crate::component::Component;
 use crate::context::Context;
 use crate::dom::Dom;
 use crate::layout::Layout;

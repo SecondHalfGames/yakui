@@ -4,6 +4,7 @@ use std::fmt;
 use glam::Vec2;
 use thunderdome::Index;
 
+use crate::dom::Dom;
 use crate::layout::Constraints;
 
 pub trait Props: Any + fmt::Debug {}
@@ -15,5 +16,5 @@ pub trait Component: Any + fmt::Debug {
 
     fn new(index: Index, props: &Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
-    fn size(&self, constraints: Constraints) -> Vec2;
+    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2;
 }

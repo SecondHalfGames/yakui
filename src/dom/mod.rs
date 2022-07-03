@@ -4,11 +4,13 @@ mod reconciler;
 
 use std::any::Any;
 
+use glam::Vec2;
 use thunderdome::{Arena, Index};
 
 use crate::layout::Layout;
 use crate::registry::Registry;
 use crate::snapshot::Snapshot;
+use crate::Constraints;
 
 pub struct Dom {
     tree: Arena<DomNode>,
@@ -18,8 +20,8 @@ pub struct Dom {
 }
 
 pub struct DomNode {
-    component: Box<dyn Any>,
-    children: Vec<Index>,
+    pub component: Box<dyn Any>,
+    pub children: Vec<Index>,
 }
 
 impl Dom {
@@ -46,5 +48,15 @@ impl Dom {
 
     pub fn get(&self, index: Index) -> Option<&DomNode> {
         self.tree.get(index)
+    }
+
+    pub fn size(&self, index: Index, constraints: Constraints) -> Vec2 {
+        let dom_node = self.tree.get(index).unwrap();
+        let component_impl = self
+            .registry
+            .get_by_id(dom_node.component.as_ref().type_id())
+            .unwrap();
+
+        (component_impl.size)(&dom_node.component, self, constraints)
     }
 }
