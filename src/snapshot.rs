@@ -1,9 +1,9 @@
 use std::any::{Any, TypeId};
 
 pub struct Element {
-    type_id: TypeId,
-    props: Box<dyn Any>,
-    children: Vec<ElementId>,
+    pub type_id: TypeId,
+    pub props: Box<dyn Any>,
+    pub children: Vec<ElementId>,
 }
 
 impl Element {
@@ -44,6 +44,10 @@ impl Snapshot {
         self.tree.clear();
         self.roots.clear();
         self.stack.clear();
+    }
+
+    pub fn get(&self, id: ElementId) -> Option<&Element> {
+        self.tree.get(id.0 as usize)
     }
 
     pub(crate) fn insert(&mut self, element: Element) -> ElementId {
