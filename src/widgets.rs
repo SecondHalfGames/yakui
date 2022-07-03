@@ -1,8 +1,11 @@
 use glam::Vec2;
 
-use crate::{context::Context, snapshot::Element};
+use crate::component::Component;
+use crate::context::Context;
+use crate::snapshot::Element;
 
-pub(crate) struct Layout {
+#[derive(Debug, Clone)]
+pub struct Layout {
     pub direction: Direction,
 }
 
@@ -14,11 +17,33 @@ impl Layout {
     }
 }
 
-pub(crate) struct FixedSizeBox {
+impl Component<Layout> for Layout {
+    fn new(props: &Layout) -> Self {
+        props.clone()
+    }
+
+    fn update(&mut self, props: &Layout) {
+        *self = props.clone();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FixedSizeBox {
     pub size: Vec2,
 }
 
-pub(crate) enum Direction {
+impl Component<FixedSizeBox> for FixedSizeBox {
+    fn new(props: &FixedSizeBox) -> Self {
+        props.clone()
+    }
+
+    fn update(&mut self, props: &FixedSizeBox) {
+        *self = props.clone();
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Direction {
     Down,
     Right,
 }

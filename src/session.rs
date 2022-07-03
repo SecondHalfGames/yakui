@@ -1,13 +1,29 @@
+use crate::component::Component;
 use crate::context::Context;
 use crate::dom::Dom;
+use crate::registry::Registry;
 
+#[derive(Debug)]
 pub struct State {
     dom: Dom,
+    registry: Registry,
 }
 
 impl State {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        Self { dom: Dom::new() }
+        let registry = Registry::new();
+        let dom = Dom::new(registry.clone());
+
+        Self { dom, registry }
+    }
+
+    pub fn register<T, P>(&self)
+    where
+        T: Component<P>,
+        P: 'static,
+    {
+        self.registry.register::<T, P>();
     }
 
     pub fn start(&mut self) {

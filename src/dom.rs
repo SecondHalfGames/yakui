@@ -1,8 +1,10 @@
+use std::any::Any;
 use std::collections::VecDeque;
+use std::fmt;
 
 use thunderdome::{Arena, Index};
 
-use crate::component::Component;
+use crate::registry::Registry;
 use crate::snapshot::{ElementId, Snapshot};
 use crate::zip_longest::zip;
 
@@ -10,20 +12,21 @@ pub struct Dom {
     tree: Arena<Node>,
     roots: Vec<Index>,
     snapshot: Option<Snapshot>,
+    registry: Registry,
 }
 
 struct Node {
-    color: bool,
+    component: Box<dyn Any>,
     children: Vec<Index>,
-    component: Box<dyn Component>,
 }
 
 impl Dom {
-    pub fn new() -> Self {
+    pub fn new(registry: Registry) -> Self {
         Self {
             tree: Arena::new(),
             roots: Vec::new(),
             snapshot: Some(Snapshot::new()),
+            registry,
         }
     }
 
@@ -46,8 +49,18 @@ impl Dom {
                     let element = snapshot.get(element_id).unwrap();
                     let dom_node = self.tree.get_mut(dom_index).unwrap();
 
-                    // TODO: Check types?
-                    dom_node.component.update(&element.props);
+                    if element.type_id == dom_node.component.type_id() {
+                        if let Some(component_impl) = self.registry.get_by_id(element.type_id) {
+                            (component_impl.update)(&mut dom_node.component, &element.props);
+                        } else {
+                            panic!("Unknown component ID {:?}", element.type_id);
+                        }
+                    } else {
+                        // Because this component has changed types, delete the
+                        // old one and create a new one immediately after.
+                        queue.push_front((Some(element_id), None));
+                        queue.push_front((None, Some(dom_index)));
+                    }
 
                     // Zip the children together and queue them for processing.
                     let element_children = element.children.iter().copied();
@@ -59,7 +72,18 @@ impl Dom {
                 (Some(element_id), None) => {
                     let element = snapshot.get(element_id).unwrap();
 
-                    // TODO: Contruction of components
+                    if let Some(component_impl) = self.registry.get_by_id(element.type_id) {
+                        let component = (component_impl.new)(&element.props);
+
+                        assert_eq!(component.type_id(), element.type_id);
+
+                        self.tree.insert(Node {
+                            component,
+                            children: Vec::new(),
+                        });
+                    } else {
+                        panic!("Unknown component ID {:?}", element.type_id);
+                    }
 
                     // Queue all of the element's children for addition.
                     queue.extend(element.children.iter().copied().map(|id| (Some(id), None)));
@@ -82,5 +106,31 @@ impl Dom {
 
     pub fn layout(&mut self) {
         todo!()
+    }
+}
+
+impl fmt::Debug for Dom {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Dom")
+            .field("tree", &ViewTree(self))
+            .finish()
+    }
+}
+
+struct ViewTree<'a>(&'a Dom);
+
+impl<'a> fmt::Debug for ViewTree<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let dom = &self.0;
+        let iter = dom.tree.iter().map(|(index, node)| {
+            let debug = match dom.registry.get_by_id(node.component.type_id()) {
+                Some(component_impl) => (component_impl.debug)(&node.component),
+                None => &"(could not find debug impl)",
+            };
+
+            format!("{index:?}: {debug:?}")
+        });
+
+        f.debug_list().entries(iter).finish()
     }
 }

@@ -1,6 +1,7 @@
 mod component;
 mod context;
 mod dom;
+mod registry;
 mod session;
 mod snapshot;
 mod widgets;
