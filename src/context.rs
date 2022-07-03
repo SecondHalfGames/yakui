@@ -21,7 +21,6 @@ impl Context {
     }
 
     pub(crate) fn start(&mut self, mut snapshot: Snapshot) {
-        snapshot.clear();
         self.snapshot = Some(snapshot);
     }
 

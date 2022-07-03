@@ -29,7 +29,8 @@ impl State {
     pub fn start(&mut self) {
         let context = Context::current();
 
-        if let Some(snapshot) = self.dom.take_snapshot() {
+        if let Some(mut snapshot) = self.dom.take_snapshot() {
+            snapshot.clear();
             context.borrow_mut().start(snapshot);
         } else {
             panic!("Cannot call start() when already started.");

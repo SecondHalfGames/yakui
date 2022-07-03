@@ -1,5 +1,7 @@
 use std::any::{Any, TypeId};
 
+use crate::registry::Registry;
+
 pub struct Element {
     pub type_id: TypeId,
     pub props: Box<dyn Any>,
@@ -29,14 +31,16 @@ pub struct Snapshot {
     pub tree: Vec<Element>,
     pub roots: Vec<ElementId>,
     pub stack: Vec<ElementId>,
+    registry: Registry,
 }
 
 impl Snapshot {
-    pub fn new() -> Self {
+    pub fn new(registry: Registry) -> Self {
         Self {
             tree: Vec::new(),
             roots: Vec::new(),
             stack: Vec::new(),
+            registry,
         }
     }
 

@@ -73,7 +73,9 @@ where
         )
     });
 
-    Box::new(T::new(props))
+    let value: T = T::new(props);
+    let boxed: Box<dyn Any> = Box::new(value);
+    boxed
 }
 
 fn update<T, P>(target: &mut dyn Any, props: &dyn Any)

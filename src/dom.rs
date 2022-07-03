@@ -25,7 +25,7 @@ impl Dom {
         Self {
             tree: Arena::new(),
             roots: Vec::new(),
-            snapshot: Some(Snapshot::new()),
+            snapshot: Some(Snapshot::new(registry.clone())),
             registry,
         }
     }
@@ -51,7 +51,10 @@ impl Dom {
 
                     if element.type_id == dom_node.component.type_id() {
                         if let Some(component_impl) = self.registry.get_by_id(element.type_id) {
-                            (component_impl.update)(&mut dom_node.component, &element.props);
+                            (component_impl.update)(
+                                dom_node.component.as_mut(),
+                                element.props.as_ref(),
+                            );
                         } else {
                             panic!("Unknown component ID {:?}", element.type_id);
                         }
@@ -73,9 +76,9 @@ impl Dom {
                     let element = snapshot.get(element_id).unwrap();
 
                     if let Some(component_impl) = self.registry.get_by_id(element.type_id) {
-                        let component = (component_impl.new)(&element.props);
+                        let component = (component_impl.new)(element.props.as_ref());
 
-                        assert_eq!(component.type_id(), element.type_id);
+                        assert_eq!(component.as_ref().type_id(), element.type_id);
 
                         self.tree.insert(Node {
                             component,
@@ -123,8 +126,10 @@ impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dom = &self.0;
         let iter = dom.tree.iter().map(|(index, node)| {
-            let debug = match dom.registry.get_by_id(node.component.type_id()) {
-                Some(component_impl) => (component_impl.debug)(&node.component),
+            let id = node.component.as_ref().type_id();
+
+            let debug = match dom.registry.get_by_id(id) {
+                Some(component_impl) => (component_impl.debug)(node.component.as_ref()),
                 None => &"(could not find debug impl)",
             };
 
