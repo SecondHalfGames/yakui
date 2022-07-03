@@ -5,7 +5,7 @@ use thunderdome::Index;
 use crate::snapshot::{ElementId, Snapshot};
 use crate::zip_longest::zip;
 
-use super::{Dom, Node};
+use super::{Dom, DomNode};
 
 pub fn apply(dom: &mut Dom, snapshot: Snapshot) {
     struct WorkItem {
@@ -75,14 +75,23 @@ pub fn apply(dom: &mut Dom, snapshot: Snapshot) {
                 let element = snapshot.get(element_id).unwrap();
 
                 let index = if let Some(component_impl) = dom.registry.get_by_id(element.type_id) {
-                    let component = (component_impl.new)(element.props.as_ref());
+                    let index = dom.tree.insert(DomNode {
+                        component: Box::new(()),
+                        children: Vec::new(),
+                    });
+
+                    let component = (component_impl.new)(index, element.props.as_ref());
 
                     assert_eq!(component.as_ref().type_id(), element.type_id);
 
-                    dom.tree.insert(Node {
-                        component,
-                        children: Vec::new(),
-                    })
+                    dom.tree.insert_at(
+                        index,
+                        DomNode {
+                            component,
+                            children: Vec::new(),
+                        },
+                    );
+                    index
                 } else {
                     panic!("Unknown component ID {:?}", element.type_id);
                 };

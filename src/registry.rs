@@ -4,11 +4,13 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
+use thunderdome::Index;
+
 use crate::component::{Component, Props};
 
 #[derive(Clone, Copy)]
 pub struct ComponentImpl {
-    pub new: fn(&dyn Any) -> Box<dyn Any>,
+    pub new: fn(index: Index, &dyn Any) -> Box<dyn Any>,
     pub update: fn(&mut dyn Any, &dyn Any),
 
     pub debug: fn(&dyn Any) -> &dyn fmt::Debug,
@@ -36,20 +38,19 @@ impl Registry {
         self.inner.borrow().types.get(&type_id).copied()
     }
 
-    pub fn register<T, P>(&self)
+    pub fn register<T>(&self)
     where
-        T: Component<P>,
-        P: Props,
+        T: Component,
     {
         self.inner
             .borrow_mut()
             .types
             .entry(TypeId::of::<T>())
             .or_insert(ComponentImpl {
-                new: new::<T, P>,
-                update: update::<T, P>,
-                debug: debug::<T, P>,
-                debug_props: debug_props::<P>,
+                new: new::<T>,
+                update: update::<T>,
+                debug: debug::<T>,
+                debug_props: debug_props::<T::Props>,
             });
     }
 }
@@ -60,50 +61,47 @@ impl fmt::Debug for Registry {
     }
 }
 
-fn new<T, P>(props: &dyn Any) -> Box<dyn Any>
+fn new<T>(index: Index, props: &dyn Any) -> Box<dyn Any>
 where
-    T: Component<P>,
-    P: Props,
+    T: Component,
 {
-    let props = props.downcast_ref::<P>().unwrap_or_else(|| {
+    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
         panic!(
             "Component {} expects props of type {} (ID {:?}), got ID {:?}",
             type_name::<T>(),
-            type_name::<P>(),
-            TypeId::of::<P>(),
+            type_name::<T::Props>(),
+            TypeId::of::<T::Props>(),
             props.type_id(),
         )
     });
 
-    let value: T = T::new(props);
+    let value: T = T::new(index, props);
     let boxed: Box<dyn Any> = Box::new(value);
     boxed
 }
 
-fn update<T, P>(target: &mut dyn Any, props: &dyn Any)
+fn update<T>(target: &mut dyn Any, props: &dyn Any)
 where
-    T: Component<P>,
-    P: Props,
+    T: Component,
 {
     let target = target
         .downcast_mut::<T>()
         .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
 
-    let props = props.downcast_ref::<P>().unwrap_or_else(|| {
+    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
         panic!(
             "Component {} expects props of type {}",
             type_name::<T>(),
-            type_name::<P>()
+            type_name::<T::Props>()
         )
     });
 
     T::update(target, props);
 }
 
-fn debug<T, P>(target: &dyn Any) -> &dyn fmt::Debug
+fn debug<T>(target: &dyn Any) -> &dyn fmt::Debug
 where
-    T: Component<P>,
-    P: Props,
+    T: Component,
 {
     let target = target
         .downcast_ref::<T>()

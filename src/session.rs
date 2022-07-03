@@ -19,12 +19,11 @@ impl State {
         Self { dom, registry }
     }
 
-    pub fn register<T, P>(&self)
+    pub fn register<T>(&self)
     where
-        T: Component<P>,
-        P: Props,
+        T: Component,
     {
-        self.registry.register::<T, P>();
+        self.registry.register::<T>();
     }
 
     pub fn start(&mut self) {

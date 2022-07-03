@@ -1,8 +1,8 @@
 #[test]
 fn basic() {
     let mut state = yakui::State::new();
-    state.register::<yakui::Layout, _>();
-    state.register::<yakui::FixedSizeBox, _>();
+    state.register::<yakui::List>();
+    state.register::<yakui::FixedSizeBox>();
 
     state.start();
     my_ui([40.0, 30.0]);

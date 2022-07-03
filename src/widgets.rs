@@ -1,16 +1,23 @@
 use glam::Vec2;
+use thunderdome::Index;
 
 use crate::component::Component;
 use crate::context::Context;
 use crate::layout::Constraints;
 use crate::snapshot::Element;
 
+#[derive(Debug)]
+pub struct List {
+    pub props: ListProps,
+    pub index: Index,
+}
+
 #[derive(Debug, Clone)]
-pub struct Layout {
+pub struct ListProps {
     pub direction: Direction,
 }
 
-impl Layout {
+impl ListProps {
     pub fn vertical() -> Self {
         Self {
             direction: Direction::Down,
@@ -18,13 +25,18 @@ impl Layout {
     }
 }
 
-impl Component<Layout> for Layout {
-    fn new(props: &Layout) -> Self {
-        props.clone()
+impl Component for List {
+    type Props = ListProps;
+
+    fn new(index: Index, props: &Self::Props) -> Self {
+        Self {
+            props: props.clone(),
+            index,
+        }
     }
 
-    fn update(&mut self, props: &Layout) {
-        *self = props.clone();
+    fn update(&mut self, props: &Self::Props) {
+        self.props = props.clone();
     }
 
     fn size(&self, constraints: Constraints) -> Vec2 {
@@ -37,12 +49,14 @@ pub struct FixedSizeBox {
     pub size: Vec2,
 }
 
-impl Component<FixedSizeBox> for FixedSizeBox {
-    fn new(props: &FixedSizeBox) -> Self {
+impl Component for FixedSizeBox {
+    type Props = Self;
+
+    fn new(index: Index, props: &Self::Props) -> Self {
         props.clone()
     }
 
-    fn update(&mut self, props: &FixedSizeBox) {
+    fn update(&mut self, props: &Self::Props) {
         *self = props.clone();
     }
 
@@ -63,7 +77,7 @@ pub fn vertical<F: FnOnce()>(contents: F) {
     let id = context
         .borrow_mut()
         .snapshot_mut()
-        .push(Element::new::<Layout, Layout>(Layout::vertical()));
+        .push(Element::new::<List, _>(ListProps::vertical()));
 
     contents();
 

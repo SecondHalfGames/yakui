@@ -11,13 +11,13 @@ use crate::registry::Registry;
 use crate::snapshot::Snapshot;
 
 pub struct Dom {
-    tree: Arena<Node>,
+    tree: Arena<DomNode>,
     roots: Vec<Index>,
     snapshot: Option<Snapshot>,
     registry: Registry,
 }
 
-struct Node {
+pub struct DomNode {
     component: Box<dyn Any>,
     children: Vec<Index>,
 }
@@ -42,5 +42,9 @@ impl Dom {
 
     pub fn layout(&mut self) -> Layout {
         layout::calculate(self)
+    }
+
+    pub fn get(&self, index: Index) -> Option<&DomNode> {
+        self.tree.get(index)
     }
 }
