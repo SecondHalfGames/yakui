@@ -1,3 +1,4 @@
+mod layout;
 mod reconciler;
 
 use std::any::Any;
@@ -5,6 +6,7 @@ use std::fmt;
 
 use thunderdome::{Arena, Index};
 
+use crate::layout::Layout;
 use crate::registry::Registry;
 use crate::snapshot::Snapshot;
 
@@ -38,8 +40,8 @@ impl Dom {
         reconciler::apply(self, snapshot);
     }
 
-    pub fn _do_layout(&mut self) {
-        todo!()
+    pub fn layout(&mut self) -> Layout {
+        layout::calculate(self)
     }
 }
 

@@ -2,6 +2,7 @@ use glam::Vec2;
 
 use crate::component::Component;
 use crate::context::Context;
+use crate::layout::Constraints;
 use crate::snapshot::Element;
 
 #[derive(Debug, Clone)]
@@ -25,6 +26,10 @@ impl Component<Layout> for Layout {
     fn update(&mut self, props: &Layout) {
         *self = props.clone();
     }
+
+    fn size(&self, constraints: Constraints) -> Vec2 {
+        Vec2::ZERO
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +44,10 @@ impl Component<FixedSizeBox> for FixedSizeBox {
 
     fn update(&mut self, props: &FixedSizeBox) {
         *self = props.clone();
+    }
+
+    fn size(&self, constraints: Constraints) -> Vec2 {
+        constraints.constrain(self.size)
     }
 }
 

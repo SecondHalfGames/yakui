@@ -1,6 +1,7 @@
 use crate::component::{Component, Props};
 use crate::context::Context;
 use crate::dom::Dom;
+use crate::layout::Layout;
 use crate::registry::Registry;
 
 #[derive(Debug)]
@@ -46,5 +47,9 @@ impl State {
         } else {
             panic!("Cannot call finish() when not started.");
         }
+    }
+
+    pub fn layout(&mut self) -> Layout {
+        self.dom.layout()
     }
 }
