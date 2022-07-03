@@ -17,9 +17,9 @@ fn basic() {
     panic!("show me!!");
 }
 
-fn my_ui(first_size: [f32; 2]) {
+fn my_ui(size: [f32; 2]) {
     yakui::vertical(|| {
-        yakui::fsbox(first_size);
+        yakui::fsbox(size);
         yakui::fsbox([30.0, 20.0]);
     });
 }

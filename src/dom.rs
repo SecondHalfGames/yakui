@@ -60,7 +60,7 @@ impl Dom {
                     let element = snapshot.get(element_id).unwrap();
                     let dom_node = self.tree.get_mut(dom_index).unwrap();
 
-                    if element.type_id == dom_node.component.type_id() {
+                    if element.type_id == dom_node.component.as_ref().type_id() {
                         if let Some(component_impl) = self.registry.get_by_id(element.type_id) {
                             (component_impl.update)(
                                 dom_node.component.as_mut(),
