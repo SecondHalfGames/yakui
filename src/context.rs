@@ -20,7 +20,7 @@ impl Context {
         self.snapshot.as_mut().unwrap()
     }
 
-    pub(crate) fn start(&mut self, mut snapshot: Snapshot) {
+    pub(crate) fn start(&mut self, snapshot: Snapshot) {
         self.snapshot = Some(snapshot);
     }
 

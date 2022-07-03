@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::component::Component;
+use crate::component::{Component, Props};
 
 #[derive(Clone, Copy)]
 pub struct ComponentImpl {
@@ -12,6 +12,7 @@ pub struct ComponentImpl {
     pub update: fn(&mut dyn Any, &dyn Any),
 
     pub debug: fn(&dyn Any) -> &dyn fmt::Debug,
+    pub debug_props: fn(&dyn Any) -> &dyn fmt::Debug,
 }
 
 #[derive(Clone)]
@@ -38,7 +39,7 @@ impl Registry {
     pub fn register<T, P>(&self)
     where
         T: Component<P>,
-        P: 'static,
+        P: Props,
     {
         self.inner
             .borrow_mut()
@@ -48,6 +49,7 @@ impl Registry {
                 new: new::<T, P>,
                 update: update::<T, P>,
                 debug: debug::<T, P>,
+                debug_props: debug_props::<P>,
             });
     }
 }
@@ -61,7 +63,7 @@ impl fmt::Debug for Registry {
 fn new<T, P>(props: &dyn Any) -> Box<dyn Any>
 where
     T: Component<P>,
-    P: 'static,
+    P: Props,
 {
     let props = props.downcast_ref::<P>().unwrap_or_else(|| {
         panic!(
@@ -81,7 +83,7 @@ where
 fn update<T, P>(target: &mut dyn Any, props: &dyn Any)
 where
     T: Component<P>,
-    P: 'static,
+    P: Props,
 {
     let target = target
         .downcast_mut::<T>()
@@ -101,11 +103,22 @@ where
 fn debug<T, P>(target: &dyn Any) -> &dyn fmt::Debug
 where
     T: Component<P>,
-    P: 'static,
+    P: Props,
 {
     let target = target
         .downcast_ref::<T>()
         .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
 
     target
+}
+
+fn debug_props<P>(props: &dyn Any) -> &dyn fmt::Debug
+where
+    P: Props,
+{
+    let props = props
+        .downcast_ref::<P>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<P>()));
+
+    props
 }

@@ -1,4 +1,7 @@
-use std::any::{Any, TypeId};
+use std::{
+    any::{Any, TypeId},
+    fmt,
+};
 
 use crate::registry::Registry;
 
@@ -20,12 +23,6 @@ impl Element {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ElementId(u32);
-
-impl ElementId {
-    pub fn value(self) -> u32 {
-        self.0
-    }
-}
 
 pub struct Snapshot {
     pub tree: Vec<Element>,
@@ -84,5 +81,36 @@ impl Snapshot {
                 panic!("Cannot pop when there are no elements on the stack.");
             }
         }
+    }
+}
+
+impl fmt::Debug for Snapshot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Snapshot")
+            .field("roots", &self.roots)
+            .field("tree", &ViewTree(self))
+            .finish()
+    }
+}
+
+struct ViewTree<'a>(&'a Snapshot);
+
+impl<'a> fmt::Debug for ViewTree<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let dom = &self.0;
+        let iter = dom.tree.iter().enumerate().map(|(index, element)| {
+            let id = element.type_id;
+
+            let debug = match dom.registry.get_by_id(id) {
+                Some(component_impl) => (component_impl.debug_props)(element.props.as_ref()),
+                None => &"(could not find debug impl)",
+            };
+
+            let children: Vec<_> = element.children.iter().collect();
+
+            format!("{index:?}: {debug:?}, children: {children:?}")
+        });
+
+        f.debug_list().entries(iter).finish()
     }
 }

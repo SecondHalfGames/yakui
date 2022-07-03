@@ -1,4 +1,4 @@
-use crate::component::Component;
+use crate::component::{Component, Props};
 use crate::context::Context;
 use crate::dom::Dom;
 use crate::registry::Registry;
@@ -21,7 +21,7 @@ impl State {
     pub fn register<T, P>(&self)
     where
         T: Component<P>,
-        P: 'static,
+        P: Props,
     {
         self.registry.register::<T, P>();
     }

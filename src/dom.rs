@@ -107,7 +107,7 @@ impl Dom {
         self.snapshot = Some(snapshot);
     }
 
-    pub fn layout(&mut self) {
+    pub fn _do_layout(&mut self) {
         todo!()
     }
 }
@@ -115,7 +115,9 @@ impl Dom {
 impl fmt::Debug for Dom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Dom")
+            .field("roots", &self.roots)
             .field("tree", &ViewTree(self))
+            .field("snapshot", &self.snapshot)
             .finish()
     }
 }
@@ -133,7 +135,9 @@ impl<'a> fmt::Debug for ViewTree<'a> {
                 None => &"(could not find debug impl)",
             };
 
-            format!("{index:?}: {debug:?}")
+            let children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
+
+            format!("{}: {debug:?}, children: {:?}", index.slot(), children)
         });
 
         f.debug_list().entries(iter).finish()
