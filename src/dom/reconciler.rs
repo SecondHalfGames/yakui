@@ -68,27 +68,22 @@ pub fn apply(dom: &mut Dom, snapshot: Snapshot) {
             (Some(element_id), None) => {
                 let element = snapshot.get(element_id).unwrap();
 
-                let index = if let Some(component_impl) = dom.registry.get_by_id(element.type_id) {
-                    let index = dom.tree.insert(DomNode {
-                        component: Box::new(DummyComponent),
+                let index = dom.tree.insert(DomNode {
+                    component: Box::new(DummyComponent),
+                    children: Vec::new(),
+                });
+
+                let component = (element.new)(index, element.props.as_ref());
+
+                assert_eq!(component.as_ref().type_id(), element.type_id);
+
+                dom.tree.insert_at(
+                    index,
+                    DomNode {
+                        component,
                         children: Vec::new(),
-                    });
-
-                    let component = (component_impl.new)(index, element.props.as_ref());
-
-                    assert_eq!(component.as_ref().type_id(), element.type_id);
-
-                    dom.tree.insert_at(
-                        index,
-                        DomNode {
-                            component,
-                            children: Vec::new(),
-                        },
-                    );
-                    index
-                } else {
-                    panic!("Unknown component ID {:?}", element.type_id);
-                };
+                    },
+                );
 
                 match work_item.parent {
                     Some(parent_index) => {

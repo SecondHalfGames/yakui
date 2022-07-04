@@ -1,36 +1,36 @@
 use crate::component::Component;
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
-use crate::layout::Layout;
-use crate::registry::Registry;
-use crate::Constraints;
+use crate::layout::{Constraints, Layout};
+use crate::rect::Rect;
+use crate::Event;
 
 #[derive(Debug)]
 pub struct State {
     dom: Dom,
     layout: LayoutDom,
-    registry: Registry,
+    viewport: Rect,
 }
 
 impl State {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        let registry = Registry::new();
-        let dom = Dom::new(registry.clone());
+        let dom = Dom::new();
         let layout = LayoutDom::new();
 
         Self {
             dom,
             layout,
-            registry,
+            viewport: Rect::ZERO,
         }
     }
 
-    pub fn register<T>(&self)
-    where
-        T: Component,
-    {
-        self.registry.register::<T>();
+    pub fn handle_event(&mut self, event: Event) {
+        match event {
+            Event::SetViewport(viewport) => {
+                self.viewport = viewport;
+            }
+        }
     }
 
     pub fn start(&mut self) {
@@ -53,9 +53,12 @@ impl State {
         } else {
             panic!("Cannot call finish() when not started.");
         }
-    }
 
-    pub fn layout(&mut self, constraints: Constraints) {
+        let constraints = Constraints {
+            min: None,
+            max: Some(self.viewport.size()),
+        };
+
         self.layout.calculate_all(&self.dom, constraints);
     }
 

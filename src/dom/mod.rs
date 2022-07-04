@@ -5,7 +5,6 @@ mod reconciler;
 use thunderdome::{Arena, Index};
 
 use crate::component::ErasedComponent;
-use crate::registry::Registry;
 use crate::snapshot::Snapshot;
 
 pub use layout::*;
@@ -14,7 +13,6 @@ pub struct Dom {
     tree: Arena<DomNode>,
     roots: Vec<Index>,
     snapshot: Option<Snapshot>,
-    registry: Registry,
 }
 
 pub struct DomNode {
@@ -23,12 +21,11 @@ pub struct DomNode {
 }
 
 impl Dom {
-    pub fn new(registry: Registry) -> Self {
+    pub fn new() -> Self {
         Self {
             tree: Arena::new(),
             roots: Vec::new(),
             snapshot: Some(Snapshot::new()),
-            registry,
         }
     }
 

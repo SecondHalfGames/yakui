@@ -36,18 +36,7 @@ pub trait Component: Any + fmt::Debug {
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
 }
 
-#[derive(Clone, Copy)]
-pub struct ComponentImpl {
-    pub new: fn(index: Index, &dyn ErasedProps) -> Box<dyn ErasedComponent>,
-}
-
-impl ComponentImpl {
-    pub fn new<T: Component>() -> Self {
-        Self { new: new::<T> }
-    }
-}
-
-fn new<T>(index: Index, props: &dyn ErasedProps) -> Box<dyn ErasedComponent>
+pub fn new<T>(index: Index, props: &dyn ErasedProps) -> Box<dyn ErasedComponent>
 where
     T: Component,
 {

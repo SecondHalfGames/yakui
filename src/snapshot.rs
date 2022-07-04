@@ -1,12 +1,15 @@
 use std::any::TypeId;
 use std::fmt;
 
-use crate::component::{Component, ErasedProps, Props};
+use thunderdome::Index;
+
+use crate::component::{Component, ErasedComponent, ErasedProps, Props};
 
 pub struct Element {
     pub type_id: TypeId,
     pub props: Box<dyn ErasedProps>,
     pub children: Vec<ElementId>,
+    pub(crate) new: fn(Index, &dyn ErasedProps) -> Box<dyn ErasedComponent>,
 }
 
 impl Element {
@@ -15,6 +18,7 @@ impl Element {
             type_id: TypeId::of::<T>(),
             props: Box::new(props),
             children: Vec::new(),
+            new: crate::component::new::<T>,
         }
     }
 }

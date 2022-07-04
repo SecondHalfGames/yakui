@@ -3,17 +3,19 @@
 mod component;
 mod context;
 mod dom;
-mod layout;
-mod registry;
-mod session;
+mod event;
+mod rect;
 mod snapshot;
+mod state;
 mod widgets;
 mod zip_longest;
 
+pub mod layout;
+
 pub extern crate glam;
-
-pub use layout::*;
-pub use session::State;
-pub use widgets::*;
-
 pub use glam::Vec2;
+
+pub use event::Event;
+pub use rect::Rect;
+pub use state::State;
+pub use widgets::*;
