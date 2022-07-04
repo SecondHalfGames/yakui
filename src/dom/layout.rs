@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use glam::Vec2;
 use thunderdome::{Arena, Index};
 
@@ -47,6 +49,8 @@ impl LayoutDom {
         for &index in &dom.roots {
             self.calculate(dom, index, constraints);
         }
+
+        self.resolve_positions(dom);
     }
 
     pub fn calculate(&mut self, dom: &Dom, index: Index, constraints: Constraints) -> Vec2 {
@@ -65,6 +69,21 @@ impl LayoutDom {
     pub fn set_pos(&mut self, index: Index, pos: Vec2) {
         if let Some(node) = self.nodes.get_mut(index) {
             node.pos = pos;
+        }
+    }
+
+    fn resolve_positions(&mut self, dom: &Dom) {
+        let mut queue = VecDeque::new();
+
+        queue.extend(dom.roots.iter().map(|&index| (index, Vec2::ZERO)));
+
+        while let Some((index, parent_pos)) = queue.pop_front() {
+            if let Some(layout_node) = self.nodes.get_mut(index) {
+                let node = dom.get(index).unwrap();
+                layout_node.pos += parent_pos;
+
+                queue.extend(node.children.iter().map(|&index| (index, layout_node.pos)));
+            }
         }
     }
 }

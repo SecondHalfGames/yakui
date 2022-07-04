@@ -25,6 +25,12 @@ impl ListProps {
             direction: Direction::Down,
         }
     }
+
+    pub fn horizontal() -> Self {
+        Self {
+            direction: Direction::Right,
+        }
+    }
 }
 
 impl Component for List {
@@ -170,6 +176,19 @@ pub fn vertical<F: FnOnce()>(contents: F) {
         .borrow_mut()
         .snapshot_mut()
         .push(Element::new::<List, _>(ListProps::vertical()));
+
+    contents();
+
+    context.borrow_mut().snapshot_mut().pop(id);
+}
+
+pub fn horizontal<F: FnOnce()>(contents: F) {
+    let context = Context::active();
+
+    let id = context
+        .borrow_mut()
+        .snapshot_mut()
+        .push(Element::new::<List, _>(ListProps::horizontal()));
 
     contents();
 

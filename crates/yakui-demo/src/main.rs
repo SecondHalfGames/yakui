@@ -12,7 +12,14 @@ use graphics::Graphics;
 
 fn ui(time: f32) {
     yakui::vertical(|| {
-        yakui::fsbox([100.0, 100.0 + 50.0 * time.sin()]);
+        yakui::horizontal(|| {
+            let x = 50.0 * time.sin();
+            let y = 20.0 * (time + 1.0).sin();
+
+            yakui::fsbox([100.0 + x, 100.0 + y]);
+            yakui::fsbox([40.0, 30.0]);
+            yakui::fsbox([60.0, 40.0]);
+        });
         yakui::fsbox([200.0, 100.0]);
     });
 }
