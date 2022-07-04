@@ -7,7 +7,7 @@ use glam::Vec2;
 use mopa::{mopafy, Any};
 use thunderdome::Index;
 
-use crate::dom::Dom;
+use crate::dom::{Dom, DomLayout};
 use crate::layout::Constraints;
 
 pub trait Props: Any + fmt::Debug {}
@@ -33,7 +33,7 @@ pub trait Component: Any + fmt::Debug {
 
     fn new(index: Index, props: &Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
-    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2;
+    fn size(&self, dom: &Dom, layout: &mut DomLayout, constraints: Constraints) -> Vec2;
 }
 
 #[derive(Clone, Copy)]
@@ -68,7 +68,7 @@ where
 
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
-    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2;
+    fn size(&self, dom: &Dom, layout: &mut DomLayout, constraints: Constraints) -> Vec2;
 
     fn as_debug(&self) -> &dyn fmt::Debug;
 }
@@ -85,8 +85,8 @@ where
         <T as Component>::update(self, props);
     }
 
-    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2 {
-        <T as Component>::size(self, dom, constraints)
+    fn size(&self, dom: &Dom, layout: &mut DomLayout, constraints: Constraints) -> Vec2 {
+        <T as Component>::size(self, dom, layout, constraints)
     }
 
     fn as_debug(&self) -> &dyn fmt::Debug {
@@ -109,7 +109,7 @@ impl Component for DummyComponent {
 
     fn update(&mut self, _props: &Self::Props) {}
 
-    fn size(&self, _dom: &Dom, _constraints: Constraints) -> Vec2 {
+    fn size(&self, _dom: &Dom, _layout: &mut DomLayout, _constraints: Constraints) -> Vec2 {
         Vec2::ZERO
     }
 }

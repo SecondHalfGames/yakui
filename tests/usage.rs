@@ -9,9 +9,20 @@ fn basic() {
     state.finish();
     println!("{state:#?}");
 
+    state.layout(yakui::Constraints {
+        min: None,
+        max: Some(yakui::Vec2::new(800.0, 600.0)),
+    });
+
     state.start();
     my_ui([2.0, 70.0]);
     state.finish();
+
+    state.layout(yakui::Constraints {
+        min: None,
+        max: Some(yakui::Vec2::new(800.0, 600.0)),
+    });
+
     println!("{state:#?}");
 
     panic!("show me!!");

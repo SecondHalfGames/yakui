@@ -1,12 +1,14 @@
 use crate::component::Component;
 use crate::context::Context;
-use crate::dom::Dom;
+use crate::dom::{Dom, DomLayout};
 use crate::layout::Layout;
 use crate::registry::Registry;
+use crate::Constraints;
 
 #[derive(Debug)]
 pub struct State {
     dom: Dom,
+    layout: DomLayout,
     registry: Registry,
 }
 
@@ -15,8 +17,13 @@ impl State {
     pub fn new() -> Self {
         let registry = Registry::new();
         let dom = Dom::new(registry.clone());
+        let layout = DomLayout::new();
 
-        Self { dom, registry }
+        Self {
+            dom,
+            layout,
+            registry,
+        }
     }
 
     pub fn register<T>(&self)
@@ -48,7 +55,11 @@ impl State {
         }
     }
 
-    pub fn layout(&mut self) -> Layout {
-        self.dom.layout()
+    pub fn layout(&mut self, constraints: Constraints) {
+        self.layout.calculate_all(&self.dom, constraints);
+    }
+
+    pub fn draw(&self) -> Layout {
+        todo!()
     }
 }

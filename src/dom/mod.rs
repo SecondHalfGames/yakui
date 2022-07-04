@@ -5,7 +5,6 @@ mod reconciler;
 use thunderdome::{Arena, Index};
 
 use crate::component::ErasedComponent;
-use crate::layout::Layout;
 use crate::registry::Registry;
 use crate::snapshot::Snapshot;
 
@@ -39,10 +38,6 @@ impl Dom {
 
     pub fn apply(&mut self, snapshot: Snapshot) {
         reconciler::apply(self, snapshot);
-    }
-
-    pub fn layout(&mut self) -> Layout {
-        layout::calculate(self)
     }
 
     pub fn get(&self, index: Index) -> Option<&DomNode> {

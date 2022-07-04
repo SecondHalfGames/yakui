@@ -3,7 +3,7 @@ use thunderdome::Index;
 
 use crate::component::Component;
 use crate::context::Context;
-use crate::dom::Dom;
+use crate::dom::{Dom, DomLayout};
 use crate::layout::Constraints;
 use crate::snapshot::Element;
 
@@ -40,13 +40,13 @@ impl Component for List {
         self.props = props.clone();
     }
 
-    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2 {
+    fn size(&self, dom: &Dom, layout: &mut DomLayout, constraints: Constraints) -> Vec2 {
         let dom_node = dom.get(self.index).unwrap();
 
         let mut size = Vec2::ZERO;
 
         for &child in &dom_node.children {
-            let child_size = Vec2::ZERO; // TODO
+            let child_size = layout.calculate(dom, child, constraints);
 
             match self.props.direction {
                 Direction::Down => {
@@ -81,7 +81,7 @@ impl Component for FixedSizeBox {
         *self = props.clone();
     }
 
-    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2 {
+    fn size(&self, _dom: &Dom, _layout: &mut DomLayout, constraints: Constraints) -> Vec2 {
         constraints.constrain(self.size)
     }
 }
