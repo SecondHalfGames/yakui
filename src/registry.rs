@@ -7,19 +7,9 @@ use std::rc::Rc;
 use glam::Vec2;
 use thunderdome::Index;
 
-use crate::component::{Component, Props};
+use crate::component::{Component, ComponentImpl, ErasedComponent, Props};
 use crate::dom::Dom;
 use crate::Constraints;
-
-#[derive(Clone, Copy)]
-pub struct ComponentImpl {
-    pub new: fn(index: Index, &dyn Any) -> Box<dyn Any>,
-    pub update: fn(&mut dyn Any, &dyn Any),
-    pub size: fn(&dyn Any, &Dom, Constraints) -> Vec2,
-
-    pub debug: fn(&dyn Any) -> &dyn fmt::Debug,
-    pub debug_props: fn(&dyn Any) -> &dyn fmt::Debug,
-}
 
 #[derive(Clone)]
 pub struct Registry {
@@ -66,7 +56,7 @@ impl fmt::Debug for Registry {
     }
 }
 
-fn new<T>(index: Index, props: &dyn Any) -> Box<dyn Any>
+fn new<T>(index: Index, props: &dyn Any) -> Box<dyn ErasedComponent>
 where
     T: Component,
 {
@@ -81,11 +71,11 @@ where
     });
 
     let value: T = T::new(index, props);
-    let boxed: Box<dyn Any> = Box::new(value);
+    let boxed: Box<dyn ErasedComponent> = Box::new(value);
     boxed
 }
 
-fn update<T>(target: &mut dyn Any, props: &dyn Any)
+fn update<T>(target: &mut dyn ErasedComponent, props: &dyn Any)
 where
     T: Component,
 {
@@ -104,7 +94,7 @@ where
     T::update(target, props);
 }
 
-fn size<T>(target: &dyn Any, dom: &Dom, constraints: Constraints) -> Vec2
+fn size<T>(target: &dyn ErasedComponent, dom: &Dom, constraints: Constraints) -> Vec2
 where
     T: Component,
 {
@@ -115,7 +105,7 @@ where
     target.size(dom, constraints)
 }
 
-fn debug<T>(target: &dyn Any) -> &dyn fmt::Debug
+fn debug<T>(target: &dyn ErasedComponent) -> &dyn fmt::Debug
 where
     T: Component,
 {

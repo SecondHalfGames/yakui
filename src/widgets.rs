@@ -46,7 +46,7 @@ impl Component for List {
         let mut size = Vec2::ZERO;
 
         for &child in &dom_node.children {
-            let child_size = dom.size(child, constraints);
+            let child_size = Vec2::ZERO; // TODO
 
             match self.props.direction {
                 Direction::Down => {

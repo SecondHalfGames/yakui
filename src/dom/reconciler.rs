@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use thunderdome::Index;
 
+use crate::component::DummyComponent;
 use crate::snapshot::{ElementId, Snapshot};
 use crate::zip_longest::zip;
 
@@ -76,7 +77,7 @@ pub fn apply(dom: &mut Dom, snapshot: Snapshot) {
 
                 let index = if let Some(component_impl) = dom.registry.get_by_id(element.type_id) {
                     let index = dom.tree.insert(DomNode {
-                        component: Box::new(()),
+                        component: Box::new(DummyComponent),
                         children: Vec::new(),
                     });
 

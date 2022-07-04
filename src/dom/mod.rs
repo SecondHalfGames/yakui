@@ -2,15 +2,14 @@ mod debug;
 mod layout;
 mod reconciler;
 
-use std::any::Any;
-
-use glam::Vec2;
 use thunderdome::{Arena, Index};
 
+use crate::component::ErasedComponent;
 use crate::layout::Layout;
 use crate::registry::Registry;
 use crate::snapshot::Snapshot;
-use crate::Constraints;
+
+pub use layout::*;
 
 pub struct Dom {
     tree: Arena<DomNode>,
@@ -20,7 +19,7 @@ pub struct Dom {
 }
 
 pub struct DomNode {
-    pub component: Box<dyn Any>,
+    pub component: Box<dyn ErasedComponent>,
     pub children: Vec<Index>,
 }
 
@@ -48,15 +47,5 @@ impl Dom {
 
     pub fn get(&self, index: Index) -> Option<&DomNode> {
         self.tree.get(index)
-    }
-
-    pub fn size(&self, index: Index, constraints: Constraints) -> Vec2 {
-        let dom_node = self.tree.get(index).unwrap();
-        let component_impl = self
-            .registry
-            .get_by_id(dom_node.component.as_ref().type_id())
-            .unwrap();
-
-        (component_impl.size)(&dom_node.component, self, constraints)
     }
 }
