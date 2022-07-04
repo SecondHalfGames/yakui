@@ -1,10 +1,9 @@
 #![allow(clippy::transmute_ptr_to_ref)] // thanks, mopa
 
-use std::any::{type_name, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
-use mopa::{mopafy, Any};
 use thunderdome::Index;
 
 use crate::dom::{Dom, LayoutDom};
@@ -26,7 +25,7 @@ where
     }
 }
 
-mopafy!(ErasedProps);
+mopmopafy!(ErasedProps);
 
 pub trait Component: Any + fmt::Debug {
     type Props: Props;
@@ -83,7 +82,7 @@ where
     }
 }
 
-mopafy!(ErasedComponent);
+mopmopafy!(ErasedComponent);
 
 // Placeholder component used internally.
 #[derive(Debug)]

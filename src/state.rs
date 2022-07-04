@@ -1,7 +1,7 @@
-use crate::component::Component;
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
-use crate::layout::{Constraints, Layout};
+use crate::draw::Output;
+use crate::layout::Constraints;
 use crate::rect::Rect;
 use crate::Event;
 
@@ -62,7 +62,7 @@ impl State {
         self.layout.calculate_all(&self.dom, constraints);
     }
 
-    pub fn draw(&self) -> Layout {
+    pub fn draw(&self) -> Output {
         todo!()
     }
 }
