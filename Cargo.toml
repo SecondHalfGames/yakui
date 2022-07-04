@@ -10,5 +10,6 @@ default-members = [".", "crates/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = "0.21.2"
+bytemuck = { version = "1.10.0", features = ["derive"] }
+glam = { version = "0.21.2", features = ["bytemuck"] }
 thunderdome = "0.5.0"
