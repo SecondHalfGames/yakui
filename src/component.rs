@@ -1,15 +1,32 @@
-use std::any::{type_name, Any, TypeId};
+#![allow(clippy::transmute_ptr_to_ref)] // thanks, mopa
+
+use std::any::{type_name, TypeId};
 use std::fmt;
 
 use glam::Vec2;
+use mopa::{mopafy, Any};
 use thunderdome::Index;
 
 use crate::dom::Dom;
 use crate::layout::Constraints;
 
 pub trait Props: Any + fmt::Debug {}
-
 impl<T> Props for T where T: Any + fmt::Debug {}
+
+pub trait ErasedProps: Any {
+    fn as_debug(&self) -> &dyn fmt::Debug;
+}
+
+impl<T> ErasedProps for T
+where
+    T: Props,
+{
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
+    }
+}
+
+mopafy!(ErasedProps);
 
 pub trait Component: Any + fmt::Debug {
     type Props: Props;
@@ -21,25 +38,16 @@ pub trait Component: Any + fmt::Debug {
 
 #[derive(Clone, Copy)]
 pub struct ComponentImpl {
-    pub new: fn(index: Index, &dyn Any) -> Box<dyn ErasedComponent>,
-    pub size: fn(&dyn ErasedComponent, &Dom, Constraints) -> Vec2,
-
-    pub debug: fn(&dyn ErasedComponent) -> &dyn fmt::Debug,
-    pub debug_props: fn(&dyn Any) -> &dyn fmt::Debug,
+    pub new: fn(index: Index, &dyn ErasedProps) -> Box<dyn ErasedComponent>,
 }
 
 impl ComponentImpl {
     pub fn new<T: Component>() -> Self {
-        Self {
-            new: new::<T>,
-            size: size::<T>,
-            debug: debug::<T>,
-            debug_props: debug_props::<T::Props>,
-        }
+        Self { new: new::<T> }
     }
 }
 
-fn new<T>(index: Index, props: &dyn Any) -> Box<dyn ErasedComponent>
+fn new<T>(index: Index, props: &dyn ErasedProps) -> Box<dyn ErasedComponent>
 where
     T: Component,
 {
@@ -58,94 +66,35 @@ where
     boxed
 }
 
-fn size<T>(target: &dyn ErasedComponent, dom: &Dom, constraints: Constraints) -> Vec2
-where
-    T: Component,
-{
-    let target = target
-        .downcast_ref::<T>()
-        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
-
-    target.size(dom, constraints)
-}
-
-fn debug<T>(target: &dyn ErasedComponent) -> &dyn fmt::Debug
-where
-    T: Component,
-{
-    let target = target
-        .downcast_ref::<T>()
-        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
-
-    target
-}
-
-fn debug_props<P>(props: &dyn Any) -> &dyn fmt::Debug
-where
-    P: Props,
-{
-    let props = props
-        .downcast_ref::<P>()
-        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<P>()));
-
-    props
-}
-
 pub trait ErasedComponent: Any {
-    fn update(&mut self, props: &dyn Any);
+    fn update(&mut self, props: &dyn ErasedProps);
+    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2;
+
+    fn as_debug(&self) -> &dyn fmt::Debug;
 }
 
 impl<T> ErasedComponent for T
 where
     T: Component,
 {
-    fn update(&mut self, props: &dyn Any) {
+    fn update(&mut self, props: &dyn ErasedProps) {
         let props = props
             .downcast_ref::<T::Props>()
             .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T::Props>()));
 
         <T as Component>::update(self, props);
     }
-}
 
-impl dyn ErasedComponent {
-    #[inline]
-    pub fn is<T: Any>(&self) -> bool {
-        let t = TypeId::of::<T>();
-        let concrete = self.type_id();
-        t == concrete
+    fn size(&self, dom: &Dom, constraints: Constraints) -> Vec2 {
+        <T as Component>::size(self, dom, constraints)
     }
 
-    #[inline]
-    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
-        if self.is::<T>() {
-            unsafe { Some(self.downcast_ref_unchecked()) }
-        } else {
-            None
-        }
-    }
-
-    #[inline]
-    pub fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
-        if self.is::<T>() {
-            unsafe { Some(self.downcast_mut_unchecked()) }
-        } else {
-            None
-        }
-    }
-
-    #[inline]
-    pub unsafe fn downcast_ref_unchecked<T: Any>(&self) -> &T {
-        debug_assert!(self.is::<T>());
-        &*(self as *const dyn ErasedComponent as *const T)
-    }
-
-    #[inline]
-    pub unsafe fn downcast_mut_unchecked<T: Any>(&mut self) -> &mut T {
-        debug_assert!(self.is::<T>());
-        &mut *(self as *mut dyn ErasedComponent as *mut T)
+    fn as_debug(&self) -> &dyn fmt::Debug {
+        self
     }
 }
+
+mopafy!(ErasedComponent);
 
 // Placeholder component used internally.
 #[derive(Debug)]

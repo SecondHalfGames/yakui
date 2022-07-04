@@ -1,18 +1,16 @@
-use std::{
-    any::{Any, TypeId},
-    fmt,
-};
+use std::any::TypeId;
+use std::fmt;
 
-use crate::registry::Registry;
+use crate::component::{Component, ErasedProps, Props};
 
 pub struct Element {
     pub type_id: TypeId,
-    pub props: Box<dyn Any>,
+    pub props: Box<dyn ErasedProps>,
     pub children: Vec<ElementId>,
 }
 
 impl Element {
-    pub fn new<T: Any, P: Any>(props: P) -> Element {
+    pub fn new<T: Component, P: Props>(props: P) -> Element {
         Element {
             type_id: TypeId::of::<T>(),
             props: Box::new(props),
@@ -28,16 +26,14 @@ pub struct Snapshot {
     pub tree: Vec<Element>,
     pub roots: Vec<ElementId>,
     pub stack: Vec<ElementId>,
-    registry: Registry,
 }
 
 impl Snapshot {
-    pub fn new(registry: Registry) -> Self {
+    pub fn new() -> Self {
         Self {
             tree: Vec::new(),
             roots: Vec::new(),
             stack: Vec::new(),
-            registry,
         }
     }
 
@@ -99,13 +95,7 @@ impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dom = &self.0;
         let iter = dom.tree.iter().enumerate().map(|(index, element)| {
-            let id = element.type_id;
-
-            let debug = match dom.registry.get_by_id(id) {
-                Some(component_impl) => (component_impl.debug_props)(element.props.as_ref()),
-                None => &"(could not find debug impl)",
-            };
-
+            let debug = element.props.as_debug();
             let children: Vec<_> = element.children.iter().collect();
 
             format!("{index:?}: {debug:?}, children: {children:?}")

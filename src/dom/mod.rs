@@ -28,7 +28,7 @@ impl Dom {
         Self {
             tree: Arena::new(),
             roots: Vec::new(),
-            snapshot: Some(Snapshot::new(registry.clone())),
+            snapshot: Some(Snapshot::new()),
             registry,
         }
     }

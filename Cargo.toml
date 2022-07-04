@@ -11,4 +11,5 @@ default-members = [".", "crates/*"]
 
 [dependencies]
 glam = "0.21.2"
+mopa = "0.2.2"
 thunderdome = "0.5.0"

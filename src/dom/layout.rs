@@ -28,12 +28,7 @@ impl DomSize {
 
     pub fn calculate(&mut self, dom: &Dom, index: Index, constraints: Constraints) {
         let dom_node = dom.tree.get(index).unwrap();
-        let component_impl = dom
-            .registry
-            .get_by_id(dom_node.component.as_ref().type_id())
-            .unwrap();
-
-        let size = (component_impl.size)(dom_node.component.as_ref(), dom, constraints);
+        let size = dom_node.component.size(dom, constraints);
         self.nodes.insert_at(index, DomSizeNode { size });
     }
 }
