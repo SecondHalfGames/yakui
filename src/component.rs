@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
@@ -30,9 +30,86 @@ pub struct ComponentImpl {
 }
 
 impl ComponentImpl {
-    pub fn new<T: Component>() -> ComponentImpl {
-        todo!()
+    pub fn new<T: Component>() -> Self {
+        Self {
+            new: new::<T>,
+            update: update::<T>,
+            size: size::<T>,
+            debug: debug::<T>,
+            debug_props: debug_props::<T::Props>,
+        }
     }
+}
+
+fn new<T>(index: Index, props: &dyn Any) -> Box<dyn ErasedComponent>
+where
+    T: Component,
+{
+    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
+        panic!(
+            "Component {} expects props of type {} (ID {:?}), got ID {:?}",
+            type_name::<T>(),
+            type_name::<T::Props>(),
+            TypeId::of::<T::Props>(),
+            props.type_id(),
+        )
+    });
+
+    let value: T = T::new(index, props);
+    let boxed: Box<dyn ErasedComponent> = Box::new(value);
+    boxed
+}
+
+fn update<T>(target: &mut dyn ErasedComponent, props: &dyn Any)
+where
+    T: Component,
+{
+    let target = target
+        .downcast_mut::<T>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
+
+    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
+        panic!(
+            "Component {} expects props of type {}",
+            type_name::<T>(),
+            type_name::<T::Props>()
+        )
+    });
+
+    T::update(target, props);
+}
+
+fn size<T>(target: &dyn ErasedComponent, dom: &Dom, constraints: Constraints) -> Vec2
+where
+    T: Component,
+{
+    let target = target
+        .downcast_ref::<T>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
+
+    target.size(dom, constraints)
+}
+
+fn debug<T>(target: &dyn ErasedComponent) -> &dyn fmt::Debug
+where
+    T: Component,
+{
+    let target = target
+        .downcast_ref::<T>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
+
+    target
+}
+
+fn debug_props<P>(props: &dyn Any) -> &dyn fmt::Debug
+where
+    P: Props,
+{
+    let props = props
+        .downcast_ref::<P>()
+        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<P>()));
+
+    props
 }
 
 pub trait ErasedComponent: Any {}
