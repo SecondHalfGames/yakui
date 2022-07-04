@@ -1,15 +1,12 @@
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::Output;
-use crate::layout::Constraints;
-use crate::rect::Rect;
 use crate::Event;
 
 #[derive(Debug)]
 pub struct State {
     dom: Dom,
     layout: LayoutDom,
-    viewport: Rect,
 }
 
 impl State {
@@ -18,17 +15,13 @@ impl State {
         let dom = Dom::new();
         let layout = LayoutDom::new();
 
-        Self {
-            dom,
-            layout,
-            viewport: Rect::ZERO,
-        }
+        Self { dom, layout }
     }
 
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::SetViewport(viewport) => {
-                self.viewport = viewport;
+                self.layout.viewport = viewport;
             }
         }
     }
@@ -54,15 +47,10 @@ impl State {
             panic!("Cannot call finish() when not started.");
         }
 
-        let constraints = Constraints {
-            min: None,
-            max: Some(self.viewport.size()),
-        };
-
-        self.layout.calculate_all(&self.dom, constraints);
+        self.layout.calculate_all(&self.dom);
     }
 
     pub fn draw(&self) -> Output {
-        Output { meshes: Vec::new() }
+        Output::draw(&self.dom, &self.layout)
     }
 }

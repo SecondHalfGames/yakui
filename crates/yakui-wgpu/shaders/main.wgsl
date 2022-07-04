@@ -1,16 +1,26 @@
+struct VertexInput {
+    @location(0) position: vec2<f32>,
+    @location(1) texcoord: vec2<f32>,
+    @location(2) color: vec4<f32>,
+};
+
 struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
+    @builtin(position) position: vec4<f32>,
     @location(0) color: vec4<f32>,
 };
 
 @vertex
 fn vs_main(
-    @builtin(vertex_index) in_vertex_index: u32,
+    in: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    let x = f32(1 - i32(in_vertex_index)) * 0.5;
-    let y = f32(i32(in_vertex_index & 1u) * 2 - 1) * 0.5;
-    out.clip_position = vec4<f32>(x, y, 0.0, 1.0);
+
+    var adjusted: vec2<f32> = in.position;
+    adjusted *= vec2(2.0, -2.0);
+    adjusted += vec2(-1.0, 1.0);
+
+    out.position = vec4<f32>(adjusted, 0.0, 1.0);
+    out.color = in.color;
     return out;
 }
 

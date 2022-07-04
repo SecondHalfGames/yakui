@@ -1,5 +1,7 @@
 mod graphics;
 
+use std::time::Instant;
+
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -8,11 +10,10 @@ use winit::{
 
 use graphics::Graphics;
 
-fn ui() {
+fn ui(time: f32) {
     yakui::vertical(|| {
-        yakui::fsbox([40.0, 20.0]);
-        yakui::fsbox([30.0, 30.0]);
-        yakui::fsbox([60.0, 20.0]);
+        yakui::fsbox([100.0, 100.0 + 50.0 * time.sin()]);
+        yakui::fsbox([200.0, 100.0]);
     });
 }
 
@@ -24,6 +25,8 @@ async fn run() {
 
     let mut yak = yakui::State::new();
     let mut yak_renderer = yakui_wgpu::State::new(&graphics.device, graphics.surface_format());
+
+    let start = Instant::now();
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -58,7 +61,8 @@ async fn run() {
 
             Event::RedrawRequested(_) => {
                 yak.start();
-                ui();
+                let time = (Instant::now() - start).as_secs_f32();
+                ui(time);
                 yak.finish();
 
                 graphics.draw(&yak, &mut yak_renderer);

@@ -1,9 +1,10 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use thunderdome::Index;
 
 use crate::component::Component;
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
+use crate::draw::{Mesh, Vertex};
 use crate::layout::Constraints;
 use crate::snapshot::Element;
 
@@ -80,26 +81,79 @@ impl Component for List {
 
         constraints.constrain(size)
     }
+
+    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut crate::draw::Output) {
+        let dom_node = dom.get(self.index).unwrap();
+
+        for &child in &dom_node.children {
+            let child_node = dom.get(child).unwrap();
+            child_node.component.draw(dom, layout, output);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct FixedSizeBox {
+    pub index: Index,
+    pub props: FixedSizeBoxProps,
 }
 
 #[derive(Debug, Clone)]
-pub struct FixedSizeBox {
+pub struct FixedSizeBoxProps {
     pub size: Vec2,
 }
 
 impl Component for FixedSizeBox {
-    type Props = Self;
+    type Props = FixedSizeBoxProps;
 
-    fn new(_index: Index, props: &Self::Props) -> Self {
-        props.clone()
+    fn new(index: Index, props: &Self::Props) -> Self {
+        Self {
+            index,
+            props: props.clone(),
+        }
     }
 
     fn update(&mut self, props: &Self::Props) {
-        *self = props.clone();
+        self.props = props.clone();
     }
 
     fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        constraints.constrain(self.size)
+        constraints.constrain(self.props.size)
+    }
+
+    fn draw(&self, _dom: &Dom, layout: &LayoutDom, output: &mut crate::draw::Output) {
+        let layout_node = layout.get(self.index).unwrap();
+        let size = layout_node.size;
+        let pos = layout_node.pos;
+
+        let view_pos = (pos + layout.viewport.pos()) / layout.viewport.size();
+        let view_size = size / layout.viewport.size();
+
+        #[rustfmt::skip]
+        let positions = [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 1.0],
+            [1.0, 0.0]
+        ].map(Vec2::from);
+
+        let vertices = positions
+            .map(|vert| {
+                Vertex::new(
+                    vert * view_size + view_pos,
+                    vert,
+                    Vec4::new(vert.x, vert.y, 0.0, 1.0),
+                )
+            })
+            .into();
+
+        #[rustfmt::skip]
+        let indices = vec![
+            0, 1, 2,
+            3, 0, 2,
+        ];
+
+        output.meshes.push(Mesh { vertices, indices });
     }
 }
 
@@ -129,7 +183,5 @@ pub fn fsbox<S: Into<Vec2>>(size: S) {
     context
         .borrow_mut()
         .snapshot_mut()
-        .insert(Element::new::<FixedSizeBox, FixedSizeBox>(FixedSizeBox {
-            size,
-        }));
+        .insert(Element::new::<FixedSizeBox, _>(FixedSizeBoxProps { size }));
 }

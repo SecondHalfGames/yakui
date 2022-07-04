@@ -37,6 +37,10 @@ impl Dom {
         reconciler::apply(self, snapshot);
     }
 
+    pub fn roots(&self) -> &[Index] {
+        self.roots.as_slice()
+    }
+
     pub fn get(&self, index: Index) -> Option<&DomNode> {
         self.tree.get(index)
     }

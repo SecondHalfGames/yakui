@@ -68,7 +68,7 @@ impl State {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
+                cull_mode: None,
                 polygon_mode: wgpu::PolygonMode::Fill,
                 unclipped_depth: false,
                 conservative: false,
@@ -106,7 +106,7 @@ impl State {
         }
 
         for mesh in output.meshes {
-            let base = self.indices.len() as u32;
+            let base = self.vertices.len() as u32;
 
             for vertex in mesh.vertices {
                 self.vertices.push(&Vertex {

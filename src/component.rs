@@ -7,6 +7,7 @@ use glam::Vec2;
 use thunderdome::Index;
 
 use crate::dom::{Dom, LayoutDom};
+use crate::draw::Output;
 use crate::layout::Constraints;
 
 pub trait Props: Any + fmt::Debug {}
@@ -33,6 +34,7 @@ pub trait Component: Any + fmt::Debug {
     fn new(index: Index, props: &Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
 }
 
 pub fn new<T>(index: Index, props: &dyn ErasedProps) -> Box<dyn ErasedComponent>
@@ -57,6 +59,7 @@ where
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
 
     fn as_debug(&self) -> &dyn fmt::Debug;
 }
@@ -77,6 +80,10 @@ where
         <T as Component>::size(self, dom, layout, constraints)
     }
 
+    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output) {
+        <T as Component>::draw(self, dom, layout, output)
+    }
+
     fn as_debug(&self) -> &dyn fmt::Debug {
         self
     }
@@ -91,13 +98,19 @@ pub struct DummyComponent;
 impl Component for DummyComponent {
     type Props = ();
 
+    #[inline]
     fn new(_index: Index, _props: &Self::Props) -> Self {
         Self
     }
 
+    #[inline]
     fn update(&mut self, _props: &Self::Props) {}
 
+    #[inline]
     fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {
         Vec2::ZERO
     }
+
+    #[inline]
+    fn draw(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
 }
