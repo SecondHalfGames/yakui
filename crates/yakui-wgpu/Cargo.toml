@@ -1,14 +1,11 @@
 [package]
-name = "yakui"
+name = "yakui-wgpu"
 version = "0.1.0"
 edition = "2021"
-
-[workspace]
-members = [".", "crates/*"]
-default-members = [".", "crates/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = "0.21.2"
-thunderdome = "0.5.0"
+yakui = { path = "../.." }
+
+wgpu = "0.13.1"
