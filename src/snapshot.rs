@@ -3,7 +3,7 @@ use std::fmt;
 
 use thunderdome::Index;
 
-use crate::component::{Component, ErasedComponent, ErasedProps, Props};
+use crate::component::{Component, ErasedComponent, ErasedProps};
 
 pub struct Element {
     pub type_id: TypeId,
@@ -13,7 +13,7 @@ pub struct Element {
 }
 
 impl Element {
-    pub fn new<T: Component, P: Props>(props: P) -> Element {
+    pub fn new<T: Component>(props: T::Props) -> Element {
         Element {
             type_id: TypeId::of::<T>(),
             props: Box::new(props),

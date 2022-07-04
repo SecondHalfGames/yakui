@@ -175,7 +175,7 @@ pub fn vertical<F: FnOnce()>(contents: F) {
     let id = context
         .borrow_mut()
         .snapshot_mut()
-        .push(Element::new::<List, _>(ListProps::vertical()));
+        .push(Element::new::<List>(ListProps::vertical()));
 
     contents();
 
@@ -188,7 +188,7 @@ pub fn horizontal<F: FnOnce()>(contents: F) {
     let id = context
         .borrow_mut()
         .snapshot_mut()
-        .push(Element::new::<List, _>(ListProps::horizontal()));
+        .push(Element::new::<List>(ListProps::horizontal()));
 
     contents();
 
@@ -202,5 +202,5 @@ pub fn fsbox<S: Into<Vec2>>(size: S) {
     context
         .borrow_mut()
         .snapshot_mut()
-        .insert(Element::new::<FixedSizeBox, _>(FixedSizeBoxProps { size }));
+        .insert(Element::new::<FixedSizeBox>(FixedSizeBoxProps { size }));
 }
