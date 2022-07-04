@@ -63,6 +63,6 @@ impl State {
     }
 
     pub fn draw(&self) -> Output {
-        todo!()
+        Output { meshes: Vec::new() }
     }
 }

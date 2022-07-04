@@ -9,3 +9,5 @@ edition = "2021"
 yakui = { path = "../.." }
 
 wgpu = "0.13.1"
+glam = { version = "0.21.2", features = ["bytemuck"] }
+bytemuck = { version = "1.10.0", features = ["derive"] }

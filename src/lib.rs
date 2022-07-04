@@ -17,7 +17,7 @@ pub mod draw;
 pub mod layout;
 
 pub extern crate glam;
-pub use glam::Vec2;
+pub use glam::{Vec2, Vec4};
 
 pub use event::Event;
 pub use rect::Rect;

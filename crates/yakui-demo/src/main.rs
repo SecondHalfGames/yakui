@@ -23,6 +23,7 @@ async fn run() {
     let mut graphics = Graphics::new(&window).await;
 
     let mut yak = yakui::State::new();
+    let mut yak_renderer = yakui_wgpu::State::new(&graphics.device, graphics.surface_format());
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -60,7 +61,7 @@ async fn run() {
                 ui();
                 yak.finish();
 
-                graphics.draw();
+                graphics.draw(&yak, &mut yak_renderer);
             }
 
             _ => (),

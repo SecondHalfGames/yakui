@@ -1,7 +1,7 @@
 use winit::{dpi::PhysicalSize, window::Window};
 
 pub struct Graphics {
-    device: wgpu::Device,
+    pub device: wgpu::Device,
     queue: wgpu::Queue,
 
     surface: wgpu::Surface,
@@ -62,6 +62,10 @@ impl Graphics {
         }
     }
 
+    pub fn surface_format(&self) -> wgpu::TextureFormat {
+        self.surface_config.format
+    }
+
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
@@ -71,7 +75,7 @@ impl Graphics {
         }
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&self, yak: &yakui::State, yak_renderer: &mut yakui_wgpu::State) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,
@@ -107,7 +111,10 @@ impl Graphics {
             });
         }
 
-        self.queue.submit([encoder.finish()]);
+        let clear = encoder.finish();
+        let draw_yak = yak_renderer.draw(yak, &self.device, &self.queue, &view);
+
+        self.queue.submit([clear, draw_yak]);
         output.present();
     }
 }
