@@ -22,7 +22,6 @@ pub trait Component: Any + fmt::Debug {
 #[derive(Clone, Copy)]
 pub struct ComponentImpl {
     pub new: fn(index: Index, &dyn Any) -> Box<dyn ErasedComponent>,
-    pub update: fn(&mut dyn ErasedComponent, &dyn Any),
     pub size: fn(&dyn ErasedComponent, &Dom, Constraints) -> Vec2,
 
     pub debug: fn(&dyn ErasedComponent) -> &dyn fmt::Debug,
@@ -33,7 +32,6 @@ impl ComponentImpl {
     pub fn new<T: Component>() -> Self {
         Self {
             new: new::<T>,
-            update: update::<T>,
             size: size::<T>,
             debug: debug::<T>,
             debug_props: debug_props::<T::Props>,
@@ -58,25 +56,6 @@ where
     let value: T = T::new(index, props);
     let boxed: Box<dyn ErasedComponent> = Box::new(value);
     boxed
-}
-
-fn update<T>(target: &mut dyn ErasedComponent, props: &dyn Any)
-where
-    T: Component,
-{
-    let target = target
-        .downcast_mut::<T>()
-        .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T>()));
-
-    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
-        panic!(
-            "Component {} expects props of type {}",
-            type_name::<T>(),
-            type_name::<T::Props>()
-        )
-    });
-
-    T::update(target, props);
 }
 
 fn size<T>(target: &dyn ErasedComponent, dom: &Dom, constraints: Constraints) -> Vec2
@@ -112,8 +91,22 @@ where
     props
 }
 
-pub trait ErasedComponent: Any {}
-impl<T> ErasedComponent for T where T: Component {}
+pub trait ErasedComponent: Any {
+    fn update(&mut self, props: &dyn Any);
+}
+
+impl<T> ErasedComponent for T
+where
+    T: Component,
+{
+    fn update(&mut self, props: &dyn Any) {
+        let props = props
+            .downcast_ref::<T::Props>()
+            .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T::Props>()));
+
+        <T as Component>::update(self, props);
+    }
+}
 
 impl dyn ErasedComponent {
     #[inline]

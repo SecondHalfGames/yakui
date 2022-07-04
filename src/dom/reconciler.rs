@@ -35,14 +35,7 @@ pub fn apply(dom: &mut Dom, snapshot: Snapshot) {
                 let dom_node = dom.tree.get_mut(dom_index).unwrap();
 
                 if element.type_id == dom_node.component.as_ref().type_id() {
-                    if let Some(component_impl) = dom.registry.get_by_id(element.type_id) {
-                        (component_impl.update)(
-                            dom_node.component.as_mut(),
-                            element.props.as_ref(),
-                        );
-                    } else {
-                        panic!("Unknown component ID {:?}", element.type_id);
-                    }
+                    dom_node.component.update(element.props.as_ref());
                 } else {
                     // Because this component has changed types, delete the
                     // old one and create a new one immediately after.
