@@ -30,11 +30,13 @@ mopmopafy!(ErasedProps);
 
 pub trait Component: Any + fmt::Debug {
     type Props: Props;
+    type Response;
 
     fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn respond(&self) -> Self::Response;
 }
 
 pub trait ErasedComponent: Any {
@@ -78,6 +80,7 @@ pub struct DummyComponent;
 
 impl Component for DummyComponent {
     type Props = ();
+    type Response = ();
 
     #[inline]
     fn new(_index: Index, _props: Self::Props) -> Self {
@@ -94,4 +97,7 @@ impl Component for DummyComponent {
 
     #[inline]
     fn draw(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
+
+    #[inline]
+    fn respond(&self) {}
 }

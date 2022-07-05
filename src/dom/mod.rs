@@ -110,7 +110,7 @@ impl Dom {
         index
     }
 
-    pub fn end_component<T: Component>(&mut self, index: Index) {
+    pub fn end_component<T: Component>(&mut self, index: Index) -> T::Response {
         match self.stack.pop() {
             Some(old_top) => {
                 assert!(
@@ -121,7 +121,12 @@ impl Dom {
                 self.trim_children(index);
 
                 let node = self.tree.get(index).unwrap();
-                // TODO: Get result from node component
+
+                node.component
+                    .as_ref()
+                    .downcast_ref::<T>()
+                    .unwrap()
+                    .respond()
             }
             None => {
                 panic!("Cannot end_component without an in-progress component.");

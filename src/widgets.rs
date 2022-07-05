@@ -34,6 +34,7 @@ impl ListProps {
 
 impl Component for List {
     type Props = ListProps;
+    type Response = ();
 
     fn new(index: Index, props: Self::Props) -> Self {
         Self { props, index }
@@ -92,6 +93,8 @@ impl Component for List {
             child_node.component.draw(dom, layout, output);
         }
     }
+
+    fn respond(&self) {}
 }
 
 #[derive(Debug)]
@@ -107,6 +110,7 @@ pub struct FixedSizeBoxProps {
 
 impl Component for FixedSizeBox {
     type Props = FixedSizeBoxProps;
+    type Response = ();
 
     fn new(index: Index, props: Self::Props) -> Self {
         Self { index, props }
@@ -154,6 +158,8 @@ impl Component for FixedSizeBox {
 
         output.meshes.push(Mesh { vertices, indices });
     }
+
+    fn respond(&self) {}
 }
 
 #[derive(Debug, Clone)]
