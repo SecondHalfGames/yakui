@@ -7,7 +7,6 @@ impl fmt::Debug for Dom {
         f.debug_struct("Dom")
             .field("roots", &self.roots)
             .field("tree", &ViewTree(self))
-            .field("snapshot", &self.snapshot)
             .finish()
     }
 }

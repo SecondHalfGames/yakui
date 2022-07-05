@@ -31,30 +31,30 @@ mopmopafy!(ErasedProps);
 pub trait Component: Any + fmt::Debug {
     type Props: Props;
 
-    fn new(index: Index, props: &Self::Props) -> Self;
+    fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
 }
 
-pub fn new<T>(index: Index, props: &dyn ErasedProps) -> Box<dyn ErasedComponent>
-where
-    T: Component,
-{
-    let props = props.downcast_ref::<T::Props>().unwrap_or_else(|| {
-        panic!(
-            "Component {} expects props of type {} (ID {:?}), got ID {:?}",
-            type_name::<T>(),
-            type_name::<T::Props>(),
-            TypeId::of::<T::Props>(),
-            props.type_id(),
-        )
-    });
+// pub fn new<T>(index: Index, props: Box<dyn ErasedProps>) -> Box<dyn ErasedComponent>
+// where
+//     T: Component,
+// {
+//     let props = props.downcast::<T::Props>().unwrap_or_else(|| {
+//         panic!(
+//             "Component {} expects props of type {} (ID {:?}), got ID {:?}",
+//             type_name::<T>(),
+//             type_name::<T::Props>(),
+//             TypeId::of::<T::Props>(),
+//             props.type_id(),
+//         )
+//     });
 
-    let value: T = T::new(index, props);
-    let boxed: Box<dyn ErasedComponent> = Box::new(value);
-    boxed
-}
+//     let value: T = T::new(index, props);
+//     let boxed: Box<dyn ErasedComponent> = Box::new(value);
+//     boxed
+// }
 
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
@@ -99,7 +99,7 @@ impl Component for DummyComponent {
     type Props = ();
 
     #[inline]
-    fn new(_index: Index, _props: &Self::Props) -> Self {
+    fn new(_index: Index, _props: Self::Props) -> Self {
         Self
     }
 

@@ -5,14 +5,14 @@ use crate::Event;
 
 #[derive(Debug)]
 pub struct State {
-    dom: Dom,
+    dom: Option<Dom>,
     layout: LayoutDom,
 }
 
 impl State {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        let dom = Dom::new();
+        let dom = Some(Dom::new());
         let layout = LayoutDom::new();
 
         Self { dom, layout }
@@ -29,9 +29,9 @@ impl State {
     pub fn start(&mut self) {
         let context = Context::current();
 
-        if let Some(mut snapshot) = self.dom.take_snapshot() {
-            snapshot.clear();
-            context.borrow_mut().start(snapshot);
+        if let Some(mut dom) = self.dom.take() {
+            dom.start();
+            context.borrow_mut().start(dom);
         } else {
             panic!("Cannot call start() when already started.");
         }
@@ -41,16 +41,16 @@ impl State {
         let context = Context::current();
         let mut context = context.borrow_mut();
 
-        if let Some(snapshot) = context.take_snapshot() {
-            self.dom.apply(snapshot);
+        if let Some(dom) = context.take_dom() {
+            self.dom = Some(dom);
         } else {
             panic!("Cannot call finish() when not started.");
         }
 
-        self.layout.calculate_all(&self.dom);
+        self.layout.calculate_all(self.dom.as_ref().unwrap());
     }
 
     pub fn draw(&self) -> Output {
-        Output::draw(&self.dom, &self.layout)
+        Output::draw(self.dom.as_ref().unwrap(), &self.layout)
     }
 }

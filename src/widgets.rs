@@ -6,7 +6,6 @@ use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::{Mesh, Vertex};
 use crate::layout::Constraints;
-use crate::snapshot::Element;
 
 #[derive(Debug)]
 pub struct List {
@@ -36,11 +35,8 @@ impl ListProps {
 impl Component for List {
     type Props = ListProps;
 
-    fn new(index: Index, props: &Self::Props) -> Self {
-        Self {
-            props: props.clone(),
-            index,
-        }
+    fn new(index: Index, props: Self::Props) -> Self {
+        Self { props, index }
     }
 
     fn update(&mut self, props: &Self::Props) {
@@ -112,11 +108,8 @@ pub struct FixedSizeBoxProps {
 impl Component for FixedSizeBox {
     type Props = FixedSizeBoxProps;
 
-    fn new(index: Index, props: &Self::Props) -> Self {
-        Self {
-            index,
-            props: props.clone(),
-        }
+    fn new(index: Index, props: Self::Props) -> Self {
+        Self { index, props }
     }
 
     fn update(&mut self, props: &Self::Props) {
@@ -172,35 +165,40 @@ pub enum Direction {
 pub fn vertical<F: FnOnce()>(contents: F) {
     let context = Context::active();
 
-    let id = context
+    let index = context
         .borrow_mut()
-        .snapshot_mut()
-        .push(Element::new::<List>(ListProps::vertical()));
+        .dom_mut()
+        .begin_component::<List>(ListProps::vertical());
 
     contents();
 
-    context.borrow_mut().snapshot_mut().pop(id);
+    context.borrow_mut().dom_mut().end_component::<List>(index);
 }
 
 pub fn horizontal<F: FnOnce()>(contents: F) {
     let context = Context::active();
 
-    let id = context
+    let index = context
         .borrow_mut()
-        .snapshot_mut()
-        .push(Element::new::<List>(ListProps::horizontal()));
+        .dom_mut()
+        .begin_component::<List>(ListProps::horizontal());
 
     contents();
 
-    context.borrow_mut().snapshot_mut().pop(id);
+    context.borrow_mut().dom_mut().end_component::<List>(index);
 }
 
 pub fn fsbox<S: Into<Vec2>>(size: S) {
     let context = Context::active();
 
     let size = size.into();
+    let index = context
+        .borrow_mut()
+        .dom_mut()
+        .begin_component::<FixedSizeBox>(FixedSizeBoxProps { size });
+
     context
         .borrow_mut()
-        .snapshot_mut()
-        .insert(Element::new::<FixedSizeBox>(FixedSizeBoxProps { size }));
+        .dom_mut()
+        .end_component::<FixedSizeBox>(index);
 }

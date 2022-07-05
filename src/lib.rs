@@ -1,4 +1,4 @@
-#![allow(clippy::new_without_default)]
+#![allow(clippy::new_without_default, clippy::collapsible_else_if)]
 
 #[macro_use]
 mod mopmopa;
@@ -8,7 +8,6 @@ mod context;
 mod dom;
 mod event;
 mod rect;
-mod snapshot;
 mod state;
 mod widgets;
 mod zip_longest;
