@@ -3,6 +3,7 @@
 #[macro_use]
 mod mopmopa;
 
+mod color;
 mod component;
 mod context;
 mod dom;
@@ -18,6 +19,7 @@ pub mod layout;
 pub extern crate glam;
 pub use glam::{Vec2, Vec4};
 
+pub use color::*;
 pub use event::Event;
 pub use rect::Rect;
 pub use state::State;

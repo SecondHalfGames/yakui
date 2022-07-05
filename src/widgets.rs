@@ -6,6 +6,7 @@ use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::{Mesh, Vertex};
 use crate::layout::Constraints;
+use crate::Color3;
 
 #[derive(Debug)]
 pub struct List {
@@ -16,18 +17,21 @@ pub struct List {
 #[derive(Debug, Clone)]
 pub struct ListProps {
     pub direction: Direction,
+    pub fill: Option<Color3>,
 }
 
 impl ListProps {
     pub fn vertical() -> Self {
         Self {
             direction: Direction::Down,
+            fill: None,
         }
     }
 
     pub fn horizontal() -> Self {
         Self {
             direction: Direction::Right,
+            fill: None,
         }
     }
 }
