@@ -37,25 +37,6 @@ pub trait Component: Any + fmt::Debug {
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
 }
 
-// pub fn new<T>(index: Index, props: Box<dyn ErasedProps>) -> Box<dyn ErasedComponent>
-// where
-//     T: Component,
-// {
-//     let props = props.downcast::<T::Props>().unwrap_or_else(|| {
-//         panic!(
-//             "Component {} expects props of type {} (ID {:?}), got ID {:?}",
-//             type_name::<T>(),
-//             type_name::<T::Props>(),
-//             TypeId::of::<T::Props>(),
-//             props.type_id(),
-//         )
-//     });
-
-//     let value: T = T::new(index, props);
-//     let boxed: Box<dyn ErasedComponent> = Box::new(value);
-//     boxed
-// }
-
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
