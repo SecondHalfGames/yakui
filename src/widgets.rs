@@ -1,7 +1,7 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use thunderdome::Index;
 
-use crate::component::Component;
+use crate::component::{Component, ComponentEvent};
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::{Mesh, Vertex};
@@ -109,6 +109,7 @@ pub struct FixedSizeBox {
 #[derive(Debug, Clone)]
 pub struct FixedSizeBoxProps {
     pub size: Vec2,
+    pub color: Color3,
 }
 
 impl Component for FixedSizeBox {
@@ -143,14 +144,10 @@ impl Component for FixedSizeBox {
             [1.0, 0.0]
         ].map(Vec2::from);
 
+        let color = self.props.color.as_vec4(1.0);
+
         let vertices = positions
-            .map(|vert| {
-                Vertex::new(
-                    vert * view_size + view_pos,
-                    vert,
-                    Vec4::new(vert.x, vert.y, 0.0, 1.0),
-                )
-            })
+            .map(|vert| Vertex::new(vert * view_size + view_pos, vert, color))
             .into();
 
         #[rustfmt::skip]
@@ -197,14 +194,15 @@ pub fn horizontal<F: FnOnce()>(contents: F) {
     context.borrow_mut().dom_mut().end_component::<List>(index);
 }
 
-pub fn fsbox<S: Into<Vec2>>(size: S) {
+pub fn fsbox<S: Into<Vec2>, C: Into<Color3>>(size: S, color: C) {
     let context = Context::active();
 
     let size = size.into();
+    let color = color.into();
     let index = context
         .borrow_mut()
         .dom_mut()
-        .begin_component::<FixedSizeBox>(FixedSizeBoxProps { size });
+        .begin_component::<FixedSizeBox>(FixedSizeBoxProps { size, color });
 
     context
         .borrow_mut()

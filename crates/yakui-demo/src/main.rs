@@ -9,6 +9,7 @@ use winit::{
 };
 
 use graphics::Graphics;
+use yakui::Color3;
 
 fn ui(time: f32) {
     yakui::vertical(|| {
@@ -16,11 +17,11 @@ fn ui(time: f32) {
             let x = 50.0 * time.sin();
             let y = 20.0 * (time + 1.0).sin();
 
-            yakui::fsbox([100.0 + x, 100.0 + y]);
-            yakui::fsbox([40.0, 30.0]);
-            yakui::fsbox([60.0, 40.0]);
+            yakui::fsbox([100.0 + x, 100.0 + y], Color3::RED);
+            yakui::fsbox([40.0, 30.0], Color3::GREEN);
+            yakui::fsbox([60.0, 40.0], Color3::BLUE);
         });
-        yakui::fsbox([200.0, 100.0]);
+        yakui::fsbox([200.0, 100.0], Color3::REBECCA_PURPLE);
     });
 }
 

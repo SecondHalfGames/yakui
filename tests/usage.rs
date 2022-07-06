@@ -18,7 +18,7 @@ fn basic() {
 
 fn my_ui(size: [f32; 2]) {
     yakui::vertical(|| {
-        yakui::fsbox(size);
-        yakui::fsbox([30.0, 20.0]);
+        yakui::fsbox(size, [1.0, 0.0, 0.0]);
+        yakui::fsbox([30.0, 20.0], [0.0, 1.0, 0.0]);
     });
 }

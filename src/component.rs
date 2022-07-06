@@ -35,6 +35,8 @@ pub trait Component: Any + fmt::Debug {
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
     fn respond(&self) -> Self::Response;
+
+    fn event(&mut self, _event: &ComponentEvent) {}
 }
 
 pub trait ErasedComponent: Any {
@@ -72,6 +74,10 @@ where
 
 mopmopafy!(ErasedComponent);
 
+pub enum ComponentEvent {
+    MouseMove(Vec2),
+}
+
 // Placeholder component used internally.
 #[derive(Debug)]
 pub struct DummyComponent;
@@ -87,6 +93,9 @@ impl Component for DummyComponent {
 
     #[inline]
     fn update(&mut self, _props: &Self::Props) {}
+
+    #[inline]
+    fn event(&mut self, _event: &ComponentEvent) {}
 
     #[inline]
     fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {
