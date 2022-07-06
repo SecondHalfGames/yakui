@@ -15,8 +15,7 @@ pub struct LayoutDom {
 
 #[derive(Debug)]
 pub struct LayoutDomNode {
-    pub pos: Vec2,
-    pub size: Vec2,
+    pub rect: Rect,
 }
 
 impl LayoutDom {
@@ -58,8 +57,7 @@ impl LayoutDom {
         self.nodes.insert_at(
             index,
             LayoutDomNode {
-                size,
-                pos: Vec2::ZERO,
+                rect: Rect::from_pos_size(Vec2::ZERO, size),
             },
         );
         size
@@ -67,7 +65,7 @@ impl LayoutDom {
 
     pub fn set_pos(&mut self, index: Index, pos: Vec2) {
         if let Some(node) = self.nodes.get_mut(index) {
-            node.pos = pos;
+            node.rect.set_pos(pos);
         }
     }
 
@@ -79,9 +77,15 @@ impl LayoutDom {
         while let Some((index, parent_pos)) = queue.pop_front() {
             if let Some(layout_node) = self.nodes.get_mut(index) {
                 let node = dom.get(index).unwrap();
-                layout_node.pos += parent_pos;
+                layout_node
+                    .rect
+                    .set_pos(layout_node.rect.pos() + parent_pos);
 
-                queue.extend(node.children.iter().map(|&index| (index, layout_node.pos)));
+                queue.extend(
+                    node.children
+                        .iter()
+                        .map(|&index| (index, layout_node.rect.pos())),
+                );
             }
         }
     }

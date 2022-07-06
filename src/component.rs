@@ -43,6 +43,7 @@ pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn event(&mut self, event: &ComponentEvent);
 
     fn as_debug(&self) -> &dyn fmt::Debug;
 }
@@ -51,6 +52,7 @@ impl<T> ErasedComponent for T
 where
     T: Component,
 {
+    #[inline]
     fn update(&mut self, props: &dyn ErasedProps) {
         let props = props
             .downcast_ref::<T::Props>()
@@ -59,14 +61,22 @@ where
         <T as Component>::update(self, props);
     }
 
+    #[inline]
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Component>::size(self, dom, layout, constraints)
     }
 
+    #[inline]
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output) {
         <T as Component>::draw(self, dom, layout, output)
     }
 
+    #[inline]
+    fn event(&mut self, event: &ComponentEvent) {
+        <T as Component>::event(self, event)
+    }
+
+    #[inline]
     fn as_debug(&self) -> &dyn fmt::Debug {
         self
     }
@@ -75,7 +85,8 @@ where
 mopmopafy!(ErasedComponent);
 
 pub enum ComponentEvent {
-    MouseMove(Vec2),
+    MouseEnter,
+    MouseLeave,
 }
 
 // Placeholder component used internally.

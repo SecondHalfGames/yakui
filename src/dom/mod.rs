@@ -160,4 +160,8 @@ impl Dom {
     pub fn get(&self, index: Index) -> Option<&DomNode> {
         self.tree.get(index)
     }
+
+    pub fn get_mut(&mut self, index: Index) -> Option<&mut DomNode> {
+        self.tree.get_mut(index)
+    }
 }

@@ -13,6 +13,13 @@ pub fn handle_event<T>(state: &mut yakui::State, event: &WinitEvent<T>) {
 
             state.handle_event(yakui::Event::SetViewport(rect));
         }
+        WinitEvent::WindowEvent {
+            event: WindowEvent::CursorMoved { position, .. },
+            ..
+        } => {
+            let pos = Vec2::new(position.x as f32, position.y as f32);
+            state.handle_event(yakui::Event::MoveMouse(pos));
+        }
         _ => (),
     }
 }

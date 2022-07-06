@@ -72,15 +72,15 @@ impl Component for List {
 
         for &child in &dom_node.children {
             let child = layout.get_mut(child).unwrap();
-            child.pos = pos;
+            child.rect.set_pos(pos);
 
             match self.props.direction {
                 Direction::Down => {
-                    pos += Vec2::new(0.0, child.size.y);
+                    pos += Vec2::new(0.0, child.rect.size().y);
                 }
 
                 Direction::Right => {
-                    pos += Vec2::new(child.size.x, 0.0);
+                    pos += Vec2::new(child.rect.size().x, 0.0);
                 }
             }
         }
@@ -103,6 +103,7 @@ impl Component for List {
 #[derive(Debug)]
 pub struct FixedSizeBox {
     pub index: Index,
+    pub hovered: bool,
     pub props: FixedSizeBoxProps,
 }
 
@@ -117,7 +118,11 @@ impl Component for FixedSizeBox {
     type Response = ();
 
     fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+        Self {
+            index,
+            hovered: false,
+            props,
+        }
     }
 
     fn update(&mut self, props: &Self::Props) {
@@ -130,8 +135,8 @@ impl Component for FixedSizeBox {
 
     fn draw(&self, _dom: &Dom, layout: &LayoutDom, output: &mut crate::draw::Output) {
         let layout_node = layout.get(self.index).unwrap();
-        let size = layout_node.size;
-        let pos = layout_node.pos;
+        let size = layout_node.rect.size();
+        let pos = layout_node.rect.pos();
 
         let view_pos = (pos + layout.viewport.pos()) / layout.viewport.size();
         let view_size = size / layout.viewport.size();
@@ -144,7 +149,11 @@ impl Component for FixedSizeBox {
             [1.0, 0.0]
         ].map(Vec2::from);
 
-        let color = self.props.color.as_vec4(1.0);
+        let mut color = self.props.color.as_vec4(1.0);
+
+        if self.hovered {
+            color *= 0.65;
+        }
 
         let vertices = positions
             .map(|vert| Vertex::new(vert * view_size + view_pos, vert, color))
@@ -160,6 +169,18 @@ impl Component for FixedSizeBox {
     }
 
     fn respond(&self) {}
+
+    fn event(&mut self, event: &ComponentEvent) {
+        match event {
+            ComponentEvent::MouseEnter => {
+                self.hovered = true;
+            }
+            ComponentEvent::MouseLeave => {
+                self.hovered = false;
+            }
+            _ => (),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
