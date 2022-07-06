@@ -1,5 +1,3 @@
-#![allow(clippy::transmute_ptr_to_ref)] // thanks, mopa
-
 use std::any::{type_name, Any, TypeId};
 use std::fmt;
 

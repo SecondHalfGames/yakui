@@ -8,6 +8,7 @@ mod context;
 mod dom;
 mod event;
 mod geometry;
+mod input;
 mod state;
 mod widgets;
 mod zip_longest;

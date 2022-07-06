@@ -1,12 +1,14 @@
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::Output;
+use crate::input::InputState;
 use crate::Event;
 
 #[derive(Debug)]
 pub struct State {
     dom: Option<Dom>,
     layout: LayoutDom,
+    input: InputState,
 }
 
 impl State {
@@ -14,14 +16,18 @@ impl State {
     pub fn new() -> Self {
         let dom = Some(Dom::new());
         let layout = LayoutDom::new();
+        let input = InputState::new();
 
-        Self { dom, layout }
+        Self { dom, layout, input }
     }
 
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::SetViewport(viewport) => {
                 self.layout.viewport = viewport;
+            }
+            Event::MoveMouse(pos) => {
+                self.input.mouse_position = pos;
             }
         }
     }
