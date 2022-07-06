@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use thunderdome::Index;
+
+use crate::component::Component;
 use crate::dom::Dom;
 
 thread_local! {

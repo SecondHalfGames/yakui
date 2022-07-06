@@ -255,7 +255,9 @@ pub fn fsbox<S: Into<Vec2>, C: Into<Color3>>(size: S, color: C) -> FixedSizeBoxR
         .dom_mut()
         .begin_component::<FixedSizeBox>(FixedSizeBoxProps { size, color });
 
-    let mut context = context.borrow_mut();
-    let dom = context.dom_mut();
-    dom.end_component::<FixedSizeBox>(index)
+    let res = context
+        .borrow_mut()
+        .dom_mut()
+        .end_component::<FixedSizeBox>(index);
+    res
 }
