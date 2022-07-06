@@ -12,6 +12,7 @@ impl State {
         Self {}
     }
 
+    // TODO: How do we determine if an input event should be sunk by the UI?
     pub fn handle_event<T>(&mut self, state: &mut yakui::State, event: &WinitEvent<T>) {
         #[allow(clippy::single_match)]
         match event {
