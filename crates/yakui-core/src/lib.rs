@@ -11,7 +11,6 @@ mod geometry;
 mod input;
 mod state;
 mod widgets;
-mod zip_longest;
 
 pub mod draw;
 
