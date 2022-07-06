@@ -9,13 +9,18 @@ use winit::{
 };
 
 use graphics::Graphics;
-use yakui::Color3;
+use yakui::{ButtonProps, Color3, Vec2};
 
 fn ui(time: f32) {
     yakui::vertical(|| {
         yakui::horizontal(|| {
             let x = 50.0 * time.sin();
             let y = 20.0 * (time + 1.0).sin();
+
+            yakui::button(ButtonProps {
+                size: Vec2::new(70.0, 30.0),
+                fill: Color3::rgb(127, 90, 200),
+            });
 
             yakui::fsbox([100.0 + x, 100.0 + y], Color3::RED);
             yakui::fsbox([40.0, 30.0], Color3::GREEN);

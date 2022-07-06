@@ -4,8 +4,8 @@
 mod mopmopa;
 
 mod component;
-mod context;
-mod dom;
+pub mod context;
+pub mod dom;
 mod event;
 mod geometry;
 mod input;
@@ -17,7 +17,9 @@ pub mod draw;
 
 pub extern crate glam;
 pub use glam::{Vec2, Vec4};
+pub use thunderdome::Index;
 
+pub use component::*;
 pub use event::Event;
 pub use geometry::*;
 pub use input::*;

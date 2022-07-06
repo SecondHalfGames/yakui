@@ -1,16 +1,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use thunderdome::Index;
-
-use crate::component::Component;
 use crate::dom::Dom;
 
 thread_local! {
     static CURRENT_CONTEXT: Rc<RefCell<Context>> = Rc::new(RefCell::new(Context::new()));
 }
 
-pub(crate) struct Context {
+pub struct Context {
     dom: Option<Dom>,
 }
 
@@ -19,7 +16,7 @@ impl Context {
         Self { dom: None }
     }
 
-    pub(crate) fn dom_mut(&mut self) -> &mut Dom {
+    pub fn dom_mut(&mut self) -> &mut Dom {
         self.dom.as_mut().unwrap()
     }
 
@@ -31,11 +28,11 @@ impl Context {
         self.dom.take()
     }
 
-    pub(crate) fn current() -> Rc<RefCell<Self>> {
+    pub fn current() -> Rc<RefCell<Self>> {
         CURRENT_CONTEXT.with(Rc::clone)
     }
 
-    pub(crate) fn active() -> Rc<RefCell<Self>> {
+    pub fn active() -> Rc<RefCell<Self>> {
         let context = Self::current();
 
         if context.borrow().dom.is_none() {
