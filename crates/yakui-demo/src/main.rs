@@ -33,13 +33,14 @@ async fn run() {
 
     let mut yak = yakui::State::new();
     let mut yak_renderer = yakui_wgpu::State::new(&graphics.device, graphics.surface_format());
+    let mut yak_window = yakui_winit::State::new();
 
     let start = Instant::now();
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
-        yakui_winit::handle_event(&mut yak, &event);
+        yak_window.handle_event(&mut yak, &event);
 
         match event {
             Event::WindowEvent {

@@ -7,6 +7,7 @@ use thunderdome::Index;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::Output;
 use crate::geometry::Constraints;
+use crate::input::MouseButton;
 
 pub trait Props: Any + fmt::Debug {}
 impl<T> Props for T where T: Any + fmt::Debug {}
@@ -84,9 +85,12 @@ where
 
 mopmopafy!(ErasedComponent);
 
+#[allow(clippy::enum_variant_names)]
 pub enum ComponentEvent {
     MouseEnter,
     MouseLeave,
+    MouseButtonChangedInside(MouseButton, bool),
+    MouseButtonChangedOutside(MouseButton, bool),
 }
 
 // Placeholder component used internally.

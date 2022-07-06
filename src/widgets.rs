@@ -6,6 +6,7 @@ use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::{Mesh, Vertex};
 use crate::geometry::{Color3, Constraints};
+use crate::input::MouseButton;
 
 #[derive(Debug)]
 pub struct List {
@@ -104,6 +105,8 @@ impl Component for List {
 pub struct FixedSizeBox {
     pub index: Index,
     pub hovered: bool,
+    pub mouse_down_inside: bool,
+    pub greenified: bool,
     pub props: FixedSizeBoxProps,
 }
 
@@ -121,6 +124,8 @@ impl Component for FixedSizeBox {
         Self {
             index,
             hovered: false,
+            mouse_down_inside: false,
+            greenified: false,
             props,
         }
     }
@@ -151,7 +156,11 @@ impl Component for FixedSizeBox {
 
         let mut color = self.props.color.as_vec4(1.0);
 
-        if self.hovered {
+        if self.greenified {
+            color = Color3::rgb(127, 255, 127).as_vec4(1.0);
+        } else if self.mouse_down_inside {
+            color *= 0.3;
+        } else if self.hovered {
             color *= 0.65;
         }
 
@@ -177,6 +186,14 @@ impl Component for FixedSizeBox {
             }
             ComponentEvent::MouseLeave => {
                 self.hovered = false;
+            }
+            ComponentEvent::MouseButtonChangedInside(MouseButton::One, down) => {
+                if *down {
+                    self.mouse_down_inside = true;
+                } else if self.mouse_down_inside {
+                    self.mouse_down_inside = false;
+                    self.greenified = !self.greenified;
+                }
             }
             _ => (),
         }

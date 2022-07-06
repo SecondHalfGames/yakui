@@ -9,7 +9,7 @@ use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::Output;
 use crate::input::InputState;
-use crate::Event;
+use crate::{ButtonState, Event};
 
 #[derive(Debug)]
 pub struct State {
@@ -43,7 +43,10 @@ impl State {
                 self.layout.viewport = viewport;
             }
             Event::MoveMouse(pos) => {
-                self.input.mouse_position = pos;
+                self.input.mouse_position = Some(pos);
+            }
+            Event::MouseButtonChanged(button, down) => {
+                self.input.mouse_button_changed(button, down);
             }
         }
     }
@@ -75,14 +78,28 @@ impl State {
         mouse_hit.clear();
         self.last_mouse_hit = take(&mut self.mouse_hit);
 
-        hit_test(dom, &self.layout, self.input.mouse_position, &mut mouse_hit);
+        if let Some(mouse_pos) = self.input.mouse_position {
+            hit_test(dom, &self.layout, mouse_pos, &mut mouse_hit);
+        }
         self.mouse_hit = mouse_hit;
 
         // oops, quadratic behavior
         for &hit in &self.mouse_hit {
-            if !self.last_mouse_hit.contains(&hit) {
-                if let Some(node) = dom.get_mut(hit) {
+            if let Some(node) = dom.get_mut(hit) {
+                if !self.last_mouse_hit.contains(&hit) {
                     node.component.event(&ComponentEvent::MouseEnter);
+                }
+
+                for (&button, state) in self.input.mouse_buttons.iter() {
+                    match state {
+                        ButtonState::JustDown => node
+                            .component
+                            .event(&ComponentEvent::MouseButtonChangedInside(button, true)),
+                        ButtonState::JustUp => node
+                            .component
+                            .event(&ComponentEvent::MouseButtonChangedInside(button, false)),
+                        _ => (),
+                    }
                 }
             }
         }
@@ -94,6 +111,8 @@ impl State {
                 }
             }
         }
+
+        self.input.step();
     }
 
     pub fn draw(&self) -> Output {

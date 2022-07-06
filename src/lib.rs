@@ -20,5 +20,6 @@ pub use glam::{Vec2, Vec4};
 
 pub use event::Event;
 pub use geometry::*;
+pub use input::*;
 pub use state::State;
 pub use widgets::*;
