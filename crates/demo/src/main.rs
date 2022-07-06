@@ -1,41 +1,27 @@
+mod apps;
 mod graphics;
 
 use std::time::Instant;
 
+use clap::Parser;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
 
+use apps::App;
 use graphics::Graphics;
-use yakui::{ButtonProps, Color3};
 
-fn ui(time: f32) {
-    yakui::vertical(|| {
-        yakui::horizontal(|| {
-            let x = 50.0 * time.sin();
-            let y = 20.0 * (time + 1.0).sin();
-
-            yakui::button(ButtonProps {
-                fill: Color3::rgb(127, 90, 200),
-                hover_fill: Some(Color3::rgb(100, 60, 150)),
-                down_fill: Some(Color3::rgb(70, 40, 110)),
-                ..ButtonProps::new([70.0, 30.0])
-            });
-
-            yakui::fsbox([100.0 + x, 100.0 + y], Color3::RED);
-            yakui::fsbox([40.0, 30.0], Color3::GREEN);
-            yakui::fsbox([60.0, 40.0], Color3::BLUE);
-        });
-
-        if yakui::fsbox([200.0, 100.0], Color3::REBECCA_PURPLE).clicked {
-            println!("Clicked it!");
-        }
-    });
+#[derive(Parser)]
+struct Args {
+    app: App,
 }
 
 async fn run() {
+    let args = Args::parse();
+    let app = args.app.function();
+
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
@@ -79,12 +65,29 @@ async fn run() {
             }
 
             Event::RedrawRequested(_) => {
-                yak.start();
                 let time = (Instant::now() - start).as_secs_f32();
-                ui(time);
-                yak.finish();
 
-                graphics.draw(&yak, &mut yak_renderer);
+                {
+                    profiling::scope!("UI");
+
+                    {
+                        profiling::scope!("UI Create+Update");
+                        yak.start();
+                        app(time);
+                    }
+
+                    {
+                        profiling::scope!("UI Layout and Input");
+                        yak.finish();
+                    }
+                }
+
+                {
+                    profiling::scope!("Rendering");
+                    graphics.draw(&yak, &mut yak_renderer);
+                }
+
+                profiling::finish_frame!();
             }
 
             _ => (),
@@ -93,5 +96,8 @@ async fn run() {
 }
 
 fn main() {
+    #[cfg(feature = "profile")]
+    let _client = tracy_client::Client::start();
+
     pollster::block_on(run());
 }
