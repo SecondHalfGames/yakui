@@ -35,7 +35,7 @@ pub trait Component: Any + fmt::Debug {
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
-    fn respond(&self) -> Self::Response;
+    fn respond(&mut self) -> Self::Response;
 
     fn event(&mut self, _event: &ComponentEvent) {}
 }
@@ -121,5 +121,5 @@ impl Component for DummyComponent {
     fn draw(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
 
     #[inline]
-    fn respond(&self) {}
+    fn respond(&mut self) {}
 }

@@ -21,7 +21,10 @@ fn ui(time: f32) {
             yakui::fsbox([40.0, 30.0], Color3::GREEN);
             yakui::fsbox([60.0, 40.0], Color3::BLUE);
         });
-        yakui::fsbox([200.0, 100.0], Color3::REBECCA_PURPLE);
+
+        if yakui::fsbox([200.0, 100.0], Color3::REBECCA_PURPLE).clicked {
+            println!("Clicked it!");
+        }
     });
 }
 

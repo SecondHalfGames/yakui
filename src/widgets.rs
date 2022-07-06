@@ -98,7 +98,7 @@ impl Component for List {
         }
     }
 
-    fn respond(&self) {}
+    fn respond(&mut self) -> Self::Response {}
 }
 
 #[derive(Debug)]
@@ -107,6 +107,7 @@ pub struct FixedSizeBox {
     pub hovered: bool,
     pub mouse_down_inside: bool,
     pub greenified: bool,
+    pub clicked: bool,
     pub props: FixedSizeBoxProps,
 }
 
@@ -116,9 +117,14 @@ pub struct FixedSizeBoxProps {
     pub color: Color3,
 }
 
+#[derive(Debug)]
+pub struct FixedSizeBoxResponse {
+    pub clicked: bool,
+}
+
 impl Component for FixedSizeBox {
     type Props = FixedSizeBoxProps;
-    type Response = ();
+    type Response = FixedSizeBoxResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
         Self {
@@ -126,6 +132,7 @@ impl Component for FixedSizeBox {
             hovered: false,
             mouse_down_inside: false,
             greenified: false,
+            clicked: false,
             props,
         }
     }
@@ -177,7 +184,12 @@ impl Component for FixedSizeBox {
         output.meshes.push(Mesh { vertices, indices });
     }
 
-    fn respond(&self) {}
+    fn respond(&mut self) -> Self::Response {
+        let clicked = self.clicked;
+        self.clicked = false;
+
+        Self::Response { clicked }
+    }
 
     fn event(&mut self, event: &ComponentEvent) {
         match event {
@@ -193,6 +205,7 @@ impl Component for FixedSizeBox {
                 } else if self.mouse_down_inside {
                     self.mouse_down_inside = false;
                     self.greenified = !self.greenified;
+                    self.clicked = true;
                 }
             }
             _ => (),
@@ -232,7 +245,7 @@ pub fn horizontal<F: FnOnce()>(contents: F) {
     context.borrow_mut().dom_mut().end_component::<List>(index);
 }
 
-pub fn fsbox<S: Into<Vec2>, C: Into<Color3>>(size: S, color: C) {
+pub fn fsbox<S: Into<Vec2>, C: Into<Color3>>(size: S, color: C) -> FixedSizeBoxResponse {
     let context = Context::active();
 
     let size = size.into();
@@ -242,8 +255,7 @@ pub fn fsbox<S: Into<Vec2>, C: Into<Color3>>(size: S, color: C) {
         .dom_mut()
         .begin_component::<FixedSizeBox>(FixedSizeBoxProps { size, color });
 
-    context
-        .borrow_mut()
-        .dom_mut()
-        .end_component::<FixedSizeBox>(index);
+    let mut context = context.borrow_mut();
+    let dom = context.dom_mut();
+    dom.end_component::<FixedSizeBox>(index)
 }

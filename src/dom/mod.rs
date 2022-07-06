@@ -111,27 +111,24 @@ impl Dom {
     }
 
     pub fn end_component<T: Component>(&mut self, index: Index) -> T::Response {
-        match self.stack.pop() {
-            Some(old_top) => {
-                assert!(
-                    index == old_top,
-                    "Dom::end_component did not match the input component."
-                );
+        let old_top = self.stack.pop().unwrap_or_else(|| {
+            panic!("Cannot end_component without an in-progress component.");
+        });
 
-                self.trim_children(index);
+        assert!(
+            index == old_top,
+            "Dom::end_component did not match the input component."
+        );
 
-                let node = self.tree.get(index).unwrap();
+        self.trim_children(index);
 
-                node.component
-                    .as_ref()
-                    .downcast_ref::<T>()
-                    .unwrap()
-                    .respond()
-            }
-            None => {
-                panic!("Cannot end_component without an in-progress component.");
-            }
-        }
+        let node = self.tree.get_mut(index).unwrap();
+
+        node.component
+            .as_mut()
+            .downcast_mut::<T>()
+            .unwrap()
+            .respond()
     }
 
     /// Remove children from the given node that weren't present in the latest
