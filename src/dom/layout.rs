@@ -3,8 +3,7 @@ use std::collections::VecDeque;
 use glam::Vec2;
 use thunderdome::{Arena, Index};
 
-use crate::layout::Constraints;
-use crate::rect::Rect;
+use crate::geometry::{Constraints, Rect};
 
 use super::Dom;
 

@@ -5,8 +5,7 @@ use crate::component::Component;
 use crate::context::Context;
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::{Mesh, Vertex};
-use crate::layout::Constraints;
-use crate::Color3;
+use crate::geometry::{Color3, Constraints};
 
 #[derive(Debug)]
 pub struct List {

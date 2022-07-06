@@ -8,7 +8,7 @@ use thunderdome::Index;
 
 use crate::dom::{Dom, LayoutDom};
 use crate::draw::Output;
-use crate::layout::Constraints;
+use crate::geometry::Constraints;
 
 pub trait Props: Any + fmt::Debug {}
 impl<T> Props for T where T: Any + fmt::Debug {}
