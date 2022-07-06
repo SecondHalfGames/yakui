@@ -86,6 +86,7 @@ where
 mopmopafy!(ErasedComponent);
 
 #[allow(clippy::enum_variant_names)]
+#[non_exhaustive]
 pub enum ComponentEvent {
     MouseEnter,
     MouseLeave,

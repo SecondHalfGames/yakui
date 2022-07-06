@@ -1,30 +1,55 @@
 use yakui_core::{
     context::Context,
     dom::{Dom, LayoutDom},
-    draw, Color3, Component, Constraints, Index, Vec2,
+    draw, Color3, Component, ComponentEvent, Constraints, Index, MouseButton, Vec2,
 };
 
 #[derive(Debug)]
 pub struct Button {
     index: Index,
     props: ButtonProps,
+    hovering: bool,
+    mouse_down: bool,
+    clicked: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct ButtonProps {
     pub size: Vec2,
     pub fill: Color3,
+    pub hover_fill: Option<Color3>,
+    pub down_fill: Option<Color3>,
+}
+
+impl ButtonProps {
+    pub fn new<S: Into<Vec2>>(size: S) -> Self {
+        Self {
+            size: size.into(),
+            fill: Color3::GRAY,
+            hover_fill: None,
+            down_fill: None,
+        }
+    }
 }
 
 #[derive(Debug)]
-pub struct ButtonResponse {}
+pub struct ButtonResponse {
+    pub hovering: bool,
+    pub clicked: bool,
+}
 
 impl Component for Button {
     type Props = ButtonProps;
     type Response = ButtonResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+        Self {
+            index,
+            props,
+            hovering: false,
+            mouse_down: false,
+            clicked: false,
+        }
     }
 
     fn update(&mut self, props: &Self::Props) {
@@ -41,11 +66,45 @@ impl Component for Button {
         let size = node.rect.size() / viewport.size();
         let pos = (node.rect.pos() + viewport.pos()) / viewport.size();
 
-        output.rect(pos, size, self.props.fill);
+        let mut color = self.props.fill;
+
+        if let (Some(fill), true) = (self.props.down_fill, self.mouse_down) {
+            color = fill
+        } else if let (Some(hover), true) = (self.props.hover_fill, self.hovering) {
+            color = hover
+        }
+
+        output.rect(pos, size, color);
     }
 
     fn respond(&mut self) -> Self::Response {
-        Self::Response {}
+        let clicked = self.clicked;
+        self.clicked = false;
+
+        Self::Response {
+            hovering: self.hovering,
+            clicked,
+        }
+    }
+
+    fn event(&mut self, event: &ComponentEvent) {
+        match event {
+            ComponentEvent::MouseEnter => {
+                self.hovering = true;
+            }
+            ComponentEvent::MouseLeave => {
+                self.hovering = false;
+            }
+            ComponentEvent::MouseButtonChangedInside(MouseButton::One, down) => {
+                if *down {
+                    self.mouse_down = true;
+                } else if self.mouse_down {
+                    self.mouse_down = false;
+                    self.clicked = true;
+                }
+            }
+            _ => {}
+        }
     }
 }
 

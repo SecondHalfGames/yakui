@@ -9,7 +9,7 @@ use winit::{
 };
 
 use graphics::Graphics;
-use yakui::{ButtonProps, Color3, Vec2};
+use yakui::{ButtonProps, Color3};
 
 fn ui(time: f32) {
     yakui::vertical(|| {
@@ -18,8 +18,10 @@ fn ui(time: f32) {
             let y = 20.0 * (time + 1.0).sin();
 
             yakui::button(ButtonProps {
-                size: Vec2::new(70.0, 30.0),
                 fill: Color3::rgb(127, 90, 200),
+                hover_fill: Some(Color3::rgb(100, 60, 150)),
+                down_fill: Some(Color3::rgb(70, 40, 110)),
+                ..ButtonProps::new([70.0, 30.0])
             });
 
             yakui::fsbox([100.0 + x, 100.0 + y], Color3::RED);
