@@ -6,7 +6,7 @@ use std::mem::size_of;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
-use yakui::{Vec2, Vec4};
+use yakui_core::{Vec2, Vec4};
 
 pub struct State {
     pipeline: wgpu::RenderPipeline,
@@ -87,7 +87,7 @@ impl State {
 
     pub fn draw(
         &mut self,
-        state: &yakui::State,
+        state: &yakui_core::State,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,

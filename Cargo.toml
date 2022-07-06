@@ -1,15 +1,4 @@
-[package]
-name = "yakui"
-version = "0.1.0"
-edition = "2021"
-
 [workspace]
+resolver = "2"
 members = [".", "crates/*"]
 default-members = [".", "crates/*"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-fontdue = "0.7.2"
-glam = "0.21.2"
-thunderdome = "0.5.1"

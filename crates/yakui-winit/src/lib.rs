@@ -1,7 +1,7 @@
 use winit::event::{
     ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
 };
-use yakui::{Rect, Vec2};
+use yakui_core::{Event, MouseButton, Rect, Vec2};
 
 #[non_exhaustive]
 pub struct State {}
@@ -13,7 +13,7 @@ impl State {
     }
 
     // TODO: How do we determine if an input event should be sunk by the UI?
-    pub fn handle_event<T>(&mut self, state: &mut yakui::State, event: &WinitEvent<T>) {
+    pub fn handle_event<T>(&mut self, state: &mut yakui_core::State, event: &WinitEvent<T>) {
         #[allow(clippy::single_match)]
         match event {
             WinitEvent::WindowEvent {
@@ -25,14 +25,14 @@ impl State {
                     Vec2::new(size.width as f32, size.height as f32),
                 );
 
-                state.handle_event(yakui::Event::SetViewport(rect));
+                state.handle_event(Event::SetViewport(rect));
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. },
                 ..
             } => {
                 let pos = Vec2::new(position.x as f32, position.y as f32);
-                state.handle_event(yakui::Event::MoveMouse(pos));
+                state.handle_event(Event::MoveMouse(pos));
             }
             WinitEvent::WindowEvent {
                 event:
@@ -44,9 +44,9 @@ impl State {
                 ..
             } => {
                 let button = match button {
-                    WinitMouseButton::Left => yakui::MouseButton::One,
-                    WinitMouseButton::Right => yakui::MouseButton::Two,
-                    WinitMouseButton::Middle => yakui::MouseButton::Three,
+                    WinitMouseButton::Left => MouseButton::One,
+                    WinitMouseButton::Right => MouseButton::Two,
+                    WinitMouseButton::Middle => MouseButton::Three,
                     WinitMouseButton::Other(_) => return,
                 };
 
@@ -55,7 +55,7 @@ impl State {
                     ElementState::Released => false,
                 };
 
-                state.handle_event(yakui::Event::MouseButtonChanged(button, down));
+                state.handle_event(Event::MouseButtonChanged(button, down));
             }
             _ => (),
         }
