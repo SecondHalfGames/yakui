@@ -53,6 +53,11 @@ impl Dom {
         self.build_index = 0;
     }
 
+    pub fn do_component<T: Component>(&mut self, props: T::Props) -> T::Response {
+        let index = self.begin_component::<T>(props);
+        self.end_component::<T>(index)
+    }
+
     pub fn begin_component<T: Component>(&mut self, props: T::Props) -> Index {
         let parent = self.stack.last();
 

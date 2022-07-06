@@ -51,15 +51,6 @@ impl Component for Button {
 
 pub fn button(props: ButtonProps) -> ButtonResponse {
     let context = Context::active();
-
-    let index = context
-        .borrow_mut()
-        .dom_mut()
-        .begin_component::<Button>(props);
-
-    let res = context
-        .borrow_mut()
-        .dom_mut()
-        .end_component::<Button>(index);
+    let res = context.borrow_mut().dom_mut().do_component::<Button>(props);
     res
 }
