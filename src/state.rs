@@ -75,7 +75,6 @@ impl State {
         mouse_hit.clear();
         self.last_mouse_hit = take(&mut self.mouse_hit);
 
-        let pos = self.input.mouse_position;
         hit_test(dom, &self.layout, self.input.mouse_position, &mut mouse_hit);
         self.mouse_hit = mouse_hit;
 
