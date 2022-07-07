@@ -40,8 +40,8 @@ impl LayoutDom {
 
     pub fn calculate_all(&mut self, dom: &Dom) {
         let constraints = Constraints {
-            min: None,
-            max: Some(self.viewport.size()),
+            min: Vec2::ZERO,
+            max: self.viewport.size(),
         };
 
         for &index in &dom.roots {

@@ -22,12 +22,21 @@ pub struct ButtonProps {
 }
 
 impl ButtonProps {
-    pub fn new<S: Into<Vec2>>(size: S) -> Self {
+    pub fn unstyled<S: Into<Vec2>>(size: S) -> Self {
         Self {
             size: size.into(),
             fill: Color3::GRAY,
             hover_fill: None,
             down_fill: None,
+        }
+    }
+
+    pub fn styled<S: Into<Vec2>>(size: S) -> Self {
+        Self {
+            size: size.into(),
+            fill: Color3::rgb(50, 94, 168),
+            hover_fill: Some(Color3::rgb(88, 129, 199)),
+            down_fill: Some(Color3::rgb(30, 76, 156)),
         }
     }
 }

@@ -10,7 +10,6 @@ mod event;
 mod geometry;
 mod input;
 mod state;
-mod widgets;
 
 pub mod draw;
 
@@ -23,4 +22,3 @@ pub use event::Event;
 pub use geometry::*;
 pub use input::*;
 pub use state::State;
-pub use widgets::*;
