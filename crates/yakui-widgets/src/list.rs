@@ -35,26 +35,56 @@ impl Component for List {
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get(self.index).unwrap();
 
-        let mut constraints = Constraints {
-            min: Vec2::new(input.max.x, 0.0),
-            max: Vec2::new(input.max.x, input.max.y),
+        let item_spacing = match self.props.direction {
+            Direction::Down => Vec2::new(0.0, self.props.item_spacing),
+            Direction::Right => Vec2::new(self.props.item_spacing, 0.0),
         };
 
-        let mut size = Vec2::new(constraints.max.x, constraints.min.y);
+        let mut constraints = match self.props.direction {
+            Direction::Down => Constraints {
+                min: Vec2::new(0.0, 0.0),
+                max: Vec2::new(input.max.x, input.max.y),
+            },
+            Direction::Right => Constraints {
+                min: Vec2::new(0.0, 0.0),
+                max: Vec2::new(input.max.x, input.max.y),
+            },
+        };
+
+        let mut next_pos = Vec2::new(0.0, 0.0);
+
+        let mut size = Vec2::new(constraints.min.x, constraints.min.y);
 
         for (index, &child) in node.children.iter().enumerate() {
             let child_size = layout.calculate(dom, child, constraints);
-
             let child_node = layout.get_mut(child).unwrap();
-            child_node.rect.set_pos(Vec2::new(0.0, size.y));
+            child_node.rect.set_pos(next_pos);
 
-            constraints.max.y -= child_size.y;
-            constraints.max.y -= self.props.item_spacing;
-            constraints.max.y = constraints.max.y.max(0.0);
-            size.y += child_size.y;
+            match self.props.direction {
+                Direction::Down => {
+                    size.x = size.x.max(child_size.x);
+                    size.y += child_size.y;
+
+                    next_pos.y += child_size.y;
+
+                    constraints.max.y -= child_size.y;
+                    constraints.max.y = constraints.max.y.max(0.0);
+                }
+                Direction::Right => {
+                    size.x += child_size.x;
+                    size.y = size.y.max(child_size.y);
+
+                    next_pos.x += child_size.x;
+
+                    constraints.max.x -= child_size.x;
+                    constraints.max.x = constraints.max.x.max(0.0);
+                }
+            }
 
             if index < node.children.len() - 1 {
-                size.y += self.props.item_spacing;
+                constraints.max -= item_spacing;
+                size += item_spacing;
+                next_pos += item_spacing;
             }
         }
 
@@ -84,6 +114,26 @@ where
         .dom_mut()
         .begin_component::<List>(ListProps {
             direction: Direction::Down,
+            item_spacing: 8.0,
+        });
+
+    children();
+
+    let res = context.borrow_mut().dom_mut().end_component::<List>(index);
+    res
+}
+
+pub fn horizontal<F>(children: F) -> ListResponse
+where
+    F: FnOnce(),
+{
+    let context = Context::active();
+
+    let index = context
+        .borrow_mut()
+        .dom_mut()
+        .begin_component::<List>(ListProps {
+            direction: Direction::Right,
             item_spacing: 8.0,
         });
 
