@@ -1,10 +1,9 @@
 use yakui_core::{
-    context::Context,
     dom::{Dom, LayoutDom},
     draw, Component, Constraints, Index, Vec2,
 };
 
-use crate::Direction;
+use crate::{util::component_children, Direction};
 
 #[derive(Debug)]
 pub struct List {
@@ -103,42 +102,22 @@ impl Component for List {
     fn respond(&mut self) -> Self::Response {}
 }
 
-pub fn vertical<F>(children: F) -> ListResponse
-where
-    F: FnOnce(),
-{
-    let context = Context::active();
-
-    let index = context
-        .borrow_mut()
-        .dom_mut()
-        .begin_component::<List>(ListProps {
+pub fn column<F: FnOnce()>(children: F) -> ListResponse {
+    component_children::<List, _>(
+        children,
+        ListProps {
             direction: Direction::Down,
             item_spacing: 8.0,
-        });
-
-    children();
-
-    let res = context.borrow_mut().dom_mut().end_component::<List>(index);
-    res
+        },
+    )
 }
 
-pub fn horizontal<F>(children: F) -> ListResponse
-where
-    F: FnOnce(),
-{
-    let context = Context::active();
-
-    let index = context
-        .borrow_mut()
-        .dom_mut()
-        .begin_component::<List>(ListProps {
+pub fn row<F: FnOnce()>(children: F) -> ListResponse {
+    component_children::<List, _>(
+        children,
+        ListProps {
             direction: Direction::Right,
             item_spacing: 8.0,
-        });
-
-    children();
-
-    let res = context.borrow_mut().dom_mut().end_component::<List>(index);
-    res
+        },
+    )
 }
