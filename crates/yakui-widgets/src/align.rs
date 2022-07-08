@@ -62,5 +62,9 @@ pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
         AlignProps {
             alignment: Alignment::CENTER,
         },
-    );
+    )
+}
+
+pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> AlignResponse {
+    component_children::<Align, _>(children, AlignProps { alignment })
 }

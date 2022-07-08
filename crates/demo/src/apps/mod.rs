@@ -2,31 +2,43 @@ use std::str::FromStr;
 
 use anyhow::bail;
 
-pub mod bench;
-pub mod simple;
-
-pub enum App {
-    Simple,
-    Bench,
+macro_rules! apps {
+    ($macro:ident) => {
+        $macro!(bench, simple, align);
+    };
 }
 
-impl App {
-    pub fn function(&self) -> &'static dyn Fn(f32) {
-        match self {
-            App::Simple => &simple::app,
-            App::Bench => &bench::app,
+macro_rules! define_app {
+    ($($mod:ident),* $(,)?) => {
+        $(pub mod $mod;)*
+
+        #[allow(non_camel_case_types)]
+        pub enum App {
+            $($mod,)*
+        }
+
+        impl App {
+            pub fn function(&self) -> &'static dyn Fn(f32) {
+                match self {
+                    $(App::$mod => &$mod::app,)*
+                }
+            }
+        }
+
+        impl FromStr for App {
+            type Err = anyhow::Error;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $(stringify!($mod) => Ok(Self::$mod),)*
+                    unknown => {
+                        let app_list = [$(stringify!($mod),)*].join(", ");
+                        bail!("unknown app '{unknown}', included apps are: {app_list}");
+                    },
+                }
+            }
         }
     }
 }
 
-impl FromStr for App {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "simple" => Ok(Self::Simple),
-            "bench" => Ok(Self::Bench),
-            unknown => bail!("unknown app '{unknown}', included apps are: simple, bench"),
-        }
-    }
-}
+apps!(define_app);
