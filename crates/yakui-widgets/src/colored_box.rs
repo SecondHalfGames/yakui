@@ -1,7 +1,4 @@
-use yakui_core::{
-    dom::{Dom, LayoutDom},
-    draw, Color3, Component, Constraints, Index, Vec2,
-};
+use yakui_core::{dom::Dom, draw, layout::LayoutDom, Color3, Component, Constraints, Index, Vec2};
 
 use crate::util::component_children;
 

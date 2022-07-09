@@ -4,14 +4,15 @@
 mod mopmopa;
 
 mod component;
-pub mod context;
-pub mod dom;
 mod event;
 mod geometry;
 mod input;
 mod state;
 
+pub mod context;
+pub mod dom;
 pub mod draw;
+pub mod layout;
 
 pub extern crate glam;
 pub use glam::{Vec2, Vec4};

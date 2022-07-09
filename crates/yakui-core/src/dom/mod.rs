@@ -1,5 +1,4 @@
 mod debug;
-mod layout;
 
 use std::any::TypeId;
 use std::collections::VecDeque;
@@ -7,8 +6,6 @@ use std::collections::VecDeque;
 use thunderdome::{Arena, Index};
 
 use crate::component::{Component, DummyComponent, ErasedComponent};
-
-pub use layout::*;
 
 pub struct Dom {
     tree: Arena<DomNode>,

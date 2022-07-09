@@ -1,7 +1,8 @@
 use glam::{Vec2, Vec4};
 
-use crate::dom::{Dom, LayoutDom};
+use crate::dom::Dom;
 use crate::geometry::Color3;
+use crate::layout::LayoutDom;
 
 #[non_exhaustive]
 pub struct Output {

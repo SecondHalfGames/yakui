@@ -3,9 +3,8 @@ use std::collections::VecDeque;
 use glam::Vec2;
 use thunderdome::{Arena, Index};
 
+use crate::dom::Dom;
 use crate::geometry::{Constraints, Rect};
-
-use super::Dom;
 
 #[derive(Debug)]
 pub struct LayoutDom {
@@ -44,7 +43,7 @@ impl LayoutDom {
             max: self.viewport.size(),
         };
 
-        for &index in &dom.roots {
+        for &index in dom.roots() {
             self.calculate(dom, index, constraints);
         }
 
@@ -52,7 +51,7 @@ impl LayoutDom {
     }
 
     pub fn calculate(&mut self, dom: &Dom, index: Index, constraints: Constraints) -> Vec2 {
-        let dom_node = dom.tree.get(index).unwrap();
+        let dom_node = dom.get(index).unwrap();
         let size = dom_node.component.size(dom, self, constraints);
         self.nodes.insert_at(
             index,
@@ -72,7 +71,7 @@ impl LayoutDom {
     fn resolve_positions(&mut self, dom: &Dom) {
         let mut queue = VecDeque::new();
 
-        queue.extend(dom.roots.iter().map(|&index| (index, Vec2::ZERO)));
+        queue.extend(dom.roots().iter().map(|&index| (index, Vec2::ZERO)));
 
         while let Some((index, parent_pos)) = queue.pop_front() {
             if let Some(layout_node) = self.nodes.get_mut(index) {

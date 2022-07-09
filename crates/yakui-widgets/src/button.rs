@@ -1,7 +1,6 @@
 use yakui_core::{
-    context::Context,
-    dom::{Dom, LayoutDom},
-    draw, Color3, Component, ComponentEvent, Constraints, Index, MouseButton, Vec2,
+    context::Context, dom::Dom, draw, layout::LayoutDom, Color3, Component, ComponentEvent,
+    Constraints, Index, MouseButton, Vec2,
 };
 
 #[derive(Debug, Clone)]

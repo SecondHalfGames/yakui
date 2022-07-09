@@ -4,10 +4,11 @@ use std::fmt;
 use glam::Vec2;
 use thunderdome::Index;
 
-use crate::dom::{Dom, LayoutDom};
+use crate::dom::Dom;
 use crate::draw::Output;
 use crate::geometry::Constraints;
 use crate::input::MouseButton;
+use crate::layout::LayoutDom;
 
 pub trait Props: Any + fmt::Debug {}
 impl<T> Props for T where T: Any + fmt::Debug {}
