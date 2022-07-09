@@ -19,6 +19,17 @@ pub struct PadProps {
     pub bottom: f32,
 }
 
+impl PadProps {
+    pub fn even(value: f32) -> Self {
+        Self {
+            left: value,
+            right: value,
+            top: value,
+            bottom: value,
+        }
+    }
+}
+
 pub type PadResponse = ();
 
 impl Component for Pad {

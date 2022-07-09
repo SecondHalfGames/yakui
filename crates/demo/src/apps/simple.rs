@@ -8,13 +8,7 @@ pub fn app(_time: f32) {
         }
 
         yakui::colored_box(Color3::REBECCA_PURPLE, || {
-            let padding = PadProps {
-                left: 8.0,
-                right: 16.0,
-                top: 32.0,
-                bottom: 64.0,
-            };
-
+            let padding = PadProps::even(8.0);
             yakui::pad(padding, || {
                 yakui::row(|| {
                     yakui::button(ButtonProps::styled([40.0, 60.0]));
