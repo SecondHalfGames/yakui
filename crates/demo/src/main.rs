@@ -114,7 +114,7 @@ fn load_texture(bytes: &[u8]) -> Texture {
     let image = image::load_from_memory(bytes).unwrap().into_rgba8();
     let size = UVec2::new(image.width(), image.height());
 
-    Texture::new(TextureFormat::Rgba8, size, image.into_raw())
+    Texture::new(TextureFormat::Rgba8Srgb, size, image.into_raw())
 }
 
 fn main() {

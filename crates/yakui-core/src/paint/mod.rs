@@ -15,7 +15,7 @@ pub use self::texture::*;
 pub struct PaintRect {
     pub rect: Rect,
     pub color: Color3,
-    pub texture: Option<Index>,
+    pub texture: Option<(Index, Rect)>,
 }
 
 impl PaintRect {

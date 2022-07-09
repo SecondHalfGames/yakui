@@ -1,54 +1,61 @@
-use glam::Vec2;
+use glam::UVec2;
+
+use super::Rect;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Rect {
-    pos: Vec2,
-    size: Vec2,
+pub struct URect {
+    pos: UVec2,
+    size: UVec2,
 }
 
-impl Rect {
+impl URect {
     pub const ZERO: Self = Self {
-        pos: Vec2::ZERO,
-        size: Vec2::ZERO,
+        pos: UVec2::ZERO,
+        size: UVec2::ZERO,
     };
 
     pub const ONE: Self = Self {
-        pos: Vec2::ZERO,
-        size: Vec2::ONE,
+        pos: UVec2::ZERO,
+        size: UVec2::ONE,
     };
 
     #[inline]
-    pub fn from_pos_size(pos: Vec2, size: Vec2) -> Self {
+    pub fn from_pos_size(pos: UVec2, size: UVec2) -> Self {
         Self { pos, size }
     }
 
     #[inline]
-    pub fn pos(&self) -> Vec2 {
+    pub fn as_rect(&self) -> Rect {
+        Rect::from_pos_size(self.pos.as_vec2(), self.size.as_vec2())
+    }
+
+    #[inline]
+    pub fn pos(&self) -> UVec2 {
         self.pos
     }
 
     #[inline]
-    pub fn size(&self) -> Vec2 {
+    pub fn size(&self) -> UVec2 {
         self.size
     }
 
     #[inline]
-    pub fn max(&self) -> Vec2 {
+    pub fn max(&self) -> UVec2 {
         self.pos + self.size
     }
 
     #[inline]
-    pub fn set_pos(&mut self, pos: Vec2) {
+    pub fn set_pos(&mut self, pos: UVec2) {
         self.pos = pos;
     }
 
     #[inline]
-    pub fn set_size(&mut self, size: Vec2) {
+    pub fn set_size(&mut self, size: UVec2) {
         self.size = size;
     }
 
     #[inline]
-    pub fn contains_point(&self, point: Vec2) -> bool {
+    pub fn contains_point(&self, point: UVec2) -> bool {
         point.x >= self.pos.x
             && point.x <= self.pos.x + self.size.x
             && point.y >= self.pos.y
@@ -64,10 +71,5 @@ impl Rect {
         let y_intersect = self.pos.y < other_max.y && self_max.y > other.pos.y;
 
         x_intersect && y_intersect
-    }
-
-    #[inline]
-    pub fn div_vec2(&self, size: Vec2) -> Self {
-        Self::from_pos_size(self.pos / size, self.size / size)
     }
 }

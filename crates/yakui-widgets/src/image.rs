@@ -43,7 +43,7 @@ impl Component for ImageComponent {
 
         let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
         rect.color = Color3::WHITE;
-        rect.texture = Some(self.props.image);
+        rect.texture = Some((self.props.image, Rect::ONE));
         output.add_rect(rect);
     }
 

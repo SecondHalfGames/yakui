@@ -118,7 +118,7 @@ impl State {
         });
 
         let default_texture_data =
-            Texture::new(TextureFormat::Rgba8, UVec2::new(1, 1), vec![255; 4]);
+            Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
         let default_texture = GpuTexture::new(device, queue, &default_texture_data);
 
         let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {

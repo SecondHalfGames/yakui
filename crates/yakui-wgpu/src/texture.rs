@@ -94,9 +94,14 @@ impl GpuTexture {
 
 fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
     match format {
-        TextureFormat::Rgba8 => wgpu::ImageDataLayout {
+        TextureFormat::Rgba8Srgb => wgpu::ImageDataLayout {
             offset: 0,
             bytes_per_row: NonZeroU32::new(4 * size.x),
+            rows_per_image: NonZeroU32::new(size.y),
+        },
+        TextureFormat::R8 => wgpu::ImageDataLayout {
+            offset: 0,
+            bytes_per_row: NonZeroU32::new(size.x),
             rows_per_image: NonZeroU32::new(size.y),
         },
         _ => panic!("Unsupported texture format {format:?}"),
@@ -105,7 +110,8 @@ fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
 
 fn wgpu_format(format: TextureFormat) -> wgpu::TextureFormat {
     match format {
-        TextureFormat::Rgba8 => wgpu::TextureFormat::Rgba8UnormSrgb,
+        TextureFormat::Rgba8Srgb => wgpu::TextureFormat::Rgba8UnormSrgb,
+        TextureFormat::R8 => wgpu::TextureFormat::R8Unorm,
         _ => panic!("Unsupported texture format {format:?}"),
     }
 }

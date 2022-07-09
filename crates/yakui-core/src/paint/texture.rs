@@ -11,7 +11,8 @@ pub struct Texture {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum TextureFormat {
-    Rgba8,
+    Rgba8Srgb,
+    R8,
 }
 
 impl Texture {
@@ -30,6 +31,10 @@ impl Texture {
 
     pub fn data(&self) -> &[u8] {
         self.data.as_slice()
+    }
+
+    pub fn data_mut(&mut self) -> &mut [u8] {
+        self.data.as_mut_slice()
     }
 
     pub fn format(&self) -> TextureFormat {
