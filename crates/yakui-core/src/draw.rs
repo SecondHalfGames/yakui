@@ -36,12 +36,12 @@ impl Output {
         self.meshes.push(Mesh { vertices, indices });
     }
 
-    pub(crate) fn draw(dom: &Dom, layout: &LayoutDom) -> Output {
+    pub(crate) fn paint(dom: &Dom, layout: &LayoutDom) -> Output {
         let mut output = Output::new();
 
         for &node_index in dom.roots() {
             let node = dom.get(node_index).unwrap();
-            node.component.draw(dom, layout, &mut output);
+            node.component.paint(dom, layout, &mut output);
         }
 
         output

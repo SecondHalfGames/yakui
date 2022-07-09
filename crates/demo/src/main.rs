@@ -84,7 +84,7 @@ async fn run() {
 
                 {
                     profiling::scope!("Rendering");
-                    graphics.draw(&yak, &mut yak_renderer);
+                    graphics.paint(&yak, &mut yak_renderer);
                 }
 
                 profiling::finish_frame!();

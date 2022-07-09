@@ -99,7 +99,7 @@ impl State {
             label: Some("yakui Encoder"),
         });
 
-        let output = state.draw();
+        let output = state.paint();
 
         if output.meshes.is_empty() {
             return encoder.finish();

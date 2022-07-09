@@ -42,7 +42,7 @@ impl Component for ColoredBoxComponent {
         input.constrain(self_size)
     }
 
-    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
         let node = dom.get(self.index).unwrap();
         let layout_node = layout.get(self.index).unwrap();
         let viewport = layout.viewport;
@@ -53,7 +53,7 @@ impl Component for ColoredBoxComponent {
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.draw(dom, layout, output);
+            child.component.paint(dom, layout, output);
         }
     }
 

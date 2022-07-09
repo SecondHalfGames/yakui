@@ -75,7 +75,7 @@ impl Graphics {
         }
     }
 
-    pub fn draw(&self, yak: &yakui::State, yak_renderer: &mut yakui_wgpu::State) {
+    pub fn paint(&self, yak: &yakui::State, yak_renderer: &mut yakui_wgpu::State) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,

@@ -34,7 +34,7 @@ pub trait Component: Any + fmt::Debug {
     fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
     fn respond(&mut self) -> Self::Response;
 
     fn event(&mut self, _event: &ComponentEvent) {}
@@ -43,7 +43,7 @@ pub trait Component: Any + fmt::Debug {
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
     fn event(&mut self, event: &ComponentEvent);
 
     fn as_debug(&self) -> &dyn fmt::Debug;
@@ -68,8 +68,8 @@ where
     }
 
     #[inline]
-    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output) {
-        <T as Component>::draw(self, dom, layout, output)
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output) {
+        <T as Component>::paint(self, dom, layout, output)
     }
 
     #[inline]
@@ -119,7 +119,7 @@ impl Component for DummyComponent {
     }
 
     #[inline]
-    fn draw(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
+    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
 
     #[inline]
     fn respond(&mut self) {}

@@ -68,12 +68,12 @@ impl Component for PaddingComponent {
         input.constrain(self_size)
     }
 
-    fn draw(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
         let node = dom.get(self.index).unwrap();
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.draw(dom, layout, output);
+            child.component.paint(dom, layout, output);
         }
     }
 

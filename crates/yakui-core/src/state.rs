@@ -115,8 +115,8 @@ impl State {
         self.input.step();
     }
 
-    pub fn draw(&self) -> Output {
-        Output::draw(self.dom.as_ref().unwrap(), &self.layout)
+    pub fn paint(&self) -> Output {
+        Output::paint(self.dom.as_ref().unwrap(), &self.layout)
     }
 }
 
