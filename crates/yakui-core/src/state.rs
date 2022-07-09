@@ -129,6 +129,10 @@ impl State {
 
         self.paint.paint(dom, &self.layout)
     }
+
+    pub fn textures(&self) -> impl Iterator<Item = (Index, &Texture)> {
+        self.paint.textures()
+    }
 }
 
 fn hit_test(dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {

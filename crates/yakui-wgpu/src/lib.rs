@@ -1,17 +1,30 @@
 #![allow(clippy::new_without_default)]
 
 mod buffer;
+mod texture;
 
 use std::mem::size_of;
+use std::ops::Range;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
+use glam::UVec2;
+use thunderdome::Arena;
+use yakui_core::paint::{Output, Texture, TextureFormat};
 use yakui_core::{Vec2, Vec4};
+
+use self::texture::GpuTexture;
 
 pub struct State {
     pipeline: wgpu::RenderPipeline,
+    layout: wgpu::BindGroupLayout,
+    default_texture: GpuTexture,
+    default_sampler: wgpu::Sampler,
+    textures: Arena<GpuTexture>,
+
     vertices: Buffer,
     indices: Buffer,
+    commands: Vec<DrawCommand>,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
@@ -35,20 +48,46 @@ impl Vertex {
 }
 
 impl State {
-    pub fn new(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        surface_format: wgpu::TextureFormat,
+    ) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/main.wgsl").into()),
         });
 
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("yakui Bind Group Layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("yukui Render Pipeline Layout"),
-            bind_group_layouts: &[],
+            label: Some("yakui Render Pipeline Layout"),
+            bind_group_layouts: &[&layout],
             push_constant_ranges: &[],
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("yukui Render Pipeline"),
+            label: Some("yakui Render Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -78,10 +117,30 @@ impl State {
             multiview: None,
         });
 
+        let default_texture_data =
+            Texture::new(TextureFormat::Rgba8, UVec2::new(1, 1), vec![255; 4]);
+        let default_texture = GpuTexture::new(device, queue, &default_texture_data);
+
+        let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
         Self {
             pipeline,
+            layout,
+            default_texture,
+            default_sampler,
+            textures: Arena::new(),
+
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
+            commands: Vec::new(),
         }
     }
 
@@ -92,8 +151,7 @@ impl State {
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,
     ) -> wgpu::CommandBuffer {
-        self.vertices.clear();
-        self.indices.clear();
+        self.update_textures(state, device, queue);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("yakui Encoder"),
@@ -105,31 +163,10 @@ impl State {
             return encoder.finish();
         }
 
-        let draw_calls: Vec<_> = output
-            .meshes
-            .into_iter()
-            .map(|mesh| {
-                let vertices = mesh.vertices.into_iter().map(|vertex| Vertex {
-                    pos: vertex.position,
-                    texcoord: vertex.texcoord,
-                    color: vertex.color,
-                });
-
-                let base = self.vertices.len() as u32;
-                let indices = mesh.indices.into_iter().map(|index| base + index as u32);
-
-                let start = self.indices.len() as u32;
-                let end = start + indices.len() as u32;
-
-                self.vertices.extend(vertices);
-                self.indices.extend(indices);
-
-                start..end
-            })
-            .collect();
-
+        self.update_buffers(device, output);
         let vertices = self.vertices.upload(device, queue);
         let indices = self.indices.upload(device, queue);
+        let commands = &self.commands;
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -149,11 +186,84 @@ impl State {
             render_pass.set_vertex_buffer(0, vertices.slice(..));
             render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
 
-            for range in draw_calls {
-                render_pass.draw_indexed(range, 0, 0..1);
+            for command in commands {
+                render_pass.set_bind_group(0, &command.bind_group, &[]);
+                render_pass.draw_indexed(command.index_range.clone(), 0, 0..1);
             }
         }
 
         encoder.finish()
     }
+
+    fn update_buffers(&mut self, device: &wgpu::Device, output: Output) {
+        self.vertices.clear();
+        self.indices.clear();
+        self.commands.clear();
+
+        let commands = output.meshes.into_iter().map(|mesh| {
+            let vertices = mesh.vertices.into_iter().map(|vertex| Vertex {
+                pos: vertex.position,
+                texcoord: vertex.texcoord,
+                color: vertex.color,
+            });
+
+            let base = self.vertices.len() as u32;
+            let indices = mesh.indices.into_iter().map(|index| base + index as u32);
+
+            let start = self.indices.len() as u32;
+            let end = start + indices.len() as u32;
+
+            self.vertices.extend(vertices);
+            self.indices.extend(indices);
+
+            let texture = mesh
+                .texture
+                .and_then(|index| self.textures.get(index))
+                .unwrap_or(&self.default_texture);
+
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("yakui Bind Group"),
+                layout: &self.layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(texture.view()),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&self.default_sampler),
+                    },
+                ],
+            });
+
+            DrawCommand {
+                index_range: start..end,
+                bind_group,
+            }
+        });
+
+        self.commands.extend(commands);
+    }
+
+    fn update_textures(
+        &mut self,
+        state: &yakui_core::State,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) {
+        for (index, texture) in state.textures() {
+            match self.textures.get_mut(index) {
+                Some(existing) => existing.update_if_newer(device, queue, texture),
+                None => {
+                    self.textures
+                        .insert_at(index, GpuTexture::new(device, queue, texture));
+                }
+            }
+        }
+    }
+}
+
+struct DrawCommand {
+    index_range: Range<u32>,
+    bind_group: wgpu::BindGroup,
 }

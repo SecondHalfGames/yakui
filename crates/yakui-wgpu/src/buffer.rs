@@ -30,6 +30,7 @@ impl Buffer {
         self.cpu_buffer.clear();
     }
 
+    #[allow(unused)]
     pub fn push(&mut self, value: &impl NoUninit) {
         self.len += 1;
         self.cpu_buffer.extend(bytes_of(value));
@@ -58,7 +59,7 @@ impl Buffer {
             let size = self.cpu_buffer.len().next_power_of_two();
 
             let desc = wgpu::BufferDescriptor {
-                label: Some("yukui vertices"),
+                label: Some("yakui vertices"),
                 size: size as u64,
                 usage: self.usage,
                 mapped_at_creation: false,

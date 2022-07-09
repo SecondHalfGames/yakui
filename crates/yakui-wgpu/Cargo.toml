@@ -11,3 +11,4 @@ yakui-core = { path = "../yakui-core" }
 wgpu = "0.13.1"
 glam = { version = "0.21.2", features = ["bytemuck"] }
 bytemuck = { version = "1.10.0", features = ["derive"] }
+thunderdome = "0.5.1"
