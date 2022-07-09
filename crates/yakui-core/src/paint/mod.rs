@@ -1,51 +1,30 @@
-use glam::{Vec2, Vec4};
+mod output;
+mod paint_dom;
+mod texture;
 
-use crate::dom::Dom;
-use crate::geometry::Color3;
-use crate::layout::LayoutDom;
+use glam::{Vec2, Vec4};
+use thunderdome::Index;
+
+use crate::geometry::{Color3, Rect};
+
+pub use self::output::*;
+pub use self::paint_dom::*;
+pub use self::texture::*;
 
 #[non_exhaustive]
-pub struct Output {
-    pub meshes: Vec<Mesh>,
+pub struct PaintRect {
+    pub rect: Rect,
+    pub color: Color3,
+    pub texture: Option<Index>,
 }
 
-impl Output {
-    pub fn new() -> Self {
-        Self { meshes: Vec::new() }
-    }
-
-    pub fn rect(&mut self, pos: Vec2, size: Vec2, color: Color3) {
-        #[rustfmt::skip]
-        let positions = [
-            [0.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0],
-            [1.0, 0.0]
-        ].map(Vec2::from);
-
-        let color = color.as_vec4(1.0);
-        let vertices = positions
-            .map(|vert| Vertex::new(vert * size + pos, vert, color))
-            .into();
-
-        #[rustfmt::skip]
-        let indices = vec![
-            0, 1, 2,
-            3, 0, 2,
-        ];
-
-        self.meshes.push(Mesh { vertices, indices });
-    }
-
-    pub(crate) fn paint(dom: &Dom, layout: &LayoutDom) -> Output {
-        let mut output = Output::new();
-
-        for &node_index in dom.roots() {
-            let node = dom.get(node_index).unwrap();
-            node.component.paint(dom, layout, &mut output);
+impl PaintRect {
+    pub fn new(rect: Rect) -> Self {
+        Self {
+            rect,
+            color: Color3::WHITE,
+            texture: None,
         }
-
-        output
     }
 }
 
@@ -53,6 +32,7 @@ impl Output {
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
+    pub texture: Option<Index>,
 }
 
 impl Mesh {
@@ -60,6 +40,7 @@ impl Mesh {
         Self {
             vertices: Vec::new(),
             indices: Vec::new(),
+            texture: None,
         }
     }
 }

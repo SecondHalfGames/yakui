@@ -9,13 +9,14 @@ use crate::context::Context;
 use crate::dom::Dom;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::Output;
+use crate::paint::{Output, PaintDom};
 use crate::{ButtonState, Event};
 
 #[derive(Debug)]
 pub struct State {
     dom: Option<Dom>,
     layout: LayoutDom,
+    paint: PaintDom,
     input: InputState,
     last_mouse_hit: Vec<Index>,
     mouse_hit: Vec<Index>,
@@ -27,6 +28,7 @@ impl State {
         Self {
             dom: Some(Dom::new()),
             layout: LayoutDom::new(),
+            paint: PaintDom::new(),
             input: InputState::new(),
             last_mouse_hit: Vec::new(),
             mouse_hit: Vec::new(),
@@ -36,7 +38,7 @@ impl State {
     pub fn handle_event(&mut self, event: Event) {
         assert!(
             self.dom.is_some(),
-            "Cannot handle_event while DOM is currently being built."
+            "Cannot handle_event() while DOM is being built."
         );
 
         match event {
@@ -117,7 +119,11 @@ impl State {
     }
 
     pub fn paint(&self) -> Output {
-        Output::paint(self.dom.as_ref().unwrap(), &self.layout)
+        let dom = self.dom.as_ref().unwrap_or_else(|| {
+            panic!("Cannot paint() while DOM is being built.");
+        });
+
+        self.paint.paint(dom, &self.layout)
     }
 }
 
