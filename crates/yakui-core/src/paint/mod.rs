@@ -14,6 +14,7 @@ pub struct PaintRect {
     pub rect: Rect,
     pub color: Color3,
     pub texture: Option<(Index, Rect)>,
+    pub pipeline: Pipeline,
 }
 
 impl PaintRect {
@@ -22,6 +23,7 @@ impl PaintRect {
             rect,
             color: Color3::WHITE,
             texture: None,
+            pipeline: Pipeline::Main,
         }
     }
 }
@@ -32,6 +34,7 @@ pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
     pub texture: Option<Index>,
+    pub pipeline: Pipeline,
 }
 
 impl Mesh {
@@ -40,6 +43,7 @@ impl Mesh {
             vertices: Vec::new(),
             indices: Vec::new(),
             texture: None,
+            pipeline: Pipeline::Main,
         }
     }
 }
@@ -65,4 +69,11 @@ impl Vertex {
             color: color.into(),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Pipeline {
+    Main,
+    Text,
 }

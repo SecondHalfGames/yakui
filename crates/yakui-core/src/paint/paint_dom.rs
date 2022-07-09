@@ -81,10 +81,11 @@ impl PaintDom {
 
         let texture_id = rect.texture.map(|(index, _rect)| index);
         let mesh = match self.meshes.last_mut() {
-            Some(mesh) if mesh.texture == texture_id => mesh,
+            Some(mesh) if mesh.texture == texture_id && mesh.pipeline == rect.pipeline => mesh,
             _ => {
                 let mut new_mesh = Mesh::new();
                 new_mesh.texture = texture_id;
+                new_mesh.pipeline = rect.pipeline;
 
                 self.meshes.push(new_mesh);
                 self.meshes.last_mut().unwrap()

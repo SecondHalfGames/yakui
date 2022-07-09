@@ -10,13 +10,14 @@ use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use thunderdome::Arena;
-use yakui_core::paint::{PaintDom, Texture, TextureFormat};
+use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
 use yakui_core::{Vec2, Vec4};
 
 use self::texture::GpuTexture;
 
 pub struct State {
-    pipeline: wgpu::RenderPipeline,
+    main_pipeline: wgpu::RenderPipeline,
+    text_pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
     default_texture: GpuTexture,
     default_sampler: wgpu::Sampler,
@@ -53,9 +54,14 @@ impl State {
         queue: &wgpu::Queue,
         surface_format: wgpu::TextureFormat,
     ) -> Self {
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
+        let main_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Main Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/main.wgsl").into()),
+        });
+
+        let text_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Text Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/text.wgsl").into()),
         });
 
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -86,20 +92,51 @@ impl State {
             push_constant_ranges: &[],
         });
 
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("yakui Render Pipeline"),
+        let main_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("yakui Main Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &shader,
+                module: &main_shader,
                 entry_point: "vs_main",
                 buffers: &[Vertex::DESCRIPTOR],
             },
             fragment: Some(wgpu::FragmentState {
-                module: &shader,
+                module: &main_shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: surface_format,
                     blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: None,
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+        });
+
+        let text_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("yakui Text Pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &text_shader,
+                entry_point: "vs_main",
+                buffers: &[Vertex::DESCRIPTOR],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &text_shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: surface_format,
+                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
             }),
@@ -132,7 +169,8 @@ impl State {
         });
 
         Self {
-            pipeline,
+            main_pipeline,
+            text_pipeline,
             layout,
             default_texture,
             default_sampler,
@@ -182,11 +220,16 @@ impl State {
                 depth_stencil_attachment: None,
             });
 
-            render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, vertices.slice(..));
             render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
 
             for command in commands {
+                match command.pipeline {
+                    Pipeline::Main => render_pass.set_pipeline(&self.main_pipeline),
+                    Pipeline::Text => render_pass.set_pipeline(&self.text_pipeline),
+                    _ => continue,
+                }
+
                 render_pass.set_bind_group(0, &command.bind_group, &[]);
                 render_pass.draw_indexed(command.index_range.clone(), 0, 0..1);
             }
@@ -239,6 +282,7 @@ impl State {
             DrawCommand {
                 index_range: start..end,
                 bind_group,
+                pipeline: mesh.pipeline,
             }
         });
 
@@ -266,4 +310,5 @@ impl State {
 struct DrawCommand {
     index_range: Range<u32>,
     bind_group: wgpu::BindGroup,
+    pipeline: Pipeline,
 }

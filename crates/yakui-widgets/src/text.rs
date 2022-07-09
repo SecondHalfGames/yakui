@@ -9,7 +9,7 @@ use fontdue::{Font, FontSettings};
 use yakui_core::context::Context;
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect, Texture, TextureFormat};
+use yakui_core::paint::{PaintDom, PaintRect, Pipeline, Texture, TextureFormat};
 use yakui_core::{Color3, Component, Constraints, Index, Rect, URect, UVec2, Vec2};
 
 #[derive(Debug, Clone)]
@@ -207,6 +207,7 @@ impl Component for TextComponent {
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
             rect.color = Color3::WHITE;
             rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
+            rect.pipeline = Pipeline::Text;
             paint.add_rect(rect);
         }
     }
