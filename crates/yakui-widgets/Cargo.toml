@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 yakui-core = { path = "../yakui-core" }
+fontdue = "0.7.2"

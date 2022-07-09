@@ -9,6 +9,7 @@ mod colored_box;
 mod image;
 mod list;
 mod padding;
+mod text;
 mod util;
 
 pub use align::*;
@@ -17,6 +18,7 @@ pub use colored_box::*;
 pub use image::*;
 pub use list::*;
 pub use padding::*;
+pub use text::*;
 
 use yakui_core::Vec2;
 

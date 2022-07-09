@@ -1,8 +1,9 @@
 mod debug;
 
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::collections::VecDeque;
 
+use anymap::AnyMap;
 use thunderdome::{Arena, Index};
 
 use crate::component::{Component, DummyComponent, ErasedComponent};
@@ -14,6 +15,8 @@ pub struct Dom {
     color: bool,
     stack: Vec<Index>,
     build_index: usize,
+
+    global_state: AnyMap,
 }
 
 pub struct DomNode {
@@ -42,6 +45,8 @@ impl Dom {
             color: false,
             stack: Vec::new(),
             build_index: 0,
+
+            global_state: AnyMap::new(),
         }
     }
 
@@ -131,6 +136,18 @@ impl Dom {
             .downcast_mut::<T>()
             .unwrap()
             .respond()
+    }
+
+    pub fn get_global_state<T: Any>(&self) -> Option<&T> {
+        self.global_state.get::<T>()
+    }
+
+    pub fn set_global_state<T: Any>(&mut self, value: T) -> Option<T> {
+        self.global_state.insert::<T>(value)
+    }
+
+    pub fn get_global_state_or_insert_with<T: Any, F: FnOnce() -> T>(&mut self, init: F) -> &mut T {
+        self.global_state.entry::<T>().or_insert_with(init)
     }
 
     /// Remove children from the given node that weren't present in the latest

@@ -6,7 +6,7 @@ use crate::AppState;
 
 macro_rules! apps {
     ($macro:ident) => {
-        $macro!(bench, simple, align, images);
+        $macro!(bench, simple, align, images, text);
     };
 }
 
