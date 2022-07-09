@@ -2,6 +2,8 @@ use std::str::FromStr;
 
 use anyhow::bail;
 
+use crate::AppState;
+
 macro_rules! apps {
     ($macro:ident) => {
         $macro!(bench, simple, align);
@@ -18,7 +20,7 @@ macro_rules! define_app {
         }
 
         impl App {
-            pub fn function(&self) -> &'static dyn Fn(f32) {
+            pub fn function(&self) -> &'static dyn Fn(&AppState) {
                 match self {
                     $(App::$mod => &$mod::app,)*
                 }

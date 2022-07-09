@@ -1,6 +1,8 @@
 use yakui::{Button, Color3, Padding};
 
-pub fn app(_time: f32) {
+use crate::AppState;
+
+pub fn app(_state: &AppState) {
     yakui::column(|| {
         let res = yakui::button(Button::styled([70.0, 30.0]));
         if res.clicked {

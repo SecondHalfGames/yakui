@@ -1,7 +1,9 @@
 use yakui_core::{
-    context::Context, dom::Dom, layout::LayoutDom, paint, Color3, Component, ComponentEvent,
-    Constraints, Index, MouseButton, Vec2,
+    dom::Dom, layout::LayoutDom, paint, Color3, Component, ComponentEvent, Constraints, Index,
+    MouseButton, Vec2,
 };
+
+use crate::util::component;
 
 #[derive(Debug, Clone)]
 pub struct Button {
@@ -117,10 +119,5 @@ impl Component for ButtonComponent {
 }
 
 pub fn button(props: Button) -> ButtonResponse {
-    let context = Context::active();
-    let res = context
-        .borrow_mut()
-        .dom_mut()
-        .do_component::<ButtonComponent>(props);
-    res
+    component::<ButtonComponent>(props)
 }

@@ -129,7 +129,6 @@ impl State {
             .collect();
 
         let vertices = self.vertices.upload(device, queue);
-        let num_indices = self.indices.len() as u32;
         let indices = self.indices.upload(device, queue);
 
         {

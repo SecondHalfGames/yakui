@@ -12,3 +12,13 @@ where
     let res = context.borrow_mut().dom_mut().end_component::<T>(index);
     res
 }
+
+pub fn component<T>(props: T::Props) -> T::Response
+where
+    T: Component,
+{
+    let context = Context::active();
+
+    let res = context.borrow_mut().dom_mut().do_component::<T>(props);
+    res
+}

@@ -6,6 +6,7 @@
 mod align;
 mod button;
 mod colored_box;
+mod image;
 mod list;
 mod padding;
 mod util;
@@ -13,6 +14,7 @@ mod util;
 pub use align::*;
 pub use button::*;
 pub use colored_box::*;
+pub use image::*;
 pub use list::*;
 pub use padding::*;
 

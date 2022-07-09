@@ -18,9 +18,15 @@ struct Args {
     app: App,
 }
 
+pub struct AppState {
+    pub time: f32,
+}
+
 async fn run() {
     let args = Args::parse();
     let app = args.app.function();
+
+    let mut state = AppState { time: 0.0 };
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -65,7 +71,7 @@ async fn run() {
             }
 
             Event::RedrawRequested(_) => {
-                let time = (Instant::now() - start).as_secs_f32();
+                state.time = (Instant::now() - start).as_secs_f32();
 
                 {
                     profiling::scope!("UI");
@@ -73,7 +79,7 @@ async fn run() {
                     {
                         profiling::scope!("UI Create+Update");
                         yak.start();
-                        app(time);
+                        app(&state);
                     }
 
                     {

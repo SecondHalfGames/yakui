@@ -1,6 +1,8 @@
 use yakui::{Alignment, Button};
 
-pub fn app(time: f32) {
+use crate::AppState;
+
+pub fn app(state: &AppState) {
     const ALIGNMENTS: &[Alignment] = &[
         Alignment::TOP_LEFT,
         Alignment::TOP_CENTER,
@@ -13,7 +15,7 @@ pub fn app(time: f32) {
         Alignment::BOTTOM_RIGHT,
     ];
 
-    let index = (time as usize) % ALIGNMENTS.len();
+    let index = (state.time as usize) % ALIGNMENTS.len();
     let alignment = ALIGNMENTS[index];
 
     yakui::align(alignment, || {

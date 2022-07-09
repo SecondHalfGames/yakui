@@ -1,6 +1,8 @@
 use yakui::{Button, Color3};
 
-pub fn app(_time: f32) {
+use crate::AppState;
+
+pub fn app(_state: &AppState) {
     let colors = [Color3::RED, Color3::GREEN, Color3::BLUE];
 
     yakui::row(|| {
