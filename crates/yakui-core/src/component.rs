@@ -8,7 +8,7 @@ use crate::dom::Dom;
 use crate::geometry::Constraints;
 use crate::input::MouseButton;
 use crate::layout::LayoutDom;
-use crate::paint::Output;
+use crate::paint::PaintDom;
 
 pub trait Props: Any + fmt::Debug {}
 impl<T> Props for T where T: Any + fmt::Debug {}
@@ -35,7 +35,7 @@ pub trait Component: Any + fmt::Debug {
     fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: &Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn respond(&mut self) -> Self::Response;
 
     fn event(&mut self, _event: &ComponentEvent) {}
@@ -44,7 +44,7 @@ pub trait Component: Any + fmt::Debug {
 pub trait ErasedComponent: Any {
     fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output);
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, event: &ComponentEvent);
 
     fn as_debug(&self) -> &dyn fmt::Debug;
@@ -69,8 +69,8 @@ where
     }
 
     #[inline]
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut Output) {
-        <T as Component>::paint(self, dom, layout, output)
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+        <T as Component>::paint(self, dom, layout, paint)
     }
 
     #[inline]
@@ -120,7 +120,7 @@ impl Component for DummyComponent {
     }
 
     #[inline]
-    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut Output) {}
+    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _paint: &mut PaintDom) {}
 
     #[inline]
     fn respond(&mut self) {}

@@ -1,4 +1,5 @@
-use yakui_core::{dom::Dom, layout::LayoutDom, paint, Component, Constraints, Index, Vec2};
+use yakui_core::paint::PaintDom;
+use yakui_core::{dom::Dom, layout::LayoutDom, Component, Constraints, Index, Vec2};
 
 use crate::util::component_children;
 
@@ -65,12 +66,12 @@ impl Component for PaddingComponent {
         input.constrain(self_size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut paint::Output) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let node = dom.get(self.index).unwrap();
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.paint(dom, layout, output);
+            child.component.paint(dom, layout, paint);
         }
     }
 

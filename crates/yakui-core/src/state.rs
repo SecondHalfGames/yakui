@@ -9,7 +9,7 @@ use crate::context::Context;
 use crate::dom::Dom;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{Output, PaintDom, Texture};
+use crate::paint::{PaintDom, Texture};
 use crate::{ButtonState, Event};
 
 #[derive(Debug)]
@@ -122,12 +122,13 @@ impl State {
         self.input.step();
     }
 
-    pub fn paint(&self) -> Output {
+    pub fn paint(&mut self) -> &PaintDom {
         let dom = self.dom.as_ref().unwrap_or_else(|| {
             panic!("Cannot paint() while DOM is being built.");
         });
 
-        self.paint.paint(dom, &self.layout)
+        self.paint.paint(dom, &self.layout);
+        &self.paint
     }
 
     pub fn textures(&self) -> impl Iterator<Item = (Index, &Texture)> {

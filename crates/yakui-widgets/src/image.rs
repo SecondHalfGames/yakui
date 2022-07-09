@@ -1,6 +1,6 @@
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{self, PaintRect};
+use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::{Color3, Component, Constraints, Index, Rect, Vec2};
 
 use crate::util::component;
@@ -35,7 +35,7 @@ impl Component for ImageComponent {
         input.constrain(self.props.size)
     }
 
-    fn paint(&self, _dom: &Dom, layout: &LayoutDom, output: &mut paint::Output) {
+    fn paint(&self, _dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
         let layout_node = layout.get(self.index).unwrap();
         let viewport = layout.viewport;
         let size = layout_node.rect.size() / viewport.size();

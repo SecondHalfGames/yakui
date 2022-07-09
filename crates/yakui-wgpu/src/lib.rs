@@ -10,7 +10,7 @@ use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use thunderdome::Arena;
-use yakui_core::paint::{Output, Texture, TextureFormat};
+use yakui_core::paint::{PaintDom, Texture, TextureFormat};
 use yakui_core::{Vec2, Vec4};
 
 use self::texture::GpuTexture;
@@ -146,7 +146,7 @@ impl State {
 
     pub fn paint(
         &mut self,
-        state: &yakui_core::State,
+        state: &mut yakui_core::State,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,
@@ -157,13 +157,13 @@ impl State {
             label: Some("yakui Encoder"),
         });
 
-        let output = state.paint();
+        let paint = state.paint();
 
-        if output.meshes.is_empty() {
+        if paint.meshes().is_empty() {
             return encoder.finish();
         }
 
-        self.update_buffers(device, output);
+        self.update_buffers(device, paint);
         let vertices = self.vertices.upload(device, queue);
         let indices = self.indices.upload(device, queue);
         let commands = &self.commands;
@@ -195,20 +195,20 @@ impl State {
         encoder.finish()
     }
 
-    fn update_buffers(&mut self, device: &wgpu::Device, output: Output) {
+    fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
         self.vertices.clear();
         self.indices.clear();
         self.commands.clear();
 
-        let commands = output.meshes.into_iter().map(|mesh| {
-            let vertices = mesh.vertices.into_iter().map(|vertex| Vertex {
+        let commands = paint.meshes().iter().map(|mesh| {
+            let vertices = mesh.vertices.iter().map(|vertex| Vertex {
                 pos: vertex.position,
                 texcoord: vertex.texcoord,
                 color: vertex.color,
             });
 
             let base = self.vertices.len() as u32;
-            let indices = mesh.indices.into_iter().map(|index| base + index as u32);
+            let indices = mesh.indices.iter().map(|&index| base + index as u32);
 
             let start = self.indices.len() as u32;
             let end = start + indices.len() as u32;

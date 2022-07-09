@@ -1,4 +1,3 @@
-mod output;
 mod paint_dom;
 mod texture;
 
@@ -7,7 +6,6 @@ use thunderdome::Index;
 
 use crate::geometry::{Color3, Rect};
 
-pub use self::output::*;
 pub use self::paint_dom::*;
 pub use self::texture::*;
 
@@ -28,6 +26,7 @@ impl PaintRect {
     }
 }
 
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
