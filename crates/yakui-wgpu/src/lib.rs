@@ -105,21 +105,28 @@ impl State {
             return encoder.finish();
         }
 
-        for mesh in output.meshes {
-            let base = self.vertices.len() as u32;
-
-            for vertex in mesh.vertices {
-                self.vertices.push(&Vertex {
+        let draw_calls: Vec<_> = output
+            .meshes
+            .into_iter()
+            .map(|mesh| {
+                let vertices = mesh.vertices.into_iter().map(|vertex| Vertex {
                     pos: vertex.position,
                     texcoord: vertex.texcoord,
                     color: vertex.color,
                 });
-            }
 
-            for index in mesh.indices {
-                self.indices.push(&(base + index as u32));
-            }
-        }
+                let base = self.vertices.len() as u32;
+                let indices = mesh.indices.into_iter().map(|index| base + index as u32);
+
+                let start = self.indices.len() as u32;
+                let end = start + indices.len() as u32;
+
+                self.vertices.extend(vertices);
+                self.indices.extend(indices);
+
+                start..end
+            })
+            .collect();
 
         let vertices = self.vertices.upload(device, queue);
         let num_indices = self.indices.len() as u32;
@@ -142,7 +149,10 @@ impl State {
             render_pass.set_pipeline(&self.pipeline);
             render_pass.set_vertex_buffer(0, vertices.slice(..));
             render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
-            render_pass.draw_indexed(0..num_indices, 0, 0..1);
+
+            for range in draw_calls {
+                render_pass.draw_indexed(range, 0, 0..1);
+            }
         }
 
         encoder.finish()
