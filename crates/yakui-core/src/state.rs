@@ -9,7 +9,7 @@ use crate::context::Context;
 use crate::dom::Dom;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{Output, PaintDom};
+use crate::paint::{Output, PaintDom, Texture};
 use crate::{ButtonState, Event};
 
 #[derive(Debug)]
@@ -52,6 +52,10 @@ impl State {
                 self.input.mouse_button_changed(button, down);
             }
         }
+    }
+
+    pub fn create_texture(&mut self, texture: Texture) -> Index {
+        self.paint.create_texture(texture)
     }
 
     pub fn start(&mut self) {

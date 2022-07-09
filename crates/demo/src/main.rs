@@ -12,6 +12,12 @@ use winit::{
 
 use apps::App;
 use graphics::Graphics;
+use yakui::{
+    paint::{Texture, TextureFormat},
+    UVec2,
+};
+
+const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 
 #[derive(Parser)]
 struct Args {
@@ -20,13 +26,12 @@ struct Args {
 
 pub struct AppState {
     pub time: f32,
+    pub monkey: yakui::Index,
 }
 
 async fn run() {
     let args = Args::parse();
     let app = args.app.function();
-
-    let mut state = AppState { time: 0.0 };
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -36,6 +41,9 @@ async fn run() {
     let mut yak = yakui::State::new();
     let mut yak_renderer = yakui_wgpu::State::new(&graphics.device, graphics.surface_format());
     let mut yak_window = yakui_winit::State::new();
+
+    let monkey = yak.create_texture(load_texture(MONKEY_PNG));
+    let mut state = AppState { time: 0.0, monkey };
 
     let start = Instant::now();
 
@@ -99,6 +107,13 @@ async fn run() {
             _ => (),
         }
     });
+}
+
+fn load_texture(bytes: &[u8]) -> Texture {
+    let image = image::load_from_memory(bytes).unwrap().into_rgba8();
+    let size = UVec2::new(image.width(), image.height());
+
+    Texture::new(TextureFormat::Rgba8, size, image.into_raw())
 }
 
 fn main() {

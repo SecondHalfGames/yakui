@@ -50,6 +50,6 @@ impl Component for ImageComponent {
     fn respond(&mut self) -> Self::Response {}
 }
 
-pub fn image<F: FnOnce()>(image: Index, size: Vec2) -> ImageResponse {
+pub fn image(image: Index, size: Vec2) -> ImageResponse {
     component::<ImageComponent>(Image { image, size })
 }
