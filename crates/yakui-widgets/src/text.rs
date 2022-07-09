@@ -54,14 +54,16 @@ impl GlyphCache {
             let glyph_size = UVec2::new(metrics.width as u32, metrics.height as u32);
 
             let glyph_max = self.next_pos + glyph_size;
-            if glyph_max.x > self.texture_size.x {
-                self.next_pos = UVec2::new(0, self.row_height);
+            let pos = if glyph_max.x < self.texture_size.x {
+                let pos = self.next_pos;
+                self.row_height = self.row_height.max(glyph_size.y + 1);
+                pos
+            } else {
+                let pos = UVec2::new(0, self.row_height);
                 self.row_height = 0;
-            }
-
-            let pos = self.next_pos;
-            self.next_pos = pos + glyph_size.x + 1;
-            self.row_height = self.row_height.max(glyph_size.y + 1);
+                pos
+            };
+            self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
 
             let size = texture.size();
             blit(pos, &bitmap, glyph_size, texture.data_mut(), size);
