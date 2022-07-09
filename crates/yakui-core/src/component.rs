@@ -5,10 +5,10 @@ use glam::Vec2;
 use thunderdome::Index;
 
 use crate::dom::Dom;
-use crate::draw::Output;
 use crate::geometry::Constraints;
 use crate::input::MouseButton;
 use crate::layout::LayoutDom;
+use crate::paint::Output;
 
 pub trait Props: Any + fmt::Debug {}
 impl<T> Props for T where T: Any + fmt::Debug {}
@@ -120,7 +120,7 @@ impl Component for DummyComponent {
     }
 
     #[inline]
-    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut crate::draw::Output) {}
+    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _output: &mut Output) {}
 
     #[inline]
     fn respond(&mut self) {}

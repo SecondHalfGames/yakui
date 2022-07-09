@@ -112,9 +112,9 @@ impl Graphics {
         }
 
         let clear = encoder.finish();
-        let draw_yak = yak_renderer.draw(yak, &self.device, &self.queue, &view);
+        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, &view);
 
-        self.queue.submit([clear, draw_yak]);
+        self.queue.submit([clear, paint_yak]);
         output.present();
     }
 }

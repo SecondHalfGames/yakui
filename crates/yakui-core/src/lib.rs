@@ -11,8 +11,8 @@ mod state;
 
 pub mod context;
 pub mod dom;
-pub mod draw;
 pub mod layout;
+pub mod paint;
 
 pub extern crate glam;
 pub use glam::{Vec2, Vec4};

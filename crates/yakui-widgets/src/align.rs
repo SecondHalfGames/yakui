@@ -1,4 +1,4 @@
-use yakui_core::{dom::Dom, draw, layout::LayoutDom, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, paint, Component, Constraints, Index, Vec2};
 
 use crate::{util::component_children, Alignment};
 
@@ -41,7 +41,7 @@ impl Component for AlignComponent {
         self_size
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut paint::Output) {
         let node = dom.get(self.index).unwrap();
 
         for &index in &node.children {

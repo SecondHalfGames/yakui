@@ -85,7 +85,7 @@ impl State {
         }
     }
 
-    pub fn draw(
+    pub fn paint(
         &mut self,
         state: &yakui_core::State,
         device: &wgpu::Device,

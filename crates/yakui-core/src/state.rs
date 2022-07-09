@@ -7,9 +7,9 @@ use thunderdome::Index;
 use crate::component::ComponentEvent;
 use crate::context::Context;
 use crate::dom::Dom;
-use crate::draw::Output;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
+use crate::paint::Output;
 use crate::{ButtonState, Event};
 
 #[derive(Debug)]

@@ -1,4 +1,4 @@
-use yakui_core::{dom::Dom, draw, layout::LayoutDom, Color3, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, paint, Color3, Component, Constraints, Index, Vec2};
 
 use crate::util::component_children;
 
@@ -39,7 +39,7 @@ impl Component for ColoredBoxComponent {
         input.constrain(self_size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut draw::Output) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut paint::Output) {
         let node = dom.get(self.index).unwrap();
         let layout_node = layout.get(self.index).unwrap();
         let viewport = layout.viewport;
