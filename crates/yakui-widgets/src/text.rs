@@ -22,7 +22,8 @@ struct TextGlobalState {
 struct GlyphCache {
     texture: Option<Index>,
     glyphs: HashMap<GlyphRasterConfig, URect>,
-    anchors: Vec<UVec2>,
+    next_pos: UVec2,
+    row_height: u32,
     texture_size: UVec2,
 }
 
@@ -36,6 +37,7 @@ impl GlyphCache {
             ));
 
             self.texture = Some(texture);
+            self.texture_size = UVec2::new(4096, 4096);
         }
     }
 
@@ -45,45 +47,26 @@ impl GlyphCache {
         font: &Font,
         key: GlyphRasterConfig,
     ) -> URect {
-        let texture = paint.modify_texture(self.texture.unwrap()).unwrap();
-
-        let others: Vec<_> = self.glyphs.values().copied().collect();
-
         *self.glyphs.entry(key).or_insert_with(|| {
+            let texture = paint.modify_texture(self.texture.unwrap()).unwrap();
+
             let (metrics, bitmap) = font.rasterize_indexed(key.glyph_index, key.px);
             let glyph_size = UVec2::new(metrics.width as u32, metrics.height as u32);
 
-            let anchor_id = self
-                .anchors
-                .iter()
-                .position(|&anchor| {
-                    let rect = URect::from_pos_size(anchor, glyph_size);
+            let glyph_max = self.next_pos + glyph_size;
+            if glyph_max.x > self.texture_size.x {
+                self.next_pos = UVec2::new(0, self.row_height);
+                self.row_height = 0;
+            }
 
-                    let fits_in_sheet = anchor.x + glyph_size.x < self.texture_size.x
-                        && anchor.y + glyph_size.y < self.texture_size.y;
-
-                    // O(n²), oops.
-                    let fits_with_others =
-                        others.iter().all(|other_rect| !rect.intersects(other_rect));
-
-                    fits_in_sheet && fits_with_others
-                })
-                .unwrap_or_else(|| {
-                    let c = key.glyph_index;
-                    let size = key.px;
-                    panic!("Tried to add {c}@{size}, but it did not fit.");
-                });
-
-            let anchor = self.anchors.swap_remove(anchor_id);
-            self.anchors
-                .push(UVec2::new(anchor.x + glyph_size.x + 1, anchor.y));
-            self.anchors
-                .push(UVec2::new(anchor.x, anchor.y + glyph_size.y + 1));
+            let pos = self.next_pos;
+            self.next_pos = pos + glyph_size.x + 1;
+            self.row_height = self.row_height.max(glyph_size.y + 1);
 
             let size = texture.size();
-            blit(anchor, &bitmap, glyph_size, texture.data_mut(), size);
+            blit(pos, &bitmap, glyph_size, texture.data_mut(), size);
 
-            URect::from_pos_size(anchor, glyph_size)
+            URect::from_pos_size(pos, glyph_size)
         })
     }
 }
@@ -99,16 +82,18 @@ fn set(data: &mut [u8], size: UVec2, pos: UVec2, value: u8) {
 }
 
 fn blit(
-    pos: UVec2,
+    dest_pos: UVec2,
     source_data: &[u8],
     source_size: UVec2,
     dest_data: &mut [u8],
     dest_size: UVec2,
 ) {
-    for y in pos.y..(pos.y + source_size.y) {
-        for x in pos.x..(pos.x + source_size.x) {
-            let value = get(source_data, source_size, UVec2::new(x, y));
-            set(dest_data, dest_size, UVec2::new(x, y), value);
+    for h in 0..source_size.y {
+        for w in 0..source_size.x {
+            let pos = UVec2::new(dest_pos.x + w, dest_pos.y + h);
+
+            let value = get(source_data, source_size, UVec2::new(w, h));
+            set(dest_data, dest_size, pos, value);
         }
     }
 }
@@ -124,7 +109,8 @@ impl TextGlobalState {
         let glyph_cache = GlyphCache {
             texture: None,
             glyphs: HashMap::new(),
-            anchors: vec![UVec2::ZERO],
+            next_pos: UVec2::ONE,
+            row_height: 0,
 
             // Not initializing to zero to avoid divide by zero issues if we do
             // intialize the texture incorrectly.
@@ -171,7 +157,7 @@ impl Component for TextComponent {
         self.props = props.clone();
     }
 
-    fn size(&self, dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let global = &self.props.global;
 
         let mut text_layout = self.layout.borrow_mut();
@@ -200,14 +186,14 @@ impl Component for TextComponent {
         let text_layout = self.layout.borrow_mut();
         let mut glyph_cache = self.props.global.glyph_cache.borrow_mut();
 
-        glyph_cache.ensure_texture(todo!());
+        glyph_cache.ensure_texture(paint);
 
         let layout_node = layout.get(self.index).unwrap();
         let viewport = layout.viewport;
 
         for glyph in text_layout.glyphs() {
             let source_rect =
-                glyph_cache.get_or_insert(todo!(), &self.props.global.default_font, glyph.key);
+                glyph_cache.get_or_insert(paint, &self.props.global.default_font, glyph.key);
 
             let size = Vec2::new(glyph.width as f32, glyph.height as f32) / viewport.size();
             let pos = (layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) + viewport.pos())
@@ -218,7 +204,7 @@ impl Component for TextComponent {
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
             rect.color = Color3::WHITE;
-            rect.texture = Some((todo!(), tex_rect));
+            rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
             paint.add_rect(rect);
         }
     }
