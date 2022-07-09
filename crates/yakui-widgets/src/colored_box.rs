@@ -5,21 +5,21 @@ use yakui_core::{
 
 use crate::util::component_children;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColoredBox {
-    index: Index,
-    props: ColoredBoxProps,
+    pub color: Color3,
 }
 
-#[derive(Debug, Clone)]
-pub struct ColoredBoxProps {
-    pub color: Color3,
+#[derive(Debug)]
+pub struct ColoredBoxComponent {
+    index: Index,
+    props: ColoredBox,
 }
 
 pub type ColoredBoxResponse = ();
 
-impl Component for ColoredBox {
-    type Props = ColoredBoxProps;
+impl Component for ColoredBoxComponent {
+    type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
@@ -61,5 +61,5 @@ impl Component for ColoredBox {
 }
 
 pub fn colored_box<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
-    component_children::<ColoredBox, _>(children, ColoredBoxProps { color })
+    component_children::<ColoredBoxComponent, _>(children, ColoredBox { color })
 }

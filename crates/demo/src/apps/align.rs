@@ -1,4 +1,4 @@
-use yakui::{Alignment, ButtonProps};
+use yakui::{Alignment, Button};
 
 pub fn app(time: f32) {
     const ALIGNMENTS: &[Alignment] = &[
@@ -17,6 +17,6 @@ pub fn app(time: f32) {
     let alignment = ALIGNMENTS[index];
 
     yakui::align(alignment, || {
-        yakui::button(ButtonProps::styled([100.0, 100.0]));
+        yakui::button(Button::styled([100.0, 100.0]));
     });
 }

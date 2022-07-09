@@ -5,21 +5,21 @@ use yakui_core::{
 
 use crate::{util::component_children, Alignment};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Align {
-    index: Index,
-    props: AlignProps,
+    pub alignment: Alignment,
 }
 
-#[derive(Debug, Clone)]
-pub struct AlignProps {
-    pub alignment: Alignment,
+#[derive(Debug)]
+pub struct AlignComponent {
+    index: Index,
+    props: Align,
 }
 
 pub type AlignResponse = ();
 
-impl Component for Align {
-    type Props = AlignProps;
+impl Component for AlignComponent {
+    type Props = Align;
     type Response = AlignResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
@@ -57,14 +57,14 @@ impl Component for Align {
 }
 
 pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
-    component_children::<Align, _>(
+    component_children::<AlignComponent, _>(
         children,
-        AlignProps {
+        Align {
             alignment: Alignment::CENTER,
         },
     )
 }
 
 pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> AlignResponse {
-    component_children::<Align, _>(children, AlignProps { alignment })
+    component_children::<AlignComponent, _>(children, Align { alignment })
 }

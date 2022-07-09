@@ -5,22 +5,22 @@ use yakui_core::{
 
 use crate::{util::component_children, Direction};
 
-#[derive(Debug)]
-pub struct List {
-    index: Index,
-    props: ListProps,
-}
-
 #[derive(Debug, Clone)]
-pub struct ListProps {
+pub struct List {
     pub direction: Direction,
     pub item_spacing: f32,
 }
 
+#[derive(Debug)]
+pub struct ListComponent {
+    index: Index,
+    props: List,
+}
+
 pub type ListResponse = ();
 
-impl Component for List {
-    type Props = ListProps;
+impl Component for ListComponent {
+    type Props = List;
     type Response = ListResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
@@ -103,9 +103,9 @@ impl Component for List {
 }
 
 pub fn column<F: FnOnce()>(children: F) -> ListResponse {
-    component_children::<List, _>(
+    component_children::<ListComponent, _>(
         children,
-        ListProps {
+        List {
             direction: Direction::Down,
             item_spacing: 8.0,
         },
@@ -113,9 +113,9 @@ pub fn column<F: FnOnce()>(children: F) -> ListResponse {
 }
 
 pub fn row<F: FnOnce()>(children: F) -> ListResponse {
-    component_children::<List, _>(
+    component_children::<ListComponent, _>(
         children,
-        ListProps {
+        List {
             direction: Direction::Right,
             item_spacing: 8.0,
         },

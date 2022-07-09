@@ -5,21 +5,15 @@ use yakui_core::{
 
 use crate::util::component_children;
 
-#[derive(Debug)]
-pub struct Pad {
-    index: Index,
-    props: PadProps,
-}
-
 #[derive(Debug, Clone)]
-pub struct PadProps {
+pub struct Padding {
     pub left: f32,
     pub right: f32,
     pub top: f32,
     pub bottom: f32,
 }
 
-impl PadProps {
+impl Padding {
     pub fn even(value: f32) -> Self {
         Self {
             left: value,
@@ -30,10 +24,16 @@ impl PadProps {
     }
 }
 
+#[derive(Debug)]
+pub struct PaddingComponent {
+    index: Index,
+    props: Padding,
+}
+
 pub type PadResponse = ();
 
-impl Component for Pad {
-    type Props = PadProps;
+impl Component for PaddingComponent {
+    type Props = Padding;
     type Response = PadResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
@@ -80,6 +80,6 @@ impl Component for Pad {
     fn respond(&mut self) -> Self::Response {}
 }
 
-pub fn pad<F: FnOnce()>(props: PadProps, children: F) -> PadResponse {
-    component_children::<Pad, _>(children, props)
+pub fn pad<F: FnOnce()>(props: Padding, children: F) -> PadResponse {
+    component_children::<PaddingComponent, _>(children, props)
 }

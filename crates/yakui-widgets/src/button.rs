@@ -4,24 +4,15 @@ use yakui_core::{
     draw, Color3, Component, ComponentEvent, Constraints, Index, MouseButton, Vec2,
 };
 
-#[derive(Debug)]
-pub struct Button {
-    index: Index,
-    props: ButtonProps,
-    hovering: bool,
-    mouse_down: bool,
-    clicked: bool,
-}
-
 #[derive(Debug, Clone)]
-pub struct ButtonProps {
+pub struct Button {
     pub size: Vec2,
     pub fill: Color3,
     pub hover_fill: Option<Color3>,
     pub down_fill: Option<Color3>,
 }
 
-impl ButtonProps {
+impl Button {
     pub fn unstyled<S: Into<Vec2>>(size: S) -> Self {
         Self {
             size: size.into(),
@@ -42,13 +33,22 @@ impl ButtonProps {
 }
 
 #[derive(Debug)]
+pub struct ButtonComponent {
+    index: Index,
+    props: Button,
+    hovering: bool,
+    mouse_down: bool,
+    clicked: bool,
+}
+
+#[derive(Debug)]
 pub struct ButtonResponse {
     pub hovering: bool,
     pub clicked: bool,
 }
 
-impl Component for Button {
-    type Props = ButtonProps;
+impl Component for ButtonComponent {
+    type Props = Button;
     type Response = ButtonResponse;
 
     fn new(index: Index, props: Self::Props) -> Self {
@@ -117,8 +117,11 @@ impl Component for Button {
     }
 }
 
-pub fn button(props: ButtonProps) -> ButtonResponse {
+pub fn button(props: Button) -> ButtonResponse {
     let context = Context::active();
-    let res = context.borrow_mut().dom_mut().do_component::<Button>(props);
+    let res = context
+        .borrow_mut()
+        .dom_mut()
+        .do_component::<ButtonComponent>(props);
     res
 }
