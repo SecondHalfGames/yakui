@@ -67,7 +67,7 @@ impl Widget for ButtonComponent {
         self.props = props;
     }
 
-    fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
+    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         constraints.constrain(self.props.size)
     }
 

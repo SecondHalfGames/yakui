@@ -28,7 +28,7 @@ impl Widget for AlignComponent {
         self.props = props;
     }
 
-    fn size(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get(self.index).unwrap();
 
         let self_size = input.max;

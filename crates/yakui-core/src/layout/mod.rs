@@ -52,7 +52,7 @@ impl LayoutDom {
 
     pub fn calculate(&mut self, dom: &Dom, index: Index, constraints: Constraints) -> Vec2 {
         let dom_node = dom.get(index).unwrap();
-        let size = dom_node.widget.size(dom, self, constraints);
+        let size = dom_node.widget.layout(dom, self, constraints);
         self.nodes.insert_at(
             index,
             LayoutDomNode {

@@ -34,7 +34,7 @@ pub trait Widget: Any + fmt::Debug {
 
     fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: Self::Props);
-    fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn respond(&mut self) -> Self::Response;
 
@@ -42,7 +42,7 @@ pub trait Widget: Any + fmt::Debug {
 }
 
 pub trait ErasedWidget: Any {
-    fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, event: &WidgetEvent);
 
@@ -54,8 +54,8 @@ where
     T: Widget,
 {
     #[inline]
-    fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        <T as Widget>::size(self, dom, layout, constraints)
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
+        <T as Widget>::layout(self, dom, layout, constraints)
     }
 
     #[inline]
@@ -105,7 +105,7 @@ impl Widget for DummyWidget {
     fn event(&mut self, _event: &WidgetEvent) {}
 
     #[inline]
-    fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {
+    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {
         Vec2::ZERO
     }
 

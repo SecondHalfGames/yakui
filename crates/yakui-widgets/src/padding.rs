@@ -42,7 +42,7 @@ impl Widget for PaddingComponent {
         self.props = props;
     }
 
-    fn size(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get(self.index).unwrap();
 
         let mut self_size = Vec2::ZERO;

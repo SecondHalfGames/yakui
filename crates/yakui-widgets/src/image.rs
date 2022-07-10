@@ -31,7 +31,7 @@ impl Widget for ImageComponent {
         self.props = props;
     }
 
-    fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         input.constrain(self.props.size)
     }
 
