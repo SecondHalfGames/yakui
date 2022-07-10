@@ -2,7 +2,7 @@ mod debug;
 mod dummy;
 mod root;
 
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;
@@ -95,7 +95,7 @@ impl Dom {
         }
     }
 
-    pub fn get_global_state_or_insert_with<T: Any, F: FnOnce() -> T>(
+    pub fn get_global_state_or_insert_with<T: 'static, F: FnOnce() -> T>(
         &self,
         init: F,
     ) -> RefMut<'_, T> {

@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::fmt;
 
 use glam::Vec2;
@@ -9,10 +9,14 @@ use crate::geometry::Constraints;
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 
-pub trait Props: Any + fmt::Debug {}
-impl<T> Props for T where T: Any + fmt::Debug {}
+/// Trait that's automatically implemented for all widget props.
+///
+/// This trait is used by yakui to enforce that props hold no non-`'static`
+/// references and implement `Debug`.
+pub trait Props: 'static + fmt::Debug {}
+impl<T> Props for T where T: 'static + fmt::Debug {}
 
-pub trait ErasedProps: Any {
+pub(crate) trait ErasedProps: 'static {
     fn as_debug(&self) -> &dyn fmt::Debug;
 }
 
@@ -27,7 +31,7 @@ where
 
 mopmopafy!(ErasedProps);
 
-pub trait Widget: Any + fmt::Debug {
+pub trait Widget: 'static + fmt::Debug {
     type Props: Props;
     type Response;
 
@@ -58,7 +62,7 @@ pub trait Widget: Any + fmt::Debug {
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 
-pub trait ErasedWidget: Any {
+pub trait ErasedWidget: 'static {
     fn children(&self) {}
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
