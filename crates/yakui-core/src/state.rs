@@ -4,7 +4,7 @@ use std::mem::take;
 use glam::Vec2;
 use thunderdome::Index;
 
-use crate::context::Context;
+use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, WidgetEvent};
 use crate::input::{ButtonState, InputState};
@@ -58,26 +58,16 @@ impl State {
     }
 
     pub fn start(&mut self) {
-        let context = Context::current();
-
-        if let Some(mut dom) = self.dom.take() {
+        if let Some(dom) = self.dom.take() {
             dom.start();
-            context.borrow_mut().start(dom);
+            context::give_dom(dom);
         } else {
             panic!("Cannot call start() when already started.");
         }
     }
 
     pub fn finish(&mut self) {
-        let context = Context::current();
-        let mut context = context.borrow_mut();
-
-        let dom = if let Some(dom) = context.take_dom() {
-            self.dom.insert(dom)
-        } else {
-            panic!("Cannot call finish() when not started.");
-        };
-
+        let dom = self.dom.insert(context::take_dom());
         self.layout.calculate_all(dom);
 
         let mut mouse_hit = take(&mut self.last_mouse_hit);
@@ -91,7 +81,7 @@ impl State {
 
         // oops, quadratic behavior
         for &hit in &self.mouse_hit {
-            if let Some(node) = dom.get_mut(hit) {
+            if let Some(mut node) = dom.get_mut(hit) {
                 if !self.last_mouse_hit.contains(&hit) {
                     node.widget.event(&WidgetEvent::MouseEnter);
                 }
@@ -112,7 +102,7 @@ impl State {
 
         for &hit in &self.last_mouse_hit {
             if !self.mouse_hit.contains(&hit) {
-                if let Some(node) = dom.get_mut(hit) {
+                if let Some(mut node) = dom.get_mut(hit) {
                     node.widget.event(&WidgetEvent::MouseLeave);
                 }
             }
@@ -138,7 +128,7 @@ impl State {
 fn hit_test(dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
     let mut queue = VecDeque::new();
 
-    queue.extend(dom.roots());
+    queue.extend(&*dom.roots());
 
     while let Some(index) = queue.pop_front() {
         let node = dom.get(index).unwrap();

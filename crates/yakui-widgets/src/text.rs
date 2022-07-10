@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use fontdue::layout::{CoordinateSystem, GlyphRasterConfig, Layout, LayoutSettings, TextStyle};
 use fontdue::{Font, FontSettings};
-use yakui_core::context::Context;
+use yakui_core::context;
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline, Texture, TextureFormat};
@@ -226,9 +226,7 @@ impl fmt::Debug for TextWidget {
 }
 
 pub fn text<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> TextResponse {
-    let context = Context::active();
-    let mut context = context.borrow_mut();
-    let dom = context.dom_mut();
+    let dom = context::dom();
 
     let global = dom
         .get_global_state_or_insert_with::<TextGlobalState, _>(TextGlobalState::new)

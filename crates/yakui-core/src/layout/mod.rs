@@ -43,7 +43,7 @@ impl LayoutDom {
             max: self.viewport.size(),
         };
 
-        for &index in dom.roots() {
+        for &index in &*dom.roots() {
             self.calculate(dom, index, constraints);
         }
 

@@ -1,17 +1,22 @@
 use std::fmt;
 
-use super::Dom;
+use super::{Dom, DomInner};
 
 impl fmt::Debug for Dom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Dom")
-            .field("roots", &self.roots)
-            .field("nodes", &ViewTree(self))
-            .finish()
+        match self.inner.try_borrow() {
+            Ok(inner) => f
+                .debug_struct("Dom")
+                .field("roots", &inner.roots)
+                .field("nodes", &ViewTree(&inner))
+                .finish(),
+
+            Err(_) => f.debug_struct("Dom (Locked)").finish(),
+        }
     }
 }
 
-struct ViewTree<'a>(&'a Dom);
+struct ViewTree<'a>(&'a DomInner);
 
 impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
