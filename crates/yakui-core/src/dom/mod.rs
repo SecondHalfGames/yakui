@@ -147,14 +147,7 @@ impl Dom {
         };
 
         dom.stack.push(index);
-
-        let node = dom.nodes.get_mut(index).unwrap();
-        if node.widget.as_ref().type_id() == TypeId::of::<T>() {
-            let widget = node.widget.downcast_mut::<T>().unwrap();
-            widget.update(props);
-        } else {
-            node.widget = Box::new(T::new(index, props));
-        }
+        dom.update_widget::<T>(index, props);
 
         index
     }
@@ -180,7 +173,7 @@ impl Dom {
 }
 
 impl DomInner {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             nodes: Arena::new(),
             roots: Vec::new(),
@@ -190,6 +183,17 @@ impl DomInner {
             build_index: 0,
 
             global_state: AnyMap::new(),
+        }
+    }
+
+    fn update_widget<T: Widget>(&mut self, index: Index, props: T::Props) {
+        let node = self.nodes.get_mut(index).unwrap();
+
+        if node.widget.as_ref().type_id() == TypeId::of::<T>() {
+            let widget = node.widget.downcast_mut::<T>().unwrap();
+            widget.update(props);
+        } else {
+            node.widget = Box::new(T::new(index, props));
         }
     }
 
