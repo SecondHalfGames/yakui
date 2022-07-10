@@ -34,10 +34,10 @@ pub trait Widget: Any + fmt::Debug {
 
     fn new(index: Index, props: Self::Props) -> Self;
     fn update(&mut self, props: Self::Props);
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn respond(&mut self) -> Self::Response;
 
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 
@@ -76,9 +76,10 @@ where
 
 mopmopafy!(ErasedWidget);
 
-// Placeholder widget used internally.
+/// Placeholder widget used internally to emplace a component without
+/// initializing it yet.
 #[derive(Debug)]
-pub struct DummyWidget;
+pub(crate) struct DummyWidget;
 
 impl Widget for DummyWidget {
     type Props = ();
