@@ -134,7 +134,6 @@ pub struct Text {
 }
 
 pub struct TextWidget {
-    index: Index,
     props: Text,
     layout: RefCell<Layout>,
 }
@@ -145,11 +144,10 @@ impl Widget for TextWidget {
     type Props = Text;
     type Response = TextResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
+    fn new(_index: Index, props: Self::Props) -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Self {
-            index,
             props,
             layout: RefCell::new(layout),
         }
@@ -189,13 +187,13 @@ impl Widget for TextWidget {
         input.constrain(size)
     }
 
-    fn paint(&self, _dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let text_layout = self.layout.borrow_mut();
         let mut glyph_cache = self.props.global.glyph_cache.borrow_mut();
 
         glyph_cache.ensure_texture(paint);
 
-        let layout_node = layout.get(self.index).unwrap();
+        let layout_node = layout.get(dom.current()).unwrap();
         let viewport = layout.viewport();
 
         for glyph in text_layout.glyphs() {
@@ -226,7 +224,6 @@ impl Widget for TextWidget {
 impl fmt::Debug for TextWidget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TextComponent")
-            .field("index", &self.index)
             .field("props", &self.props)
             .field("layout", &"(no debug impl)")
             .finish()

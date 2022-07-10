@@ -36,7 +36,6 @@ impl Button {
 
 #[derive(Debug)]
 pub struct ButtonWidget {
-    index: Index,
     props: Button,
     hovering: bool,
     mouse_down: bool,
@@ -53,9 +52,8 @@ impl Widget for ButtonWidget {
     type Props = Button;
     type Response = ButtonResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
+    fn new(_index: Index, props: Self::Props) -> Self {
         Self {
-            index,
             props,
             hovering: false,
             mouse_down: false,
@@ -72,7 +70,7 @@ impl Widget for ButtonWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
         for &child in &node.children {
             layout.calculate(dom, child, constraints);
         }
@@ -81,7 +79,7 @@ impl Widget for ButtonWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = layout.get(self.index).unwrap();
+        let node = layout.get(dom.current()).unwrap();
         let viewport = layout.viewport();
         let size = node.rect.size() / viewport.size();
         let pos = (node.rect.pos() + viewport.pos()) / viewport.size();
@@ -98,7 +96,7 @@ impl Widget for ButtonWidget {
         rect.color = color;
         paint.add_rect(rect);
 
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
         for &child in &node.children {
             paint.paint(dom, layout, child);
         }

@@ -24,7 +24,6 @@ impl Padding {
 
 #[derive(Debug)]
 pub struct PaddingWidget {
-    index: Index,
     props: Padding,
 }
 
@@ -34,8 +33,8 @@ impl Widget for PaddingWidget {
     type Props = Padding;
     type Response = PadResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+    fn new(_index: Index, props: Self::Props) -> Self {
+        Self { props }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -43,7 +42,7 @@ impl Widget for PaddingWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
 
         let mut self_size = Vec2::ZERO;
 
@@ -67,8 +66,7 @@ impl Widget for PaddingWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get(self.index).unwrap();
-
+        let node = dom.get_current();
         for &child in &node.children {
             paint.paint(dom, layout, child);
         }

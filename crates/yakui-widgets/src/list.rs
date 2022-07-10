@@ -11,7 +11,6 @@ pub struct List {
 
 #[derive(Debug)]
 pub struct ListWidget {
-    index: Index,
     props: List,
 }
 
@@ -21,8 +20,8 @@ impl Widget for ListWidget {
     type Props = List;
     type Response = ListResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+    fn new(_index: Index, props: Self::Props) -> Self {
+        Self { props }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -30,7 +29,7 @@ impl Widget for ListWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
 
         let item_spacing = match self.props.direction {
             Direction::Down => Vec2::new(0.0, self.props.item_spacing),
@@ -89,8 +88,7 @@ impl Widget for ListWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get(self.index).unwrap();
-
+        let node = dom.get_current();
         for &child in &node.children {
             paint.paint(dom, layout, child);
         }

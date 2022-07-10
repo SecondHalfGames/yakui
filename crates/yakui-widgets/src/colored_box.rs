@@ -11,7 +11,6 @@ pub struct ColoredBox {
 
 #[derive(Debug)]
 pub struct ColoredBoxWidget {
-    index: Index,
     props: ColoredBox,
 }
 
@@ -21,8 +20,8 @@ impl Widget for ColoredBoxWidget {
     type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+    fn new(_index: Index, props: Self::Props) -> Self {
+        Self { props }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -30,7 +29,7 @@ impl Widget for ColoredBoxWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
 
         let mut self_size = Vec2::ZERO;
 
@@ -42,8 +41,8 @@ impl Widget for ColoredBoxWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get(self.index).unwrap();
-        let layout_node = layout.get(self.index).unwrap();
+        let node = dom.get_current();
+        let layout_node = layout.get(dom.current()).unwrap();
         let viewport = layout.viewport();
         let size = layout_node.rect.size() / viewport.size();
         let pos = (layout_node.rect.pos() + viewport.pos()) / viewport.size();

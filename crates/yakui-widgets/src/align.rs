@@ -10,7 +10,6 @@ pub struct Align {
 
 #[derive(Debug)]
 pub struct AlignComponent {
-    index: Index,
     props: Align,
 }
 
@@ -20,8 +19,8 @@ impl Widget for AlignComponent {
     type Props = Align;
     type Response = AlignResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+    fn new(_index: Index, props: Self::Props) -> Self {
+        Self { props }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -29,7 +28,7 @@ impl Widget for AlignComponent {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get(self.index).unwrap();
+        let node = dom.get_current();
 
         let self_size = input.max;
         let align = self.props.alignment.as_vec2();
@@ -43,8 +42,7 @@ impl Widget for AlignComponent {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get(self.index).unwrap();
-
+        let node = dom.get_current();
         for &child in &node.children {
             paint.paint(dom, layout, child);
         }

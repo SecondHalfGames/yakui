@@ -13,7 +13,6 @@ pub struct Image {
 
 #[derive(Debug)]
 pub struct ImageWidget {
-    index: Index,
     props: Image,
 }
 
@@ -23,8 +22,8 @@ impl Widget for ImageWidget {
     type Props = Image;
     type Response = ImageResponse;
 
-    fn new(index: Index, props: Self::Props) -> Self {
-        Self { index, props }
+    fn new(_index: Index, props: Self::Props) -> Self {
+        Self { props }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -35,8 +34,8 @@ impl Widget for ImageWidget {
         input.constrain(self.props.size)
     }
 
-    fn paint(&self, _dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
-        let layout_node = layout.get(self.index).unwrap();
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
+        let layout_node = layout.get(dom.current()).unwrap();
         let viewport = layout.viewport();
         let size = layout_node.rect.size() / viewport.size();
         let pos = (layout_node.rect.pos() + viewport.pos()) / viewport.size();

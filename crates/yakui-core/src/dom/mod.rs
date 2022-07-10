@@ -66,6 +66,13 @@ impl Dom {
         stack.last().copied().unwrap_or(dom.root)
     }
 
+    pub fn get_current(&self) -> Ref<'_, DomNode> {
+        let dom = self.inner.borrow();
+        let index = dom.current_widget();
+
+        Ref::map(dom, |dom| dom.nodes.get(index).unwrap())
+    }
+
     pub fn get(&self, index: Index) -> Option<Ref<'_, DomNode>> {
         let dom = self.inner.borrow();
 
@@ -169,8 +176,13 @@ impl DomInner {
         }
     }
 
+    fn current_widget(&self) -> Index {
+        let stack = self.stack.borrow();
+        stack.last().copied().unwrap_or(self.root)
+    }
+
     fn next_widget(&mut self) -> Index {
-        let parent_index = self.stack.borrow().last().copied().unwrap_or(self.root);
+        let parent_index = self.current_widget();
 
         let parent = self.nodes.get_mut(parent_index).unwrap();
         if parent.next_child < parent.children.len() {
