@@ -19,29 +19,14 @@ pub struct Dom {
 struct DomInner {
     nodes: Arena<DomNode>,
     root: Index,
-
-    color: bool,
     stack: Vec<Index>,
-
     global_state: AnyMap,
 }
 
 pub struct DomNode {
     pub widget: Box<dyn ErasedWidget>,
     pub children: Vec<Index>,
-
-    build_index: usize,
-    color: bool,
-}
-
-impl DomNode {
-    pub fn set_color(&mut self, color: bool) {
-        if self.color != color {
-            self.build_index = 0;
-        }
-
-        self.color = color;
-    }
+    next_child: usize,
 }
 
 impl Dom {
@@ -54,7 +39,9 @@ impl Dom {
     pub fn start(&self) {
         let mut dom = self.inner.borrow_mut();
 
-        dom.color = !dom.color;
+        let root = dom.root;
+        let root = dom.nodes.get_mut(root).unwrap();
+        root.next_child = 0;
     }
 
     pub fn root(&self) -> Index {
@@ -110,23 +97,21 @@ impl Dom {
         let parent_index = dom.stack.last().copied().unwrap_or(dom.root);
 
         let parent = dom.nodes.get_mut(parent_index).unwrap();
-        parent.set_color(dom.color);
 
-        let index = if parent.build_index < parent.children.len() {
-            let index = parent.children[parent.build_index];
-            parent.build_index += 1;
+        let index = if parent.next_child < parent.children.len() {
+            let index = parent.children[parent.next_child];
+            parent.next_child += 1;
             index
         } else {
             let index = dom.nodes.insert(DomNode {
                 widget: Box::new(DummyWidget),
                 children: Vec::new(),
-                build_index: 0,
-                color: dom.color,
+                next_child: 0,
             });
 
             let parent = dom.nodes.get_mut(parent_index).unwrap();
             parent.children.push(index);
-            parent.build_index += 1;
+            parent.next_child += 1;
             index
         };
 
@@ -151,7 +136,6 @@ impl Dom {
         dom.trim_children(index);
 
         let node = dom.nodes.get_mut(index).unwrap();
-
         node.widget.as_mut().downcast_mut::<T>().unwrap().respond()
     }
 }
@@ -162,8 +146,7 @@ impl DomInner {
         let root = nodes.insert(DomNode {
             widget: Box::new(DummyWidget),
             children: Vec::new(),
-            build_index: 0,
-            color: false,
+            next_child: 0,
         });
 
         nodes.get_mut(root).unwrap().widget = Box::new(RootWidget::new(root, ()));
@@ -171,10 +154,7 @@ impl DomInner {
         Self {
             nodes,
             root,
-
-            color: false,
             stack: Vec::new(),
-
             global_state: AnyMap::new(),
         }
     }
@@ -188,6 +168,8 @@ impl DomInner {
         } else {
             node.widget = Box::new(T::new(index, props));
         }
+
+        node.next_child = 0;
     }
 
     /// Remove children from the given node that weren't present in the latest
@@ -195,19 +177,41 @@ impl DomInner {
     fn trim_children(&mut self, index: Index) {
         let node = self.nodes.get_mut(index).unwrap();
 
-        if node.build_index < node.children.len() {
+        if node.next_child < node.children.len() {
             let mut queue = VecDeque::new();
-            let to_drop = &node.children[node.build_index..];
+            let to_drop = &node.children[node.next_child..];
             queue.extend(to_drop);
 
-            node.children.truncate(node.build_index);
+            node.children.truncate(node.next_child);
 
-            while let Some(index) = queue.pop_front() {
-                let node = self.nodes.remove(index).unwrap();
-                queue.extend(node.children);
-
-                println!("Dropping {}", index.slot());
+            while let Some(child_index) = queue.pop_front() {
+                let child = self.nodes.remove(child_index).unwrap();
+                queue.extend(child.children);
             }
         }
+    }
+
+    #[allow(unused)]
+    fn debug_tree(&self) -> String {
+        use std::fmt::Write;
+
+        let mut output = String::new();
+        let mut visit = VecDeque::new();
+        visit.push_back((self.root, 0));
+
+        while let Some((index, depth)) = visit.pop_back() {
+            let indent = "  ".repeat(depth);
+            let node = self.nodes.get(index).unwrap();
+            let slot = index.slot();
+            let children: Vec<_> = node.children.iter().map(|child| child.slot()).collect();
+
+            writeln!(output, "{indent}{slot} ({children:?})").unwrap();
+
+            for &child in node.children.iter().rev() {
+                visit.push_back((child, depth + 1));
+            }
+        }
+
+        output
     }
 }
