@@ -159,25 +159,30 @@ impl Widget for TextWidget {
         self.props = props;
     }
 
-    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn layout(&self, _dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let global = &self.props.global;
 
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
-            max_width: Some(input.max.x),
-            max_height: Some(input.max.y),
+            max_width: Some(input.max.x * layout.scale_factor()),
+            max_height: Some(input.max.y * layout.scale_factor()),
             ..LayoutSettings::default()
         });
 
         text_layout.append(
             &[global.default_font.as_ref()],
-            &TextStyle::new(&self.props.text, self.props.font_size, 0),
+            &TextStyle::new(
+                &self.props.text,
+                self.props.font_size * layout.scale_factor(),
+                0,
+            ),
         );
 
         let mut size = Vec2::ZERO;
 
         for glyph in text_layout.glyphs() {
-            let max = Vec2::new(glyph.x + glyph.width as f32, glyph.y + glyph.height as f32);
+            let max = Vec2::new(glyph.x + glyph.width as f32, glyph.y + glyph.height as f32)
+                / layout.scale_factor();
             size = size.max(max);
         }
 
@@ -191,18 +196,21 @@ impl Widget for TextWidget {
         glyph_cache.ensure_texture(paint);
 
         let layout_node = layout.get(self.index).unwrap();
-        let viewport = layout.viewport;
+        let viewport = layout.viewport();
 
         for glyph in text_layout.glyphs() {
-            let source_rect =
-                glyph_cache.get_or_insert(paint, &self.props.global.default_font, glyph.key);
-
-            let size = Vec2::new(glyph.width as f32, glyph.height as f32) / viewport.size();
-            let pos = (layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) + viewport.pos())
-                / viewport.size();
-            let tex_rect = source_rect
+            let tex_rect = glyph_cache
+                .get_or_insert(paint, &self.props.global.default_font, glyph.key)
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
+
+            let size = Vec2::new(glyph.width as f32, glyph.height as f32)
+                / layout.scale_factor()
+                / viewport.size();
+            let pos = (layout_node.rect.pos()
+                + Vec2::new(glyph.x, glyph.y) / layout.scale_factor()
+                + viewport.pos())
+                / viewport.size();
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
             rect.color = Color3::WHITE;

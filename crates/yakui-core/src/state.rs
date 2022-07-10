@@ -42,7 +42,7 @@ impl State {
 
         match event {
             Event::SetViewport(viewport) => {
-                self.layout.viewport = viewport;
+                self.layout.set_unscaled_viewport(viewport);
             }
             Event::MoveMouse(pos) => {
                 self.input.mouse_position = Some(pos);
@@ -74,7 +74,8 @@ impl State {
         mouse_hit.clear();
         self.last_mouse_hit = take(&mut self.mouse_hit);
 
-        if let Some(mouse_pos) = self.input.mouse_position {
+        if let Some(mut mouse_pos) = self.input.mouse_position {
+            mouse_pos /= self.layout.scale_factor();
             hit_test(dom, &self.layout, mouse_pos, &mut mouse_hit);
         }
         self.mouse_hit = mouse_hit;
@@ -122,6 +123,10 @@ impl State {
 
     pub fn textures(&self) -> impl Iterator<Item = (Index, &Texture)> {
         self.paint.textures()
+    }
+
+    pub fn set_scale_factor(&mut self, factor: f32) {
+        self.layout.set_scale_factor(factor);
     }
 }
 

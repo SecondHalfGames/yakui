@@ -8,7 +8,9 @@ use crate::geometry::{Constraints, Rect};
 
 #[derive(Debug)]
 pub struct LayoutDom {
-    pub viewport: Rect,
+    viewport: Rect,
+    scaled_viewport: Rect,
+    scale_factor: f32,
     nodes: Arena<LayoutDomNode>,
 }
 
@@ -20,7 +22,9 @@ pub struct LayoutDomNode {
 impl LayoutDom {
     pub fn new() -> Self {
         Self {
-            viewport: Rect::ZERO,
+            viewport: Rect::ONE,
+            scaled_viewport: Rect::ONE,
+            scale_factor: 1.0,
             nodes: Arena::new(),
         }
     }
@@ -37,10 +41,30 @@ impl LayoutDom {
         self.nodes.get_mut(index)
     }
 
+    pub fn set_unscaled_viewport(&mut self, view: Rect) {
+        self.viewport = view;
+        self.scaled_viewport = Rect::from_pos_size(view.pos(), view.size() / self.scale_factor);
+    }
+
+    pub fn set_scale_factor(&mut self, scale: f32) {
+        self.scale_factor = scale;
+
+        let view = self.viewport;
+        self.scaled_viewport = Rect::from_pos_size(view.pos(), view.size() / self.scale_factor);
+    }
+
+    pub fn scale_factor(&self) -> f32 {
+        self.scale_factor
+    }
+
+    pub fn viewport(&self) -> Rect {
+        self.scaled_viewport
+    }
+
     pub fn calculate_all(&mut self, dom: &Dom) {
         let constraints = Constraints {
             min: Vec2::ZERO,
-            max: self.viewport.size(),
+            max: self.viewport.size() / self.scale_factor,
         };
 
         self.calculate(dom, dom.root(), constraints);

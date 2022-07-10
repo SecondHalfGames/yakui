@@ -41,7 +41,8 @@ async fn run() {
     let mut yak = yakui::State::new();
     let mut yak_renderer =
         yakui_wgpu::State::new(&graphics.device, &graphics.queue, graphics.surface_format());
-    let mut yak_window = yakui_winit::State::new();
+    let mut yak_window = yakui_winit::State::new(&window);
+    // yak_window.set_automatic_scale_factor(false);
 
     let monkey = yak.create_texture(load_texture(MONKEY_PNG));
     let mut state = AppState { time: 0.0, monkey };

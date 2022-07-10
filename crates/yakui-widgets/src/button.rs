@@ -73,7 +73,7 @@ impl Widget for ButtonWidget {
 
     fn paint(&self, _dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let node = layout.get(self.index).unwrap();
-        let viewport = layout.viewport;
+        let viewport = layout.viewport();
         let size = node.rect.size() / viewport.size();
         let pos = (node.rect.pos() + viewport.pos()) / viewport.size();
 

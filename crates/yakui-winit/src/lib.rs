@@ -1,19 +1,42 @@
 use winit::event::{
     ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
 };
+use winit::window::Window;
 use yakui_core::{Event, MouseButton, Rect, Vec2};
 
 #[non_exhaustive]
-pub struct State {}
+pub struct State {
+    auto_scale: bool,
+    unapplied_scale: Option<f32>,
+}
 
 impl State {
     #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(window: &Window) -> Self {
+        let unapplied_scale = Some(window.scale_factor() as f32);
+
+        Self {
+            auto_scale: true,
+            unapplied_scale,
+        }
+    }
+
+    /// Configure whether scale factor (ie DPI) should be automatically applied
+    /// from the window to scale the yakui UI.
+    ///
+    /// Defaults to `true`.
+    pub fn set_automatic_scale_factor(&mut self, enabled: bool) {
+        self.auto_scale = enabled;
     }
 
     // TODO: How do we determine if an input event should be sunk by the UI?
     pub fn handle_event<T>(&mut self, state: &mut yakui_core::State, event: &WinitEvent<T>) {
+        if let Some(scale) = self.unapplied_scale {
+            if self.auto_scale {
+                state.set_scale_factor(scale);
+            }
+        }
+
         #[allow(clippy::single_match)]
         match event {
             WinitEvent::WindowEvent {
@@ -26,6 +49,14 @@ impl State {
                 );
 
                 state.handle_event(Event::SetViewport(rect));
+            }
+            WinitEvent::WindowEvent {
+                event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
+                ..
+            } => {
+                if self.auto_scale {
+                    state.set_scale_factor(*scale_factor as f32);
+                }
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::CursorMoved { position, .. },

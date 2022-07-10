@@ -37,7 +37,7 @@ impl Widget for ImageWidget {
 
     fn paint(&self, _dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
         let layout_node = layout.get(self.index).unwrap();
-        let viewport = layout.viewport;
+        let viewport = layout.viewport();
         let size = layout_node.rect.size() / viewport.size();
         let pos = (layout_node.rect.pos() + viewport.pos()) / viewport.size();
 
