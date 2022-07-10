@@ -36,12 +36,14 @@ pub trait Widget: Any + fmt::Debug {
     fn update(&mut self, props: Self::Props);
     fn respond(&mut self) -> Self::Response;
 
+    fn children(&self) {}
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 
 pub trait ErasedWidget: Any {
+    fn children(&self) {}
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, event: &WidgetEvent);
@@ -53,6 +55,11 @@ impl<T> ErasedWidget for T
 where
     T: Widget,
 {
+    #[inline]
+    fn children(&self) {
+        <T as Widget>::children(self)
+    }
+
     #[inline]
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Widget>::layout(self, dom, layout, constraints)
