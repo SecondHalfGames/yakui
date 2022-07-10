@@ -166,7 +166,7 @@ impl DomInner {
             next_child: 0,
         });
 
-        nodes.get_mut(root).unwrap().widget = Box::new(RootWidget::new(root, ()));
+        nodes.get_mut(root).unwrap().widget = Box::new(RootWidget);
 
         Self {
             nodes,
@@ -210,7 +210,7 @@ impl DomInner {
             let widget = node.widget.downcast_mut::<T>().unwrap();
             widget.update(props);
         } else {
-            node.widget = Box::new(T::new(index, props));
+            node.widget = Box::new(T::new(props));
         }
 
         node.next_child = 0;

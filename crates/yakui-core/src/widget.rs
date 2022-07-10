@@ -2,7 +2,6 @@ use std::any::{Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
-use thunderdome::Index;
 
 use crate::dom::Dom;
 use crate::event::WidgetEvent;
@@ -32,7 +31,7 @@ pub trait Widget: Any + fmt::Debug {
     type Props: Props;
     type Response;
 
-    fn new(index: Index, props: Self::Props) -> Self;
+    fn new(props: Self::Props) -> Self;
     fn update(&mut self, props: Self::Props);
     fn respond(&mut self) -> Self::Response;
 
@@ -93,7 +92,7 @@ impl Widget for DummyWidget {
     type Response = ();
 
     #[inline]
-    fn new(_index: Index, _props: Self::Props) -> Self {
+    fn new(_props: Self::Props) -> Self {
         Self
     }
 

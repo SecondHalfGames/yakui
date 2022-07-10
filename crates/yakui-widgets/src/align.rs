@@ -1,5 +1,5 @@
 use yakui_core::paint::PaintDom;
-use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Index, Vec2, Widget};
+use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::{util::widget_children, Alignment};
 
@@ -19,7 +19,7 @@ impl Widget for AlignComponent {
     type Props = Align;
     type Response = AlignResponse;
 
-    fn new(_index: Index, props: Self::Props) -> Self {
+    fn new(props: Self::Props) -> Self {
         Self { props }
     }
 

@@ -144,7 +144,7 @@ impl Widget for TextWidget {
     type Props = Text;
     type Response = TextResponse;
 
-    fn new(_index: Index, props: Self::Props) -> Self {
+    fn new(props: Self::Props) -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Self {

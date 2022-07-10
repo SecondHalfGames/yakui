@@ -1,7 +1,7 @@
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
 use yakui_core::{
-    dom::Dom, layout::LayoutDom, Color3, Constraints, Index, MouseButton, Vec2, Widget, WidgetEvent,
+    dom::Dom, layout::LayoutDom, Color3, Constraints, MouseButton, Vec2, Widget, WidgetEvent,
 };
 
 use crate::util::widget;
@@ -52,7 +52,7 @@ impl Widget for ButtonWidget {
     type Props = Button;
     type Response = ButtonResponse;
 
-    fn new(_index: Index, props: Self::Props) -> Self {
+    fn new(props: Self::Props) -> Self {
         Self {
             props,
             hovering: false,

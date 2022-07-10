@@ -22,7 +22,7 @@ impl Widget for ImageWidget {
     type Props = Image;
     type Response = ImageResponse;
 
-    fn new(_index: Index, props: Self::Props) -> Self {
+    fn new(props: Self::Props) -> Self {
         Self { props }
     }
 

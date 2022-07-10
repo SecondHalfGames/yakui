@@ -1,6 +1,6 @@
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
-use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Index, Vec2, Widget};
+use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Vec2, Widget};
 
 use crate::util::widget_children;
 
@@ -20,7 +20,7 @@ impl Widget for ColoredBoxWidget {
     type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
-    fn new(_index: Index, props: Self::Props) -> Self {
+    fn new(props: Self::Props) -> Self {
         Self { props }
     }
 
