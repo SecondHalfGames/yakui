@@ -16,7 +16,7 @@ struct ViewTree<'a>(&'a Dom);
 impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dom = &self.0;
-        let iter = dom.tree.iter().map(|(index, node)| {
+        let iter = dom.nodes.iter().map(|(index, node)| {
             let debug = node.widget.as_debug();
 
             let children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();

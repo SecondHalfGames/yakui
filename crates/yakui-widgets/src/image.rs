@@ -12,14 +12,14 @@ pub struct Image {
 }
 
 #[derive(Debug)]
-pub struct ImageComponent {
+pub struct ImageWidget {
     index: Index,
     props: Image,
 }
 
 pub type ImageResponse = ();
 
-impl Widget for ImageComponent {
+impl Widget for ImageWidget {
     type Props = Image;
     type Response = ImageResponse;
 
@@ -51,5 +51,5 @@ impl Widget for ImageComponent {
 }
 
 pub fn image(image: Index, size: Vec2) -> ImageResponse {
-    widget::<ImageComponent>(Image { image, size })
+    widget::<ImageWidget>(Image { image, size })
 }

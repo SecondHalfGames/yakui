@@ -133,7 +133,7 @@ pub struct Text {
     global: TextGlobalState,
 }
 
-pub struct TextComponent {
+pub struct TextWidget {
     index: Index,
     props: Text,
     layout: RefCell<Layout>,
@@ -141,7 +141,7 @@ pub struct TextComponent {
 
 pub type TextResponse = ();
 
-impl Widget for TextComponent {
+impl Widget for TextWidget {
     type Props = Text;
     type Response = TextResponse;
 
@@ -215,7 +215,7 @@ impl Widget for TextComponent {
     fn respond(&mut self) -> Self::Response {}
 }
 
-impl fmt::Debug for TextComponent {
+impl fmt::Debug for TextWidget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TextComponent")
             .field("index", &self.index)
@@ -234,7 +234,7 @@ pub fn text<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> TextResponse
         .get_global_state_or_insert_with::<TextGlobalState, _>(TextGlobalState::new)
         .clone();
 
-    dom.do_widget::<TextComponent>(Text {
+    dom.do_widget::<TextWidget>(Text {
         text: text.into(),
         font_size,
         global,

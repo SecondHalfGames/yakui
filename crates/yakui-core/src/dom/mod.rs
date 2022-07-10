@@ -9,7 +9,7 @@ use thunderdome::{Arena, Index};
 use crate::widget::{DummyWidget, ErasedWidget, Widget};
 
 pub struct Dom {
-    tree: Arena<DomNode>,
+    nodes: Arena<DomNode>,
     roots: Vec<Index>,
 
     color: bool,
@@ -22,6 +22,7 @@ pub struct Dom {
 pub struct DomNode {
     pub widget: Box<dyn ErasedWidget>,
     pub children: Vec<Index>,
+
     build_index: usize,
     color: bool,
 }
@@ -39,7 +40,7 @@ impl DomNode {
 impl Dom {
     pub fn new() -> Self {
         Self {
-            tree: Arena::new(),
+            nodes: Arena::new(),
             roots: Vec::new(),
 
             color: false,
@@ -65,7 +66,7 @@ impl Dom {
 
         let index = match parent {
             Some(&parent_index) => {
-                let parent = self.tree.get_mut(parent_index).unwrap();
+                let parent = self.nodes.get_mut(parent_index).unwrap();
                 parent.set_color(self.color);
 
                 if parent.build_index < parent.children.len() {
@@ -73,14 +74,14 @@ impl Dom {
                     parent.build_index += 1;
                     index
                 } else {
-                    let index = self.tree.insert(DomNode {
+                    let index = self.nodes.insert(DomNode {
                         widget: Box::new(DummyWidget),
                         children: Vec::new(),
                         build_index: 0,
                         color: self.color,
                     });
 
-                    let parent = self.tree.get_mut(parent_index).unwrap();
+                    let parent = self.nodes.get_mut(parent_index).unwrap();
                     parent.children.push(index);
                     parent.build_index += 1;
                     index
@@ -92,7 +93,7 @@ impl Dom {
                     self.build_index += 1;
                     index
                 } else {
-                    let index = self.tree.insert(DomNode {
+                    let index = self.nodes.insert(DomNode {
                         widget: Box::new(DummyWidget),
                         children: Vec::new(),
                         build_index: 0,
@@ -107,7 +108,7 @@ impl Dom {
 
         self.stack.push(index);
 
-        let node = self.tree.get_mut(index).unwrap();
+        let node = self.nodes.get_mut(index).unwrap();
         if node.widget.as_ref().type_id() == TypeId::of::<T>() {
             let widget = node.widget.downcast_mut::<T>().unwrap();
             widget.update(props);
@@ -130,7 +131,7 @@ impl Dom {
 
         self.trim_children(index);
 
-        let node = self.tree.get_mut(index).unwrap();
+        let node = self.nodes.get_mut(index).unwrap();
 
         node.widget.as_mut().downcast_mut::<T>().unwrap().respond()
     }
@@ -150,7 +151,7 @@ impl Dom {
     /// Remove children from the given node that weren't present in the latest
     /// traversal through the tree.
     fn trim_children(&mut self, index: Index) {
-        let node = self.tree.get_mut(index).unwrap();
+        let node = self.nodes.get_mut(index).unwrap();
 
         if node.build_index < node.children.len() {
             let mut queue = VecDeque::new();
@@ -160,7 +161,7 @@ impl Dom {
             node.children.truncate(self.build_index);
 
             while let Some(index) = queue.pop_front() {
-                let node = self.tree.remove(index).unwrap();
+                let node = self.nodes.remove(index).unwrap();
                 queue.extend(node.children);
             }
         }
@@ -171,10 +172,10 @@ impl Dom {
     }
 
     pub fn get(&self, index: Index) -> Option<&DomNode> {
-        self.tree.get(index)
+        self.nodes.get(index)
     }
 
     pub fn get_mut(&mut self, index: Index) -> Option<&mut DomNode> {
-        self.tree.get_mut(index)
+        self.nodes.get_mut(index)
     }
 }

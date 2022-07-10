@@ -10,14 +10,14 @@ pub struct List {
 }
 
 #[derive(Debug)]
-pub struct ListComponent {
+pub struct ListWidget {
     index: Index,
     props: List,
 }
 
 pub type ListResponse = ();
 
-impl Widget for ListComponent {
+impl Widget for ListWidget {
     type Props = List;
     type Response = ListResponse;
 
@@ -101,7 +101,7 @@ impl Widget for ListComponent {
 }
 
 pub fn column<F: FnOnce()>(children: F) -> ListResponse {
-    widget_children::<ListComponent, _>(
+    widget_children::<ListWidget, _>(
         children,
         List {
             direction: Direction::Down,
@@ -111,7 +111,7 @@ pub fn column<F: FnOnce()>(children: F) -> ListResponse {
 }
 
 pub fn row<F: FnOnce()>(children: F) -> ListResponse {
-    widget_children::<ListComponent, _>(
+    widget_children::<ListWidget, _>(
         children,
         List {
             direction: Direction::Right,

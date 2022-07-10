@@ -23,14 +23,14 @@ impl Padding {
 }
 
 #[derive(Debug)]
-pub struct PaddingComponent {
+pub struct PaddingWidget {
     index: Index,
     props: Padding,
 }
 
 pub type PadResponse = ();
 
-impl Widget for PaddingComponent {
+impl Widget for PaddingWidget {
     type Props = Padding;
     type Response = PadResponse;
 
@@ -79,5 +79,5 @@ impl Widget for PaddingComponent {
 }
 
 pub fn pad<F: FnOnce()>(props: Padding, children: F) -> PadResponse {
-    widget_children::<PaddingComponent, _>(children, props)
+    widget_children::<PaddingWidget, _>(children, props)
 }

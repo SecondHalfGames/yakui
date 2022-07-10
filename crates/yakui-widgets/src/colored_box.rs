@@ -10,14 +10,14 @@ pub struct ColoredBox {
 }
 
 #[derive(Debug)]
-pub struct ColoredBoxComponent {
+pub struct ColoredBoxWidget {
     index: Index,
     props: ColoredBox,
 }
 
 pub type ColoredBoxResponse = ();
 
-impl Widget for ColoredBoxComponent {
+impl Widget for ColoredBoxWidget {
     type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
@@ -62,5 +62,5 @@ impl Widget for ColoredBoxComponent {
 }
 
 pub fn colored_box<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
-    widget_children::<ColoredBoxComponent, _>(children, ColoredBox { color })
+    widget_children::<ColoredBoxWidget, _>(children, ColoredBox { color })
 }

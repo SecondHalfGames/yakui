@@ -35,7 +35,7 @@ impl Button {
 }
 
 #[derive(Debug)]
-pub struct ButtonComponent {
+pub struct ButtonWidget {
     index: Index,
     props: Button,
     hovering: bool,
@@ -49,7 +49,7 @@ pub struct ButtonResponse {
     pub clicked: bool,
 }
 
-impl Widget for ButtonComponent {
+impl Widget for ButtonWidget {
     type Props = Button;
     type Response = ButtonResponse;
 
@@ -122,5 +122,5 @@ impl Widget for ButtonComponent {
 }
 
 pub fn button(props: Button) -> ButtonResponse {
-    widget::<ButtonComponent>(props)
+    widget::<ButtonWidget>(props)
 }
