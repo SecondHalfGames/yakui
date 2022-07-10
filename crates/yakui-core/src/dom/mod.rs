@@ -109,7 +109,8 @@ impl Dom {
 
         let node = self.tree.get_mut(index).unwrap();
         if node.component.as_ref().type_id() == TypeId::of::<T>() {
-            node.component.update(&props);
+            let component = node.component.downcast_mut::<T>().unwrap();
+            component.update(props);
         } else {
             node.component = Box::new(T::new(index, props));
         }

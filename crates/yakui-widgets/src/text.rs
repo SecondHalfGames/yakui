@@ -155,8 +155,8 @@ impl Component for TextComponent {
         }
     }
 
-    fn update(&mut self, props: &Self::Props) {
-        self.props = props.clone();
+    fn update(&mut self, props: Self::Props) {
+        self.props = props;
     }
 
     fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {

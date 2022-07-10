@@ -24,8 +24,8 @@ impl Component for AlignComponent {
         Self { index, props }
     }
 
-    fn update(&mut self, props: &Self::Props) {
-        self.props = props.clone();
+    fn update(&mut self, props: Self::Props) {
+        self.props = props;
     }
 
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {

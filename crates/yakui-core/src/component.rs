@@ -1,4 +1,4 @@
-use std::any::{type_name, Any, TypeId};
+use std::any::{Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
@@ -33,7 +33,7 @@ pub trait Component: Any + fmt::Debug {
     type Response;
 
     fn new(index: Index, props: Self::Props) -> Self;
-    fn update(&mut self, props: &Self::Props);
+    fn update(&mut self, props: Self::Props);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn respond(&mut self) -> Self::Response;
@@ -42,7 +42,6 @@ pub trait Component: Any + fmt::Debug {
 }
 
 pub trait ErasedComponent: Any {
-    fn update(&mut self, props: &dyn ErasedProps);
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn event(&mut self, event: &ComponentEvent);
@@ -54,15 +53,6 @@ impl<T> ErasedComponent for T
 where
     T: Component,
 {
-    #[inline]
-    fn update(&mut self, props: &dyn ErasedProps) {
-        let props = props
-            .downcast_ref::<T::Props>()
-            .unwrap_or_else(|| panic!("Type mixup: unexpected {}", type_name::<T::Props>()));
-
-        <T as Component>::update(self, props);
-    }
-
     #[inline]
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Component>::size(self, dom, layout, constraints)
@@ -109,7 +99,7 @@ impl Component for DummyComponent {
     }
 
     #[inline]
-    fn update(&mut self, _props: &Self::Props) {}
+    fn update(&mut self, _props: Self::Props) {}
 
     #[inline]
     fn event(&mut self, _event: &ComponentEvent) {}
