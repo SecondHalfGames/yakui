@@ -6,7 +6,7 @@ impl fmt::Debug for Dom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Dom")
             .field("roots", &self.roots)
-            .field("tree", &ViewTree(self))
+            .field("nodes", &ViewTree(self))
             .finish()
     }
 }
