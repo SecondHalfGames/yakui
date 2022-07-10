@@ -1,5 +1,4 @@
 use crate::layout::LayoutDom;
-use crate::paint::PaintDom;
 use crate::{Constraints, Widget};
 
 use super::Dom;
@@ -26,14 +25,5 @@ impl Widget for RootWidget {
         }
 
         constraints.max
-    }
-
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
-
-        for &child in &node.children {
-            let child = dom.get(child).unwrap();
-            child.widget.paint(dom, layout, paint);
-        }
     }
 }
