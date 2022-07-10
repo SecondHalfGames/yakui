@@ -43,10 +43,7 @@ impl LayoutDom {
             max: self.viewport.size(),
         };
 
-        for &index in &*dom.roots() {
-            self.calculate(dom, index, constraints);
-        }
-
+        self.calculate(dom, dom.root(), constraints);
         self.resolve_positions(dom);
     }
 
@@ -71,7 +68,7 @@ impl LayoutDom {
     fn resolve_positions(&mut self, dom: &Dom) {
         let mut queue = VecDeque::new();
 
-        queue.extend(dom.roots().iter().map(|&index| (index, Vec2::ZERO)));
+        queue.push_back((dom.root(), Vec2::ZERO));
 
         while let Some((index, parent_pos)) = queue.pop_front() {
             if let Some(layout_node) = self.nodes.get_mut(index) {

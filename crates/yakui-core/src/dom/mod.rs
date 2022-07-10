@@ -1,4 +1,5 @@
 mod debug;
+mod root;
 
 use std::any::{Any, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
@@ -9,17 +10,18 @@ use thunderdome::{Arena, Index};
 
 use crate::widget::{DummyWidget, ErasedWidget, Widget};
 
+use self::root::RootWidget;
+
 pub struct Dom {
     inner: RefCell<DomInner>,
 }
 
 struct DomInner {
     nodes: Arena<DomNode>,
-    roots: Vec<Index>,
+    root: Index,
 
     color: bool,
     stack: Vec<Index>,
-    build_index: usize,
 
     global_state: AnyMap,
 }
@@ -53,13 +55,16 @@ impl Dom {
         let mut dom = self.inner.borrow_mut();
 
         dom.color = !dom.color;
-        dom.build_index = 0;
     }
 
-    pub fn roots(&self) -> Ref<'_, [Index]> {
+    pub fn root(&self) -> Index {
         let dom = self.inner.borrow();
+        dom.root
+    }
 
-        Ref::map(dom, |dom| dom.roots.as_slice())
+    #[deprecated]
+    pub fn roots(&self) -> Ref<'_, [Index]> {
+        todo!()
     }
 
     pub fn get(&self, index: Index) -> Option<Ref<'_, DomNode>> {
@@ -102,48 +107,27 @@ impl Dom {
         let mut dom = self.inner.borrow_mut();
         let dom = &mut *dom;
 
-        let parent = dom.stack.last();
+        let parent_index = dom.stack.last().copied().unwrap_or(dom.root);
 
-        let index = match parent {
-            Some(&parent_index) => {
-                let parent = dom.nodes.get_mut(parent_index).unwrap();
-                parent.set_color(dom.color);
+        let parent = dom.nodes.get_mut(parent_index).unwrap();
+        parent.set_color(dom.color);
 
-                if parent.build_index < parent.children.len() {
-                    let index = parent.children[parent.build_index];
-                    parent.build_index += 1;
-                    index
-                } else {
-                    let index = dom.nodes.insert(DomNode {
-                        widget: Box::new(DummyWidget),
-                        children: Vec::new(),
-                        build_index: 0,
-                        color: dom.color,
-                    });
+        let index = if parent.build_index < parent.children.len() {
+            let index = parent.children[parent.build_index];
+            parent.build_index += 1;
+            index
+        } else {
+            let index = dom.nodes.insert(DomNode {
+                widget: Box::new(DummyWidget),
+                children: Vec::new(),
+                build_index: 0,
+                color: dom.color,
+            });
 
-                    let parent = dom.nodes.get_mut(parent_index).unwrap();
-                    parent.children.push(index);
-                    parent.build_index += 1;
-                    index
-                }
-            }
-            None => {
-                if dom.build_index < dom.roots.len() {
-                    let index = dom.roots[dom.build_index];
-                    dom.build_index += 1;
-                    index
-                } else {
-                    let index = dom.nodes.insert(DomNode {
-                        widget: Box::new(DummyWidget),
-                        children: Vec::new(),
-                        build_index: 0,
-                        color: dom.color,
-                    });
-                    dom.roots.push(index);
-                    dom.build_index += 1;
-                    index
-                }
-            }
+            let parent = dom.nodes.get_mut(parent_index).unwrap();
+            parent.children.push(index);
+            parent.build_index += 1;
+            index
         };
 
         dom.stack.push(index);
@@ -174,13 +158,22 @@ impl Dom {
 
 impl DomInner {
     fn new() -> Self {
+        let mut nodes = Arena::new();
+        let root = nodes.insert(DomNode {
+            widget: Box::new(DummyWidget),
+            children: Vec::new(),
+            build_index: 0,
+            color: false,
+        });
+
+        nodes.get_mut(root).unwrap().widget = Box::new(RootWidget::new(root, ()));
+
         Self {
-            nodes: Arena::new(),
-            roots: Vec::new(),
+            nodes,
+            root,
 
             color: false,
             stack: Vec::new(),
-            build_index: 0,
 
             global_state: AnyMap::new(),
         }
@@ -202,17 +195,35 @@ impl DomInner {
     fn trim_children(&mut self, index: Index) {
         let node = self.nodes.get_mut(index).unwrap();
 
+        // println!("Trim {}", index.slot());
+        // println!("- Children: {dbg_children:?}");
+        // println!("- Build Index: {}", node.build_index);
+
         if node.build_index < node.children.len() {
+            let dbg_children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
+            println!("Trimming {}", index.slot());
+            println!("Children: {dbg_children:?}");
+            println!(
+                "Dropping {} children",
+                node.children.len() - node.build_index
+            );
+
             let mut queue = VecDeque::new();
             let to_drop = &node.children[node.build_index..];
             queue.extend(to_drop);
 
-            node.children.truncate(self.build_index);
+            node.children.truncate(node.build_index);
 
             while let Some(index) = queue.pop_front() {
                 let node = self.nodes.remove(index).unwrap();
                 queue.extend(node.children);
+
+                println!("Dropping {}", index.slot());
             }
+
+            let node = self.nodes.get(index).unwrap();
+            let dbg_children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
+            println!("Children after trimming: {dbg_children:?}");
         }
     }
 }

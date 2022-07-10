@@ -128,7 +128,7 @@ impl State {
 fn hit_test(dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
     let mut queue = VecDeque::new();
 
-    queue.extend(&*dom.roots());
+    queue.push_back(dom.root());
 
     while let Some(index) = queue.pop_front() {
         let node = dom.get(index).unwrap();

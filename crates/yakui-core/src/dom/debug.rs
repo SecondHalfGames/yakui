@@ -7,7 +7,7 @@ impl fmt::Debug for Dom {
         match self.inner.try_borrow() {
             Ok(inner) => f
                 .debug_struct("Dom")
-                .field("roots", &inner.roots)
+                .field("root", &inner.root)
                 .field("nodes", &ViewTree(&inner))
                 .finish(),
 

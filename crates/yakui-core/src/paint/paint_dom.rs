@@ -42,10 +42,8 @@ impl PaintDom {
     pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom) {
         self.meshes.clear();
 
-        for &node_index in &*dom.roots() {
-            let node = dom.get(node_index).unwrap();
-            node.widget.paint(dom, layout, self);
-        }
+        let node = dom.get(dom.root()).unwrap();
+        node.widget.paint(dom, layout, self);
     }
 
     pub fn create_texture(&mut self, texture: Texture) -> Index {
