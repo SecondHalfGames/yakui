@@ -195,19 +195,7 @@ impl DomInner {
     fn trim_children(&mut self, index: Index) {
         let node = self.nodes.get_mut(index).unwrap();
 
-        // println!("Trim {}", index.slot());
-        // println!("- Children: {dbg_children:?}");
-        // println!("- Build Index: {}", node.build_index);
-
         if node.build_index < node.children.len() {
-            let dbg_children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
-            println!("Trimming {}", index.slot());
-            println!("Children: {dbg_children:?}");
-            println!(
-                "Dropping {} children",
-                node.children.len() - node.build_index
-            );
-
             let mut queue = VecDeque::new();
             let to_drop = &node.children[node.build_index..];
             queue.extend(to_drop);
@@ -220,10 +208,6 @@ impl DomInner {
 
                 println!("Dropping {}", index.slot());
             }
-
-            let node = self.nodes.get(index).unwrap();
-            let dbg_children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
-            println!("Children after trimming: {dbg_children:?}");
         }
     }
 }
