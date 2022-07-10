@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::Rect;
+use yakui_core::paint::PaintDom;
 use yakui_core::{
     dom::Dom, layout::LayoutDom, Color3, Constraints, MouseButton, Vec2, Widget, WidgetEvent,
 };
@@ -72,8 +71,18 @@ impl Widget for ButtonWidget {
     }
 
     fn children(&self) {
-        crate::pad(self.props.padding, || {
-            crate::text(16.0, self.props.text.clone());
+        let mut color = self.props.fill;
+
+        if let (Some(fill), true) = (self.props.down_fill, self.mouse_down) {
+            color = fill
+        } else if let (Some(hover), true) = (self.props.hover_fill, self.hovering) {
+            color = hover
+        }
+
+        crate::colored_box_container(color, || {
+            crate::pad(self.props.padding, || {
+                crate::text(16.0, self.props.text.clone());
+            });
         });
     }
 
@@ -89,23 +98,6 @@ impl Widget for ButtonWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = layout.get(dom.current()).unwrap();
-        let viewport = layout.viewport();
-        let size = node.rect.size() / viewport.size();
-        let pos = (node.rect.pos() + viewport.pos()) / viewport.size();
-
-        let mut color = self.props.fill;
-
-        if let (Some(fill), true) = (self.props.down_fill, self.mouse_down) {
-            color = fill
-        } else if let (Some(hover), true) = (self.props.hover_fill, self.hovering) {
-            color = hover
-        }
-
-        let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
-        rect.color = color;
-        paint.add_rect(rect);
-
         let node = dom.get_current();
         for &child in &node.children {
             paint.paint(dom, layout, child);

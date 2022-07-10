@@ -2,7 +2,7 @@ use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
 use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Vec2, Widget};
 
-use crate::util::widget;
+use crate::util::{widget, widget_children};
 
 #[derive(Debug, Clone)]
 pub struct ColoredBox {
@@ -65,4 +65,14 @@ pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> ColoredBoxResponse 
         color,
         size: size.into(),
     })
+}
+
+pub fn colored_box_container<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
+    widget_children::<ColoredBoxWidget, F>(
+        children,
+        ColoredBox {
+            color,
+            size: Vec2::ZERO,
+        },
+    )
 }
