@@ -4,6 +4,7 @@ mod root;
 use std::any::{Any, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
+use std::mem::replace;
 
 use anymap::AnyMap;
 use thunderdome::{Arena, Index};
@@ -91,12 +92,30 @@ impl Dom {
     }
 
     pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Index {
-        let mut dom = self.inner.borrow_mut();
-        let dom = &mut *dom;
+        let (index, widget) = {
+            let mut dom = self.inner.borrow_mut();
+            let index = dom.next_widget();
+            dom.stack.push(index);
+            dom.update_widget::<T>(index, props);
 
-        let index = dom.next_widget();
-        dom.stack.push(index);
-        dom.update_widget::<T>(index, props);
+            // Component::children needs mutable access to the DOM, so we need
+            // to rip the widget out of the tree so we can release our lock.
+            let node = dom.nodes.get_mut(index).unwrap();
+            let widget = replace(&mut node.widget, Box::new(DummyWidget));
+
+            (index, widget)
+        };
+
+        // Give this widget a chance to create children to take advantage of
+        // composition.
+        widget.children();
+
+        // Quick! Put the widget back, before anyone notices!
+        {
+            let mut dom = self.inner.borrow_mut();
+            let node = dom.nodes.get_mut(index).unwrap();
+            node.widget = widget;
+        }
 
         index
     }
