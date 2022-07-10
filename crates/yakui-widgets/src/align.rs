@@ -42,12 +42,11 @@ impl Widget for AlignComponent {
         self_size
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let node = dom.get(self.index).unwrap();
 
-        for &index in &node.children {
-            let child = dom.get(index).unwrap();
-            child.widget.paint(dom, layout, output);
+        for &child in &node.children {
+            paint.paint(dom, layout, child);
         }
     }
 

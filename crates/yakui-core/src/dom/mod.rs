@@ -20,7 +20,7 @@ pub struct Dom {
 struct DomInner {
     nodes: Arena<DomNode>,
     root: Index,
-    stack: Vec<Index>,
+    stack: RefCell<Vec<Index>>,
     global_state: AnyMap,
 }
 
@@ -50,9 +50,20 @@ impl Dom {
         dom.root
     }
 
-    #[deprecated]
-    pub fn roots(&self) -> Ref<'_, [Index]> {
-        todo!()
+    pub(crate) fn enter(&self, widget: Index) {
+        let dom = self.inner.borrow();
+        dom.stack.borrow_mut().push(widget);
+    }
+
+    pub(crate) fn exit(&self, widget: Index) {
+        let dom = self.inner.borrow();
+        assert_eq!(dom.stack.borrow_mut().pop(), Some(widget));
+    }
+
+    pub fn current(&self) -> Index {
+        let dom = self.inner.borrow();
+        let stack = dom.stack.borrow();
+        stack.last().copied().unwrap_or(dom.root)
     }
 
     pub fn get(&self, index: Index) -> Option<Ref<'_, DomNode>> {
@@ -95,7 +106,7 @@ impl Dom {
         let (index, widget) = {
             let mut dom = self.inner.borrow_mut();
             let index = dom.next_widget();
-            dom.stack.push(index);
+            dom.stack.borrow_mut().push(index);
             dom.update_widget::<T>(index, props);
 
             // Component::children needs mutable access to the DOM, so we need
@@ -123,7 +134,7 @@ impl Dom {
     pub fn end_widget<T: Widget>(&self, index: Index) -> T::Response {
         let mut dom = self.inner.borrow_mut();
 
-        let old_top = dom.stack.pop().unwrap_or_else(|| {
+        let old_top = dom.stack.borrow_mut().pop().unwrap_or_else(|| {
             panic!("Cannot end_widget without an in-progress widget.");
         });
 
@@ -153,13 +164,13 @@ impl DomInner {
         Self {
             nodes,
             root,
-            stack: Vec::new(),
+            stack: RefCell::new(Vec::new()),
             global_state: AnyMap::new(),
         }
     }
 
     fn next_widget(&mut self) -> Index {
-        let parent_index = self.stack.last().copied().unwrap_or(self.root);
+        let parent_index = self.stack.borrow().last().copied().unwrap_or(self.root);
 
         let parent = self.nodes.get_mut(parent_index).unwrap();
         if parent.next_child < parent.children.len() {

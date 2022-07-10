@@ -100,8 +100,7 @@ impl Widget for ButtonWidget {
 
         let node = dom.get(self.index).unwrap();
         for &child in &node.children {
-            let child = dom.get(child).unwrap();
-            child.widget.paint(dom, layout, paint);
+            paint.paint(dom, layout, child);
         }
     }
 

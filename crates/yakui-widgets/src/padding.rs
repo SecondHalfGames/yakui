@@ -69,9 +69,8 @@ impl Widget for PaddingWidget {
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let node = dom.get(self.index).unwrap();
 
-        for &index in &node.children {
-            let child = dom.get(index).unwrap();
-            child.widget.paint(dom, layout, paint);
+        for &child in &node.children {
+            paint.paint(dom, layout, child);
         }
     }
 

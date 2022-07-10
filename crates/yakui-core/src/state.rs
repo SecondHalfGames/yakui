@@ -117,7 +117,7 @@ impl State {
             panic!("Cannot paint() while DOM is being built.");
         });
 
-        self.paint.paint(dom, &self.layout);
+        self.paint.paint_all(dom, &self.layout);
         &self.paint
     }
 

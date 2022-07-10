@@ -39,7 +39,14 @@ impl PaintDom {
         }
     }
 
-    pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom) {
+    pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, index: Index) {
+        let node = dom.get(index).unwrap();
+        dom.enter(index);
+        node.widget.paint(dom, layout, self);
+        dom.exit(index);
+    }
+
+    pub fn paint_all(&mut self, dom: &Dom, layout: &LayoutDom) {
         self.meshes.clear();
 
         let node = dom.get(dom.root()).unwrap();

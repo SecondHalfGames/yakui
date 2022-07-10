@@ -52,9 +52,8 @@ impl Widget for ColoredBoxWidget {
         rect.color = self.props.color;
         paint.add_rect(rect);
 
-        for &index in &node.children {
-            let child = dom.get(index).unwrap();
-            child.widget.paint(dom, layout, paint);
+        for &child in &node.children {
+            paint.paint(dom, layout, child);
         }
     }
 
