@@ -94,27 +94,7 @@ impl Dom {
         let mut dom = self.inner.borrow_mut();
         let dom = &mut *dom;
 
-        let parent_index = dom.stack.last().copied().unwrap_or(dom.root);
-
-        let parent = dom.nodes.get_mut(parent_index).unwrap();
-
-        let index = if parent.next_child < parent.children.len() {
-            let index = parent.children[parent.next_child];
-            parent.next_child += 1;
-            index
-        } else {
-            let index = dom.nodes.insert(DomNode {
-                widget: Box::new(DummyWidget),
-                children: Vec::new(),
-                next_child: 0,
-            });
-
-            let parent = dom.nodes.get_mut(parent_index).unwrap();
-            parent.children.push(index);
-            parent.next_child += 1;
-            index
-        };
-
+        let index = dom.next_widget();
         dom.stack.push(index);
         dom.update_widget::<T>(index, props);
 
@@ -156,6 +136,28 @@ impl DomInner {
             root,
             stack: Vec::new(),
             global_state: AnyMap::new(),
+        }
+    }
+
+    fn next_widget(&mut self) -> Index {
+        let parent_index = self.stack.last().copied().unwrap_or(self.root);
+
+        let parent = self.nodes.get_mut(parent_index).unwrap();
+        if parent.next_child < parent.children.len() {
+            let index = parent.children[parent.next_child];
+            parent.next_child += 1;
+            index
+        } else {
+            let index = self.nodes.insert(DomNode {
+                widget: Box::new(DummyWidget),
+                children: Vec::new(),
+                next_child: 0,
+            });
+
+            let parent = self.nodes.get_mut(parent_index).unwrap();
+            parent.children.push(index);
+            parent.next_child += 1;
+            index
         }
     }
 
