@@ -31,6 +31,8 @@ where
 
 mopmopafy!(ErasedProps);
 
+/// A yakui widget. Implement this trait to create a custom widget if composing
+/// existing widgets does not solve your use case.
 pub trait Widget: 'static + fmt::Debug {
     type Props: Props;
     type Response;
@@ -62,6 +64,7 @@ pub trait Widget: 'static + fmt::Debug {
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 
+/// A type-erased version of [`Widget`].
 pub trait ErasedWidget: 'static {
     fn children(&self) {}
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
