@@ -3,7 +3,7 @@ use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::util::widget_children;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Padding {
     pub left: f32,
     pub right: f32,

@@ -2,11 +2,12 @@ use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
 use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Vec2, Widget};
 
-use crate::util::widget_children;
+use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct ColoredBox {
     pub color: Color3,
+    pub size: Vec2,
 }
 
 #[derive(Debug)]
@@ -30,14 +31,14 @@ impl Widget for ColoredBoxWidget {
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
-
-        let mut self_size = Vec2::ZERO;
+        let mut size = self.props.size;
 
         for &child in &node.children {
-            self_size = layout.calculate(dom, child, input);
+            let child_size = layout.calculate(dom, child, input);
+            size = size.max(child_size);
         }
 
-        input.constrain(self_size)
+        input.constrain(size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
@@ -59,6 +60,9 @@ impl Widget for ColoredBoxWidget {
     fn respond(&mut self) -> Self::Response {}
 }
 
-pub fn colored_box<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
-    widget_children::<ColoredBoxWidget, _>(children, ColoredBox { color })
+pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> ColoredBoxResponse {
+    widget::<ColoredBoxWidget>(ColoredBox {
+        color,
+        size: size.into(),
+    })
 }

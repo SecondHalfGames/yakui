@@ -1,4 +1,4 @@
-use yakui::{Alignment, Button};
+use yakui::{Alignment, Color3};
 
 use crate::AppState;
 
@@ -19,6 +19,6 @@ pub fn app(state: &AppState) {
     let alignment = ALIGNMENTS[index];
 
     yakui::align(alignment, || {
-        yakui::button(Button::styled([100.0, 100.0]));
+        yakui::colored_box(Color3::REBECCA_PURPLE, [100.0, 100.0]);
     });
 }

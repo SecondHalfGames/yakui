@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
 use yakui_core::{
@@ -5,28 +7,32 @@ use yakui_core::{
 };
 
 use crate::util::widget;
+use crate::Padding;
 
 #[derive(Debug, Clone)]
 pub struct Button {
-    pub size: Vec2,
+    pub text: Cow<'static, str>,
+    pub padding: Padding,
     pub fill: Color3,
     pub hover_fill: Option<Color3>,
     pub down_fill: Option<Color3>,
 }
 
 impl Button {
-    pub fn unstyled<S: Into<Vec2>>(size: S) -> Self {
+    pub fn unstyled<S: Into<Cow<'static, str>>>(text: S) -> Self {
         Self {
-            size: size.into(),
+            text: text.into(),
+            padding: Padding::even(0.0),
             fill: Color3::GRAY,
             hover_fill: None,
             down_fill: None,
         }
     }
 
-    pub fn styled<S: Into<Vec2>>(size: S) -> Self {
+    pub fn styled<S: Into<Cow<'static, str>>>(text: S) -> Self {
         Self {
-            size: size.into(),
+            text: text.into(),
+            padding: Padding::even(6.0),
             fill: Color3::rgb(50, 94, 168),
             hover_fill: Some(Color3::rgb(88, 129, 199)),
             down_fill: Some(Color3::rgb(30, 76, 156)),
@@ -66,16 +72,20 @@ impl Widget for ButtonWidget {
     }
 
     fn children(&self) {
-        crate::text(8.0, "hey, listen!");
+        crate::pad(self.props.padding, || {
+            crate::text(16.0, self.props.text.clone());
+        });
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         let node = dom.get_current();
+        let mut size = Vec2::ZERO;
         for &child in &node.children {
-            layout.calculate(dom, child, constraints);
+            let child_size = layout.calculate(dom, child, constraints);
+            size = size.max(child_size);
         }
 
-        constraints.constrain(self.props.size)
+        constraints.constrain(size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {

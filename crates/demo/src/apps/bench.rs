@@ -1,4 +1,4 @@
-use yakui::{Button, Color3};
+use yakui::Color3;
 
 use crate::AppState;
 
@@ -13,10 +13,7 @@ pub fn app(_state: &AppState) {
 
                     let w = 2.0 + 3.0 + (x / 2) as f32;
                     let h = 2.0 + 3.0 + (y / 2) as f32;
-                    yakui::button(Button {
-                        fill: color,
-                        ..Button::styled([w, h])
-                    });
+                    yakui::colored_box(color, [w, h]);
                 }
             });
         }
