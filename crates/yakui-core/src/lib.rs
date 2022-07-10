@@ -18,8 +18,8 @@ pub extern crate glam;
 pub use glam::{UVec2, Vec2, Vec4};
 pub use thunderdome::Index;
 
-pub use event::Event;
+pub use event::*;
 pub use geometry::*;
 pub use input::*;
-pub use state::State;
+pub use state::*;
 pub use widget::*;

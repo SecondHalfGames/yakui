@@ -5,8 +5,8 @@ use glam::Vec2;
 use thunderdome::Index;
 
 use crate::dom::Dom;
+use crate::event::WidgetEvent;
 use crate::geometry::Constraints;
-use crate::input::MouseButton;
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 
@@ -75,15 +75,6 @@ where
 }
 
 mopmopafy!(ErasedWidget);
-
-#[allow(clippy::enum_variant_names)]
-#[non_exhaustive]
-pub enum WidgetEvent {
-    MouseEnter,
-    MouseLeave,
-    MouseButtonChangedInside(MouseButton, bool),
-    MouseButtonChangedOutside(MouseButton, bool),
-}
 
 // Placeholder widget used internally.
 #[derive(Debug)]

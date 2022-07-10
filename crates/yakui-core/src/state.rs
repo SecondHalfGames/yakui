@@ -6,11 +6,10 @@ use thunderdome::Index;
 
 use crate::context::Context;
 use crate::dom::Dom;
-use crate::input::InputState;
+use crate::event::{Event, WidgetEvent};
+use crate::input::{ButtonState, InputState};
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
-use crate::widget::WidgetEvent;
-use crate::{ButtonState, Event};
 
 #[derive(Debug)]
 pub struct State {

@@ -10,3 +10,12 @@ pub enum Event {
     MoveMouse(Vec2),
     MouseButtonChanged(MouseButton, bool),
 }
+
+#[allow(clippy::enum_variant_names)]
+#[non_exhaustive]
+pub enum WidgetEvent {
+    MouseEnter,
+    MouseLeave,
+    MouseButtonChangedInside(MouseButton, bool),
+    MouseButtonChangedOutside(MouseButton, bool),
+}
