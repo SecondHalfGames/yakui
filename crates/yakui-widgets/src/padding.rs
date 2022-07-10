@@ -1,7 +1,7 @@
 use yakui_core::paint::PaintDom;
-use yakui_core::{dom::Dom, layout::LayoutDom, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Index, Vec2, Widget};
 
-use crate::util::component_children;
+use crate::util::widget_children;
 
 #[derive(Debug, Clone)]
 pub struct Padding {
@@ -30,7 +30,7 @@ pub struct PaddingComponent {
 
 pub type PadResponse = ();
 
-impl Component for PaddingComponent {
+impl Widget for PaddingComponent {
     type Props = Padding;
     type Response = PadResponse;
 
@@ -71,7 +71,7 @@ impl Component for PaddingComponent {
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.paint(dom, layout, paint);
+            child.widget.paint(dom, layout, paint);
         }
     }
 
@@ -79,5 +79,5 @@ impl Component for PaddingComponent {
 }
 
 pub fn pad<F: FnOnce()>(props: Padding, children: F) -> PadResponse {
-    component_children::<PaddingComponent, _>(children, props)
+    widget_children::<PaddingComponent, _>(children, props)
 }

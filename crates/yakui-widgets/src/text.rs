@@ -10,7 +10,7 @@ use yakui_core::context::Context;
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline, Texture, TextureFormat};
-use yakui_core::{Color3, Component, Constraints, Index, Rect, URect, UVec2, Vec2};
+use yakui_core::{Color3, Constraints, Index, Rect, URect, UVec2, Vec2, Widget};
 
 #[derive(Debug, Clone)]
 struct TextGlobalState {
@@ -141,7 +141,7 @@ pub struct TextComponent {
 
 pub type TextResponse = ();
 
-impl Component for TextComponent {
+impl Widget for TextComponent {
     type Props = Text;
     type Response = TextResponse;
 
@@ -234,7 +234,7 @@ pub fn text<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> TextResponse
         .get_global_state_or_insert_with::<TextGlobalState, _>(TextGlobalState::new)
         .clone();
 
-    dom.do_component::<TextComponent>(Text {
+    dom.do_widget::<TextComponent>(Text {
         text: text.into(),
         font_size,
         global,

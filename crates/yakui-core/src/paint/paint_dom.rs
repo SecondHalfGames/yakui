@@ -44,7 +44,7 @@ impl PaintDom {
 
         for &node_index in dom.roots() {
             let node = dom.get(node_index).unwrap();
-            node.component.paint(dom, layout, self);
+            node.widget.paint(dom, layout, self);
         }
     }
 

@@ -1,7 +1,7 @@
 use yakui_core::paint::PaintDom;
-use yakui_core::{dom::Dom, layout::LayoutDom, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Index, Vec2, Widget};
 
-use crate::{util::component_children, Direction};
+use crate::{util::widget_children, Direction};
 
 #[derive(Debug, Clone)]
 pub struct List {
@@ -17,7 +17,7 @@ pub struct ListComponent {
 
 pub type ListResponse = ();
 
-impl Component for ListComponent {
+impl Widget for ListComponent {
     type Props = List;
     type Response = ListResponse;
 
@@ -93,7 +93,7 @@ impl Component for ListComponent {
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.paint(dom, layout, output);
+            child.widget.paint(dom, layout, output);
         }
     }
 
@@ -101,7 +101,7 @@ impl Component for ListComponent {
 }
 
 pub fn column<F: FnOnce()>(children: F) -> ListResponse {
-    component_children::<ListComponent, _>(
+    widget_children::<ListComponent, _>(
         children,
         List {
             direction: Direction::Down,
@@ -111,7 +111,7 @@ pub fn column<F: FnOnce()>(children: F) -> ListResponse {
 }
 
 pub fn row<F: FnOnce()>(children: F) -> ListResponse {
-    component_children::<ListComponent, _>(
+    widget_children::<ListComponent, _>(
         children,
         List {
             direction: Direction::Right,

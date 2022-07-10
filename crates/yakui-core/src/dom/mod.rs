@@ -6,7 +6,7 @@ use std::collections::VecDeque;
 use anymap::AnyMap;
 use thunderdome::{Arena, Index};
 
-use crate::component::{Component, DummyComponent, ErasedComponent};
+use crate::widget::{DummyWidget, ErasedWidget, Widget};
 
 pub struct Dom {
     tree: Arena<DomNode>,
@@ -20,7 +20,7 @@ pub struct Dom {
 }
 
 pub struct DomNode {
-    pub component: Box<dyn ErasedComponent>,
+    pub widget: Box<dyn ErasedWidget>,
     pub children: Vec<Index>,
     build_index: usize,
     color: bool,
@@ -55,12 +55,12 @@ impl Dom {
         self.build_index = 0;
     }
 
-    pub fn do_component<T: Component>(&mut self, props: T::Props) -> T::Response {
-        let index = self.begin_component::<T>(props);
-        self.end_component::<T>(index)
+    pub fn do_widget<T: Widget>(&mut self, props: T::Props) -> T::Response {
+        let index = self.begin_widget::<T>(props);
+        self.end_widget::<T>(index)
     }
 
-    pub fn begin_component<T: Component>(&mut self, props: T::Props) -> Index {
+    pub fn begin_widget<T: Widget>(&mut self, props: T::Props) -> Index {
         let parent = self.stack.last();
 
         let index = match parent {
@@ -74,7 +74,7 @@ impl Dom {
                     index
                 } else {
                     let index = self.tree.insert(DomNode {
-                        component: Box::new(DummyComponent),
+                        widget: Box::new(DummyWidget),
                         children: Vec::new(),
                         build_index: 0,
                         color: self.color,
@@ -93,7 +93,7 @@ impl Dom {
                     index
                 } else {
                     let index = self.tree.insert(DomNode {
-                        component: Box::new(DummyComponent),
+                        widget: Box::new(DummyWidget),
                         children: Vec::new(),
                         build_index: 0,
                         color: self.color,
@@ -108,35 +108,31 @@ impl Dom {
         self.stack.push(index);
 
         let node = self.tree.get_mut(index).unwrap();
-        if node.component.as_ref().type_id() == TypeId::of::<T>() {
-            let component = node.component.downcast_mut::<T>().unwrap();
-            component.update(props);
+        if node.widget.as_ref().type_id() == TypeId::of::<T>() {
+            let widget = node.widget.downcast_mut::<T>().unwrap();
+            widget.update(props);
         } else {
-            node.component = Box::new(T::new(index, props));
+            node.widget = Box::new(T::new(index, props));
         }
 
         index
     }
 
-    pub fn end_component<T: Component>(&mut self, index: Index) -> T::Response {
+    pub fn end_widget<T: Widget>(&mut self, index: Index) -> T::Response {
         let old_top = self.stack.pop().unwrap_or_else(|| {
-            panic!("Cannot end_component without an in-progress component.");
+            panic!("Cannot end_widget without an in-progress widget.");
         });
 
         assert!(
             index == old_top,
-            "Dom::end_component did not match the input component."
+            "Dom::end_widget did not match the input widget."
         );
 
         self.trim_children(index);
 
         let node = self.tree.get_mut(index).unwrap();
 
-        node.component
-            .as_mut()
-            .downcast_mut::<T>()
-            .unwrap()
-            .respond()
+        node.widget.as_mut().downcast_mut::<T>().unwrap().respond()
     }
 
     pub fn get_global_state<T: Any>(&self) -> Option<&T> {

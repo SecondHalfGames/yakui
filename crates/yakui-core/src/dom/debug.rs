@@ -17,7 +17,7 @@ impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dom = &self.0;
         let iter = dom.tree.iter().map(|(index, node)| {
-            let debug = node.component.as_debug();
+            let debug = node.widget.as_debug();
 
             let children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
 

@@ -4,12 +4,12 @@ use std::mem::take;
 use glam::Vec2;
 use thunderdome::Index;
 
-use crate::component::ComponentEvent;
 use crate::context::Context;
 use crate::dom::Dom;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
+use crate::widget::WidgetEvent;
 use crate::{ButtonState, Event};
 
 #[derive(Debug)]
@@ -94,17 +94,17 @@ impl State {
         for &hit in &self.mouse_hit {
             if let Some(node) = dom.get_mut(hit) {
                 if !self.last_mouse_hit.contains(&hit) {
-                    node.component.event(&ComponentEvent::MouseEnter);
+                    node.widget.event(&WidgetEvent::MouseEnter);
                 }
 
                 for (&button, state) in self.input.mouse_buttons.iter() {
                     match state {
                         ButtonState::JustDown => node
-                            .component
-                            .event(&ComponentEvent::MouseButtonChangedInside(button, true)),
+                            .widget
+                            .event(&WidgetEvent::MouseButtonChangedInside(button, true)),
                         ButtonState::JustUp => node
-                            .component
-                            .event(&ComponentEvent::MouseButtonChangedInside(button, false)),
+                            .widget
+                            .event(&WidgetEvent::MouseButtonChangedInside(button, false)),
                         _ => (),
                     }
                 }
@@ -114,7 +114,7 @@ impl State {
         for &hit in &self.last_mouse_hit {
             if !self.mouse_hit.contains(&hit) {
                 if let Some(node) = dom.get_mut(hit) {
-                    node.component.event(&ComponentEvent::MouseLeave);
+                    node.widget.event(&WidgetEvent::MouseLeave);
                 }
             }
         }

@@ -1,9 +1,9 @@
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::{Color3, Component, Constraints, Index, Rect, Vec2};
+use yakui_core::{Color3, Constraints, Index, Rect, Vec2, Widget};
 
-use crate::util::component;
+use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct Image {
@@ -19,7 +19,7 @@ pub struct ImageComponent {
 
 pub type ImageResponse = ();
 
-impl Component for ImageComponent {
+impl Widget for ImageComponent {
     type Props = Image;
     type Response = ImageResponse;
 
@@ -51,5 +51,5 @@ impl Component for ImageComponent {
 }
 
 pub fn image(image: Index, size: Vec2) -> ImageResponse {
-    component::<ImageComponent>(Image { image, size })
+    widget::<ImageComponent>(Image { image, size })
 }

@@ -28,7 +28,7 @@ where
 
 mopmopafy!(ErasedProps);
 
-pub trait Component: Any + fmt::Debug {
+pub trait Widget: Any + fmt::Debug {
     type Props: Props;
     type Response;
 
@@ -38,34 +38,34 @@ pub trait Component: Any + fmt::Debug {
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
     fn respond(&mut self) -> Self::Response;
 
-    fn event(&mut self, _event: &ComponentEvent) {}
+    fn event(&mut self, _event: &WidgetEvent) {}
 }
 
-pub trait ErasedComponent: Any {
+pub trait ErasedWidget: Any {
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
-    fn event(&mut self, event: &ComponentEvent);
+    fn event(&mut self, event: &WidgetEvent);
 
     fn as_debug(&self) -> &dyn fmt::Debug;
 }
 
-impl<T> ErasedComponent for T
+impl<T> ErasedWidget for T
 where
-    T: Component,
+    T: Widget,
 {
     #[inline]
     fn size(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        <T as Component>::size(self, dom, layout, constraints)
+        <T as Widget>::size(self, dom, layout, constraints)
     }
 
     #[inline]
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        <T as Component>::paint(self, dom, layout, paint)
+        <T as Widget>::paint(self, dom, layout, paint)
     }
 
     #[inline]
-    fn event(&mut self, event: &ComponentEvent) {
-        <T as Component>::event(self, event)
+    fn event(&mut self, event: &WidgetEvent) {
+        <T as Widget>::event(self, event)
     }
 
     #[inline]
@@ -74,22 +74,22 @@ where
     }
 }
 
-mopmopafy!(ErasedComponent);
+mopmopafy!(ErasedWidget);
 
 #[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
-pub enum ComponentEvent {
+pub enum WidgetEvent {
     MouseEnter,
     MouseLeave,
     MouseButtonChangedInside(MouseButton, bool),
     MouseButtonChangedOutside(MouseButton, bool),
 }
 
-// Placeholder component used internally.
+// Placeholder widget used internally.
 #[derive(Debug)]
-pub struct DummyComponent;
+pub struct DummyWidget;
 
-impl Component for DummyComponent {
+impl Widget for DummyWidget {
     type Props = ();
     type Response = ();
 
@@ -102,7 +102,7 @@ impl Component for DummyComponent {
     fn update(&mut self, _props: Self::Props) {}
 
     #[inline]
-    fn event(&mut self, _event: &ComponentEvent) {}
+    fn event(&mut self, _event: &WidgetEvent) {}
 
     #[inline]
     fn size(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {

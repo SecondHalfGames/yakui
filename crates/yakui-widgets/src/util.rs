@@ -1,24 +1,24 @@
-use yakui_core::{context::Context, Component};
+use yakui_core::{context::Context, Widget};
 
-pub fn component_children<T, F>(children: F, props: T::Props) -> T::Response
+pub fn widget_children<T, F>(children: F, props: T::Props) -> T::Response
 where
-    T: Component,
+    T: Widget,
     F: FnOnce(),
 {
     let context = Context::active();
 
-    let index = context.borrow_mut().dom_mut().begin_component::<T>(props);
+    let index = context.borrow_mut().dom_mut().begin_widget::<T>(props);
     children();
-    let res = context.borrow_mut().dom_mut().end_component::<T>(index);
+    let res = context.borrow_mut().dom_mut().end_widget::<T>(index);
     res
 }
 
-pub fn component<T>(props: T::Props) -> T::Response
+pub fn widget<T>(props: T::Props) -> T::Response
 where
-    T: Component,
+    T: Widget,
 {
     let context = Context::active();
 
-    let res = context.borrow_mut().dom_mut().do_component::<T>(props);
+    let res = context.borrow_mut().dom_mut().do_widget::<T>(props);
     res
 }

@@ -1,11 +1,10 @@
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
 use yakui_core::{
-    dom::Dom, layout::LayoutDom, Color3, Component, ComponentEvent, Constraints, Index,
-    MouseButton, Vec2,
+    dom::Dom, layout::LayoutDom, Color3, Constraints, Index, MouseButton, Vec2, Widget, WidgetEvent,
 };
 
-use crate::util::component;
+use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct Button {
@@ -50,7 +49,7 @@ pub struct ButtonResponse {
     pub clicked: bool,
 }
 
-impl Component for ButtonComponent {
+impl Widget for ButtonComponent {
     type Props = Button;
     type Response = ButtonResponse;
 
@@ -101,15 +100,15 @@ impl Component for ButtonComponent {
         }
     }
 
-    fn event(&mut self, event: &ComponentEvent) {
+    fn event(&mut self, event: &WidgetEvent) {
         match event {
-            ComponentEvent::MouseEnter => {
+            WidgetEvent::MouseEnter => {
                 self.hovering = true;
             }
-            ComponentEvent::MouseLeave => {
+            WidgetEvent::MouseLeave => {
                 self.hovering = false;
             }
-            ComponentEvent::MouseButtonChangedInside(MouseButton::One, down) => {
+            WidgetEvent::MouseButtonChangedInside(MouseButton::One, down) => {
                 if *down {
                     self.mouse_down = true;
                 } else if self.mouse_down {
@@ -123,5 +122,5 @@ impl Component for ButtonComponent {
 }
 
 pub fn button(props: Button) -> ButtonResponse {
-    component::<ButtonComponent>(props)
+    widget::<ButtonComponent>(props)
 }

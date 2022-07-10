@@ -1,5 +1,5 @@
 #![allow(
-    clippy::let_unit_value, // When implementing components, we want to spell
+    clippy::let_unit_value, // When implementing widgets, we want to spell
                             // out our Response type even if it's unit.
 )]
 

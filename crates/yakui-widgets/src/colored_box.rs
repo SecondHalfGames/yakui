@@ -1,8 +1,8 @@
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::Rect;
-use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Index, Vec2, Widget};
 
-use crate::util::component_children;
+use crate::util::widget_children;
 
 #[derive(Debug, Clone)]
 pub struct ColoredBox {
@@ -17,7 +17,7 @@ pub struct ColoredBoxComponent {
 
 pub type ColoredBoxResponse = ();
 
-impl Component for ColoredBoxComponent {
+impl Widget for ColoredBoxComponent {
     type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
@@ -54,7 +54,7 @@ impl Component for ColoredBoxComponent {
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.paint(dom, layout, paint);
+            child.widget.paint(dom, layout, paint);
         }
     }
 
@@ -62,5 +62,5 @@ impl Component for ColoredBoxComponent {
 }
 
 pub fn colored_box<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
-    component_children::<ColoredBoxComponent, _>(children, ColoredBox { color })
+    widget_children::<ColoredBoxComponent, _>(children, ColoredBox { color })
 }

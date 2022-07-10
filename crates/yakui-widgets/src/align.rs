@@ -1,7 +1,7 @@
 use yakui_core::paint::PaintDom;
-use yakui_core::{dom::Dom, layout::LayoutDom, Component, Constraints, Index, Vec2};
+use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Index, Vec2, Widget};
 
-use crate::{util::component_children, Alignment};
+use crate::{util::widget_children, Alignment};
 
 #[derive(Debug, Clone)]
 pub struct Align {
@@ -16,7 +16,7 @@ pub struct AlignComponent {
 
 pub type AlignResponse = ();
 
-impl Component for AlignComponent {
+impl Widget for AlignComponent {
     type Props = Align;
     type Response = AlignResponse;
 
@@ -47,7 +47,7 @@ impl Component for AlignComponent {
 
         for &index in &node.children {
             let child = dom.get(index).unwrap();
-            child.component.paint(dom, layout, output);
+            child.widget.paint(dom, layout, output);
         }
     }
 
@@ -55,7 +55,7 @@ impl Component for AlignComponent {
 }
 
 pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
-    component_children::<AlignComponent, _>(
+    widget_children::<AlignComponent, _>(
         children,
         Align {
             alignment: Alignment::CENTER,
@@ -64,5 +64,5 @@ pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
 }
 
 pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> AlignResponse {
-    component_children::<AlignComponent, _>(children, Align { alignment })
+    widget_children::<AlignComponent, _>(children, Align { alignment })
 }
