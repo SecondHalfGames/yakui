@@ -4,8 +4,11 @@ use crate::AppState;
 
 pub fn app(state: &AppState) {
     yakui::center(|| {
-        if state.time.floor() % 2.0 == 0.0 {
-            yakui::image(state.monkey, Vec2::new(400.0, 400.0));
-        }
+        yakui::column(|| {
+            if state.time.sin() > 0.0 {
+                yakui::text(32.0, format!("{}", state.time.sin()));
+                yakui::image(state.monkey, Vec2::new(400.0, 400.0));
+            }
+        });
     });
 }
