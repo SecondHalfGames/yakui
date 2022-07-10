@@ -98,35 +98,3 @@ where
 }
 
 mopmopafy!(ErasedWidget);
-
-/// Placeholder widget used internally to emplace a component without
-/// initializing it yet.
-#[derive(Debug)]
-pub(crate) struct DummyWidget;
-
-impl Widget for DummyWidget {
-    type Props = ();
-    type Response = ();
-
-    #[inline]
-    fn new(_props: Self::Props) -> Self {
-        Self
-    }
-
-    #[inline]
-    fn update(&mut self, _props: Self::Props) {}
-
-    #[inline]
-    fn event(&mut self, _event: &WidgetEvent) {}
-
-    #[inline]
-    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, _constraints: Constraints) -> Vec2 {
-        Vec2::ZERO
-    }
-
-    #[inline]
-    fn paint(&self, _dom: &Dom, _layout: &LayoutDom, _paint: &mut PaintDom) {}
-
-    #[inline]
-    fn respond(&mut self) {}
-}

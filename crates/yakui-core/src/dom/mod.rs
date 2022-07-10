@@ -1,4 +1,5 @@
 mod debug;
+mod dummy;
 mod root;
 
 use std::any::{Any, TypeId};
@@ -9,8 +10,9 @@ use std::mem::replace;
 use anymap::AnyMap;
 use thunderdome::{Arena, Index};
 
-use crate::widget::{DummyWidget, ErasedWidget, Widget};
+use crate::widget::{ErasedWidget, Widget};
 
+use self::dummy::DummyWidget;
 use self::root::RootWidget;
 
 pub struct Dom {
