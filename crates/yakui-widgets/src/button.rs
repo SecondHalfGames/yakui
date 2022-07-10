@@ -1,9 +1,6 @@
 use std::borrow::Cow;
 
-use yakui_core::paint::PaintDom;
-use yakui_core::{
-    dom::Dom, layout::LayoutDom, Color3, Constraints, MouseButton, Vec2, Widget, WidgetEvent,
-};
+use yakui_core::{Color3, MouseButton, Widget, WidgetEvent};
 
 use crate::util::widget;
 use crate::Padding;
@@ -84,24 +81,6 @@ impl Widget for ButtonWidget {
                 crate::text(16.0, self.props.text.clone());
             });
         });
-    }
-
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        let node = dom.get_current();
-        let mut size = Vec2::ZERO;
-        for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
-            size = size.max(child_size);
-        }
-
-        constraints.constrain(size)
-    }
-
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
-        for &child in &node.children {
-            paint.paint(dom, layout, child);
-        }
     }
 
     fn respond(&mut self) -> Self::Response {

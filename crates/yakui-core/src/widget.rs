@@ -36,8 +36,25 @@ pub trait Widget: Any + fmt::Debug {
     fn respond(&mut self) -> Self::Response;
 
     fn children(&self) {}
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
+
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
+        let node = dom.get_current();
+        let mut size = Vec2::ZERO;
+        for &child in &node.children {
+            let child_size = layout.calculate(dom, child, constraints);
+            size = size.max(child_size);
+        }
+
+        constraints.constrain(size)
+    }
+
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+        let node = dom.get_current();
+        for &child in &node.children {
+            paint.paint(dom, layout, child);
+        }
+    }
+
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 

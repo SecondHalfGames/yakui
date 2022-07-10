@@ -1,4 +1,3 @@
-use yakui_core::paint::PaintDom;
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::{util::widget_children, Direction};
@@ -85,13 +84,6 @@ impl Widget for ListWidget {
         }
 
         input.constrain(size)
-    }
-
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
-        for &child in &node.children {
-            paint.paint(dom, layout, child);
-        }
     }
 
     fn respond(&mut self) -> Self::Response {}
