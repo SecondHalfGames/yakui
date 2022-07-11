@@ -57,6 +57,7 @@ impl Buffer {
         } else {
             // Buffer needs to grow or be created
             let size = self.cpu_buffer.len().next_power_of_two();
+            self.gpu_buffer_len = size;
 
             let desc = wgpu::BufferDescriptor {
                 label: Some("yakui vertices"),
