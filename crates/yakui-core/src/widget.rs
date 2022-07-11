@@ -37,12 +37,26 @@ pub trait Widget: 'static + fmt::Debug {
     type Props: Props;
     type Response;
 
+    /// Create the widget with the given props.
     fn new(props: Self::Props) -> Self;
+
+    /// Update the widget with new props.
     fn update(&mut self, props: Self::Props);
+
+    /// Return a response, which lets users receive information from the widget
+    /// like whether it was clicked.
     fn respond(&mut self) -> Self::Response;
 
+    /// Construct the widget's children, helpful for reusing functionality
+    /// between widgets.
     fn children(&self) {}
 
+    /// Calculate this widget's layout with the given constraints and return its
+    /// size. The returned size must fit within the given constraints, which can
+    /// be done using `constraints.constrain(size)`.
+    ///
+    /// The default implementation will lay out all of this widget's children on
+    /// top of each other, and fit the widget tightly around them.
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         let node = dom.get_current();
         let mut size = Vec2::ZERO;
@@ -54,6 +68,9 @@ pub trait Widget: 'static + fmt::Debug {
         constraints.constrain(size)
     }
 
+    /// Paint the widget based on its current state.
+    ///
+    /// The default implementation will paint all of the widget's children.
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let node = dom.get_current();
         for &child in &node.children {
@@ -61,17 +78,23 @@ pub trait Widget: 'static + fmt::Debug {
         }
     }
 
+    /// Handle the given event and update the widget's state.
     fn event(&mut self, _event: &WidgetEvent) {}
 }
 
 /// A type-erased version of [`Widget`].
-pub trait ErasedWidget: 'static {
+pub trait ErasedWidget: 'static + fmt::Debug {
+    /// See [`Widget::children`].
     fn children(&self) {}
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
-    fn event(&mut self, event: &WidgetEvent);
 
-    fn as_debug(&self) -> &dyn fmt::Debug;
+    /// See [`Widget::layout`].
+    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+
+    /// See [`Widget::paint`].
+    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
+
+    /// See [`Widget::event`].
+    fn event(&mut self, event: &WidgetEvent);
 }
 
 impl<T> ErasedWidget for T
@@ -96,11 +119,6 @@ where
     #[inline]
     fn event(&mut self, event: &WidgetEvent) {
         <T as Widget>::event(self, event)
-    }
-
-    #[inline]
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
     }
 }
 
