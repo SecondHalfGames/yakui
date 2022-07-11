@@ -67,10 +67,19 @@ impl Widget for TextWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let global = dom.get_global_or_init(TextGlobalState::new);
 
+        let (max_width, max_height) = if input.is_bounded() {
+            (
+                Some(input.max.x * layout.scale_factor()),
+                Some(input.max.y * layout.scale_factor()),
+            )
+        } else {
+            (None, None)
+        };
+
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
-            max_width: Some(input.max.x * layout.scale_factor()),
-            max_height: Some(input.max.y * layout.scale_factor()),
+            max_width,
+            max_height,
             ..LayoutSettings::default()
         });
 
