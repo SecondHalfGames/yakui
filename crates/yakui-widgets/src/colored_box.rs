@@ -7,7 +7,31 @@ use crate::util::{widget, widget_children};
 #[derive(Debug, Clone)]
 pub struct ColoredBox {
     pub color: Color3,
-    pub size: Vec2,
+    pub min_size: Vec2,
+}
+
+impl ColoredBox {
+    pub fn sized(color: Color3, size: Vec2) -> Self {
+        Self {
+            color,
+            min_size: size,
+        }
+    }
+
+    pub fn container(color: Color3) -> Self {
+        Self {
+            color,
+            min_size: Vec2::ZERO,
+        }
+    }
+
+    pub fn show(self) -> ColoredBoxResponse {
+        widget::<ColoredBoxWidget>(self)
+    }
+
+    pub fn show_children<F: FnOnce()>(self, children: F) -> ColoredBoxResponse {
+        widget_children::<ColoredBoxWidget, F>(children, self)
+    }
 }
 
 #[derive(Debug)]
@@ -31,7 +55,7 @@ impl Widget for ColoredBoxWidget {
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
-        let mut size = self.props.size;
+        let mut size = self.props.min_size;
 
         for &child in &node.children {
             let child_size = layout.calculate(dom, child, input);
@@ -58,21 +82,4 @@ impl Widget for ColoredBoxWidget {
     }
 
     fn respond(&mut self) -> Self::Response {}
-}
-
-pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> ColoredBoxResponse {
-    widget::<ColoredBoxWidget>(ColoredBox {
-        color,
-        size: size.into(),
-    })
-}
-
-pub fn colored_box_container<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
-    widget_children::<ColoredBoxWidget, F>(
-        children,
-        ColoredBox {
-            color,
-            size: Vec2::ZERO,
-        },
-    )
 }

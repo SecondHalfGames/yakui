@@ -11,6 +11,16 @@ pub struct Image {
     pub size: Vec2,
 }
 
+impl Image {
+    pub fn new(image: Index, size: Vec2) -> Self {
+        Self { image, size }
+    }
+
+    pub fn show(self) {
+        widget::<ImageWidget>(self)
+    }
+}
+
 #[derive(Debug)]
 pub struct ImageWidget {
     props: Image,
@@ -47,8 +57,4 @@ impl Widget for ImageWidget {
     }
 
     fn respond(&mut self) -> Self::Response {}
-}
-
-pub fn image(image: Index, size: Vec2) -> ImageResponse {
-    widget::<ImageWidget>(Image { image, size })
 }

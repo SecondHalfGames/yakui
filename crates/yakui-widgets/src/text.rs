@@ -3,18 +3,35 @@ use std::cell::RefCell;
 use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
-use yakui_core::context;
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::{Color3, Constraints, Rect, Vec2, Widget};
 
 use crate::text_renderer::TextGlobalState;
+use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct Text {
     pub text: Cow<'static, str>,
     pub font_size: f32,
+}
+
+impl Text {
+    pub fn new(font_size: f32, text: Cow<'static, str>) -> Self {
+        Self { text, font_size }
+    }
+
+    pub fn label(text: Cow<'static, str>) -> Self {
+        Self {
+            text,
+            font_size: 14.0,
+        }
+    }
+
+    pub fn show(self) -> TextResponse {
+        widget::<TextWidget>(self)
+    }
 }
 
 pub struct TextWidget {
@@ -114,13 +131,4 @@ impl fmt::Debug for TextWidget {
             .field("layout", &"(no debug impl)")
             .finish()
     }
-}
-
-pub fn text<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> TextResponse {
-    let dom = context::dom();
-
-    dom.do_widget::<TextWidget>(Text {
-        text: text.into(),
-        font_size,
-    })
 }

@@ -3,14 +3,14 @@ use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 use crate::util::widget_children;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Padding {
+pub struct Pad {
     pub left: f32,
     pub right: f32,
     pub top: f32,
     pub bottom: f32,
 }
 
-impl Padding {
+impl Pad {
     pub fn even(value: f32) -> Self {
         Self {
             left: value,
@@ -19,17 +19,21 @@ impl Padding {
             bottom: value,
         }
     }
+
+    pub fn show<F: FnOnce()>(self, children: F) -> PadResponse {
+        widget_children::<PadWidget, F>(children, self)
+    }
 }
 
 #[derive(Debug)]
-pub struct PaddingWidget {
-    props: Padding,
+pub struct PadWidget {
+    props: Pad,
 }
 
 pub type PadResponse = ();
 
-impl Widget for PaddingWidget {
-    type Props = Padding;
+impl Widget for PadWidget {
+    type Props = Pad;
     type Response = PadResponse;
 
     fn new(props: Self::Props) -> Self {
@@ -65,8 +69,4 @@ impl Widget for PaddingWidget {
     }
 
     fn respond(&mut self) -> Self::Response {}
-}
-
-pub fn pad<F: FnOnce()>(props: Padding, children: F) -> PadResponse {
-    widget_children::<PaddingWidget, _>(children, props)
 }

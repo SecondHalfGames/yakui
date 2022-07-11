@@ -8,14 +8,30 @@ pub struct Align {
     pub alignment: Alignment,
 }
 
+impl Align {
+    pub fn new(alignment: Alignment) -> Self {
+        Self { alignment }
+    }
+
+    pub fn center() -> Self {
+        Self {
+            alignment: Alignment::CENTER,
+        }
+    }
+
+    pub fn show<F: FnOnce()>(self, children: F) -> AlignResponse {
+        widget_children::<AlignWidget, F>(children, self)
+    }
+}
+
 #[derive(Debug)]
-pub struct AlignComponent {
+pub struct AlignWidget {
     props: Align,
 }
 
 pub type AlignResponse = ();
 
-impl Widget for AlignComponent {
+impl Widget for AlignWidget {
     type Props = Align;
     type Response = AlignResponse;
 
@@ -49,17 +65,4 @@ impl Widget for AlignComponent {
     }
 
     fn respond(&mut self) -> Self::Response {}
-}
-
-pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
-    widget_children::<AlignComponent, _>(
-        children,
-        Align {
-            alignment: Alignment::CENTER,
-        },
-    )
-}
-
-pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> AlignResponse {
-    widget_children::<AlignComponent, _>(children, Align { alignment })
 }

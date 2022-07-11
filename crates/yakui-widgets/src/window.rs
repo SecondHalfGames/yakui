@@ -1,7 +1,7 @@
 use yakui_core::{Color3, Vec2, Widget};
 
 use crate::util::widget_children;
-use crate::Padding;
+use crate::Pad;
 
 #[derive(Debug)]
 pub struct Window {
@@ -43,7 +43,7 @@ impl Widget for WindowWidget {
         crate::colored_box_container(Color3::GRAY, || {
             crate::column(|| {
                 crate::colored_box_container(Color3::rgb(92, 92, 92), || {
-                    crate::pad(Padding::even(8.0), || {
+                    crate::pad(Pad::even(8.0), || {
                         let mut row = crate::List::horizontal();
                         row.item_spacing = 8.0;
                         row.show(|| {
