@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
@@ -74,7 +74,7 @@ pub trait Widget: 'static + fmt::Debug {
 }
 
 /// A type-erased version of [`Widget`].
-pub trait ErasedWidget: 'static + fmt::Debug {
+pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::children`].
     fn children(&self) {}
 
