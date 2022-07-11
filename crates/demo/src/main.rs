@@ -118,11 +118,20 @@ fn load_texture(bytes: &[u8]) -> Texture {
     Texture::new(TextureFormat::Rgba8Srgb, size, image.into_raw())
 }
 
+fn init_logging() {
+    env_logger::builder()
+        .filter_module("wgpu_hal::auxil::dxgi", log::LevelFilter::Off)
+        .filter_module("wgpu_core", log::LevelFilter::Warn)
+        .filter_module("wgpu_hal", log::LevelFilter::Warn)
+        .filter_level(log::LevelFilter::Info)
+        .init();
+}
+
 fn main() {
     #[cfg(feature = "profile")]
     let _client = tracy_client::Client::start();
 
-    env_logger::init();
+    init_logging();
 
     pollster::block_on(run());
 }
