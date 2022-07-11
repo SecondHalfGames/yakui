@@ -6,14 +6,14 @@ use crate::util::widget;
 use crate::Pad;
 
 pub struct Window {
-    pub size: Vec2,
+    pub initial_size: Vec2,
     children: Option<Box<dyn Fn()>>,
 }
 
 impl Window {
-    pub fn new<S: Into<Vec2>>(size: S) -> Self {
+    pub fn new<S: Into<Vec2>>(initial_size: S) -> Self {
         Self {
-            size: size.into(),
+            initial_size: initial_size.into(),
             children: None,
         }
     }
@@ -27,6 +27,7 @@ impl Window {
 #[derive(Debug)]
 pub struct WindowWidget {
     props: Window,
+    size: Vec2,
 }
 
 pub type WindowResponse = ();
@@ -36,7 +37,10 @@ impl Widget for WindowWidget {
     type Response = WindowResponse;
 
     fn new(props: Self::Props) -> Self {
-        Self { props }
+        Self {
+            size: props.initial_size,
+            props,
+        }
     }
 
     fn update(&mut self, props: Self::Props) {
@@ -48,6 +52,7 @@ impl Widget for WindowWidget {
     fn children(&self) {
         crate::colored_box_container(Color3::GRAY, || {
             crate::column(|| {
+                // Window Title Bar
                 crate::colored_box_container(Color3::rgb(92, 92, 92), || {
                     crate::pad(Pad::even(8.0), || {
                         let mut row = crate::List::horizontal();
@@ -60,8 +65,12 @@ impl Widget for WindowWidget {
                     });
                 });
 
+                // Window Contents
+                let contents = crate::ColoredBox::sized(Color3::rgb(240, 240, 240), self.size);
                 if let Some(children) = &self.props.children {
-                    children()
+                    contents.show_children(children);
+                } else {
+                    contents.show();
                 }
             });
         });
@@ -71,7 +80,7 @@ impl Widget for WindowWidget {
 impl fmt::Debug for Window {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Window")
-            .field("size", &self.size)
+            .field("size", &self.initial_size)
             .finish_non_exhaustive()
     }
 }
