@@ -1,11 +1,32 @@
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
-use crate::{util::widget_children, Direction};
+use crate::util::widget_children;
+use crate::Direction;
 
 #[derive(Debug, Clone)]
 pub struct List {
     pub direction: Direction,
     pub item_spacing: f32,
+}
+
+impl List {
+    pub fn vertical() -> Self {
+        Self {
+            direction: Direction::Down,
+            item_spacing: 0.0,
+        }
+    }
+
+    pub fn horizontal() -> Self {
+        Self {
+            direction: Direction::Right,
+            item_spacing: 0.0,
+        }
+    }
+
+    pub fn show<F: FnOnce()>(self, children: F) -> ListResponse {
+        widget_children::<ListWidget, F>(children, self)
+    }
 }
 
 #[derive(Debug)]
@@ -87,24 +108,4 @@ impl Widget for ListWidget {
     }
 
     fn respond(&mut self) -> Self::Response {}
-}
-
-pub fn column<F: FnOnce()>(children: F) -> ListResponse {
-    widget_children::<ListWidget, _>(
-        children,
-        List {
-            direction: Direction::Down,
-            item_spacing: 8.0,
-        },
-    )
-}
-
-pub fn row<F: FnOnce()>(children: F) -> ListResponse {
-    widget_children::<ListWidget, _>(
-        children,
-        List {
-            direction: Direction::Right,
-            item_spacing: 8.0,
-        },
-    )
 }

@@ -9,9 +9,13 @@ mod colored_box;
 mod image;
 mod list;
 mod padding;
+mod shorthand;
 mod text;
 mod text_renderer;
 mod util;
+mod window;
+
+pub use shorthand::*;
 
 pub use self::align::*;
 pub use self::button::*;
@@ -20,6 +24,7 @@ pub use self::image::*;
 pub use self::list::*;
 pub use self::padding::*;
 pub use self::text::*;
+pub use self::window::*;
 
 use yakui_core::Vec2;
 
