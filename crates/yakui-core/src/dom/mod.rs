@@ -17,13 +17,13 @@ use self::root::RootWidget;
 
 pub struct Dom {
     inner: RefCell<DomInner>,
+    globals: RefCell<AnyMap>,
 }
 
 struct DomInner {
     nodes: Arena<DomNode>,
     root: Index,
     stack: RefCell<Vec<Index>>,
-    global_state: AnyMap,
 }
 
 pub struct DomNode {
@@ -35,6 +35,7 @@ pub struct DomNode {
 impl Dom {
     pub fn new() -> Self {
         Self {
+            globals: RefCell::new(AnyMap::new()),
             inner: RefCell::new(DomInner::new()),
         }
     }
@@ -101,15 +102,13 @@ impl Dom {
         }
     }
 
-    pub fn get_global_state_or_insert_with<T: 'static, F: FnOnce() -> T>(
+    pub fn get_global_or_insert_with<T: 'static, F: FnOnce() -> T>(
         &self,
         init: F,
     ) -> RefMut<'_, T> {
-        let dom = self.inner.borrow_mut();
+        let globals = self.globals.borrow_mut();
 
-        RefMut::map(dom, |dom| {
-            dom.global_state.entry::<T>().or_insert_with(init)
-        })
+        RefMut::map(globals, |globals| globals.entry::<T>().or_insert_with(init))
     }
 
     pub fn do_widget<T: Widget>(&self, props: T::Props) -> T::Response {
@@ -184,7 +183,6 @@ impl DomInner {
             nodes,
             root,
             stack: RefCell::new(Vec::new()),
-            global_state: AnyMap::new(),
         }
     }
 

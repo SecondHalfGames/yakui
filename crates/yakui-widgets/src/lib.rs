@@ -10,6 +10,7 @@ mod image;
 mod list;
 mod padding;
 mod text;
+mod text_renderer;
 mod util;
 
 pub use self::align::*;
