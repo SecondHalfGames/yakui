@@ -35,6 +35,8 @@ impl State {
     }
 
     pub fn handle_event(&mut self, event: Event) {
+        log::debug!("State::handle_event({event:?})");
+
         assert!(
             self.dom.is_some(),
             "Cannot handle_event() while DOM is being built."
@@ -68,6 +70,8 @@ impl State {
 
     pub fn finish(&mut self) {
         let dom = self.dom.insert(context::take_dom());
+        dom.finish();
+
         self.layout.calculate_all(dom);
 
         let mut mouse_hit = take(&mut self.last_mouse_hit);

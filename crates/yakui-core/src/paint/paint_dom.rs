@@ -47,6 +47,8 @@ impl PaintDom {
     }
 
     pub fn paint_all(&mut self, dom: &Dom, layout: &LayoutDom) {
+        log::debug!("PaintDom:paint_all()");
+
         self.meshes.clear();
 
         let node = dom.get(dom.root()).unwrap();

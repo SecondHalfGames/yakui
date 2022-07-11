@@ -122,5 +122,7 @@ fn main() {
     #[cfg(feature = "profile")]
     let _client = tracy_client::Client::start();
 
+    env_logger::init();
+
     pollster::block_on(run());
 }

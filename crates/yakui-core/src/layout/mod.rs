@@ -62,6 +62,8 @@ impl LayoutDom {
     }
 
     pub fn calculate_all(&mut self, dom: &Dom) {
+        log::debug!("LayoutDom::calculate_all()");
+
         let constraints = Constraints {
             min: Vec2::ZERO,
             max: self.viewport.size() / self.scale_factor,

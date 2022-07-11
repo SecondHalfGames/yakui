@@ -2,7 +2,7 @@ mod debug;
 mod dummy;
 mod root;
 
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;
@@ -40,11 +40,17 @@ impl Dom {
     }
 
     pub fn start(&self) {
+        log::debug!("Dom::start()");
+
         let mut dom = self.inner.borrow_mut();
 
         let root = dom.root;
         let root = dom.nodes.get_mut(root).unwrap();
         root.next_child = 0;
+    }
+
+    pub fn finish(&self) {
+        log::debug!("Dom::finish()");
     }
 
     pub fn root(&self) -> Index {
@@ -112,6 +118,8 @@ impl Dom {
     }
 
     pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Index {
+        log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
+
         let (index, widget) = {
             let mut dom = self.inner.borrow_mut();
             let index = dom.next_widget();
@@ -141,6 +149,8 @@ impl Dom {
     }
 
     pub fn end_widget<T: Widget>(&self, index: Index) -> T::Response {
+        log::trace!("end_widget::<{}>({})", type_name::<T>(), index.slot());
+
         let mut dom = self.inner.borrow_mut();
 
         let old_top = dom.stack.borrow_mut().pop().unwrap_or_else(|| {

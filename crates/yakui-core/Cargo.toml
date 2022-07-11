@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 anymap = "0.12.1"
 glam = "0.21.2"
+log = "0.4.17"
 thunderdome = "0.5.1"
