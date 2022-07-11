@@ -42,7 +42,7 @@ impl Widget for TextWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let global = dom.get_global_or_insert_with(TextGlobalState::new);
+        let global = dom.get_global_or_init(TextGlobalState::new);
 
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
@@ -72,7 +72,7 @@ impl Widget for TextWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let global = dom.get_global_or_insert_with(TextGlobalState::new);
+        let global = dom.get_global_or_init(TextGlobalState::new);
 
         let text_layout = self.layout.borrow_mut();
         let mut glyph_cache = global.glyph_cache.borrow_mut();

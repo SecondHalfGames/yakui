@@ -102,13 +102,13 @@ impl Dom {
         }
     }
 
-    pub fn get_global_or_insert_with<T: 'static, F: FnOnce() -> T>(
-        &self,
-        init: F,
-    ) -> RefMut<'_, T> {
-        let globals = self.globals.borrow_mut();
-
-        RefMut::map(globals, |globals| globals.entry::<T>().or_insert_with(init))
+    pub fn get_global_or_init<T, F>(&self, init: F) -> T
+    where
+        T: 'static + Clone,
+        F: FnOnce() -> T,
+    {
+        let mut globals = self.globals.borrow_mut();
+        globals.entry::<T>().or_insert_with(init).clone()
     }
 
     pub fn do_widget<T: Widget>(&self, props: T::Props) -> T::Response {
