@@ -1,20 +1,26 @@
+use std::fmt;
+
 use yakui_core::{Color3, Vec2, Widget};
 
-use crate::util::widget_children;
+use crate::util::widget;
 use crate::Pad;
 
-#[derive(Debug)]
 pub struct Window {
     pub size: Vec2,
+    children: Option<Box<dyn Fn()>>,
 }
 
 impl Window {
     pub fn new<S: Into<Vec2>>(size: S) -> Self {
-        Self { size: size.into() }
+        Self {
+            size: size.into(),
+            children: None,
+        }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> WindowResponse {
-        widget_children::<WindowWidget, F>(children, self)
+    pub fn show<F: 'static + Fn()>(mut self, children: F) -> WindowResponse {
+        self.children = Some(Box::new(children));
+        widget::<WindowWidget>(self)
     }
 }
 
@@ -54,9 +60,18 @@ impl Widget for WindowWidget {
                     });
                 });
 
-                crate::colored_box(Color3::REBECCA_PURPLE, [200.0, 200.0]);
-                // TODO: Put children here
+                if let Some(children) = &self.props.children {
+                    children()
+                }
             });
         });
+    }
+}
+
+impl fmt::Debug for Window {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Window")
+            .field("size", &self.size)
+            .finish_non_exhaustive()
     }
 }
