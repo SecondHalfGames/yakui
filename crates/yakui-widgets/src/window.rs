@@ -58,8 +58,9 @@ impl Widget for WindowWidget {
                         let mut row = crate::List::horizontal();
                         row.item_spacing = 8.0;
                         row.show(|| {
-                            // TODO: Expanded
-                            crate::text(16.0, "Yakui Window");
+                            crate::expanded(|| {
+                                crate::text(16.0, "Yakui Window");
+                            });
                             crate::colored_box(Color3::RED, [16.0, 16.0]);
                         });
                     });

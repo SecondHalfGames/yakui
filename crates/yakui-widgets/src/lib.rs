@@ -6,6 +6,7 @@
 mod align;
 mod button;
 mod colored_box;
+mod flex;
 mod image;
 mod list;
 mod padding;
@@ -20,6 +21,7 @@ pub use shorthand::*;
 pub use self::align::*;
 pub use self::button::*;
 pub use self::colored_box::*;
+pub use self::flex::*;
 pub use self::image::*;
 pub use self::list::*;
 pub use self::padding::*;

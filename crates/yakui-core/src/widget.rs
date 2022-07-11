@@ -42,6 +42,13 @@ pub trait Widget: 'static + fmt::Debug {
     /// between widgets.
     fn children(&self) {}
 
+    /// Returns whether this widget should grow to fill a flexible layout, and
+    /// if so, what weight should be applied to it if other widgets also want to
+    /// grow.
+    fn flex(&self) -> Option<f32> {
+        None
+    }
+
     /// Calculate this widget's layout with the given constraints and return its
     /// size. The returned size must fit within the given constraints, which can
     /// be done using `constraints.constrain(size)`.

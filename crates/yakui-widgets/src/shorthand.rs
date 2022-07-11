@@ -3,8 +3,8 @@ use std::borrow::Cow;
 use yakui_core::{Color3, Index, Vec2};
 
 use crate::{
-    Align, AlignResponse, Alignment, Button, ButtonResponse, ColoredBox, ColoredBoxResponse, Image,
-    ImageResponse, List, ListResponse, Pad, PadResponse, Text, TextResponse,
+    Align, AlignResponse, Alignment, Button, ButtonResponse, ColoredBox, ColoredBoxResponse, Flex,
+    FlexResponse, Image, ImageResponse, List, ListResponse, Pad, PadResponse, Text, TextResponse,
 };
 
 pub fn column<F: FnOnce()>(children: F) -> ListResponse {
@@ -49,4 +49,12 @@ pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> TextResponse {
 
 pub fn label<S: Into<Cow<'static, str>>>(text: S) -> TextResponse {
     Text::label(text.into()).show()
+}
+
+pub fn flex<F: FnOnce()>(flex: f32, children: F) -> FlexResponse {
+    Flex::new(flex).show(children)
+}
+
+pub fn expanded<F: FnOnce()>(children: F) -> FlexResponse {
+    Flex::expanded().show(children)
 }
