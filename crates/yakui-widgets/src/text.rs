@@ -14,17 +14,23 @@ use crate::util::widget;
 #[derive(Debug, Clone)]
 pub struct Text {
     pub text: Cow<'static, str>,
+    pub color: Color3,
     pub font_size: f32,
 }
 
 impl Text {
     pub fn new(font_size: f32, text: Cow<'static, str>) -> Self {
-        Self { text, font_size }
+        Self {
+            text,
+            color: Color3::WHITE,
+            font_size,
+        }
     }
 
     pub fn label(text: Cow<'static, str>) -> Self {
         Self {
             text,
+            color: Color3::WHITE,
             font_size: 14.0,
         }
     }
@@ -114,7 +120,7 @@ impl Widget for TextWidget {
                 / viewport.size();
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
-            rect.color = Color3::WHITE;
+            rect.color = self.props.color;
             rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
             rect.pipeline = Pipeline::Text;
             paint.add_rect(rect);
