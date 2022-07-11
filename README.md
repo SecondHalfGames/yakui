@@ -13,13 +13,13 @@ You can run an example with `cargo run <example name>`.
 
 ```rust
 fn app() {
-	yakui::column(|| {
-		yakui::text(32.0, "Hello, world!");
+    yakui::column(|| {
+        yakui::text(32.0, "Hello, world!");
 
-		if yakui::button("Click me!").clicked {
-			println!("Button clicked.");
-		}
-	})
+        if yakui::button("Click me!").clicked {
+            println!("Button clicked.");
+        }
+    })
 }
 ```
 
