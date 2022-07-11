@@ -16,25 +16,16 @@ use crate::paint::PaintDom;
 pub trait Props: 'static + fmt::Debug {}
 impl<T> Props for T where T: 'static + fmt::Debug {}
 
-pub(crate) trait ErasedProps: 'static {
-    fn as_debug(&self) -> &dyn fmt::Debug;
-}
-
-impl<T> ErasedProps for T
-where
-    T: Props,
-{
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
-    }
-}
-
-mopmopafy!(ErasedProps);
-
 /// A yakui widget. Implement this trait to create a custom widget if composing
 /// existing widgets does not solve your use case.
 pub trait Widget: 'static + fmt::Debug {
+    /// The props that this widget needs to be created or updated. Props define
+    /// all of the values that a widget's user can specify every render.
     type Props: Props;
+
+    /// The type that the widget will return to the user when it is created or
+    /// updated. This type should contain information like whether the widget
+    /// was clicked, had keyboard input, or other info that might be useful.
     type Response;
 
     /// Create the widget with the given props.
