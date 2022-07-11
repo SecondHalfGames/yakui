@@ -12,13 +12,13 @@ mod padding;
 mod text;
 mod util;
 
-pub use align::*;
-pub use button::*;
-pub use colored_box::*;
-pub use image::*;
-pub use list::*;
-pub use padding::*;
-pub use text::*;
+pub use self::align::*;
+pub use self::button::*;
+pub use self::colored_box::*;
+pub use self::image::*;
+pub use self::list::*;
+pub use self::padding::*;
+pub use self::text::*;
 
 use yakui_core::Vec2;
 
