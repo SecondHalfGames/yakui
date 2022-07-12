@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, Index, Vec2};
+use yakui_core::{Color3, Constraints, Index, Vec2};
 
 use crate::{
-    Align, AlignResponse, Alignment, Button, ButtonResponse, ColoredBox, ColoredBoxResponse, Flex,
-    FlexResponse, Image, ImageResponse, List, ListResponse, Pad, PadResponse, Text, TextResponse,
+    Align, AlignResponse, Alignment, Button, ButtonResponse, ColoredBox, ColoredBoxResponse,
+    ConstrainedBox, ConstrainedBoxResponse, Flex, FlexResponse, Image, ImageResponse, List,
+    ListResponse, Pad, PadResponse, Text, TextResponse,
 };
 
 pub fn column<F: FnOnce()>(children: F) -> ListResponse {
@@ -57,4 +58,8 @@ pub fn flex<F: FnOnce()>(flex: u32, children: F) -> FlexResponse {
 
 pub fn expanded<F: FnOnce()>(children: F) -> FlexResponse {
     Flex::expanded().show(children)
+}
+
+pub fn constrained<F: FnOnce()>(constraints: Constraints, children: F) -> ConstrainedBoxResponse {
+    ConstrainedBox::new(constraints).show(children)
 }
