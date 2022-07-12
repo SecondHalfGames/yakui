@@ -31,9 +31,76 @@ pub use self::window::*;
 use yakui_core::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FlexFit {
+    Tight,
+    Loose,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MainAxisSize {
+    Max,
+    // Min,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MainAxisAlignment {
+    Start,
+    // Center,
+    // End,
+    // SpaceAround,
+    // SpaceBetween,
+    // SpaceEvenly,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CrossAxisAlignment {
+    Start,
+    // Center,
+    // End,
+    // Stretch,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Direction {
     Down,
     Right,
+}
+
+impl Direction {
+    fn vec2(&self, main: f32, cross: f32) -> Vec2 {
+        match self {
+            Self::Down => Vec2::new(cross, main),
+            Self::Right => Vec2::new(main, cross),
+        }
+    }
+
+    fn get_main_axis(&self, vec: Vec2) -> f32 {
+        match self {
+            Self::Down => vec.y,
+            Self::Right => vec.x,
+        }
+    }
+
+    fn get_cross_axis(&self, vec: Vec2) -> f32 {
+        match self {
+            Self::Down => vec.x,
+            Self::Right => vec.y,
+        }
+    }
+
+    fn only_main_axis(&self, vec: Vec2) -> Vec2 {
+        match self {
+            Self::Down => Vec2::new(0.0, vec.y),
+            Self::Right => Vec2::new(vec.x, 0.0),
+        }
+    }
+
+    fn only_cross_axis(&self, vec: Vec2) -> Vec2 {
+        match self {
+            Self::Down => Vec2::new(vec.x, 0.0),
+            Self::Right => Vec2::new(0.0, vec.y),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

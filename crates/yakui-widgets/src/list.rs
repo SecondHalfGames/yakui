@@ -1,27 +1,33 @@
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::util::widget_children;
-use crate::Direction;
+use crate::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize};
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct List {
     pub direction: Direction,
-    pub item_spacing: f32,
+    pub main_axis_size: MainAxisSize,
+    pub main_axis_alignment: MainAxisAlignment,
+    pub cross_axis_alignment: CrossAxisAlignment,
 }
 
 impl List {
-    pub fn vertical() -> Self {
+    pub fn new(direction: Direction) -> Self {
         Self {
-            direction: Direction::Down,
-            item_spacing: 0.0,
+            direction,
+            main_axis_size: MainAxisSize::Max,
+            main_axis_alignment: MainAxisAlignment::Start,
+            cross_axis_alignment: CrossAxisAlignment::Start,
         }
     }
 
+    pub fn vertical() -> Self {
+        Self::new(Direction::Down)
+    }
+
     pub fn horizontal() -> Self {
-        Self {
-            direction: Direction::Right,
-            item_spacing: 0.0,
-        }
+        Self::new(Direction::Right)
     }
 
     pub fn show<F: FnOnce()>(self, children: F) -> ListResponse {
@@ -48,63 +54,76 @@ impl Widget for ListWidget {
         self.props = props;
     }
 
+    // This approach to layout is based on Flutter's Flex layout algorithm.
+    //
+    // https://api.flutter.dev/flutter/widgets/Flex-class.html#layout-algorithm
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
+        let direction = self.props.direction;
 
-        let item_spacing = match self.props.direction {
-            Direction::Down => Vec2::new(0.0, self.props.item_spacing),
-            Direction::Right => Vec2::new(self.props.item_spacing, 0.0),
-        };
+        let mut total_main_axis_size = 0.0;
+        let mut max_cross_axis_size = 0.0;
 
-        let mut constraints = match self.props.direction {
-            Direction::Down => Constraints {
-                min: Vec2::new(0.0, 0.0),
-                max: Vec2::new(input.max.x, input.max.y),
-            },
-            Direction::Right => Constraints {
-                min: Vec2::new(0.0, 0.0),
-                max: Vec2::new(input.max.x, input.max.y),
-            },
-        };
+        // First, we lay out any children that do not flex, giving them unbound
+        // main axis constraints. This ensures that we don't unfairly squish
+        // later widgets in the layout.
+        //
+        // Simultaneously, we'll track the total value of all flexible elements
+        // so that we can divide the remaining space up later.
+        let mut total_flex = 0;
+        for &child_index in &node.children {
+            let child = dom.get(child_index).unwrap();
+            let flex = child.widget.flex();
+            total_flex += flex;
 
-        let mut next_pos = Vec2::new(0.0, 0.0);
-
-        let mut size = Vec2::new(constraints.min.x, constraints.min.y);
-
-        for (index, &child) in node.children.iter().enumerate() {
-            let child_size = layout.calculate(dom, child, constraints);
-            let child_node = layout.get_mut(child).unwrap();
-            child_node.rect.set_pos(next_pos);
-
-            match self.props.direction {
-                Direction::Down => {
-                    size.x = size.x.max(child_size.x);
-                    size.y += child_size.y;
-
-                    next_pos.y += child_size.y;
-
-                    constraints.max.y -= child_size.y;
-                    constraints.max.y = constraints.max.y.max(0.0);
-                }
-                Direction::Right => {
-                    size.x += child_size.x;
-                    size.y = size.y.max(child_size.y);
-
-                    next_pos.x += child_size.x;
-
-                    constraints.max.x -= child_size.x;
-                    constraints.max.x = constraints.max.x.max(0.0);
-                }
+            if flex != 0 {
+                continue;
             }
 
-            if index < node.children.len() - 1 {
-                constraints.max -= item_spacing;
-                size += item_spacing;
-                next_pos += item_spacing;
-            }
+            let constraints = Constraints {
+                min: Vec2::ZERO,
+                max: Vec2::splat(f32::INFINITY),
+            };
+
+            let size = layout.calculate(dom, child_index, constraints);
+            total_main_axis_size += direction.get_main_axis(size);
+            max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
 
-        input.constrain(size)
+        // Next, lay out all flexible elements, giving them each some portion of
+        // the remaining space.
+        let remaining_main_axis =
+            (direction.get_main_axis(input.max) - total_main_axis_size).max(0.0);
+        for &child_index in &node.children {
+            let child = dom.get(child_index).unwrap();
+            let flex = child.widget.flex();
+
+            if flex == 0 {
+                continue;
+            }
+
+            let main_axis_size = flex as f32 * remaining_main_axis / total_flex as f32;
+
+            let constraints = Constraints {
+                min: Vec2::ZERO,
+                max: main_axis_size + direction.only_cross_axis(input.max),
+            };
+
+            let size = layout.calculate(dom, child_index, constraints);
+            total_main_axis_size += direction.get_main_axis(size);
+            max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
+        }
+
+        // Finally, position all children based on the sizes applied above.
+        let mut next_pos = Vec2::ZERO;
+        for &child_index in &node.children {
+            let child_layout = layout.get_mut(child_index).unwrap();
+            child_layout.rect.set_pos(next_pos);
+
+            next_pos += direction.only_main_axis(child_layout.rect.size());
+        }
+
+        input.constrain(direction.vec2(total_main_axis_size, max_cross_axis_size))
     }
 
     fn respond(&mut self) -> Self::Response {}

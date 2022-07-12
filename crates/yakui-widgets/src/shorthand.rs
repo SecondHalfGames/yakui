@@ -51,7 +51,7 @@ pub fn label<S: Into<Cow<'static, str>>>(text: S) -> TextResponse {
     Text::label(text.into()).show()
 }
 
-pub fn flex<F: FnOnce()>(flex: f32, children: F) -> FlexResponse {
+pub fn flex<F: FnOnce()>(flex: u32, children: F) -> FlexResponse {
     Flex::new(flex).show(children)
 }
 

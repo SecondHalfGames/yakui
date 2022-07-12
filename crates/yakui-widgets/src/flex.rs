@@ -1,19 +1,29 @@
-use yakui_core::Widget;
+use yakui_core::dom::Dom;
+use yakui_core::layout::LayoutDom;
+use yakui_core::{Constraints, Widget};
 
 use crate::util::widget_children;
+use crate::FlexFit;
 
 #[derive(Debug)]
 pub struct Flex {
-    pub flex: f32,
+    pub flex: u32,
+    pub fit: FlexFit,
 }
 
 impl Flex {
-    pub fn new(flex: f32) -> Self {
-        Self { flex }
+    pub fn new(flex: u32) -> Self {
+        Self {
+            flex,
+            fit: FlexFit::Loose,
+        }
     }
 
     pub fn expanded() -> Self {
-        Self { flex: 1.0 }
+        Self {
+            flex: 1,
+            fit: FlexFit::Tight,
+        }
     }
 
     pub fn show<F: FnOnce()>(self, children: F) {
@@ -42,7 +52,32 @@ impl Widget for FlexWidget {
 
     fn respond(&mut self) -> Self::Response {}
 
-    fn flex(&self) -> Option<f32> {
-        Some(self.props.flex)
+    fn flex(&self) -> u32 {
+        self.props.flex
+    }
+
+    fn layout(
+        &self,
+        dom: &Dom,
+        layout: &mut LayoutDom,
+        constraints: Constraints,
+    ) -> yakui_core::Vec2 {
+        let node = dom.get_current();
+
+        let child_constraints = match self.props.fit {
+            FlexFit::Tight => Constraints {
+                min: constraints.max,
+                max: constraints.max,
+            },
+            FlexFit::Loose => constraints,
+        };
+
+        let mut size = yakui_core::Vec2::ZERO;
+        for &child in &node.children {
+            let child_size = layout.calculate(dom, child, child_constraints);
+            size = size.max(child_size);
+        }
+
+        constraints.constrain(size)
     }
 }

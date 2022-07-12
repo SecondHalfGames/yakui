@@ -45,8 +45,11 @@ pub trait Widget: 'static + fmt::Debug {
     /// Returns whether this widget should grow to fill a flexible layout, and
     /// if so, what weight should be applied to it if other widgets also want to
     /// grow.
-    fn flex(&self) -> Option<f32> {
-        None
+    ///
+    /// A value of `0` indicates that this widget should not grow, while `1`
+    /// means that it should stretch to take the available space.
+    fn flex(&self) -> u32 {
+        0
     }
 
     /// Calculate this widget's layout with the given constraints and return its
@@ -88,6 +91,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::layout`].
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
 
+    /// See [`Widget::flex`].
+    fn flex(&self) -> u32;
+
     /// See [`Widget::paint`].
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
 
@@ -107,6 +113,11 @@ where
     #[inline]
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Widget>::layout(self, dom, layout, constraints)
+    }
+
+    #[inline]
+    fn flex(&self) -> u32 {
+        <T as Widget>::flex(self)
     }
 
     #[inline]

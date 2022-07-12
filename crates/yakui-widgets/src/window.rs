@@ -55,8 +55,7 @@ impl Widget for WindowWidget {
                 // Window Title Bar
                 crate::colored_box_container(Color3::rgb(92, 92, 92), || {
                     crate::pad(Pad::even(8.0), || {
-                        let mut row = crate::List::horizontal();
-                        row.item_spacing = 8.0;
+                        let row = crate::List::horizontal();
                         row.show(|| {
                             crate::expanded(|| {
                                 crate::text(16.0, "Yakui Window");
