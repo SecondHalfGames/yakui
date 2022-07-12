@@ -149,7 +149,7 @@ impl InputState {
 
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
-    for &(index, _interest) in &layout.interest_mouse {
+    for &index in &layout.interest_mouse {
         let layout_node = layout.get(index).unwrap();
 
         if layout_node.rect.contains_point(coords) {
