@@ -13,12 +13,21 @@ pub struct Pad {
 }
 
 impl Pad {
-    pub fn even(value: f32) -> Self {
+    pub fn equal(value: f32) -> Self {
         Self {
             left: value,
             right: value,
             top: value,
             bottom: value,
+        }
+    }
+
+    pub fn balanced(horizontal: f32, vertical: f32) -> Self {
+        Self {
+            left: horizontal,
+            right: horizontal,
+            top: vertical,
+            bottom: vertical,
         }
     }
 

@@ -12,6 +12,14 @@ impl Color3 {
         Self { r, g, b }
     }
 
+    pub fn adjust(&self, percent: f32) -> Self {
+        Self {
+            r: (self.r as f32 * percent) as u8,
+            g: (self.g as f32 * percent) as u8,
+            b: (self.b as f32 * percent) as u8,
+        }
+    }
+
     pub fn as_vec3(&self) -> Vec3 {
         Vec3::new(
             self.r as f32 / 255.0,

@@ -56,7 +56,7 @@ impl Widget for WindowWidget {
                 let constraints = Constraints::loose(self.size);
                 crate::constrained(constraints, || {
                     crate::colored_box_container(Color3::rgb(92, 92, 92), || {
-                        crate::pad(Pad::even(8.0), || {
+                        crate::pad(Pad::equal(8.0), || {
                             let row = crate::List::horizontal();
                             row.show(|| {
                                 crate::expanded(|| {

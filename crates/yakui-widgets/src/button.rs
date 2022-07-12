@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use yakui_core::{Color3, MouseButton, Response, Widget, WidgetEvent};
 
+use crate::colors;
 use crate::util::widget;
 use crate::Pad;
 
@@ -18,7 +19,7 @@ impl Button {
     pub fn unstyled(text: Cow<'static, str>) -> Self {
         Self {
             text,
-            padding: Pad::even(0.0),
+            padding: Pad::equal(0.0),
             fill: Color3::GRAY,
             hover_fill: None,
             down_fill: None,
@@ -28,10 +29,10 @@ impl Button {
     pub fn styled(text: Cow<'static, str>) -> Self {
         Self {
             text,
-            padding: Pad::even(6.0),
-            fill: Color3::rgb(50, 94, 168),
-            hover_fill: Some(Color3::rgb(88, 129, 199)),
-            down_fill: Some(Color3::rgb(30, 76, 156)),
+            padding: Pad::balanced(20.0, 10.0),
+            fill: colors::BACKGROUND_3,
+            hover_fill: Some(colors::BACKGROUND_3.adjust(1.2)),
+            down_fill: Some(colors::BACKGROUND_3.adjust(0.8)),
         }
     }
 
@@ -82,7 +83,7 @@ impl Widget for ButtonWidget {
 
         crate::colored_box_container(color, || {
             crate::pad(self.props.padding, || {
-                crate::text(16.0, self.props.text.clone());
+                crate::text(18.0, self.props.text.clone());
             });
         });
     }

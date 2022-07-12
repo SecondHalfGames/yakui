@@ -17,7 +17,7 @@ mod text_renderer;
 mod util;
 mod window;
 
-pub use shorthand::*;
+pub mod colors;
 
 pub use self::align::*;
 pub use self::button::*;
@@ -27,6 +27,7 @@ pub use self::flex::*;
 pub use self::image::*;
 pub use self::list::*;
 pub use self::padding::*;
+pub use self::shorthand::*;
 pub use self::text::*;
 pub use self::window::*;
 
@@ -88,13 +89,6 @@ impl Direction {
         match self {
             Self::Down => Vec2::new(0.0, vec.y),
             Self::Right => Vec2::new(vec.x, 0.0),
-        }
-    }
-
-    fn only_cross_axis(&self, vec: Vec2) -> Vec2 {
-        match self {
-            Self::Down => Vec2::new(vec.x, 0.0),
-            Self::Right => Vec2::new(0.0, vec.y),
         }
     }
 }
