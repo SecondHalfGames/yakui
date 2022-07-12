@@ -31,12 +31,6 @@ pub use self::window::*;
 use yakui_core::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FlexFit {
-    Tight,
-    Loose,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainAxisSize {
     Max,
     // Min,

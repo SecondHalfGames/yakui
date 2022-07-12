@@ -7,6 +7,13 @@ pub struct Constraints {
 }
 
 impl Constraints {
+    pub fn loose(max: Vec2) -> Self {
+        Self {
+            min: Vec2::ZERO,
+            max,
+        }
+    }
+
     pub fn constrain(&self, base: Vec2) -> Vec2 {
         base.max(self.min).min(self.max)
     }

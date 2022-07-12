@@ -1,3 +1,4 @@
+use yakui_core::FlexFit;
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::util::widget_children;
@@ -73,7 +74,7 @@ impl Widget for ListWidget {
         let mut total_flex = 0;
         for &child_index in &node.children {
             let child = dom.get(child_index).unwrap();
-            let flex = child.widget.flex();
+            let (flex, _fit) = child.widget.flex();
             total_flex += flex;
 
             if flex != 0 {
@@ -82,7 +83,7 @@ impl Widget for ListWidget {
 
             let constraints = Constraints {
                 min: Vec2::ZERO,
-                max: Vec2::splat(f32::INFINITY),
+                max: direction.vec2(f32::INFINITY, direction.get_cross_axis(input.max)),
             };
 
             let size = layout.calculate(dom, child_index, constraints);
@@ -91,12 +92,12 @@ impl Widget for ListWidget {
         }
 
         // Next, lay out all flexible elements, giving them each some portion of
-        // the remaining space.
+        // the remaining space based on their flex factor.
         let remaining_main_axis =
             (direction.get_main_axis(input.max) - total_main_axis_size).max(0.0);
         for &child_index in &node.children {
             let child = dom.get(child_index).unwrap();
-            let flex = child.widget.flex();
+            let (flex, fit) = child.widget.flex();
 
             if flex == 0 {
                 continue;
@@ -104,9 +105,18 @@ impl Widget for ListWidget {
 
             let main_axis_size = flex as f32 * remaining_main_axis / total_flex as f32;
 
-            let constraints = Constraints {
-                min: Vec2::ZERO,
-                max: main_axis_size + direction.only_cross_axis(input.max),
+            // The maximum main axis size is based on the portion of the
+            // remaining space that we allocated to this widget.
+            //
+            // We pass along the maximum cross axis size from our incoming
+            // constraints.
+            let max = direction.vec2(main_axis_size, direction.get_cross_axis(input.max));
+            let constraints = match fit {
+                FlexFit::Loose => Constraints::loose(max),
+                FlexFit::Tight => Constraints {
+                    min: direction.vec2(main_axis_size, 0.0),
+                    max,
+                },
             };
 
             let size = layout.calculate(dom, child_index, constraints);
@@ -114,7 +124,7 @@ impl Widget for ListWidget {
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
 
-        // Finally, position all children based on the sizes applied above.
+        // Finally, position all children based on the sizes calculated above.
         let mut next_pos = Vec2::ZERO;
         for &child_index in &node.children {
             let child_layout = layout.get_mut(child_index).unwrap();

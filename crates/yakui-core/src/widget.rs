@@ -5,7 +5,7 @@ use glam::Vec2;
 
 use crate::dom::Dom;
 use crate::event::WidgetEvent;
-use crate::geometry::Constraints;
+use crate::geometry::{Constraints, FlexFit};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 
@@ -48,8 +48,8 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// A value of `0` indicates that this widget should not grow, while `1`
     /// means that it should stretch to take the available space.
-    fn flex(&self) -> u32 {
-        0
+    fn flex(&self) -> (u32, FlexFit) {
+        (0, FlexFit::Loose)
     }
 
     /// Calculate this widget's layout with the given constraints and return its
@@ -92,7 +92,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
 
     /// See [`Widget::flex`].
-    fn flex(&self) -> u32;
+    fn flex(&self) -> (u32, FlexFit);
 
     /// See [`Widget::paint`].
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
@@ -116,7 +116,7 @@ where
     }
 
     #[inline]
-    fn flex(&self) -> u32 {
+    fn flex(&self) -> (u32, FlexFit) {
         <T as Widget>::flex(self)
     }
 

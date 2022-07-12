@@ -1,9 +1,6 @@
-use yakui_core::dom::Dom;
-use yakui_core::layout::LayoutDom;
-use yakui_core::{Constraints, Widget};
+use yakui_core::{FlexFit, Widget};
 
 use crate::util::widget_children;
-use crate::FlexFit;
 
 #[derive(Debug)]
 pub struct Flex {
@@ -52,32 +49,7 @@ impl Widget for FlexWidget {
 
     fn respond(&mut self) -> Self::Response {}
 
-    fn flex(&self) -> u32 {
-        self.props.flex
-    }
-
-    fn layout(
-        &self,
-        dom: &Dom,
-        layout: &mut LayoutDom,
-        constraints: Constraints,
-    ) -> yakui_core::Vec2 {
-        let node = dom.get_current();
-
-        let child_constraints = match self.props.fit {
-            FlexFit::Tight => Constraints {
-                min: constraints.max,
-                max: constraints.max,
-            },
-            FlexFit::Loose => constraints,
-        };
-
-        let mut size = yakui_core::Vec2::ZERO;
-        for &child in &node.children {
-            let child_size = layout.calculate(dom, child, child_constraints);
-            size = size.max(child_size);
-        }
-
-        constraints.constrain(size)
+    fn flex(&self) -> (u32, FlexFit) {
+        (self.props.flex, self.props.fit)
     }
 }

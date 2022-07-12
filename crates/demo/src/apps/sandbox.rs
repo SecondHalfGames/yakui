@@ -11,8 +11,7 @@ pub fn app(_state: &AppState) {
 
         let padding = Pad::even(8.0);
         yakui::pad(padding, || {
-            let row = yakui::List::horizontal();
-            row.show(|| {
+            yakui::row(|| {
                 yakui::button("Hello");
                 yakui::button("World");
                 yakui::button("I'm Yakui!");
