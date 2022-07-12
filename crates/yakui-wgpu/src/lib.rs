@@ -247,7 +247,7 @@ impl State {
             let vertices = mesh.vertices.iter().map(|vertex| Vertex {
                 pos: vertex.position,
                 texcoord: vertex.texcoord,
-                color: srgb_to_linear(vertex.color),
+                color: vertex.color,
             });
 
             let base = self.vertices.len() as u32;
@@ -311,21 +311,4 @@ struct DrawCommand {
     index_range: Range<u32>,
     bind_group: wgpu::BindGroup,
     pipeline: Pipeline,
-}
-
-fn srgb_to_linear(input: Vec4) -> Vec4 {
-    Vec4::new(
-        srgb_to_linear_component(input.x),
-        srgb_to_linear_component(input.y),
-        srgb_to_linear_component(input.z),
-        input.w,
-    )
-}
-
-fn srgb_to_linear_component(value: f32) -> f32 {
-    if value <= 0.04045 {
-        value / 12.92
-    } else {
-        ((value + 0.055) / 1.055).powf(2.2)
-    }
 }

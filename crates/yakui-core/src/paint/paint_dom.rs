@@ -84,7 +84,7 @@ impl PaintDom {
     pub fn add_rect(&mut self, rect: PaintRect) {
         let size = rect.rect.size();
         let pos = rect.rect.pos();
-        let color = rect.color.as_vec4(1.0);
+        let color = rect.color.to_linear().extend(1.0);
 
         let texture_id = rect.texture.map(|(index, _rect)| index);
         let mesh = match self.meshes.last_mut() {

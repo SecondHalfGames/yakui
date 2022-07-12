@@ -92,7 +92,7 @@ impl Graphics {
             });
 
         {
-            let bg = yakui::colors::BACKGROUND_1.as_vec4(1.0);
+            let bg = yakui::colors::BACKGROUND_1.to_linear();
 
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),

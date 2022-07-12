@@ -20,6 +20,14 @@ impl Color3 {
         }
     }
 
+    pub fn to_linear(&self) -> Vec3 {
+        palette::Srgb::new(self.r, self.g, self.b)
+            .into_format::<f32>()
+            .into_linear()
+            .into_components()
+            .into()
+    }
+
     pub fn as_vec3(&self) -> Vec3 {
         Vec3::new(
             self.r as f32 / 255.0,
