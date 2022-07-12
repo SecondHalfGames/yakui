@@ -1,11 +1,10 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::mem::take;
 
 use glam::Vec2;
 use thunderdome::Index;
 
 use crate::dom::Dom;
-use crate::event::EventInterest;
 use crate::layout::LayoutDom;
 use crate::WidgetEvent;
 
@@ -148,21 +147,13 @@ impl InputState {
     }
 }
 
-fn hit_test(dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
-    let mut queue = VecDeque::new();
+#[profiling::function]
+fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
+    for &(index, _interest) in &layout.interest_mouse {
+        let layout_node = layout.get(index).unwrap();
 
-    queue.push_back(dom.root());
-
-    while let Some(index) = queue.pop_front() {
-        let node = dom.get(index).unwrap();
-        let layout = layout.get(index).unwrap();
-
-        if layout.rect.contains_point(coords) {
-            if layout.event_interest.contains(EventInterest::MOUSE_INSIDE) {
-                output.push(index);
-            }
-
-            queue.extend(&node.children);
+        if layout_node.rect.contains_point(coords) {
+            output.push(index);
         }
     }
 }

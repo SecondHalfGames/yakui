@@ -9,10 +9,13 @@ use crate::EventInterest;
 
 #[derive(Debug)]
 pub struct LayoutDom {
+    nodes: Arena<LayoutDomNode>,
+
     viewport: Rect,
     scaled_viewport: Rect,
     scale_factor: f32,
-    nodes: Arena<LayoutDomNode>,
+
+    pub interest_mouse: Vec<(Index, EventInterest)>,
 }
 
 #[derive(Debug)]
@@ -25,10 +28,13 @@ pub struct LayoutDomNode {
 impl LayoutDom {
     pub fn new() -> Self {
         Self {
+            nodes: Arena::new(),
+
             viewport: Rect::ONE,
             scaled_viewport: Rect::ONE,
             scale_factor: 1.0,
-            nodes: Arena::new(),
+
+            interest_mouse: Vec::new(),
         }
     }
 
@@ -65,7 +71,10 @@ impl LayoutDom {
     }
 
     pub fn calculate_all(&mut self, dom: &Dom) {
+        profiling::scope!("LayoutDom::calculate_all");
         log::debug!("LayoutDom::calculate_all()");
+
+        self.interest_mouse.clear();
 
         let constraints = Constraints {
             min: Vec2::ZERO,
@@ -81,6 +90,11 @@ impl LayoutDom {
         let dom_node = dom.get(index).unwrap();
         let size = dom_node.widget.layout(dom, self, constraints);
         let event_interest = dom_node.widget.event_interest();
+
+        if event_interest.intersects(EventInterest::MOUSE) {
+            self.interest_mouse.push((index, event_interest));
+        }
+
         self.nodes.insert_at(
             index,
             LayoutDomNode {

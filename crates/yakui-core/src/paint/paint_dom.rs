@@ -47,6 +47,7 @@ impl PaintDom {
     }
 
     pub fn paint_all(&mut self, dom: &Dom, layout: &LayoutDom) {
+        profiling::scope!("PaintDom::paint_all");
         log::debug!("PaintDom:paint_all()");
 
         self.meshes.clear();

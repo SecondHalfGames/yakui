@@ -93,25 +93,10 @@ async fn run() {
             Event::RedrawRequested(_) => {
                 state.time = (Instant::now() - start).as_secs_f32();
 
-                {
-                    profiling::scope!("UI");
-
-                    {
-                        profiling::scope!("UI Create+Update");
-                        yak.start();
-                        app(&state);
-                    }
-
-                    {
-                        profiling::scope!("UI Layout and Input");
-                        yak.finish();
-                    }
-                }
-
-                {
-                    profiling::scope!("Rendering");
-                    graphics.paint(&mut yak, &mut yak_renderer);
-                }
+                yak.start();
+                app(&state);
+                yak.finish();
+                graphics.paint(&mut yak, &mut yak_renderer);
 
                 profiling::finish_frame!();
             }

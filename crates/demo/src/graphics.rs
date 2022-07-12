@@ -75,6 +75,7 @@ impl Graphics {
         }
     }
 
+    #[profiling::function]
     pub fn paint(&self, yak: &mut yakui::State, yak_renderer: &mut yakui_wgpu::State) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
