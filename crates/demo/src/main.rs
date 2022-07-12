@@ -43,8 +43,13 @@ async fn run() {
         yakui_wgpu::State::new(&graphics.device, &graphics.queue, graphics.surface_format());
     let mut yak_window = yakui_winit::State::new(&window);
 
-    if std::env::var("YAKUI_NO_SCALE").as_deref() == Ok("1") {
+    let force_scale: Option<f32> = std::env::var("YAKUI_FORCE_SCALE")
+        .ok()
+        .and_then(|s| s.parse().ok());
+
+    if let Some(scale) = force_scale {
         yak_window.set_automatic_scale_factor(false);
+        yak.set_scale_factor(scale);
     }
 
     let monkey = yak.create_texture(load_texture(MONKEY_PNG));
@@ -55,7 +60,9 @@ async fn run() {
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
-        yak_window.handle_event(&mut yak, &event);
+        if yak_window.handle_event(&mut yak, &event) {
+            return;
+        }
 
         match event {
             Event::WindowEvent {

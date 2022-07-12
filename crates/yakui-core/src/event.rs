@@ -11,6 +11,7 @@ pub enum Event {
     MouseButtonChanged(MouseButton, bool),
 }
 
+#[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 pub enum WidgetEvent {
@@ -25,5 +26,6 @@ bitflags::bitflags! {
     pub struct EventInterest: u8 {
         const MOUSE_INSIDE  = 0b0000_0001;
         const MOUSE_OUTSIDE = 0b0000_0010;
+        const MOUSE = Self::MOUSE_INSIDE.bits | Self::MOUSE_OUTSIDE.bits;
     }
 }

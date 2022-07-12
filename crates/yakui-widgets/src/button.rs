@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, MouseButton, Response, Widget, WidgetEvent};
+use yakui_core::{Color3, EventInterest, MouseButton, Response, Widget, WidgetEvent};
 
 use crate::colors;
 use crate::util::widget;
@@ -96,6 +96,10 @@ impl Widget for ButtonWidget {
             hovering: self.hovering,
             clicked,
         }
+    }
+
+    fn event_interest(&self) -> EventInterest {
+        EventInterest::MOUSE
     }
 
     fn event(&mut self, event: &WidgetEvent) {

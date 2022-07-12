@@ -1,10 +1,10 @@
-use std::any::{Any, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
 
 use crate::dom::Dom;
-use crate::event::WidgetEvent;
+use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
@@ -79,6 +79,10 @@ pub trait Widget: 'static + fmt::Debug {
         }
     }
 
+    fn event_interest(&self) -> EventInterest {
+        EventInterest::empty()
+    }
+
     /// Handle the given event and update the widget's state.
     fn event(&mut self, _event: &WidgetEvent) {}
 }
@@ -97,6 +101,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::paint`].
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
 
+    /// See [`Widget::event_interest`].
+    fn event_interest(&self) -> EventInterest;
+
     /// See [`Widget::event`].
     fn event(&mut self, event: &WidgetEvent);
 }
@@ -105,28 +112,29 @@ impl<T> ErasedWidget for T
 where
     T: Widget,
 {
-    #[inline]
     fn children(&self) {
         <T as Widget>::children(self)
     }
 
-    #[inline]
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Widget>::layout(self, dom, layout, constraints)
     }
 
-    #[inline]
     fn flex(&self) -> (u32, FlexFit) {
         <T as Widget>::flex(self)
     }
 
-    #[inline]
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         <T as Widget>::paint(self, dom, layout, paint)
     }
 
-    #[inline]
+    fn event_interest(&self) -> EventInterest {
+        <T as Widget>::event_interest(self)
+    }
+
     fn event(&mut self, event: &WidgetEvent) {
+        log::debug!("Event on {}: {event:?}", type_name::<T>());
+
         <T as Widget>::event(self, event)
     }
 }

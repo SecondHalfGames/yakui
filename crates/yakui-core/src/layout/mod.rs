@@ -5,6 +5,7 @@ use thunderdome::{Arena, Index};
 
 use crate::dom::Dom;
 use crate::geometry::{Constraints, Rect};
+use crate::EventInterest;
 
 #[derive(Debug)]
 pub struct LayoutDom {
@@ -15,8 +16,10 @@ pub struct LayoutDom {
 }
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct LayoutDomNode {
     pub rect: Rect,
+    pub event_interest: EventInterest,
 }
 
 impl LayoutDom {
@@ -77,10 +80,12 @@ impl LayoutDom {
         dom.enter(index);
         let dom_node = dom.get(index).unwrap();
         let size = dom_node.widget.layout(dom, self, constraints);
+        let event_interest = dom_node.widget.event_interest();
         self.nodes.insert_at(
             index,
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
+                event_interest,
             },
         );
         dom.exit(index);
