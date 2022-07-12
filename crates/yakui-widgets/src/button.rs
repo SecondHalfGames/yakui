@@ -83,7 +83,7 @@ impl Widget for ButtonWidget {
 
         crate::colored_box_container(color, || {
             crate::pad(self.props.padding, || {
-                crate::text(18.0, self.props.text.clone());
+                crate::text(16.0, self.props.text.clone());
             });
         });
     }
