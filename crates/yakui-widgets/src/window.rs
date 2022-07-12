@@ -69,12 +69,14 @@ impl Widget for WindowWidget {
                 });
 
                 // Window Contents
-                let contents = crate::ColoredBox::sized(Color3::rgb(240, 240, 240), self.size);
-                if let Some(children) = &self.props.children {
-                    contents.show_children(children);
-                } else {
-                    contents.show();
-                }
+                crate::constrained(constraints, || {
+                    let contents = crate::ColoredBox::sized(Color3::rgb(60, 60, 60), self.size);
+                    if let Some(children) = &self.props.children {
+                        contents.show_children(children);
+                    } else {
+                        contents.show();
+                    }
+                });
             });
         });
     }

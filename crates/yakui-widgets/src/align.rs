@@ -46,6 +46,7 @@ impl Widget for AlignWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
 
+        // FIXME: Need to behave when given unbound constraints
         let self_size = input.max;
         let align = self.props.alignment.as_vec2();
 
