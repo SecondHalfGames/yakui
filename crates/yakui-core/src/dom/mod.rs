@@ -29,6 +29,7 @@ struct DomInner {
 
 pub struct DomNode {
     pub widget: Box<dyn ErasedWidget>,
+    pub parent: Option<Index>,
     pub children: Vec<Index>,
     next_child: usize,
 }
@@ -175,6 +176,7 @@ impl DomInner {
         let mut nodes = Arena::new();
         let root = nodes.insert(DomNode {
             widget: Box::new(DummyWidget),
+            parent: None,
             children: Vec::new(),
             next_child: 0,
         });
@@ -204,6 +206,7 @@ impl DomInner {
         } else {
             let index = self.nodes.insert(DomNode {
                 widget: Box::new(DummyWidget),
+                parent: Some(parent_index),
                 children: Vec::new(),
                 next_child: 0,
             });
