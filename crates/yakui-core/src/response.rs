@@ -4,8 +4,11 @@ use thunderdome::Index;
 
 use crate::widget::Widget;
 
+/// Wraps the response returned by a widget when it is updated.
 pub struct Response<T: Widget> {
     inner: T::Response,
+
+    /// The ID of the widget that responded.
     pub index: Index,
 }
 

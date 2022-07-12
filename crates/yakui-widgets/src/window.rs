@@ -55,7 +55,7 @@ impl Widget for WindowWidget {
                 // Window Title Bar
                 let constraints = Constraints::loose(self.size);
                 crate::constrained(constraints, || {
-                    crate::pad(Pad::equal(8.0), || {
+                    crate::pad(Pad::all(8.0), || {
                         let row = crate::List::horizontal();
                         row.show(|| {
                             crate::colored_box(Color3::BLUE, [16.0, 16.0]);

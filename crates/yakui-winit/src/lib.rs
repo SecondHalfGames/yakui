@@ -63,7 +63,13 @@ impl State {
                 ..
             } => {
                 let pos = Vec2::new(position.x as f32, position.y as f32);
-                state.handle_event(Event::MoveMouse(pos));
+                state.handle_event(Event::MoveMouse(Some(pos)));
+            }
+            WinitEvent::WindowEvent {
+                event: WindowEvent::CursorLeft { .. },
+                ..
+            } => {
+                state.handle_event(Event::MoveMouse(None));
             }
             WinitEvent::WindowEvent {
                 event:

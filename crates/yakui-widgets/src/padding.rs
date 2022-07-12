@@ -13,7 +13,9 @@ pub struct Pad {
 }
 
 impl Pad {
-    pub fn equal(value: f32) -> Self {
+    pub const ZERO: Pad = Pad::all(0.0);
+
+    pub const fn all(value: f32) -> Self {
         Self {
             left: value,
             right: value,
@@ -22,12 +24,30 @@ impl Pad {
         }
     }
 
-    pub fn balanced(horizontal: f32, vertical: f32) -> Self {
+    pub const fn balanced(horizontal: f32, vertical: f32) -> Self {
         Self {
             left: horizontal,
             right: horizontal,
             top: vertical,
             bottom: vertical,
+        }
+    }
+
+    pub const fn horizontal(value: f32) -> Self {
+        Self {
+            left: value,
+            right: value,
+            top: 0.0,
+            bottom: 0.0,
+        }
+    }
+
+    pub const fn vertical(value: f32) -> Self {
+        Self {
+            left: 0.0,
+            right: 0.0,
+            top: value,
+            bottom: value,
         }
     }
 

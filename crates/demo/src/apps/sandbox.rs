@@ -9,7 +9,7 @@ pub fn app(_state: &AppState) {
             println!("Clicked the first button!");
         }
 
-        let padding = Pad::equal(8.0);
+        let padding = Pad::all(8.0);
         yakui::pad(padding, || {
             yakui::row(|| {
                 yakui::button("Hello");

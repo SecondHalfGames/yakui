@@ -1,6 +1,6 @@
 use crate::Widget;
 
-/// Placeholder widget used internally to emplace a component without
+/// Placeholder widget used internally to emplace a widget without
 /// initializing it yet.
 #[derive(Debug)]
 pub(crate) struct DummyWidget;

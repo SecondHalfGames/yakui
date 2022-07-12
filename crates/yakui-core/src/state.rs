@@ -47,7 +47,7 @@ impl State {
                 self.layout.set_unscaled_viewport(viewport);
             }
             Event::MoveMouse(pos) => {
-                self.input.mouse_position = Some(pos);
+                self.input.mouse_position = pos;
             }
             Event::MouseButtonChanged(button, down) => {
                 self.input.mouse_button_changed(button, down);

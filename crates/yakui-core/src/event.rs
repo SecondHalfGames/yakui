@@ -7,7 +7,7 @@ use crate::input::MouseButton;
 #[non_exhaustive]
 pub enum Event {
     SetViewport(Rect),
-    MoveMouse(Vec2),
+    MoveMouse(Option<Vec2>),
     MouseButtonChanged(MouseButton, bool),
 }
 
@@ -18,4 +18,12 @@ pub enum WidgetEvent {
     MouseLeave,
     MouseButtonChangedInside(MouseButton, bool),
     MouseButtonChangedOutside(MouseButton, bool),
+}
+
+bitflags::bitflags! {
+    #[derive(Default)]
+    pub struct EventInterest: u8 {
+        const MOUSE_INSIDE  = 0b0000_0001;
+        const MOUSE_OUTSIDE = 0b0000_0010;
+    }
 }

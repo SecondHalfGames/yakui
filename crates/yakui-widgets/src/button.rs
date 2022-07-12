@@ -19,7 +19,7 @@ impl Button {
     pub fn unstyled(text: Cow<'static, str>) -> Self {
         Self {
             text,
-            padding: Pad::equal(0.0),
+            padding: Pad::ZERO,
             fill: Color3::GRAY,
             hover_fill: None,
             down_fill: None,
