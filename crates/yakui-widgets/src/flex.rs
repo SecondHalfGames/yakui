@@ -1,4 +1,4 @@
-use yakui_core::{FlexFit, Widget};
+use yakui_core::{FlexFit, Response, Widget};
 
 use crate::util::widget_children;
 
@@ -23,7 +23,7 @@ impl Flex {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<FlexWidget> {
         widget_children::<FlexWidget, F>(children, self)
     }
 }

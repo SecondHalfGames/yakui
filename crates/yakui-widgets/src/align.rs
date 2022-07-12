@@ -1,4 +1,5 @@
 use yakui_core::paint::PaintDom;
+use yakui_core::Response;
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
 
 use crate::{util::widget_children, Alignment};
@@ -19,7 +20,7 @@ impl Align {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> AlignResponse {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<AlignWidget> {
         widget_children::<AlignWidget, F>(children, self)
     }
 }

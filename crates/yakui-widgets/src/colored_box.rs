@@ -1,6 +1,7 @@
+use yakui_core::dom::Dom;
+use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::Rect;
-use yakui_core::{dom::Dom, layout::LayoutDom, Color3, Constraints, Vec2, Widget};
+use yakui_core::{Color3, Constraints, Rect, Response, Vec2, Widget};
 
 use crate::util::{widget, widget_children};
 
@@ -25,11 +26,11 @@ impl ColoredBox {
         }
     }
 
-    pub fn show(self) -> ColoredBoxResponse {
+    pub fn show(self) -> Response<ColoredBoxWidget> {
         widget::<ColoredBoxWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> ColoredBoxResponse {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<ColoredBoxWidget> {
         widget_children::<ColoredBoxWidget, F>(children, self)
     }
 }

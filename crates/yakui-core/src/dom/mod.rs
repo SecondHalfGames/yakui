@@ -10,6 +10,7 @@ use std::mem::replace;
 use anymap::AnyMap;
 use thunderdome::{Arena, Index};
 
+use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
 
 use self::dummy::DummyWidget;
@@ -111,7 +112,7 @@ impl Dom {
         globals.entry::<T>().or_insert_with(init).clone()
     }
 
-    pub fn do_widget<T: Widget>(&self, props: T::Props) -> T::Response {
+    pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T> {
         let index = self.begin_widget::<T>(props);
         self.end_widget::<T>(index)
     }
@@ -147,7 +148,7 @@ impl Dom {
         index
     }
 
-    pub fn end_widget<T: Widget>(&self, index: Index) -> T::Response {
+    pub fn end_widget<T: Widget>(&self, index: Index) -> Response<T> {
         log::trace!("end_widget::<{}>({})", type_name::<T>(), index.slot());
 
         let mut dom = self.inner.borrow_mut();
@@ -164,7 +165,8 @@ impl Dom {
         dom.trim_children(index);
 
         let node = dom.nodes.get_mut(index).unwrap();
-        node.widget.as_mut().downcast_mut::<T>().unwrap().respond()
+        let res = node.widget.as_mut().downcast_mut::<T>().unwrap().respond();
+        Response::new(index, res)
     }
 }
 

@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, MouseButton, Widget, WidgetEvent};
+use yakui_core::{Color3, MouseButton, Response, Widget, WidgetEvent};
 
 use crate::util::widget;
 use crate::Pad;
@@ -35,7 +35,7 @@ impl Button {
         }
     }
 
-    pub fn show(self) -> ButtonResponse {
+    pub fn show(self) -> Response<ButtonWidget> {
         widget::<ButtonWidget>(self)
     }
 }

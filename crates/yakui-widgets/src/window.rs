@@ -1,6 +1,6 @@
 use std::fmt;
 
-use yakui_core::{Color3, Constraints, Vec2, Widget};
+use yakui_core::{Color3, Constraints, Response, Vec2, Widget};
 
 use crate::util::widget;
 use crate::Pad;
@@ -18,7 +18,7 @@ impl Window {
         }
     }
 
-    pub fn show<F: 'static + Fn()>(mut self, children: F) -> WindowResponse {
+    pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowWidget> {
         self.children = Some(Box::new(children));
         widget::<WindowWidget>(self)
     }

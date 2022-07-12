@@ -1,65 +1,71 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, Constraints, Index, Vec2};
+use yakui_core::{Color3, Constraints, Index, Response, Vec2};
 
 use crate::{
-    Align, AlignResponse, Alignment, Button, ButtonResponse, ColoredBox, ColoredBoxResponse,
-    ConstrainedBox, ConstrainedBoxResponse, Flex, FlexResponse, Image, ImageResponse, List,
-    ListResponse, Pad, PadResponse, Text, TextResponse,
+    Align, AlignWidget, Alignment, Button, ButtonWidget, ColoredBox, ColoredBoxWidget,
+    ConstrainedBox, ConstrainedBoxWidget, Flex, FlexWidget, Image, ImageWidget, List, ListWidget,
+    Pad, PadWidget, Text, TextWidget,
 };
 
-pub fn column<F: FnOnce()>(children: F) -> ListResponse {
+pub fn column<F: FnOnce()>(children: F) -> Response<ListWidget> {
     List::vertical().show(children)
 }
 
-pub fn row<F: FnOnce()>(children: F) -> ListResponse {
+pub fn row<F: FnOnce()>(children: F) -> Response<ListWidget> {
     List::horizontal().show(children)
 }
 
-pub fn center<F: FnOnce()>(children: F) -> AlignResponse {
+pub fn center<F: FnOnce()>(children: F) -> Response<AlignWidget> {
     Align::center().show(children)
 }
 
-pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> AlignResponse {
+pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> Response<AlignWidget> {
     Align::new(alignment).show(children)
 }
 
-pub fn button<S: Into<Cow<'static, str>>>(text: S) -> ButtonResponse {
+pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonWidget> {
     Button::styled(text.into()).show()
 }
 
-pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> ColoredBoxResponse {
+pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> Response<ColoredBoxWidget> {
     ColoredBox::sized(color, size.into()).show()
 }
 
-pub fn colored_box_container<F: FnOnce()>(color: Color3, children: F) -> ColoredBoxResponse {
+pub fn colored_box_container<F: FnOnce()>(
+    color: Color3,
+    children: F,
+) -> Response<ColoredBoxWidget> {
     ColoredBox::container(color).show_children(children)
 }
 
-pub fn image(image: Index, size: Vec2) -> ImageResponse {
+pub fn image(image: Index, size: Vec2) -> Response<ImageWidget> {
     Image::new(image, size).show()
 }
 
-pub fn pad<F: FnOnce()>(padding: Pad, children: F) -> PadResponse {
+pub fn pad<F: FnOnce()>(padding: Pad, children: F) -> Response<PadWidget> {
     padding.show(children)
 }
 
-pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> TextResponse {
+pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> Response<TextWidget> {
     Text::new(size, text.into()).show()
 }
 
-pub fn label<S: Into<Cow<'static, str>>>(text: S) -> TextResponse {
+pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<TextWidget> {
     Text::label(text.into()).show()
 }
 
-pub fn flex<F: FnOnce()>(flex: u32, children: F) -> FlexResponse {
+pub fn flex<F: FnOnce()>(flex: u32, children: F) -> Response<FlexWidget> {
     Flex::new(flex).show(children)
 }
 
-pub fn expanded<F: FnOnce()>(children: F) -> FlexResponse {
+pub fn expanded<F: FnOnce()>(children: F) -> Response<FlexWidget> {
     Flex::expanded().show(children)
 }
 
-pub fn constrained<F: FnOnce()>(constraints: Constraints, children: F) -> ConstrainedBoxResponse {
+pub fn constrained<F: FnOnce()>(
+    constraints: Constraints,
+    children: F,
+) -> Response<ConstrainedBoxWidget> {
     ConstrainedBox::new(constraints).show(children)
 }

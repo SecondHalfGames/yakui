@@ -6,7 +6,7 @@ use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
-use yakui_core::{Color3, Constraints, Rect, Vec2, Widget};
+use yakui_core::{Color3, Constraints, Rect, Response, Vec2, Widget};
 
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
@@ -35,7 +35,7 @@ impl Text {
         }
     }
 
-    pub fn show(self) -> TextResponse {
+    pub fn show(self) -> Response<TextWidget> {
         widget::<TextWidget>(self)
     }
 }

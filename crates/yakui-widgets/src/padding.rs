@@ -1,4 +1,6 @@
-use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
+use yakui_core::dom::Dom;
+use yakui_core::layout::LayoutDom;
+use yakui_core::{Constraints, Response, Vec2, Widget};
 
 use crate::util::widget_children;
 
@@ -20,7 +22,7 @@ impl Pad {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> PadResponse {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<PadWidget> {
         widget_children::<PadWidget, F>(children, self)
     }
 }

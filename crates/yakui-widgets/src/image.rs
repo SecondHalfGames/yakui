@@ -1,7 +1,7 @@
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::{Color3, Constraints, Index, Rect, Vec2, Widget};
+use yakui_core::{Color3, Constraints, Index, Rect, Response, Vec2, Widget};
 
 use crate::util::widget;
 
@@ -16,7 +16,7 @@ impl Image {
         Self { image, size }
     }
 
-    pub fn show(self) {
+    pub fn show(self) -> Response<ImageWidget> {
         widget::<ImageWidget>(self)
     }
 }

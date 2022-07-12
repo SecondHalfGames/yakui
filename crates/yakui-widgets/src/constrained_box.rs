@@ -1,6 +1,6 @@
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
-use yakui_core::{Constraints, Vec2, Widget};
+use yakui_core::{Constraints, Response, Vec2, Widget};
 
 use crate::util::widget_children;
 
@@ -14,7 +14,7 @@ impl ConstrainedBox {
         Self { constraints }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> ConstrainedBoxResponse {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxWidget> {
         widget_children::<ConstrainedBoxWidget, F>(children, self)
     }
 }

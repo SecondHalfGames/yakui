@@ -1,5 +1,5 @@
-use yakui_core::FlexFit;
 use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
+use yakui_core::{FlexFit, Response};
 
 use crate::util::widget_children;
 use crate::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize};
@@ -31,7 +31,7 @@ impl List {
         Self::new(Direction::Right)
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> ListResponse {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ListWidget> {
         widget_children::<ListWidget, F>(children, self)
     }
 }

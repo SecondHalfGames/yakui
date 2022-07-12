@@ -1,7 +1,8 @@
 use yakui_core::context;
+use yakui_core::Response;
 use yakui_core::Widget;
 
-pub fn widget_children<T, F>(children: F, props: T::Props) -> T::Response
+pub fn widget_children<T, F>(children: F, props: T::Props) -> Response<T>
 where
     T: Widget,
     F: FnOnce(),
@@ -12,7 +13,7 @@ where
     dom.end_widget::<T>(index)
 }
 
-pub fn widget<T>(props: T::Props) -> T::Response
+pub fn widget<T>(props: T::Props) -> Response<T>
 where
     T: Widget,
 {
