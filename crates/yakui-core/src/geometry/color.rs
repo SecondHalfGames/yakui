@@ -24,9 +24,14 @@ impl Color3 {
         Self::rgb(r, g, b)
     }
 
-    /// Brighten or darken the color by the given percent.
-    pub fn adjust(&self, percent: f32) -> Self {
-        Self::from_linear(self.to_linear() * percent)
+    /// Brighten or darken the color by multiplying it by a factor.
+    ///
+    /// Values greater than 1 will lighten the color, values smaller than 1 will
+    /// darken it.
+    ///
+    /// This operation is gamma-correct.
+    pub fn adjust(&self, factor: f32) -> Self {
+        Self::from_linear(self.to_linear() * factor)
     }
 
     /// Convert this color to a linear RGB color.
