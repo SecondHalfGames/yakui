@@ -9,18 +9,27 @@ pub struct Color3 {
 }
 
 impl Color3 {
+    /// Create a new `Color3`.
     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
 
-    pub fn adjust(&self, percent: f32) -> Self {
-        Self {
-            r: (self.r as f32 * percent) as u8,
-            g: (self.g as f32 * percent) as u8,
-            b: (self.b as f32 * percent) as u8,
-        }
+    /// Create a new `Color3` from a linear RGB color.
+    pub fn from_linear(value: Vec3) -> Self {
+        let linear = palette::LinSrgb::new(value.x, value.y, value.z);
+        let (r, g, b) = palette::Srgb::from_linear(linear)
+            .into_format::<u8>()
+            .into_components();
+
+        Self::rgb(r, g, b)
     }
 
+    /// Brighten or darken the color by the given percent.
+    pub fn adjust(&self, percent: f32) -> Self {
+        Self::from_linear(self.to_linear() * percent)
+    }
+
+    /// Convert this color to a linear RGB color.
     pub fn to_linear(&self) -> Vec3 {
         palette::Srgb::new(self.r, self.g, self.b)
             .into_format::<f32>()
