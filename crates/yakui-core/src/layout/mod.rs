@@ -15,7 +15,7 @@ pub struct LayoutDom {
     scaled_viewport: Rect,
     scale_factor: f32,
 
-    pub interest_mouse: Vec<Index>,
+    pub interest_mouse: Vec<(Index, EventInterest)>,
 }
 
 #[derive(Debug)]
@@ -92,7 +92,7 @@ impl LayoutDom {
         let event_interest = dom_node.widget.event_interest();
 
         if event_interest.intersects(EventInterest::MOUSE) {
-            self.interest_mouse.push(index);
+            self.interest_mouse.push((index, event_interest));
         }
 
         self.nodes.insert_at(

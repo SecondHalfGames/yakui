@@ -99,22 +99,18 @@ impl InputState {
     }
 
     fn send_mouse_events(&self, dom: &Dom) {
+        for (&button, state) in &self.mouse_buttons {
+            match state {
+                ButtonState::JustDown => self.send_just_down(dom, button),
+                ButtonState::JustUp => self.send_just_up(dom, button),
+                _ => (),
+            }
+        }
+
         for &hit in &self.mouse_hit {
             if let Some(mut node) = dom.get_mut(hit) {
                 if !self.mouse_hit_last.contains(&hit) {
                     node.widget.event(&WidgetEvent::MouseEnter);
-                }
-
-                for (&button, state) in self.mouse_buttons.iter() {
-                    match state {
-                        ButtonState::JustDown => node
-                            .widget
-                            .event(&WidgetEvent::MouseButtonChangedInside(button, true)),
-                        ButtonState::JustUp => node
-                            .widget
-                            .event(&WidgetEvent::MouseButtonChangedInside(button, false)),
-                        _ => (),
-                    }
                 }
             }
         }
@@ -124,6 +120,24 @@ impl InputState {
                 if let Some(mut node) = dom.get_mut(hit) {
                     node.widget.event(&WidgetEvent::MouseLeave);
                 }
+            }
+        }
+    }
+
+    fn send_just_down(&self, dom: &Dom, button: MouseButton) {
+        for &index in &self.mouse_hit {
+            if let Some(mut node) = dom.get_mut(index) {
+                node.widget
+                    .event(&WidgetEvent::MouseButtonChangedInside(button, true))
+            }
+        }
+    }
+
+    fn send_just_up(&self, dom: &Dom, button: MouseButton) {
+        for &index in &self.mouse_hit {
+            if let Some(mut node) = dom.get_mut(index) {
+                node.widget
+                    .event(&WidgetEvent::MouseButtonChangedInside(button, false))
             }
         }
     }
@@ -149,7 +163,7 @@ impl InputState {
 
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
-    for &index in &layout.interest_mouse {
+    for &(index, _interest) in &layout.interest_mouse {
         let layout_node = layout.get(index).unwrap();
 
         if layout_node.rect.contains_point(coords) {
