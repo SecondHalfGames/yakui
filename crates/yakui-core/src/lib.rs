@@ -18,7 +18,6 @@ pub mod paint;
 
 pub extern crate glam;
 pub use glam::{UVec2, Vec2, Vec4};
-pub use thunderdome::Index;
 
 pub use self::event::*;
 pub use self::geometry::*;
