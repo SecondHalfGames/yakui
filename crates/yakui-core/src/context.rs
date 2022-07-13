@@ -9,6 +9,10 @@ thread_local! {
     static CURRENT_CONTEXT: Storage = Rc::new(RefCell::new(None));
 }
 
+/// If there is a DOM currently being built, returns a reference to it.
+///
+/// # Panics
+/// Panics if there is no DOM currently being built.
 pub fn dom() -> Ref<'static, Dom> {
     CURRENT_CONTEXT.with(|context| {
         // SAFETY: Rust won't give us a 'static reference here because this

@@ -4,6 +4,9 @@ use crate::id::WidgetId;
 use crate::widget::Widget;
 
 /// Wraps the response returned by a widget when it is updated.
+///
+/// Widget responses can convey information like whether the widget was clicked,
+/// is currently hovered, or had an update to its state.
 pub struct Response<T: Widget> {
     inner: T::Response,
 
