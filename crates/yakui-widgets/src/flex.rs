@@ -3,12 +3,12 @@ use yakui_core::{FlexFit, Response, Widget};
 use crate::util::widget_children;
 
 #[derive(Debug)]
-pub struct Flex {
+pub struct Flexible {
     pub flex: u32,
     pub fit: FlexFit,
 }
 
-impl Flex {
+impl Flexible {
     pub fn new(flex: u32) -> Self {
         Self {
             flex,
@@ -30,13 +30,13 @@ impl Flex {
 
 #[derive(Debug)]
 pub struct FlexWidget {
-    props: Flex,
+    props: Flexible,
 }
 
 pub type FlexResponse = ();
 
 impl Widget for FlexWidget {
-    type Props = Flex;
+    type Props = Flexible;
     type Response = FlexResponse;
 
     fn new(props: Self::Props) -> Self {

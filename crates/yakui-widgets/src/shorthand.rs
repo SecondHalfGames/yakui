@@ -4,8 +4,8 @@ use yakui_core::{Color3, Constraints, Response, TextureId, Vec2};
 
 use crate::{
     Align, AlignWidget, Alignment, Button, ButtonWidget, ColoredBox, ColoredBoxWidget,
-    ConstrainedBox, ConstrainedBoxWidget, Flex, FlexWidget, Image, ImageWidget, List, ListWidget,
-    Pad, PadWidget, Text, TextWidget,
+    ConstrainedBox, ConstrainedBoxWidget, FlexWidget, Flexible, Image, ImageWidget, List,
+    ListWidget, Pad, PadWidget, Text, TextWidget,
 };
 
 pub fn column<F: FnOnce()>(children: F) -> Response<ListWidget> {
@@ -55,12 +55,12 @@ pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<TextWidget> {
     Text::label(text.into()).show()
 }
 
-pub fn flex<F: FnOnce()>(flex: u32, children: F) -> Response<FlexWidget> {
-    Flex::new(flex).show(children)
+pub fn flexible<F: FnOnce()>(flex: u32, children: F) -> Response<FlexWidget> {
+    Flexible::new(flex).show(children)
 }
 
 pub fn expanded<F: FnOnce()>(children: F) -> Response<FlexWidget> {
-    Flex::expanded().show(children)
+    Flexible::expanded().show(children)
 }
 
 pub fn constrained<F: FnOnce()>(
