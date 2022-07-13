@@ -118,6 +118,11 @@ impl Widget for ButtonWidget {
                     self.clicked = true;
                 }
             }
+            WidgetEvent::MouseButtonChangedOutside(MouseButton::One, down) => {
+                if !*down {
+                    self.mouse_down = false;
+                }
+            }
             _ => {}
         }
     }

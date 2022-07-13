@@ -6,7 +6,7 @@ use thunderdome::Index;
 
 use crate::dom::Dom;
 use crate::layout::LayoutDom;
-use crate::WidgetEvent;
+use crate::{EventInterest, WidgetEvent};
 
 #[derive(Debug)]
 pub struct InputState {
@@ -94,19 +94,42 @@ impl InputState {
 
     pub fn finish(&mut self, dom: &Dom, layout: &LayoutDom) {
         self.mouse_hit_test(dom, layout);
-        self.send_mouse_events(dom);
+        self.send_mouse_events(dom, layout);
         self.settle_buttons();
     }
 
-    fn send_mouse_events(&self, dom: &Dom) {
+    fn send_mouse_events(&self, dom: &Dom, layout: &LayoutDom) {
+        self.send_enter(dom);
+        self.send_leave(dom);
+
         for (&button, state) in &self.mouse_buttons {
             match state {
-                ButtonState::JustDown => self.send_just_down(dom, button),
-                ButtonState::JustUp => self.send_just_up(dom, button),
+                ButtonState::JustDown => self.send_button_change(dom, layout, button, true),
+                ButtonState::JustUp => self.send_button_change(dom, layout, button, false),
                 _ => (),
             }
         }
+    }
 
+    fn send_button_change(&self, dom: &Dom, layout: &LayoutDom, button: MouseButton, value: bool) {
+        for &index in &self.mouse_hit {
+            if let Some(mut node) = dom.get_mut(index) {
+                node.widget
+                    .event(&WidgetEvent::MouseButtonChangedInside(button, value))
+            }
+        }
+
+        for &(index, interest) in &layout.interest_mouse {
+            if interest.contains(EventInterest::MOUSE_OUTSIDE) && !self.mouse_hit.contains(&index) {
+                if let Some(mut node) = dom.get_mut(index) {
+                    node.widget
+                        .event(&WidgetEvent::MouseButtonChangedOutside(button, value));
+                }
+            }
+        }
+    }
+
+    fn send_enter(&self, dom: &Dom) {
         for &hit in &self.mouse_hit {
             if let Some(mut node) = dom.get_mut(hit) {
                 if !self.mouse_hit_last.contains(&hit) {
@@ -114,30 +137,14 @@ impl InputState {
                 }
             }
         }
+    }
 
+    fn send_leave(&self, dom: &Dom) {
         for &hit in &self.mouse_hit_last {
             if !self.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
                     node.widget.event(&WidgetEvent::MouseLeave);
                 }
-            }
-        }
-    }
-
-    fn send_just_down(&self, dom: &Dom, button: MouseButton) {
-        for &index in &self.mouse_hit {
-            if let Some(mut node) = dom.get_mut(index) {
-                node.widget
-                    .event(&WidgetEvent::MouseButtonChangedInside(button, true))
-            }
-        }
-    }
-
-    fn send_just_up(&self, dom: &Dom, button: MouseButton) {
-        for &index in &self.mouse_hit {
-            if let Some(mut node) = dom.get_mut(index) {
-                node.widget
-                    .event(&WidgetEvent::MouseButtonChangedInside(button, false))
             }
         }
     }
