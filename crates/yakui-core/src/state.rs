@@ -1,11 +1,11 @@
 use thunderdome::Index;
 
-use crate::context;
 use crate::dom::Dom;
 use crate::event::Event;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
+use crate::{context, EventResponse};
 
 #[derive(Debug)]
 pub struct State {
@@ -31,10 +31,10 @@ impl State {
     pub fn handle_event(&mut self, event: Event) -> bool {
         log::debug!("State::handle_event({event:?})");
 
-        assert!(
-            self.dom.is_some(),
-            "Cannot handle_event() while DOM is being built."
-        );
+        let dom = match &self.dom {
+            Some(dom) => dom,
+            None => panic!("Cannot handle_event() while DOM is being built."),
+        };
 
         match event {
             Event::SetViewport(viewport) => {
@@ -42,12 +42,15 @@ impl State {
                 false
             }
             Event::MoveMouse(pos) => {
-                self.input.mouse_position = pos;
+                self.input.mouse_moved(dom, &self.layout, pos);
                 false
             }
             Event::MouseButtonChanged(button, down) => {
-                self.input.mouse_button_changed(button, down);
-                false
+                let response = self
+                    .input
+                    .mouse_button_changed(dom, &self.layout, button, down);
+
+                response == EventResponse::Sink
             }
         }
     }
@@ -70,7 +73,7 @@ impl State {
         dom.finish();
 
         self.layout.calculate_all(dom);
-        self.input.finish(dom, &self.layout);
+        self.input.finish();
     }
 
     pub fn paint(&mut self) -> &PaintDom {

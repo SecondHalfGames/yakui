@@ -17,8 +17,14 @@ pub enum Event {
 pub enum WidgetEvent {
     MouseEnter,
     MouseLeave,
-    MouseButtonChangedInside(MouseButton, bool),
+    MouseButtonChanged(MouseButton, bool),
     MouseButtonChangedOutside(MouseButton, bool),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventResponse {
+    Bubble,
+    Sink,
 }
 
 bitflags::bitflags! {

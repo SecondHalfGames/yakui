@@ -101,6 +101,15 @@ async fn run() {
                 profiling::finish_frame!();
             }
 
+            Event::WindowEvent {
+                event: WindowEvent::MouseInput { state, button, .. },
+                ..
+            } => {
+                if button == winit::event::MouseButton::Left {
+                    println!("Left mouse button {state:?}");
+                }
+            }
+
             _ => (),
         }
     });

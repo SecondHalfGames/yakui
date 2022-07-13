@@ -8,6 +8,7 @@ use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
+use crate::EventResponse;
 
 /// Trait that's automatically implemented for all widget props.
 ///
@@ -84,7 +85,9 @@ pub trait Widget: 'static + fmt::Debug {
     }
 
     /// Handle the given event and update the widget's state.
-    fn event(&mut self, _event: &WidgetEvent) {}
+    fn event(&mut self, _event: &WidgetEvent) -> EventResponse {
+        EventResponse::Bubble
+    }
 }
 
 /// A type-erased version of [`Widget`].
@@ -105,7 +108,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
     fn event_interest(&self) -> EventInterest;
 
     /// See [`Widget::event`].
-    fn event(&mut self, event: &WidgetEvent);
+    fn event(&mut self, event: &WidgetEvent) -> EventResponse;
 }
 
 impl<T> ErasedWidget for T
@@ -132,7 +135,7 @@ where
         <T as Widget>::event_interest(self)
     }
 
-    fn event(&mut self, event: &WidgetEvent) {
+    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
         log::debug!("Event on {}: {event:?}", type_name::<T>());
 
         <T as Widget>::event(self, event)

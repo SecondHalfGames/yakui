@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, EventInterest, MouseButton, Response, Widget, WidgetEvent};
+use yakui_core::{
+    Color3, EventInterest, EventResponse, MouseButton, Response, Widget, WidgetEvent,
+};
 
 use crate::colors;
 use crate::util::widget;
@@ -102,28 +104,36 @@ impl Widget for ButtonWidget {
         EventInterest::MOUSE
     }
 
-    fn event(&mut self, event: &WidgetEvent) {
+    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseEnter => {
                 self.hovering = true;
+                EventResponse::Sink
             }
             WidgetEvent::MouseLeave => {
                 self.hovering = false;
+                EventResponse::Sink
             }
-            WidgetEvent::MouseButtonChangedInside(MouseButton::One, down) => {
+            WidgetEvent::MouseButtonChanged(MouseButton::One, down) => {
                 if *down {
                     self.mouse_down = true;
+                    EventResponse::Sink
                 } else if self.mouse_down {
                     self.mouse_down = false;
                     self.clicked = true;
+                    EventResponse::Sink
+                } else {
+                    EventResponse::Bubble
                 }
             }
             WidgetEvent::MouseButtonChangedOutside(MouseButton::One, down) => {
                 if !*down {
                     self.mouse_down = false;
                 }
+
+                EventResponse::Bubble
             }
-            _ => {}
+            _ => EventResponse::Bubble,
         }
     }
 }
