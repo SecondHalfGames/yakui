@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use yakui_core::{Color3, Constraints, Index, Response, Vec2};
+use yakui_core::{Color3, Constraints, Response, TextureId, Vec2};
 
 use crate::{
     Align, AlignWidget, Alignment, Button, ButtonWidget, ColoredBox, ColoredBoxWidget,
@@ -39,7 +39,7 @@ pub fn colored_box_container<F: FnOnce()>(
     ColoredBox::container(color).show_children(children)
 }
 
-pub fn image(image: Index, size: Vec2) -> Response<ImageWidget> {
+pub fn image(image: TextureId, size: Vec2) -> Response<ImageWidget> {
     Image::new(image, size).show()
 }
 

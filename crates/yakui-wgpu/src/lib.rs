@@ -3,15 +3,15 @@
 mod buffer;
 mod texture;
 
+use std::collections::HashMap;
 use std::mem::size_of;
 use std::ops::Range;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
-use thunderdome::Arena;
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
-use yakui_core::{Vec2, Vec4};
+use yakui_core::{TextureId, Vec2, Vec4};
 
 use self::texture::GpuTexture;
 
@@ -21,7 +21,7 @@ pub struct State {
     layout: wgpu::BindGroupLayout,
     default_texture: GpuTexture,
     default_sampler: wgpu::Sampler,
-    textures: Arena<GpuTexture>,
+    textures: HashMap<TextureId, GpuTexture>,
 
     vertices: Buffer,
     indices: Buffer,
@@ -174,7 +174,7 @@ impl State {
             layout,
             default_texture,
             default_sampler,
-            textures: Arena::new(),
+            textures: HashMap::new(),
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
@@ -261,7 +261,7 @@ impl State {
 
             let texture = mesh
                 .texture
-                .and_then(|index| self.textures.get(index))
+                .and_then(|index| self.textures.get(&index))
                 .unwrap_or(&self.default_texture);
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -295,12 +295,12 @@ impl State {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) {
-        for (index, texture) in state.textures() {
-            match self.textures.get_mut(index) {
+        for (id, texture) in state.textures() {
+            match self.textures.get_mut(&id) {
                 Some(existing) => existing.update_if_newer(device, queue, texture),
                 None => {
                     self.textures
-                        .insert_at(index, GpuTexture::new(device, queue, texture));
+                        .insert(id, GpuTexture::new(device, queue, texture));
                 }
             }
         }

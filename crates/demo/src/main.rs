@@ -4,18 +4,14 @@ mod graphics;
 use std::time::Instant;
 
 use clap::Parser;
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::WindowBuilder;
 
 use apps::App;
 use graphics::Graphics;
-use yakui::{
-    paint::{Texture, TextureFormat},
-    UVec2,
-};
+use yakui::paint::{Texture, TextureFormat};
+use yakui::{TextureId, UVec2};
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 
@@ -26,7 +22,7 @@ struct Args {
 
 pub struct AppState {
     pub time: f32,
-    pub monkey: yakui::Index,
+    pub monkey: TextureId,
 }
 
 async fn run() {

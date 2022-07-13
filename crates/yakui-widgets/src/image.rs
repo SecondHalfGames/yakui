@@ -1,18 +1,18 @@
 use yakui_core::dom::Dom;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::{Color3, Constraints, Index, Rect, Response, Vec2, Widget};
+use yakui_core::{Color3, Constraints, Rect, Response, TextureId, Vec2, Widget};
 
 use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct Image {
-    pub image: Index,
+    pub image: TextureId,
     pub size: Vec2,
 }
 
 impl Image {
-    pub fn new(image: Index, size: Vec2) -> Self {
+    pub fn new(image: TextureId, size: Vec2) -> Self {
         Self { image, size }
     }
 

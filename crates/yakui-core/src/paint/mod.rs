@@ -2,9 +2,9 @@ mod paint_dom;
 mod texture;
 
 use glam::{Vec2, Vec4};
-use thunderdome::Index;
 
 use crate::geometry::{Color3, Rect};
+use crate::id::TextureId;
 
 pub use self::paint_dom::*;
 pub use self::texture::*;
@@ -13,7 +13,7 @@ pub use self::texture::*;
 pub struct PaintRect {
     pub rect: Rect,
     pub color: Color3,
-    pub texture: Option<(Index, Rect)>,
+    pub texture: Option<(TextureId, Rect)>,
     pub pipeline: Pipeline,
 }
 
@@ -33,7 +33,7 @@ impl PaintRect {
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
-    pub texture: Option<Index>,
+    pub texture: Option<TextureId>,
     pub pipeline: Pipeline,
 }
 

@@ -1,11 +1,10 @@
-use thunderdome::Index;
-
+use crate::context;
 use crate::dom::Dom;
-use crate::event::Event;
+use crate::event::{Event, EventResponse};
+use crate::id::TextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
-use crate::{context, EventResponse};
 
 #[derive(Debug)]
 pub struct State {
@@ -55,7 +54,7 @@ impl State {
         }
     }
 
-    pub fn create_texture(&mut self, texture: Texture) -> Index {
+    pub fn create_texture(&mut self, texture: Texture) -> TextureId {
         self.paint.create_texture(texture)
     }
 
@@ -85,7 +84,7 @@ impl State {
         &self.paint
     }
 
-    pub fn textures(&self) -> impl Iterator<Item = (Index, &Texture)> {
+    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
         self.paint.textures()
     }
 

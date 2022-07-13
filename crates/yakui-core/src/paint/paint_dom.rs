@@ -1,10 +1,9 @@
 use glam::Vec2;
 use thunderdome::Arena;
-use thunderdome::Index;
 
 use crate::dom::Dom;
 use crate::geometry::Rect;
-use crate::id::WidgetId;
+use crate::id::{TextureId, WidgetId};
 use crate::layout::LayoutDom;
 
 use super::Mesh;
@@ -57,26 +56,28 @@ impl PaintDom {
         node.widget.paint(dom, layout, self);
     }
 
-    pub fn create_texture(&mut self, texture: Texture) -> Index {
-        self.textures.insert(texture)
+    pub fn create_texture(&mut self, texture: Texture) -> TextureId {
+        TextureId::new(self.textures.insert(texture))
     }
 
-    pub fn remove_texture(&mut self, index: Index) {
-        self.textures.remove(index);
+    pub fn remove_texture(&mut self, id: TextureId) {
+        self.textures.remove(id.index());
     }
 
-    pub fn get_texture(&self, index: Index) -> Option<&Texture> {
-        self.textures.get(index)
+    pub fn get_texture(&self, id: TextureId) -> Option<&Texture> {
+        self.textures.get(id.index())
     }
 
-    pub fn modify_texture(&mut self, index: Index) -> Option<&mut Texture> {
-        let texture = self.textures.get_mut(index)?;
+    pub fn modify_texture(&mut self, id: TextureId) -> Option<&mut Texture> {
+        let texture = self.textures.get_mut(id.index())?;
         texture.generation = texture.generation.wrapping_add(1);
         Some(texture)
     }
 
-    pub fn textures(&self) -> impl Iterator<Item = (Index, &Texture)> {
-        self.textures.iter()
+    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
+        self.textures
+            .iter()
+            .map(|(index, texture)| (TextureId::new(index), texture))
     }
 
     pub fn meshes(&self) -> &[Mesh] {
