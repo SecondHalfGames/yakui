@@ -1,7 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use thunderdome::Index;
-
+use crate::id::WidgetId;
 use crate::widget::Widget;
 
 /// Wraps the response returned by a widget when it is updated.
@@ -9,12 +8,12 @@ pub struct Response<T: Widget> {
     inner: T::Response,
 
     /// The ID of the widget that responded.
-    pub index: Index,
+    pub id: WidgetId,
 }
 
 impl<T: Widget> Response<T> {
-    pub(crate) fn new(index: Index, inner: T::Response) -> Self {
-        Self { index, inner }
+    pub(crate) fn new(id: WidgetId, inner: T::Response) -> Self {
+        Self { id, inner }
     }
 }
 

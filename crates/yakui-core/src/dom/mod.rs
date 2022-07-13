@@ -8,8 +8,9 @@ use std::collections::VecDeque;
 use std::mem::replace;
 
 use anymap::AnyMap;
-use thunderdome::{Arena, Index};
+use thunderdome::Arena;
 
+use crate::id::WidgetId;
 use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
 
@@ -23,14 +24,14 @@ pub struct Dom {
 
 struct DomInner {
     nodes: Arena<DomNode>,
-    root: Index,
-    stack: RefCell<Vec<Index>>,
+    root: WidgetId,
+    stack: RefCell<Vec<WidgetId>>,
 }
 
 pub struct DomNode {
     pub widget: Box<dyn ErasedWidget>,
-    pub parent: Option<Index>,
-    pub children: Vec<Index>,
+    pub parent: Option<WidgetId>,
+    pub children: Vec<WidgetId>,
     next_child: usize,
 }
 
@@ -48,7 +49,7 @@ impl Dom {
         let mut dom = self.inner.borrow_mut();
 
         let root = dom.root;
-        let root = dom.nodes.get_mut(root).unwrap();
+        let root = dom.nodes.get_mut(root.index()).unwrap();
         root.next_child = 0;
     }
 
@@ -56,22 +57,22 @@ impl Dom {
         log::debug!("Dom::finish()");
     }
 
-    pub fn root(&self) -> Index {
+    pub fn root(&self) -> WidgetId {
         let dom = self.inner.borrow();
         dom.root
     }
 
-    pub(crate) fn enter(&self, widget: Index) {
+    pub(crate) fn enter(&self, id: WidgetId) {
         let dom = self.inner.borrow();
-        dom.stack.borrow_mut().push(widget);
+        dom.stack.borrow_mut().push(id);
     }
 
-    pub(crate) fn exit(&self, widget: Index) {
+    pub(crate) fn exit(&self, id: WidgetId) {
         let dom = self.inner.borrow();
-        assert_eq!(dom.stack.borrow_mut().pop(), Some(widget));
+        assert_eq!(dom.stack.borrow_mut().pop(), Some(id));
     }
 
-    pub fn current(&self) -> Index {
+    pub fn current(&self) -> WidgetId {
         let dom = self.inner.borrow();
         let stack = dom.stack.borrow();
         stack.last().copied().unwrap_or(dom.root)
@@ -79,13 +80,14 @@ impl Dom {
 
     pub fn get_current(&self) -> Ref<'_, DomNode> {
         let dom = self.inner.borrow();
-        let index = dom.current_widget();
+        let index = dom.current_widget().index();
 
         Ref::map(dom, |dom| dom.nodes.get(index).unwrap())
     }
 
-    pub fn get(&self, index: Index) -> Option<Ref<'_, DomNode>> {
+    pub fn get(&self, id: WidgetId) -> Option<Ref<'_, DomNode>> {
         let dom = self.inner.borrow();
+        let index = id.index();
 
         if dom.nodes.contains(index) {
             Some(Ref::map(dom, |dom| dom.nodes.get(index).unwrap()))
@@ -94,8 +96,9 @@ impl Dom {
         }
     }
 
-    pub fn get_mut(&self, index: Index) -> Option<RefMut<'_, DomNode>> {
+    pub fn get_mut(&self, id: WidgetId) -> Option<RefMut<'_, DomNode>> {
         let dom = self.inner.borrow_mut();
+        let index = id.index();
 
         if dom.nodes.contains(index) {
             Some(RefMut::map(dom, |dom| dom.nodes.get_mut(index).unwrap()))
@@ -118,21 +121,21 @@ impl Dom {
         self.end_widget::<T>(index)
     }
 
-    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Index {
+    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> WidgetId {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
-        let (index, widget) = {
+        let (id, widget) = {
             let mut dom = self.inner.borrow_mut();
-            let index = dom.next_widget();
-            dom.stack.borrow_mut().push(index);
-            dom.update_widget::<T>(index, props);
+            let id = dom.next_widget();
+            dom.stack.borrow_mut().push(id);
+            dom.update_widget::<T>(id, props);
 
             // Component::children needs mutable access to the DOM, so we need
             // to rip the widget out of the tree so we can release our lock.
-            let node = dom.nodes.get_mut(index).unwrap();
+            let node = dom.nodes.get_mut(id.index()).unwrap();
             let widget = replace(&mut node.widget, Box::new(DummyWidget));
 
-            (index, widget)
+            (id, widget)
         };
 
         // Give this widget a chance to create children to take advantage of
@@ -142,15 +145,15 @@ impl Dom {
         // Quick! Put the widget back, before anyone notices!
         {
             let mut dom = self.inner.borrow_mut();
-            let node = dom.nodes.get_mut(index).unwrap();
+            let node = dom.nodes.get_mut(id.index()).unwrap();
             node.widget = widget;
         }
 
-        index
+        id
     }
 
-    pub fn end_widget<T: Widget>(&self, index: Index) -> Response<T> {
-        log::trace!("end_widget::<{}>({})", type_name::<T>(), index.slot());
+    pub fn end_widget<T: Widget>(&self, id: WidgetId) -> Response<T> {
+        log::trace!("end_widget::<{}>({id:?})", type_name::<T>());
 
         let mut dom = self.inner.borrow_mut();
 
@@ -159,15 +162,15 @@ impl Dom {
         });
 
         assert!(
-            index == old_top,
+            id == old_top,
             "Dom::end_widget did not match the input widget."
         );
 
-        dom.trim_children(index);
+        dom.trim_children(id);
 
-        let node = dom.nodes.get_mut(index).unwrap();
+        let node = dom.nodes.get_mut(id.index()).unwrap();
         let res = node.widget.as_mut().downcast_mut::<T>().unwrap().respond();
-        Response::new(index, res)
+        Response::new(id, res)
     }
 }
 
@@ -185,41 +188,43 @@ impl DomInner {
 
         Self {
             nodes,
-            root,
+            root: WidgetId::new(root),
             stack: RefCell::new(Vec::new()),
         }
     }
 
-    fn current_widget(&self) -> Index {
+    fn current_widget(&self) -> WidgetId {
         let stack = self.stack.borrow();
         stack.last().copied().unwrap_or(self.root)
     }
 
-    fn next_widget(&mut self) -> Index {
-        let parent_index = self.current_widget();
+    fn next_widget(&mut self) -> WidgetId {
+        let parent_id = self.current_widget();
 
-        let parent = self.nodes.get_mut(parent_index).unwrap();
+        let parent = self.nodes.get_mut(parent_id.index()).unwrap();
         if parent.next_child < parent.children.len() {
-            let index = parent.children[parent.next_child];
+            let id = parent.children[parent.next_child];
             parent.next_child += 1;
-            index
+            id
         } else {
             let index = self.nodes.insert(DomNode {
                 widget: Box::new(DummyWidget),
-                parent: Some(parent_index),
+                parent: Some(parent_id),
                 children: Vec::new(),
                 next_child: 0,
             });
 
-            let parent = self.nodes.get_mut(parent_index).unwrap();
-            parent.children.push(index);
+            let id = WidgetId::new(index);
+
+            let parent = self.nodes.get_mut(parent_id.index()).unwrap();
+            parent.children.push(id);
             parent.next_child += 1;
-            index
+            id
         }
     }
 
-    fn update_widget<T: Widget>(&mut self, index: Index, props: T::Props) {
-        let node = self.nodes.get_mut(index).unwrap();
+    fn update_widget<T: Widget>(&mut self, id: WidgetId, props: T::Props) {
+        let node = self.nodes.get_mut(id.index()).unwrap();
 
         if node.widget.as_ref().type_id() == TypeId::of::<T>() {
             let widget = node.widget.downcast_mut::<T>().unwrap();
@@ -233,18 +238,18 @@ impl DomInner {
 
     /// Remove children from the given node that weren't present in the latest
     /// traversal through the tree.
-    fn trim_children(&mut self, index: Index) {
-        let node = self.nodes.get_mut(index).unwrap();
+    fn trim_children(&mut self, id: WidgetId) {
+        let node = self.nodes.get_mut(id.index()).unwrap();
 
         if node.next_child < node.children.len() {
-            let mut queue = VecDeque::new();
+            let mut queue: VecDeque<WidgetId> = VecDeque::new();
             let to_drop = &node.children[node.next_child..];
             queue.extend(to_drop);
 
             node.children.truncate(node.next_child);
 
-            while let Some(child_index) = queue.pop_front() {
-                let child = self.nodes.remove(child_index).unwrap();
+            while let Some(child_id) = queue.pop_front() {
+                let child = self.nodes.remove(child_id.index()).unwrap();
                 queue.extend(child.children);
             }
         }
@@ -258,13 +263,11 @@ impl DomInner {
         let mut visit = VecDeque::new();
         visit.push_back((self.root, 0));
 
-        while let Some((index, depth)) = visit.pop_back() {
+        while let Some((id, depth)) = visit.pop_back() {
             let indent = "  ".repeat(depth);
-            let node = self.nodes.get(index).unwrap();
-            let slot = index.slot();
-            let children: Vec<_> = node.children.iter().map(|child| child.slot()).collect();
+            let node = self.nodes.get(id.index()).unwrap();
 
-            writeln!(output, "{indent}{slot} ({children:?})").unwrap();
+            writeln!(output, "{indent}{id:?} ({:?})", &node.children).unwrap();
 
             for &child in node.children.iter().rev() {
                 visit.push_back((child, depth + 1));

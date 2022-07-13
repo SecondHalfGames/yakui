@@ -1,11 +1,12 @@
 use std::collections::VecDeque;
 
 use glam::Vec2;
-use thunderdome::{Arena, Index};
+use thunderdome::Arena;
 
 use crate::dom::Dom;
+use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
-use crate::EventInterest;
+use crate::id::WidgetId;
 
 #[derive(Debug)]
 pub struct LayoutDom {
@@ -15,7 +16,7 @@ pub struct LayoutDom {
     scaled_viewport: Rect,
     scale_factor: f32,
 
-    pub interest_mouse: Vec<(Index, EventInterest)>,
+    pub interest_mouse: Vec<(WidgetId, EventInterest)>,
 }
 
 #[derive(Debug)]
@@ -42,12 +43,12 @@ impl LayoutDom {
         self.nodes.clear();
     }
 
-    pub fn get(&self, index: Index) -> Option<&LayoutDomNode> {
-        self.nodes.get(index)
+    pub fn get(&self, id: WidgetId) -> Option<&LayoutDomNode> {
+        self.nodes.get(id.index())
     }
 
-    pub fn get_mut(&mut self, index: Index) -> Option<&mut LayoutDomNode> {
-        self.nodes.get_mut(index)
+    pub fn get_mut(&mut self, id: WidgetId) -> Option<&mut LayoutDomNode> {
+        self.nodes.get_mut(id.index())
     }
 
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
@@ -85,29 +86,29 @@ impl LayoutDom {
         self.resolve_positions(dom);
     }
 
-    pub fn calculate(&mut self, dom: &Dom, index: Index, constraints: Constraints) -> Vec2 {
-        dom.enter(index);
-        let dom_node = dom.get(index).unwrap();
+    pub fn calculate(&mut self, dom: &Dom, id: WidgetId, constraints: Constraints) -> Vec2 {
+        dom.enter(id);
+        let dom_node = dom.get(id).unwrap();
         let size = dom_node.widget.layout(dom, self, constraints);
         let event_interest = dom_node.widget.event_interest();
 
         if event_interest.intersects(EventInterest::MOUSE) {
-            self.interest_mouse.push((index, event_interest));
+            self.interest_mouse.push((id, event_interest));
         }
 
         self.nodes.insert_at(
-            index,
+            id.index(),
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
                 event_interest,
             },
         );
-        dom.exit(index);
+        dom.exit(id);
         size
     }
 
-    pub fn set_pos(&mut self, index: Index, pos: Vec2) {
-        if let Some(node) = self.nodes.get_mut(index) {
+    pub fn set_pos(&mut self, id: WidgetId, pos: Vec2) {
+        if let Some(node) = self.nodes.get_mut(id.index()) {
             node.rect.set_pos(pos);
         }
     }
@@ -117,18 +118,14 @@ impl LayoutDom {
 
         queue.push_back((dom.root(), Vec2::ZERO));
 
-        while let Some((index, parent_pos)) = queue.pop_front() {
-            if let Some(layout_node) = self.nodes.get_mut(index) {
-                let node = dom.get(index).unwrap();
+        while let Some((id, parent_pos)) = queue.pop_front() {
+            if let Some(layout_node) = self.nodes.get_mut(id.index()) {
+                let node = dom.get(id).unwrap();
                 layout_node
                     .rect
                     .set_pos(layout_node.rect.pos() + parent_pos);
 
-                queue.extend(
-                    node.children
-                        .iter()
-                        .map(|&index| (index, layout_node.rect.pos())),
-                );
+                queue.extend(node.children.iter().map(|&id| (id, layout_node.rect.pos())));
             }
         }
     }

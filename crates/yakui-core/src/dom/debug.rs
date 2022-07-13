@@ -21,15 +21,8 @@ struct ViewTree<'a>(&'a DomInner);
 impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dom = &self.0;
-        let iter = dom.nodes.iter().map(|(index, node)| {
-            let children: Vec<_> = node.children.iter().map(|index| index.slot()).collect();
-
-            format!(
-                "{}: {:?}, children: {:?}",
-                index.slot(),
-                &node.widget,
-                children
-            )
+        let iter = dom.nodes.iter().map(|(id, node)| {
+            format!("{id:?}: {:?}, children: {:?}", &node.widget, &node.children)
         });
 
         f.debug_list().entries(iter).finish()

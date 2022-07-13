@@ -3,11 +3,11 @@ use std::mem::take;
 
 use glam::Vec2;
 use smallvec::SmallVec;
-use thunderdome::Index;
 
 use crate::dom::Dom;
+use crate::event::{EventInterest, EventResponse, WidgetEvent};
+use crate::id::WidgetId;
 use crate::layout::LayoutDom;
-use crate::{EventInterest, EventResponse, WidgetEvent};
 
 #[derive(Debug)]
 pub struct InputState {
@@ -18,25 +18,25 @@ pub struct InputState {
     /// intersects with.
     ///
     /// All lists like this are stored in reverse depth first order.
-    pub mouse_hit: Vec<Index>,
+    pub mouse_hit: Vec<WidgetId>,
 
     /// All of the widgets that have had a mouse enter event sent to them
     /// without a corresponding mouse leave event yet. This is different from
     /// mouse_hit because hover events can be sunk by event handlers.
-    pub mouse_entered: Vec<Index>,
+    pub mouse_entered: Vec<WidgetId>,
 
     /// All of the widgets that had a mouse enter event sent to them and then
     /// sunk it that are still being hovered. This helps us ensure that a widget
     /// that sunk a hover event will continue to occupy that space even if we
     /// don't send it more events.
-    pub mouse_entered_and_sunk: Vec<Index>,
+    pub mouse_entered_and_sunk: Vec<WidgetId>,
 
     /// All widgets that had the corresponding mouse button pressed while the
     /// mouse cursor was over them.
-    pub mouse_down_in: HashMap<MouseButton, Vec<Index>>,
+    pub mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
 
     // TODO: Remove this?
-    pub mouse_hit_last: Vec<Index>,
+    pub mouse_hit_last: Vec<WidgetId>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -137,8 +137,8 @@ impl InputState {
     ) -> EventResponse {
         let mut overall_response = EventResponse::Bubble;
 
-        for &index in &self.mouse_hit {
-            if let Some(mut node) = dom.get_mut(index) {
+        for &id in &self.mouse_hit {
+            if let Some(mut node) = dom.get_mut(id) {
                 let response = node
                     .widget
                     .event(&WidgetEvent::MouseButtonChanged(button, value));
@@ -154,9 +154,9 @@ impl InputState {
         // hit_test. This event can't be sunk, so it's not super important.
         let interest_mouse = layout.interest_mouse.iter().copied().rev();
 
-        for (index, interest) in interest_mouse {
-            if interest.contains(EventInterest::MOUSE_OUTSIDE) && !self.mouse_hit.contains(&index) {
-                if let Some(mut node) = dom.get_mut(index) {
+        for (id, interest) in interest_mouse {
+            if interest.contains(EventInterest::MOUSE_OUTSIDE) && !self.mouse_hit.contains(&id) {
+                if let Some(mut node) = dom.get_mut(id) {
                     node.widget
                         .event(&WidgetEvent::MouseButtonChangedOutside(button, value));
                 }
@@ -189,7 +189,7 @@ impl InputState {
     }
 
     fn send_mouse_leave(&mut self, dom: &Dom) {
-        let mut to_remove = SmallVec::<[Index; 4]>::new();
+        let mut to_remove = SmallVec::<[WidgetId; 4]>::new();
 
         for &hit in &self.mouse_entered {
             if !self.mouse_hit.contains(&hit) {
@@ -202,8 +202,8 @@ impl InputState {
         }
 
         for remove in to_remove {
-            self.mouse_entered.retain(|&index| index != remove);
-            self.mouse_entered_and_sunk.retain(|&index| index != remove);
+            self.mouse_entered.retain(|&id| id != remove);
+            self.mouse_entered_and_sunk.retain(|&id| id != remove);
         }
     }
 
@@ -227,18 +227,18 @@ impl InputState {
 }
 
 #[profiling::function]
-fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Index>) {
+fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<WidgetId>) {
     // interest_mouse is stored in layout traversal order, which is depth first.
     //
     // We want to test against the deepest widgets in the tree first and bubble
     // to their ancestors first.
     let interest_mouse = layout.interest_mouse.iter().copied().rev();
 
-    for (index, _interest) in interest_mouse {
-        let layout_node = layout.get(index).unwrap();
+    for (id, _interest) in interest_mouse {
+        let layout_node = layout.get(id).unwrap();
 
         if layout_node.rect.contains_point(coords) {
-            output.push(index);
+            output.push(id);
         }
     }
 }

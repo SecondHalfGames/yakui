@@ -5,6 +5,7 @@ mod mopmopa;
 
 mod event;
 mod geometry;
+mod id;
 mod input;
 mod response;
 mod state;
@@ -21,6 +22,7 @@ pub use thunderdome::Index;
 
 pub use self::event::*;
 pub use self::geometry::*;
+pub use self::id::*;
 pub use self::input::*;
 pub use self::response::Response;
 pub use self::state::*;

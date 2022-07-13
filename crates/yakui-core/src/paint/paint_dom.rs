@@ -3,8 +3,9 @@ use thunderdome::Arena;
 use thunderdome::Index;
 
 use crate::dom::Dom;
+use crate::geometry::Rect;
+use crate::id::WidgetId;
 use crate::layout::LayoutDom;
-use crate::Rect;
 
 use super::Mesh;
 use super::PaintRect;
@@ -39,11 +40,11 @@ impl PaintDom {
         }
     }
 
-    pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, index: Index) {
-        let node = dom.get(index).unwrap();
-        dom.enter(index);
+    pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, id: WidgetId) {
+        let node = dom.get(id).unwrap();
+        dom.enter(id);
         node.widget.paint(dom, layout, self);
-        dom.exit(index);
+        dom.exit(id);
     }
 
     pub fn paint_all(&mut self, dom: &Dom, layout: &LayoutDom) {
