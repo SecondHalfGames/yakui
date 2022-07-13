@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 
-use yakui_core::{
-    Color3, EventInterest, EventResponse, MouseButton, Response, Widget, WidgetEvent,
-};
+use yakui_core::input::MouseButton;
+use yakui_core::{Color3, EventInterest, EventResponse, Response, Widget, WidgetEvent};
 
 use crate::colors;
 use crate::util::widget;

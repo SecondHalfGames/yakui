@@ -2,7 +2,8 @@ use winit::event::{
     ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
 };
 use winit::window::Window;
-use yakui_core::{Event, MouseButton, Rect, Vec2};
+use yakui_core::input::MouseButton;
+use yakui_core::{Event, Rect, Vec2};
 
 #[non_exhaustive]
 pub struct State {

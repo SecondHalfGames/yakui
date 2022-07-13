@@ -9,9 +9,15 @@ use crate::event::{EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
+use super::button::MouseButton;
+
 #[derive(Debug)]
 pub struct InputState {
+    /// The current mouse position, or `None` if it's outside the window.
     pub mouse_position: Option<Vec2>,
+
+    /// The state of each mouse button. If missing from the map, the button is
+    /// up and has not yet been pressed.
     pub mouse_buttons: HashMap<MouseButton, ButtonState>,
 
     /// All of the widgets with mouse interest that the current mouse position
@@ -47,20 +53,9 @@ pub enum ButtonState {
     Up,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum MouseButton {
-    One,
-    Two,
-    Three,
-}
-
 impl ButtonState {
     pub fn is_down(&self) -> bool {
         matches!(self, Self::JustDown | Self::Down)
-    }
-
-    pub fn is_up(&self) -> bool {
-        matches!(self, Self::JustUp | Self::Up)
     }
 
     pub fn settle(&mut self) {
