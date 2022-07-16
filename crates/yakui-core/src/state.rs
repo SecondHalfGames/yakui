@@ -57,8 +57,8 @@ impl State {
     }
 
     /// Creates a texture for use within yakui.
-    pub fn create_texture(&mut self, texture: Texture) -> TextureId {
-        self.paint.create_texture(texture)
+    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
+        self.paint.add_texture(texture)
     }
 
     /// Returns an iterator of all textures managed by yakui.

@@ -48,7 +48,7 @@ async fn run() {
         yak.set_scale_factor(scale);
     }
 
-    let monkey = yak.create_texture(load_texture(MONKEY_PNG));
+    let monkey = yak.add_texture(load_texture(MONKEY_PNG));
     let mut state = AppState { time: 0.0, monkey };
 
     let start = Instant::now();

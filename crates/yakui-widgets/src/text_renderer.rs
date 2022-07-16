@@ -25,7 +25,7 @@ pub struct GlyphCache {
 impl GlyphCache {
     pub fn ensure_texture(&mut self, paint: &mut PaintDom) {
         if self.texture.is_none() {
-            let texture = paint.create_texture(Texture::new(
+            let texture = paint.add_texture(Texture::new(
                 TextureFormat::R8,
                 UVec2::new(4096, 4096),
                 vec![0; 4096 * 4096],

@@ -56,7 +56,7 @@ impl PaintDom {
         node.widget.paint(dom, layout, self);
     }
 
-    pub fn create_texture(&mut self, texture: Texture) -> TextureId {
+    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
         TextureId::new(self.textures.insert(texture))
     }
 
