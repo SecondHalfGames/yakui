@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::bail;
+use clap::Parser;
 
 use crate::ExampleState;
 
@@ -10,16 +11,24 @@ macro_rules! examples {
     };
 }
 
+/// Run a yakui example.
+#[derive(Parser)]
+pub struct Args {
+    #[clap(subcommand)]
+    pub example: Example,
+}
+
 macro_rules! define_example {
     ($($mod:ident),* $(,)?) => {
         $(pub mod $mod;)*
 
-        #[derive(Debug)]
+        #[derive(Debug, Parser)]
         #[allow(non_camel_case_types)]
-        #[doc = "The example to run. Available examples:"]
-        #[doc = "foo"]
         pub enum Example {
-            $($mod,)*
+            $(
+                #[clap(about = concat!("example: ", stringify!($mod)))]
+                $mod,
+            )*
         }
 
         impl Example {

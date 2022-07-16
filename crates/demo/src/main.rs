@@ -9,18 +9,13 @@ use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
-use examples::Example;
 use graphics::Graphics;
 use yakui::paint::{Texture, TextureFormat};
 use yakui::{TextureId, UVec2};
 
-const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
+use crate::examples::Args;
 
-/// Run a yakui example.
-#[derive(Parser)]
-struct Args {
-    example: Example,
-}
+const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 
 /// This is the state that we provide to each demo.
 ///
