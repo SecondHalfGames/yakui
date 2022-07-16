@@ -1,8 +1,8 @@
 use yakui::{Alignment, Color3};
 
-use crate::AppState;
+use crate::ExampleState;
 
-pub fn app(state: &AppState) {
+pub fn run(state: &ExampleState) {
     const ALIGNMENTS: &[Alignment] = &[
         Alignment::TOP_LEFT,
         Alignment::TOP_CENTER,

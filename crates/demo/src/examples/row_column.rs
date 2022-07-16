@@ -1,8 +1,8 @@
 use yakui::Color3;
 
-use crate::AppState;
+use crate::ExampleState;
 
-pub fn app(_state: &AppState) {
+pub fn run(_state: &ExampleState) {
     yakui::column(|| {
         yakui::colored_box(Color3::RED, [100.0, 100.0]);
         yakui::row(|| {

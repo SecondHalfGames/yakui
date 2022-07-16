@@ -1,8 +1,8 @@
 use yakui::{Color3, Text};
 
-use crate::AppState;
+use crate::ExampleState;
 
-pub fn app(_state: &AppState) {
+pub fn run(_state: &ExampleState) {
     yakui::column(|| {
         yakui::row(|| {
             yakui::label("Hello, world!");

@@ -1,8 +1,8 @@
 use yakui::Pad;
 
-use crate::AppState;
+use crate::ExampleState;
 
-pub fn app(_state: &AppState) {
+pub fn run(_state: &ExampleState) {
     yakui::column(|| {
         let res = yakui::button("First button");
         if res.clicked {

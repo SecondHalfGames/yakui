@@ -1,8 +1,8 @@
 use yakui::Color3;
 
-use crate::AppState;
+use crate::ExampleState;
 
-pub fn app(_state: &AppState) {
+pub fn run(_state: &ExampleState) {
     let colors = [Color3::RED, Color3::GREEN, Color3::BLUE];
 
     yakui::row(|| {

@@ -2,40 +2,43 @@ use std::str::FromStr;
 
 use anyhow::bail;
 
-use crate::AppState;
+use crate::ExampleState;
 
-macro_rules! apps {
+macro_rules! examples {
     ($macro:ident) => {
         $macro!(bench, sandbox, align, images, text, window, row_column, flex, inputs);
     };
 }
 
-macro_rules! define_app {
+macro_rules! define_example {
     ($($mod:ident),* $(,)?) => {
         $(pub mod $mod;)*
 
+        #[derive(Debug)]
         #[allow(non_camel_case_types)]
-        pub enum App {
+        #[doc = "The example to run. Available examples:"]
+        #[doc = "foo"]
+        pub enum Example {
             $($mod,)*
         }
 
-        impl App {
-            pub fn function(&self) -> &'static dyn Fn(&AppState) {
+        impl Example {
+            pub fn function(&self) -> &'static dyn Fn(&ExampleState) {
                 match self {
-                    $(App::$mod => &$mod::app,)*
+                    $(Example::$mod => &$mod::run,)*
                 }
             }
         }
 
-        impl FromStr for App {
+        impl FromStr for Example {
             type Err = anyhow::Error;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 match s {
                     $(stringify!($mod) => Ok(Self::$mod),)*
                     unknown => {
-                        let app_list = [$(stringify!($mod),)*].join(", ");
-                        bail!("unknown app '{unknown}', included apps are: {app_list}");
+                        let example_list = [$(stringify!($mod),)*].join(", ");
+                        bail!("unknown example '{unknown}', included examples are: {example_list}");
                     },
                 }
             }
@@ -43,4 +46,4 @@ macro_rules! define_app {
     }
 }
 
-apps!(define_app);
+examples!(define_example);
