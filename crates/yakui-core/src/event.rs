@@ -10,11 +10,11 @@ use crate::input::MouseButton;
 #[non_exhaustive]
 pub enum Event {
     /// The viewport has changed. This can mean resizing as well as positioning.
-    SetViewport(Rect),
+    ViewportChanged(Rect),
 
-    /// The mouse moved. If `None`, indicates that the mouse moved outside the
-    /// window.
-    MoveMouse(Option<Vec2>),
+    /// The mouse cursor moved. If `None`, indicates that the mouse moved
+    /// outside the window.
+    CursorMoved(Option<Vec2>),
 
     /// A mouse button changed, telling whether it is now pressed.
     MouseButtonChanged(MouseButton, bool),

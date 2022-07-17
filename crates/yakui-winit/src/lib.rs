@@ -54,7 +54,7 @@ impl State {
                     Vec2::new(size.width as f32, size.height as f32),
                 );
 
-                state.handle_event(Event::SetViewport(rect))
+                state.handle_event(Event::ViewportChanged(rect))
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
@@ -71,12 +71,12 @@ impl State {
                 ..
             } => {
                 let pos = Vec2::new(position.x as f32, position.y as f32);
-                state.handle_event(Event::MoveMouse(Some(pos)))
+                state.handle_event(Event::CursorMoved(Some(pos)))
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::CursorLeft { .. },
                 ..
-            } => state.handle_event(Event::MoveMouse(None)),
+            } => state.handle_event(Event::CursorMoved(None)),
             WinitEvent::WindowEvent {
                 event:
                     WindowEvent::MouseInput {

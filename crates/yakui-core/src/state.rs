@@ -38,11 +38,11 @@ impl State {
         };
 
         match event {
-            Event::SetViewport(viewport) => {
+            Event::ViewportChanged(viewport) => {
                 self.layout.set_unscaled_viewport(viewport);
                 false
             }
-            Event::MoveMouse(pos) => {
+            Event::CursorMoved(pos) => {
                 self.input.mouse_moved(dom, &self.layout, pos);
                 false
             }
