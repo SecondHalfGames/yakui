@@ -48,11 +48,8 @@ impl Widget for ImageWidget {
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
         let layout_node = layout.get(dom.current()).unwrap();
-        let viewport = layout.viewport();
-        let size = layout_node.rect.size() / viewport.size();
-        let pos = (layout_node.rect.pos() + viewport.pos()) / viewport.size();
 
-        let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
+        let mut rect = PaintRect::new(layout_node.rect);
         rect.color = Color3::WHITE;
         rect.texture = Some((self.props.image, Rect::ONE));
         output.add_rect(rect);

@@ -4,7 +4,6 @@ use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use yakui_core::dom::Dom;
-use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
@@ -139,9 +138,8 @@ impl Widget for TextBoxWidget {
         glyph_cache.ensure_texture(paint);
 
         let layout_node = layout.get(dom.current()).unwrap();
-        let viewport = layout.viewport();
 
-        let mut bg = PaintRect::new(layout_node.rect.div_vec2(viewport.size()));
+        let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
         paint.add_rect(bg);
 
@@ -151,13 +149,8 @@ impl Widget for TextBoxWidget {
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
 
-            let size = Vec2::new(glyph.width as f32, glyph.height as f32)
-                / layout.scale_factor()
-                / viewport.size();
-            let pos = (layout_node.rect.pos()
-                + Vec2::new(glyph.x, glyph.y) / layout.scale_factor()
-                + viewport.pos())
-                / viewport.size();
+            let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
+            let pos = layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
             rect.color = self.props.color;
@@ -166,8 +159,8 @@ impl Widget for TextBoxWidget {
             paint.add_rect(rect);
         }
 
-        let cursor_pos = (layout_node.rect.pos() + *self.cursor_pos.borrow()) / viewport.size();
-        let cursor_size = Vec2::new(1.0, self.props.font_size) / viewport.size();
+        let cursor_pos = layout_node.rect.pos() + *self.cursor_pos.borrow();
+        let cursor_size = Vec2::new(1.0, self.props.font_size);
 
         let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
         rect.color = Color3::RED;

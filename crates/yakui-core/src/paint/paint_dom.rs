@@ -28,6 +28,7 @@ const RECT_INDEX: [u16; 6] = [
 pub struct PaintDom {
     textures: Arena<Texture>,
     calls: Vec<PaintCall>,
+    viewport: Rect,
 }
 
 impl PaintDom {
@@ -36,7 +37,12 @@ impl PaintDom {
         Self {
             textures: Arena::new(),
             calls: Vec::new(),
+            viewport: Rect::ONE,
         }
+    }
+
+    pub(crate) fn set_viewport(&mut self, viewport: Rect) {
+        self.viewport = viewport;
     }
 
     /// Paint a specific widget. This function is usually called as part of an
@@ -125,7 +131,10 @@ impl PaintDom {
             .map(|index| index + call.vertices.len() as u16);
         call.indices.extend(indices);
 
-        let vertices = mesh.vertices.into_iter();
+        let vertices = mesh.vertices.into_iter().map(|mut vertex| {
+            vertex.position = (vertex.position + self.viewport.pos()) / self.viewport.size();
+            vertex
+        });
         call.vertices.extend(vertices);
     }
 

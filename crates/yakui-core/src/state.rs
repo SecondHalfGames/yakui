@@ -118,6 +118,7 @@ impl State {
             panic!("Cannot paint() while DOM is being built.");
         });
 
+        self.paint.set_viewport(self.layout.viewport());
         self.paint.paint_all(dom, &self.layout);
         &self.paint
     }

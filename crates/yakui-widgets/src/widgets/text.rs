@@ -114,7 +114,6 @@ impl Widget for TextWidget {
         glyph_cache.ensure_texture(paint);
 
         let layout_node = layout.get(dom.current()).unwrap();
-        let viewport = layout.viewport();
 
         for glyph in text_layout.glyphs() {
             let tex_rect = glyph_cache
@@ -122,13 +121,8 @@ impl Widget for TextWidget {
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
 
-            let size = Vec2::new(glyph.width as f32, glyph.height as f32)
-                / layout.scale_factor()
-                / viewport.size();
-            let pos = (layout_node.rect.pos()
-                + Vec2::new(glyph.x, glyph.y) / layout.scale_factor()
-                + viewport.pos())
-                / viewport.size();
+            let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
+            let pos = layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
             rect.color = self.props.color;
