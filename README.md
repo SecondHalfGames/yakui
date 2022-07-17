@@ -3,6 +3,8 @@
     <p>yakui is a declarative Rust UI library for games.</p>
 </div>
 
+**yakui is an early work in progress. Feedback is welcome, but mind the dragons, sharp edges, and exposed nails!**
+
 yakui combines a layout model inspired by [Flutter] with the ease-of-use of an immediate mode UI library like [Dear Imgui] or [egui].
 
 yakui has the following priorities:
