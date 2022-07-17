@@ -3,7 +3,7 @@
 use glam::Vec2;
 
 use crate::geometry::Rect;
-use crate::input::MouseButton;
+use crate::input::{KeyboardKey, MouseButton};
 
 /// An event that can be handled by yakui.
 #[derive(Debug)]
@@ -18,6 +18,9 @@ pub enum Event {
 
     /// A mouse button changed, telling whether it is now pressed.
     MouseButtonChanged(MouseButton, bool),
+
+    /// A key changed, telling whether it is now pressed.
+    KeyChanged(KeyboardKey, bool),
 
     /// A Unicode codepoint was typed in the window.
     TextInput(char),

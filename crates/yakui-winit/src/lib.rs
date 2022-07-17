@@ -1,10 +1,14 @@
+mod keys;
+
 use winit::event::{
-    ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
+    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
 };
 use winit::window::Window;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, Vec2};
 use yakui_core::input::MouseButton;
+
+pub use self::keys::from_winit_key;
 
 #[non_exhaustive]
 pub struct State {
@@ -104,6 +108,21 @@ impl State {
                 event: WindowEvent::ReceivedCharacter(c),
                 ..
             } => state.handle_event(Event::TextInput(*c)),
+            WinitEvent::DeviceEvent {
+                event: DeviceEvent::Key(input),
+                ..
+            } => {
+                if let Some(key) = input.virtual_keycode.and_then(from_winit_key) {
+                    let pressed = match input.state {
+                        ElementState::Pressed => true,
+                        ElementState::Released => false,
+                    };
+
+                    state.handle_event(Event::KeyChanged(key, pressed))
+                } else {
+                    false
+                }
+            }
             _ => false,
         }
     }

@@ -11,3 +11,14 @@ pub enum MouseButton {
     /// The user's third mouse button. This is usually the middle mouse button.
     Three,
 }
+
+/// A physical key on the keyboard.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
+pub enum KeyboardKey {
+    Tab,
+    Space,
+    Backspace,
+    Delete,
+    Return,
+}

@@ -53,6 +53,10 @@ impl State {
 
                 response == EventResponse::Sink
             }
+            Event::KeyChanged(_key, _down) => {
+                // TODO
+                false
+            }
             Event::TextInput(_c) => {
                 // TODO
                 false
