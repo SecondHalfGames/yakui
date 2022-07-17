@@ -18,7 +18,6 @@ mod window;
 
 pub mod colors;
 pub mod shorthand;
-pub mod types;
 
 #[doc(inline)]
 pub use self::shorthand::*;
