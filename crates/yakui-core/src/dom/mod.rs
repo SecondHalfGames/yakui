@@ -221,13 +221,11 @@ impl DomInner {
     fn new() -> Self {
         let mut nodes = Arena::new();
         let root = nodes.insert(DomNode {
-            widget: Box::new(DummyWidget),
+            widget: Box::new(RootWidget),
             parent: None,
             children: Vec::new(),
             next_child: 0,
         });
-
-        nodes.get_mut(root).unwrap().widget = Box::new(RootWidget);
 
         Self {
             nodes,
