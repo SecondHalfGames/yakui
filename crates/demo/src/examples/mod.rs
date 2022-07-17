@@ -32,7 +32,7 @@ macro_rules! define_example {
         }
 
         impl Example {
-            pub fn function(&self) -> &'static dyn Fn(&ExampleState) {
+            pub fn function(&self) -> &'static dyn Fn(&mut ExampleState) {
                 match self {
                     $(Example::$mod => &$mod::run,)*
                 }

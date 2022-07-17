@@ -2,7 +2,7 @@ use yakui::{Alignment, Color3};
 
 use crate::ExampleState;
 
-pub fn run(state: &ExampleState) {
+pub fn run(state: &mut ExampleState) {
     const ALIGNMENTS: &[Alignment] = &[
         Alignment::TOP_LEFT,
         Alignment::TOP_CENTER,

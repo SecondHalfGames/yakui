@@ -3,6 +3,7 @@
                             // out our Response type even if it's unit.
 )]
 
+mod icons;
 mod text_renderer;
 mod util;
 

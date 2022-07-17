@@ -29,6 +29,9 @@ pub struct ExampleState {
     /// `TextureId` is a handle to a texture we previously gave to yakui. This
     /// is an image that's usable from any of the examples.
     pub monkey: TextureId,
+
+    /// Just a random bool.
+    pub checked: bool,
 }
 
 async fn run() {
@@ -77,7 +80,11 @@ async fn run() {
     // Preload a texture for the examples to use and set up some default state
     // that we'll modify later.
     let monkey = yak.add_texture(load_texture(MONKEY_PNG));
-    let mut state = ExampleState { time: 0.0, monkey };
+    let mut state = ExampleState {
+        time: 0.0,
+        monkey,
+        checked: false,
+    };
 
     let start = Instant::now();
     let mut is_init = false;
@@ -104,7 +111,7 @@ async fn run() {
 
                 // Here, we call out to our example code. See `src/examples` for
                 // the code, which runs each frame.
-                example(&state);
+                example(&mut state);
 
                 // Finish building the UI and compute this frame's layout.
                 yak.finish();

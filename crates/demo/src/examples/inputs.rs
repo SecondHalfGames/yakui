@@ -1,7 +1,10 @@
 use crate::ExampleState;
 
-pub fn run(_state: &ExampleState) {
+pub fn run(state: &mut ExampleState) {
     yakui::center(|| {
-        yakui::button("Button");
+        yakui::column(|| {
+            yakui::button("Button");
+            state.checked = yakui::checkbox(state.checked).checked;
+        });
     });
 }

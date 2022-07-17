@@ -2,7 +2,7 @@ use yakui::Color3;
 
 use crate::ExampleState;
 
-pub fn run(_state: &ExampleState) {
+pub fn run(_state: &mut ExampleState) {
     let colors = [Color3::RED, Color3::GREEN, Color3::BLUE];
 
     yakui::row(|| {

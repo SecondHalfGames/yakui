@@ -3,7 +3,7 @@ use yakui::Color3;
 
 use crate::ExampleState;
 
-pub fn run(_state: &ExampleState) {
+pub fn run(_state: &mut ExampleState) {
     yakui::column(|| {
         yakui::row(|| {
             yakui::label("Hello, world!");

@@ -9,9 +9,9 @@ use yakui_core::geometry::{Color3, Constraints, Vec2};
 use yakui_core::{Alignment, Response, TextureId};
 
 use crate::widgets::{
-    Align, AlignWidget, Button, ButtonWidget, ColoredBox, ColoredBoxWidget, ConstrainedBox,
-    ConstrainedBoxWidget, FlexWidget, Flexible, Image, ImageWidget, List, ListWidget, Pad,
-    PadWidget, Text, TextWidget,
+    Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
+    ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, FlexWidget, Flexible, Image,
+    ImageWidget, List, ListWidget, Pad, PadWidget, Text, TextWidget,
 };
 
 pub fn column<F: FnOnce()>(children: F) -> Response<ListWidget> {
@@ -74,4 +74,8 @@ pub fn constrained<F: FnOnce()>(
     children: F,
 ) -> Response<ConstrainedBoxWidget> {
     ConstrainedBox::new(constraints).show(children)
+}
+
+pub fn checkbox(checked: bool) -> Response<CheckboxWidget> {
+    Checkbox::new(checked).show()
 }
