@@ -8,6 +8,7 @@ mod image;
 mod list;
 mod padding;
 mod text;
+mod textbox;
 mod window;
 
 pub use self::align::*;
@@ -20,4 +21,5 @@ pub use self::image::*;
 pub use self::list::*;
 pub use self::padding::*;
 pub use self::text::*;
+pub use self::textbox::*;
 pub use self::window::*;

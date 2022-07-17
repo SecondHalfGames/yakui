@@ -1,6 +1,7 @@
 mod examples;
 mod graphics;
 
+use std::borrow::Cow;
 use std::time::Instant;
 
 use clap::Parser;
@@ -32,6 +33,9 @@ pub struct ExampleState {
 
     /// Just a random bool.
     pub checked: bool,
+
+    /// A string to feed into components.
+    pub name: Cow<'static, str>,
 }
 
 async fn run() {
@@ -84,6 +88,7 @@ async fn run() {
         time: 0.0,
         monkey,
         checked: false,
+        name: "Hello".into(),
     };
 
     let start = Instant::now();

@@ -44,6 +44,9 @@ pub enum WidgetEvent {
     /// A mouse button changed state while the cursor was outside the widget's
     /// rectangle.
     MouseButtonChangedOutside(MouseButton, bool),
+
+    /// The widget was focused or unfocused.
+    FocusChanged(bool),
 }
 
 /// Responses that can be given to an event.
@@ -72,5 +75,8 @@ bitflags::bitflags! {
 
         /// Notify this widget of all mouse events.
         const MOUSE = Self::MOUSE_INSIDE.bits | Self::MOUSE_OUTSIDE.bits;
+
+        /// This widget can be focused.
+        const FOCUS = 0b0000_0100;
     }
 }
