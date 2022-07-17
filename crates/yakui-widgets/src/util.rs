@@ -1,6 +1,6 @@
 use yakui_core::context;
+use yakui_core::widget::Widget;
 use yakui_core::Response;
-use yakui_core::Widget;
 
 pub fn widget_children<T, F>(children: F, props: T::Props) -> Response<T>
 where

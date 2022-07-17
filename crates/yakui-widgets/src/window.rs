@@ -1,6 +1,7 @@
 use std::fmt;
 
-use yakui_core::{Color3, Constraints, Response, Vec2, Widget};
+use yakui_core::widget::Widget;
+use yakui_core::{Color3, Constraints, Response, Vec2};
 
 use crate::util::widget;
 use crate::{colors, Pad};

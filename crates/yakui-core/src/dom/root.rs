@@ -1,5 +1,6 @@
+use crate::geometry::Constraints;
 use crate::layout::LayoutDom;
-use crate::{Constraints, Widget};
+use crate::widget::Widget;
 
 use super::Dom;
 

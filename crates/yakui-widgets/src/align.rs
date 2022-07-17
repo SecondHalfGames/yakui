@@ -1,6 +1,8 @@
+use yakui_core::dom::Dom;
+use yakui_core::layout::LayoutDom;
 use yakui_core::paint::PaintDom;
-use yakui_core::Response;
-use yakui_core::{dom::Dom, layout::LayoutDom, Constraints, Vec2, Widget};
+use yakui_core::widget::Widget;
+use yakui_core::{Constraints, Response, Vec2};
 
 use crate::{util::widget_children, Alignment};
 

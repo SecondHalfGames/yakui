@@ -1,4 +1,4 @@
-use crate::Widget;
+use crate::widget::Widget;
 
 /// Placeholder widget used internally to emplace a widget without
 /// initializing it yet.

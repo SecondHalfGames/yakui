@@ -11,13 +11,13 @@ mod geometry;
 mod id;
 mod response;
 mod state;
-mod widget;
 
 pub mod context;
 pub mod dom;
 pub mod input;
 pub mod layout;
 pub mod paint;
+pub mod widget;
 
 pub extern crate glam;
 
@@ -29,4 +29,3 @@ pub use self::geometry::*;
 pub use self::id::*;
 pub use self::response::*;
 pub use self::state::*;
-pub use self::widget::*;

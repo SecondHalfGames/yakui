@@ -1,14 +1,16 @@
+//! Defines traits for building widgets.
+
 use std::any::{type_name, Any, TypeId};
 use std::fmt;
 
 use glam::Vec2;
 
 use crate::dom::Dom;
+use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
-use crate::EventResponse;
 
 /// Trait that's automatically implemented for all widget props.
 ///
