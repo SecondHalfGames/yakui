@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::mem::take;
 
 use glam::Vec2;
 use smallvec::SmallVec;
@@ -40,9 +39,6 @@ pub(crate) struct InputState {
     /// All widgets that had the corresponding mouse button pressed while the
     /// mouse cursor was over them.
     pub mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
-
-    // TODO: Remove this?
-    pub mouse_hit_last: Vec<WidgetId>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,8 +77,6 @@ impl InputState {
             mouse_entered: Vec::new(),
             mouse_entered_and_sunk: Vec::new(),
             mouse_down_in: HashMap::new(),
-
-            mouse_hit_last: Vec::new(),
         }
     }
 
@@ -203,15 +197,12 @@ impl InputState {
     }
 
     fn mouse_hit_test(&mut self, dom: &Dom, layout: &LayoutDom) {
-        let mut mouse_hit = take(&mut self.mouse_hit_last);
-        mouse_hit.clear();
-        self.mouse_hit_last = take(&mut self.mouse_hit);
+        self.mouse_hit.clear();
 
         if let Some(mut mouse_pos) = self.mouse_position {
             mouse_pos /= layout.scale_factor();
-            hit_test(dom, layout, mouse_pos, &mut mouse_hit);
+            hit_test(dom, layout, mouse_pos, &mut self.mouse_hit);
         }
-        self.mouse_hit = mouse_hit;
     }
 
     fn settle_buttons(&mut self) {
