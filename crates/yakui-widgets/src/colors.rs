@@ -1,7 +1,7 @@
 //! Defines built-in colors that look pretty good.
 #![allow(missing_docs)]
 
-use yakui_core::Color3;
+use yakui_core::geometry::Color3;
 
 macro_rules! colors {
     (

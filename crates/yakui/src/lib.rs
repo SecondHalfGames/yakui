@@ -1,3 +1,4 @@
+pub use yakui_core::geometry::*;
 pub use yakui_core::*;
 
 #[doc(no_inline)]

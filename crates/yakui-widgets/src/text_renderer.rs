@@ -4,8 +4,9 @@ use std::rc::Rc;
 
 use fontdue::layout::GlyphRasterConfig;
 use fontdue::{Font, FontSettings};
+use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
-use yakui_core::{TextureId, URect, UVec2};
+use yakui_core::TextureId;
 
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {

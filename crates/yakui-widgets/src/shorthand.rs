@@ -5,7 +5,8 @@
 
 use std::borrow::Cow;
 
-use yakui_core::{Color3, Constraints, Response, TextureId, Vec2};
+use yakui_core::geometry::{Color3, Constraints, Vec2};
+use yakui_core::{Response, TextureId};
 
 use crate::types::Alignment;
 use crate::widgets::{

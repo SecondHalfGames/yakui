@@ -6,14 +6,14 @@
 #[macro_use]
 mod mopmopa;
 
-mod event;
-mod geometry;
 mod id;
 mod response;
 mod state;
 
 pub mod context;
 pub mod dom;
+pub mod event;
+pub mod geometry;
 pub mod input;
 pub mod layout;
 pub mod paint;
@@ -24,8 +24,6 @@ pub extern crate glam;
 #[doc(no_inline)]
 pub use glam::{UVec2, Vec2, Vec4};
 
-pub use self::event::*;
-pub use self::geometry::*;
 pub use self::id::*;
 pub use self::response::*;
 pub use self::state::*;

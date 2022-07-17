@@ -1,7 +1,8 @@
 use yakui_core::dom::Dom;
+use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::widget::Widget;
-use yakui_core::{Constraints, Response, Vec2};
+use yakui_core::Response;
 
 use crate::util::widget_children;
 

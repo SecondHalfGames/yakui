@@ -1,5 +1,6 @@
+use yakui_core::geometry::FlexFit;
 use yakui_core::widget::Widget;
-use yakui_core::{FlexFit, Response};
+use yakui_core::Response;
 
 use crate::util::widget_children;
 

@@ -1,7 +1,12 @@
+//! Defines common geometry types used by yakui.
+
 mod color;
 mod constraints;
 mod rect;
 mod urect;
+
+#[doc(no_inline)]
+pub use glam::{UVec2, Vec2, Vec4};
 
 pub use self::color::*;
 pub use self::constraints::*;

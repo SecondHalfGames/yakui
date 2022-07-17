@@ -1,7 +1,8 @@
 use std::fmt;
 
+use yakui_core::geometry::{Color3, Constraints, Vec2};
 use yakui_core::widget::Widget;
-use yakui_core::{Color3, Constraints, Response, Vec2};
+use yakui_core::Response;
 
 use crate::colors;
 use crate::util::widget;

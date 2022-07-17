@@ -1,3 +1,5 @@
+//! Defines the events that can be sent to yakui and handled by widgets.
+
 use glam::Vec2;
 
 use crate::geometry::Rect;

@@ -1,8 +1,9 @@
 use yakui_core::dom::Dom;
+use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::widget::Widget;
-use yakui_core::{Color3, Constraints, Rect, Response, TextureId, Vec2};
+use yakui_core::{Response, TextureId};
 
 use crate::util::widget;
 

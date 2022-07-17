@@ -4,10 +4,11 @@ use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use yakui_core::dom::Dom;
+use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
-use yakui_core::{Color3, Constraints, Rect, Response, Vec2};
+use yakui_core::Response;
 
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
