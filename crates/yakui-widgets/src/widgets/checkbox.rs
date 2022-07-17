@@ -83,8 +83,6 @@ impl Widget for CheckboxWidget {
         bg.color = colors::BACKGROUND_3;
         paint.add_rect(bg);
 
-        let padding = 0.2;
-
         if self.props.checked {
             crate::icons::cross(paint, check_rect, colors::TEXT);
         }
