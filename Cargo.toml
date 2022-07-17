@@ -1,4 +1,4 @@
 [workspace]
 resolver = "2"
-members = [".", "crates/*"]
-default-members = [".", "crates/*"]
+members = ["crates/*"]
+default-members = ["crates/*"]

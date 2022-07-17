@@ -1,12 +1,15 @@
 [package]
 name = "yakui-wgpu"
+description = "wgpu renderer for yakui"
 version = "0.1.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/LPGhatguy/yakui"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-yakui-core = { path = "../yakui-core" }
+yakui-core = { path = "../yakui-core", version = "0.1.0" }
 
 wgpu = "0.13.1"
 glam = { version = "0.21.2", features = ["bytemuck"] }
