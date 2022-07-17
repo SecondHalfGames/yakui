@@ -10,35 +10,40 @@ use crate::layout::LayoutDom;
 
 use super::button::MouseButton;
 
+/// Holds yakui's input state, like cursor position, hovered, and selected
+/// widgets.
 #[derive(Debug)]
-pub(crate) struct InputState {
+pub struct InputState {
     /// The current mouse position, or `None` if it's outside the window.
-    pub mouse_position: Option<Vec2>,
+    mouse_position: Option<Vec2>,
 
     /// The state of each mouse button. If missing from the map, the button is
     /// up and has not yet been pressed.
-    pub mouse_buttons: HashMap<MouseButton, ButtonState>,
+    mouse_buttons: HashMap<MouseButton, ButtonState>,
 
     /// All of the widgets with mouse interest that the current mouse position
     /// intersects with.
     ///
     /// All lists like this are stored in reverse depth first order.
-    pub mouse_hit: Vec<WidgetId>,
+    mouse_hit: Vec<WidgetId>,
 
     /// All of the widgets that have had a mouse enter event sent to them
     /// without a corresponding mouse leave event yet. This is different from
     /// mouse_hit because hover events can be sunk by event handlers.
-    pub mouse_entered: Vec<WidgetId>,
+    mouse_entered: Vec<WidgetId>,
 
     /// All of the widgets that had a mouse enter event sent to them and then
     /// sunk it that are still being hovered. This helps us ensure that a widget
     /// that sunk a hover event will continue to occupy that space even if we
     /// don't send it more events.
-    pub mouse_entered_and_sunk: Vec<WidgetId>,
+    mouse_entered_and_sunk: Vec<WidgetId>,
 
     /// All widgets that had the corresponding mouse button pressed while the
     /// mouse cursor was over them.
-    pub mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
+    mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
+
+    /// The widget that is currently selected.
+    selection: Option<WidgetId>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +73,7 @@ impl ButtonState {
 }
 
 impl InputState {
+    /// Create a new, empty `InputState`.
     pub fn new() -> Self {
         Self {
             mouse_position: None,
@@ -77,17 +83,31 @@ impl InputState {
             mouse_entered: Vec::new(),
             mouse_entered_and_sunk: Vec::new(),
             mouse_down_in: HashMap::new(),
+
+            selection: None,
         }
     }
 
-    pub fn mouse_moved(&mut self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
+    /// Return the currently selected widget, if there is one.
+    pub fn selection(&self) -> Option<WidgetId> {
+        self.selection
+    }
+
+    /// Set the currently selected widget.
+    pub fn set_selection(&mut self, id: Option<WidgetId>) {
+        self.selection = id;
+    }
+
+    /// Signal that the mouse has moved.
+    pub(crate) fn mouse_moved(&mut self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
         self.mouse_position = pos;
         self.mouse_hit_test(dom, layout);
         self.send_mouse_enter(dom);
         self.send_mouse_leave(dom);
     }
 
-    pub fn mouse_button_changed(
+    /// Signal that a mouse button's state has changed.
+    pub(crate) fn mouse_button_changed(
         &mut self,
         dom: &Dom,
         layout: &LayoutDom,
@@ -113,7 +133,8 @@ impl InputState {
         }
     }
 
-    pub fn finish(&mut self) {
+    /// Finish applying input events for this frame.
+    pub(crate) fn finish(&mut self) {
         self.settle_buttons();
     }
 
