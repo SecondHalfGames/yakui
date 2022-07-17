@@ -82,10 +82,10 @@ fn app() {
 ## Rationale
 yakui exists to fill two roles in the Rust game UI ecosystem:
 
-1. A library for building polished, custom game UI
-2. A library for prototype, development, or debug game UI
+1. A library for prototype, development, or debug game UI
+2. A library for building polished, custom game UI
 
-Most importantly, yakui provides a smooth transition from #2 to #1. When you reach the phase of your game's development where custom UI makes sense, you shouldn't need to throw out your existing UI code or technology. You should be able to incrementally improve the look, fit, and feel of your UI.
+Most importantly, yakui provides a smooth transition from #1 to #2. When you reach the phase of your game's development where custom UI makes sense, you shouldn't need to throw out your existing UI code or technology. You should be able to incrementally improve the look, fit, and feel of your UI.
 
 While Rust has multiple libraries aimed at debug or development UI, they do not place an emphasis on being capable for building good custom game UI. None of them provide a gradual path for converting from UI suitable for a game prototype into polished UI for a quality shipping game. All of yakui's built-in widgets are created using public APIs and are easy to compose, extend, or fork.
 
