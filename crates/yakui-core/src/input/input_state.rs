@@ -12,7 +12,7 @@ use crate::layout::LayoutDom;
 use super::button::MouseButton;
 
 #[derive(Debug)]
-pub struct InputState {
+pub(crate) struct InputState {
     /// The current mouse position, or `None` if it's outside the window.
     pub mouse_position: Option<Vec2>,
 
@@ -46,7 +46,7 @@ pub struct InputState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ButtonState {
+pub(crate) enum ButtonState {
     JustDown,
     Down,
     JustUp,

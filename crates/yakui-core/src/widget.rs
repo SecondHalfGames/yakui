@@ -80,11 +80,16 @@ pub trait Widget: 'static + fmt::Debug {
         }
     }
 
+    /// Tells which events the widget is interested in receiving.
+    ///
+    /// The default implementation will register interest in no events.
     fn event_interest(&self) -> EventInterest {
         EventInterest::empty()
     }
 
     /// Handle the given event and update the widget's state.
+    ///
+    /// The default implementation will bubble all events.
     fn event(&mut self, _event: &WidgetEvent) -> EventResponse {
         EventResponse::Bubble
     }

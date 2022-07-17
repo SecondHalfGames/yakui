@@ -2,6 +2,7 @@ use glam::Vec3;
 
 /// An sRGB color.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub struct Color3 {
     pub r: u8,
     pub g: u8,
@@ -46,6 +47,7 @@ impl Color3 {
 
 macro_rules! builtin_colors {
     ($($name:ident ($($color:literal),*),)*) => {
+        #[allow(missing_docs)]
         impl Color3 {
             $(
                 pub const $name: Self = Self::rgb($($color),*);

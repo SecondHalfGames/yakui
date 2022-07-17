@@ -1,3 +1,5 @@
+//! Defines how yakui responds to input and delegates it to widgets.
+
 mod button;
 mod input_state;
 

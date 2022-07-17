@@ -1,3 +1,5 @@
+//! Defines yakui's layout protocol and Layout DOM.
+
 use std::collections::VecDeque;
 
 use glam::Vec2;

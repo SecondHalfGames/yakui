@@ -1,3 +1,6 @@
+//! Defines yakui's DOM, which holds the hierarchy of widgets and their
+//! implementation details.
+
 mod debug;
 mod dummy;
 mod root;

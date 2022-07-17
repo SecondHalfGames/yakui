@@ -6,10 +6,8 @@ use crate::geometry::Rect;
 use crate::id::{TextureId, WidgetId};
 use crate::layout::LayoutDom;
 
-use super::PaintRect;
-use super::Texture;
-use super::Vertex;
-use super::{PaintCall, PaintMesh};
+use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
+use super::texture::Texture;
 
 #[rustfmt::skip]
 const RECT_POS: [[f32; 2]; 4] = [

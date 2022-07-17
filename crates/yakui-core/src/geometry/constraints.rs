@@ -3,7 +3,10 @@ use glam::Vec2;
 /// Defines box constraints used for layout.
 #[derive(Debug, Clone, Copy)]
 pub struct Constraints {
+    /// The minimum size that is allowed by these constraints.
     pub min: Vec2,
+
+    /// The maximum size that is allowed by these constraints.
     pub max: Vec2,
 }
 
