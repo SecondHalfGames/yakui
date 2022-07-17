@@ -3,8 +3,9 @@ use std::fmt;
 use yakui_core::widget::Widget;
 use yakui_core::{Color3, Constraints, Response, Vec2};
 
+use crate::colors;
 use crate::util::widget;
-use crate::{colors, Pad};
+use crate::widgets::{List, Pad};
 
 pub struct Window {
     pub initial_size: Vec2,
@@ -57,7 +58,7 @@ impl Widget for WindowWidget {
                 let constraints = Constraints::loose(self.size);
                 crate::constrained(constraints, || {
                     crate::pad(Pad::all(8.0), || {
-                        let row = crate::List::horizontal();
+                        let row = List::horizontal();
                         row.show(|| {
                             crate::colored_box(Color3::BLUE, [16.0, 16.0]);
                             crate::expanded(|| {

@@ -1,8 +1,25 @@
+//! Defines built-in colors that look pretty good.
+#![allow(missing_docs)]
+
 use yakui_core::Color3;
 
-pub const BACKGROUND_1: Color3 = Color3::rgb(31, 31, 31);
-pub const BACKGROUND_2: Color3 = Color3::rgb(42, 42, 42);
-pub const BACKGROUND_3: Color3 = Color3::rgb(54, 54, 54);
+macro_rules! colors {
+    (
+        $(
+            $name:ident = ( $r:literal, $g:literal, $b:literal );
+        )*
+    ) => {
+        $(
+            #[doc = concat!("rgb(", $r, ", ", $g, ", ", $b, ")")]
+            pub const $name: Color3 = Color3::rgb($r, $g, $b);
+        )*
+    };
+}
 
-pub const TEXT: Color3 = Color3::rgb(255, 255, 255);
-pub const TEXT_MUTED: Color3 = Color3::rgb(147, 147, 147);
+colors! {
+    BACKGROUND_1 = (31, 31, 31);
+    BACKGROUND_2 = (42, 42, 42);
+    BACKGROUND_3 = (54, 54, 54);
+    TEXT = (255, 255, 255);
+    TEXT_MUTED = (147, 147, 147);
+}

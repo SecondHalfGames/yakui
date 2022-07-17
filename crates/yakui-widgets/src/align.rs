@@ -4,7 +4,8 @@ use yakui_core::paint::PaintDom;
 use yakui_core::widget::Widget;
 use yakui_core::{Constraints, Response, Vec2};
 
-use crate::{util::widget_children, Alignment};
+use crate::types::Alignment;
+use crate::util::widget_children;
 
 #[derive(Debug, Clone)]
 pub struct Align {

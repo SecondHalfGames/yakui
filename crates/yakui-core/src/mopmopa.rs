@@ -6,7 +6,7 @@ macro_rules! mopmopafy {
     ($target:ident) => {
         #[allow(unused)]
         impl dyn $target {
-            /// See [`std::any::Any::is`].
+            /// See `std::any::Any::is`
             #[inline]
             pub fn is<T: std::any::Any>(&self) -> bool {
                 let t = TypeId::of::<T>();
@@ -14,7 +14,7 @@ macro_rules! mopmopafy {
                 t == concrete
             }
 
-            /// See [`std::any::Any::downcast_ref`].
+            /// See `std::any::Any::downcast_ref`.
             #[inline]
             pub fn downcast_ref<T: std::any::Any>(&self) -> Option<&T> {
                 if self.is::<T>() {
@@ -24,7 +24,7 @@ macro_rules! mopmopafy {
                 }
             }
 
-            /// See [`std::any::Any::downcast_mut`].
+            /// See `std::any::Any::downcast_mut`.
             #[inline]
             pub fn downcast_mut<T: std::any::Any>(&mut self) -> Option<&mut T> {
                 if self.is::<T>() {

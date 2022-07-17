@@ -1,4 +1,4 @@
-use yakui::Pad;
+use yakui::widgets::Pad;
 
 use crate::ExampleState;
 

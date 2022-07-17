@@ -6,7 +6,7 @@ use yakui_core::{Color3, EventInterest, EventResponse, Response, WidgetEvent};
 
 use crate::colors;
 use crate::util::widget;
-use crate::Pad;
+use crate::widgets::Pad;
 
 #[derive(Debug, Clone)]
 pub struct Button {

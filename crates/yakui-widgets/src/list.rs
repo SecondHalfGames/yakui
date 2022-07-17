@@ -3,8 +3,8 @@ use yakui_core::layout::LayoutDom;
 use yakui_core::widget::Widget;
 use yakui_core::{Constraints, FlexFit, Response, Vec2};
 
+use crate::types::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize};
 use crate::util::widget_children;
-use crate::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize};
 
 #[derive(Debug, Clone)]
 #[non_exhaustive]

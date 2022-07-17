@@ -1,4 +1,5 @@
-use yakui::{Color3, Text};
+use yakui::widgets::Text;
+use yakui::Color3;
 
 use crate::ExampleState;
 

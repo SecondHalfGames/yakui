@@ -40,7 +40,7 @@ impl PaintDom {
     }
 
     /// Paint a specific widget. This function is usually called as part of an
-    /// implementation of [`Widget::paint`][crate::Widget::paint].
+    /// implementation of [`Widget::paint`][crate::widget::Widget::paint].
     ///
     /// Must only be called once per widget per paint pass.
     pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, id: WidgetId) {

@@ -1,11 +1,17 @@
+//! Contains terse defaults for the most common widgets.
+//!
+//! Each function in this module is easy to read in order to enable extending a
+//! widget if its defaults don't work for you.
+
 use std::borrow::Cow;
 
 use yakui_core::{Color3, Constraints, Response, TextureId, Vec2};
 
-use crate::{
-    Align, AlignWidget, Alignment, Button, ButtonWidget, ColoredBox, ColoredBoxWidget,
-    ConstrainedBox, ConstrainedBoxWidget, FlexWidget, Flexible, Image, ImageWidget, List,
-    ListWidget, Pad, PadWidget, Text, TextWidget,
+use crate::types::Alignment;
+use crate::widgets::{
+    Align, AlignWidget, Button, ButtonWidget, ColoredBox, ColoredBoxWidget, ConstrainedBox,
+    ConstrainedBoxWidget, FlexWidget, Flexible, Image, ImageWidget, List, ListWidget, Pad,
+    PadWidget, Text, TextWidget,
 };
 
 pub fn column<F: FnOnce()>(children: F) -> Response<ListWidget> {
