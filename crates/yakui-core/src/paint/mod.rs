@@ -28,16 +28,39 @@ impl PaintRect {
     }
 }
 
+#[non_exhaustive]
+pub struct PaintMesh<V, I> {
+    pub vertices: V,
+    pub indices: I,
+    pub texture: Option<(TextureId, Rect)>,
+    pub pipeline: Pipeline,
+}
+
+impl<V, I> PaintMesh<V, I>
+where
+    V: IntoIterator<Item = Vertex>,
+    I: IntoIterator<Item = u16>,
+{
+    pub fn new(vertices: V, indices: I) -> Self {
+        Self {
+            vertices,
+            indices,
+            texture: None,
+            pipeline: Pipeline::Main,
+        }
+    }
+}
+
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct Mesh {
+pub struct PaintCall {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
     pub texture: Option<TextureId>,
     pub pipeline: Pipeline,
 }
 
-impl Mesh {
+impl PaintCall {
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),

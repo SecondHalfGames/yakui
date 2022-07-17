@@ -98,8 +98,9 @@ impl LayoutDom {
 
     /// Calculate the layout of a specific widget.
     ///
-    /// This function must only be called from [`crate::Widget::layout`] and
-    /// should only be called once per widget per layout pass.
+    /// This function must only be called from
+    /// [`Widget::layout`][crate::Widget::layout] and should only be called once
+    /// per widget per layout pass.
     pub fn calculate(&mut self, dom: &Dom, id: WidgetId, constraints: Constraints) -> Vec2 {
         dom.enter(id);
         let dom_node = dom.get(id).unwrap();

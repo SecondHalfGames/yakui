@@ -197,7 +197,7 @@ impl State {
 
         let paint = state.paint();
 
-        if paint.meshes().is_empty() {
+        if paint.calls().is_empty() {
             return encoder.finish();
         }
 
@@ -243,7 +243,7 @@ impl State {
         self.indices.clear();
         self.commands.clear();
 
-        let commands = paint.meshes().iter().map(|mesh| {
+        let commands = paint.calls().iter().map(|mesh| {
             let vertices = mesh.vertices.iter().map(|vertex| Vertex {
                 pos: vertex.position,
                 texcoord: vertex.texcoord,
