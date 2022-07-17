@@ -1,6 +1,6 @@
 //! Types used by various yakui widgets.
 
-use yakui_core::Vec2;
+use yakui_core::geometry::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]

@@ -21,9 +21,6 @@ pub mod widget;
 
 pub extern crate glam;
 
-#[doc(no_inline)]
-pub use glam::{UVec2, Vec2, Vec4};
-
 pub use self::id::*;
 pub use self::response::*;
 pub use self::state::*;

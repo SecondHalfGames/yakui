@@ -10,8 +10,9 @@ use std::ops::Range;
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
+use yakui_core::geometry::{Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
-use yakui_core::{TextureId, Vec2, Vec4};
+use yakui_core::TextureId;
 
 use self::texture::GpuTexture;
 
