@@ -100,6 +100,10 @@ impl State {
 
                 state.handle_event(Event::MouseButtonChanged(button, down))
             }
+            WinitEvent::WindowEvent {
+                event: WindowEvent::ReceivedCharacter(c),
+                ..
+            } => state.handle_event(Event::TextInput(*c)),
             _ => false,
         }
     }

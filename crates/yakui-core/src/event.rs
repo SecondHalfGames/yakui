@@ -18,6 +18,9 @@ pub enum Event {
 
     /// A mouse button changed, telling whether it is now pressed.
     MouseButtonChanged(MouseButton, bool),
+
+    /// A Unicode codepoint was typed in the window.
+    TextInput(char),
 }
 
 /// An event that can be handled by an individual widget.
