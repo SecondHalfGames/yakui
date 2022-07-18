@@ -9,13 +9,16 @@ use crate::util::widget;
 
 #[derive(Debug, Clone)]
 pub struct Image {
-    pub image: TextureId,
+    pub image: Option<TextureId>,
     pub size: Vec2,
 }
 
 impl Image {
     pub fn new(image: TextureId, size: Vec2) -> Self {
-        Self { image, size }
+        Self {
+            image: Some(image),
+            size,
+        }
     }
 
     pub fn show(self) -> Response<ImageWidget> {
@@ -34,11 +37,16 @@ impl Widget for ImageWidget {
     type Props = Image;
     type Response = ImageResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: Image {
+                image: None,
+                size: Vec2::ZERO,
+            },
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -49,11 +57,11 @@ impl Widget for ImageWidget {
     fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
         let layout_node = layout.get(dom.current()).unwrap();
 
-        let mut rect = PaintRect::new(layout_node.rect);
-        rect.color = Color3::WHITE;
-        rect.texture = Some((self.props.image, Rect::ONE));
-        output.add_rect(rect);
+        if let Some(image) = self.props.image {
+            let mut rect = PaintRect::new(layout_node.rect);
+            rect.color = Color3::WHITE;
+            rect.texture = Some((image, Rect::ONE));
+            output.add_rect(rect);
+        }
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

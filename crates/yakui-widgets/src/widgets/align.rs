@@ -39,11 +39,13 @@ impl Widget for AlignWidget {
     type Props = Align;
     type Response = AlignResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: Align::center(),
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -68,6 +70,4 @@ impl Widget for AlignWidget {
             paint.paint(dom, layout, child);
         }
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

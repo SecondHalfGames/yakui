@@ -11,12 +11,11 @@ impl Widget for RootWidget {
     type Props = ();
     type Response = ();
 
-    fn new(_props: Self::Props) -> Self {
+    fn new() -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props) {}
-    fn respond(&mut self) -> Self::Response {}
+    fn update(&mut self, _props: Self::Props) -> Self::Response {}
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> glam::Vec2 {
         let node = dom.get_current();

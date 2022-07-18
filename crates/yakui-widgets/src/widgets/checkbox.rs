@@ -46,20 +46,18 @@ impl Widget for CheckboxWidget {
     type Props = Checkbox;
     type Response = CheckboxResponse;
 
-    fn new(props: Self::Props) -> Self {
+    fn new() -> Self {
         Self {
-            props,
+            props: Checkbox::new(false),
             hovering: false,
             mouse_down: false,
             just_toggled: false,
         }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-    }
 
-    fn respond(&mut self) -> Self::Response {
         let mut checked = self.props.checked;
         if self.just_toggled {
             checked = !checked;

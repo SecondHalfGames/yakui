@@ -49,11 +49,13 @@ impl Widget for ListWidget {
     type Props = List;
     type Response = ListResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: List::horizontal(),
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -137,6 +139,4 @@ impl Widget for ListWidget {
 
         input.constrain(direction.vec2(total_main_axis_size, max_cross_axis_size))
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

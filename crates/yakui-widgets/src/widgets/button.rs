@@ -63,20 +63,18 @@ impl Widget for ButtonWidget {
     type Props = Button;
     type Response = ButtonResponse;
 
-    fn new(props: Self::Props) -> Self {
+    fn new() -> Self {
         Self {
-            props,
+            props: Button::unstyled(Cow::Borrowed("")),
             hovering: false,
             mouse_down: false,
             clicked: false,
         }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-    }
 
-    fn children(&self) {
         let mut color = self.props.fill;
 
         if let (Some(fill), true) = (self.props.down_fill, self.mouse_down) {
@@ -90,9 +88,7 @@ impl Widget for ButtonWidget {
                 crate::text(16.0, self.props.text.clone());
             });
         });
-    }
 
-    fn respond(&mut self) -> Self::Response {
         let clicked = self.clicked;
         self.clicked = false;
 

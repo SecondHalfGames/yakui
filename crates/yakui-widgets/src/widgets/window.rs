@@ -30,7 +30,6 @@ impl Window {
 #[derive(Debug)]
 pub struct WindowWidget {
     props: Window,
-    size: Vec2,
 }
 
 pub type WindowResponse = ();
@@ -39,24 +38,19 @@ impl Widget for WindowWidget {
     type Props = Window;
     type Response = WindowResponse;
 
-    fn new(props: Self::Props) -> Self {
+    fn new() -> Self {
         Self {
-            size: props.initial_size,
-            props,
+            props: Window::new(Vec2::ZERO),
         }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-    }
 
-    fn respond(&mut self) -> Self::Response {}
-
-    fn children(&self) {
         crate::colored_box_container(colors::BACKGROUND_2, || {
             crate::column(|| {
                 // Window Title Bar
-                let constraints = Constraints::loose(self.size);
+                let constraints = Constraints::loose(self.props.initial_size);
                 crate::constrained(constraints, || {
                     crate::pad(Pad::all(8.0), || {
                         let row = List::horizontal();

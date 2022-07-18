@@ -14,6 +14,13 @@ pub struct ColoredBox {
 }
 
 impl ColoredBox {
+    pub fn empty() -> Self {
+        Self {
+            color: Color3::WHITE,
+            min_size: Vec2::ZERO,
+        }
+    }
+
     pub fn sized(color: Color3, size: Vec2) -> Self {
         Self {
             color,
@@ -48,11 +55,13 @@ impl Widget for ColoredBoxWidget {
     type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: ColoredBox::empty(),
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -80,6 +89,4 @@ impl Widget for ColoredBoxWidget {
             paint.paint(dom, layout, child);
         }
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

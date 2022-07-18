@@ -59,12 +59,12 @@ impl Widget for TextBoxWidget {
     type Props = TextBox;
     type Response = TextBoxResponse;
 
-    fn new(props: Self::Props) -> Self {
+    fn new() -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
-        let cursor = props.text.len() - 2;
+        let cursor = 0;
 
         Self {
-            props,
+            props: TextBox::new(0.0, Cow::Borrowed("")),
             focused: false,
             cursor,
             cursor_pos: RefCell::new(Vec2::ZERO),
@@ -72,8 +72,12 @@ impl Widget for TextBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
+
+        Self::Response {
+            text: self.props.text.clone(),
+        }
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
@@ -165,12 +169,6 @@ impl Widget for TextBoxWidget {
         let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
         rect.color = Color3::RED;
         paint.add_rect(rect);
-    }
-
-    fn respond(&mut self) -> Self::Response {
-        Self::Response {
-            text: self.props.text.clone(),
-        }
     }
 }
 

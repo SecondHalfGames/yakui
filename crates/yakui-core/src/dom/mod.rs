@@ -159,33 +159,41 @@ impl Dom {
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
     pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T> {
-        let index = self.begin_widget::<T>(props);
-        self.end_widget::<T>(index)
+        let response = self.begin_widget::<T>(props);
+        self.end_widget::<T>(response.id);
+        response
     }
 
     /// Begin building a widget with the given type and props.
     ///
     /// After calling this method, children can be added to this widget.
-    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> WidgetId {
+    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Response<T> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
-        let (id, widget) = {
+        let (id, mut widget) = {
             let mut dom = self.inner.borrow_mut();
             let id = dom.next_widget(self.current());
             self.stack.borrow_mut().push(id);
-            dom.update_widget::<T>(id, props);
 
-            // Component::children needs mutable access to the DOM, so we need
-            // to rip the widget out of the tree so we can release our lock.
+            // Component::update needs mutable access to both the widget and the
+            // DOM, so we need to rip the widget out of the tree so we can
+            // release our lock.
             let node = dom.nodes.get_mut(id.index()).unwrap();
             let widget = replace(&mut node.widget, Box::new(DummyWidget));
 
+            node.next_child = 0;
             (id, widget)
         };
 
-        // Give this widget a chance to create children to take advantage of
-        // composition.
-        widget.children();
+        // Potentially recreate the widget, then update it.
+        let response = {
+            if widget.as_ref().type_id() != TypeId::of::<T>() {
+                widget = Box::new(T::new());
+            }
+
+            let widget = widget.downcast_mut::<T>().unwrap();
+            widget.update(props)
+        };
 
         // Quick! Put the widget back, before anyone notices!
         {
@@ -194,14 +202,12 @@ impl Dom {
             node.widget = widget;
         }
 
-        id
+        Response::new(id, response)
     }
 
     /// Finish building the widget with the given ID. Must be the top of the
     /// stack, with no other widgets pending.
-    ///
-    /// Returns the widget's response type, wrapped in a [`Response`].
-    pub fn end_widget<T: Widget>(&self, id: WidgetId) -> Response<T> {
+    pub fn end_widget<T: Widget>(&self, id: WidgetId) {
         log::trace!("end_widget::<{}>({id:?})", type_name::<T>());
 
         let mut dom = self.inner.borrow_mut();
@@ -216,10 +222,6 @@ impl Dom {
         );
 
         dom.trim_children(id);
-
-        let node = dom.nodes.get_mut(id.index()).unwrap();
-        let res = node.widget.as_mut().downcast_mut::<T>().unwrap().respond();
-        Response::new(id, res)
     }
 }
 
@@ -245,19 +247,6 @@ impl DomInner {
             parent.next_child += 1;
             id
         }
-    }
-
-    fn update_widget<T: Widget>(&mut self, id: WidgetId, props: T::Props) {
-        let node = self.nodes.get_mut(id.index()).unwrap();
-
-        if node.widget.as_ref().type_id() == TypeId::of::<T>() {
-            let widget = node.widget.downcast_mut::<T>().unwrap();
-            widget.update(props);
-        } else {
-            node.widget = Box::new(T::new(props));
-        }
-
-        node.next_child = 0;
     }
 
     /// Remove children from the given node that weren't present in the latest

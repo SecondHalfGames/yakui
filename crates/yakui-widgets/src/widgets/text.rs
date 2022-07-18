@@ -53,16 +53,16 @@ impl Widget for TextWidget {
     type Props = Text;
     type Response = TextResponse;
 
-    fn new(props: Self::Props) -> Self {
+    fn new() -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Self {
-            props,
+            props: Text::new(0.0, Cow::Borrowed("")),
             layout: RefCell::new(layout),
         }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -131,8 +131,6 @@ impl Widget for TextWidget {
             paint.add_rect(rect);
         }
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }
 
 impl fmt::Debug for TextWidget {

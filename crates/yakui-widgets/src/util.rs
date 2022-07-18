@@ -8,9 +8,10 @@ where
     F: FnOnce(),
 {
     let dom = context::dom();
-    let index = dom.begin_widget::<T>(props);
+    let response = dom.begin_widget::<T>(props);
     children();
-    dom.end_widget::<T>(index)
+    dom.end_widget::<T>(response.id);
+    response
 }
 
 pub fn widget<T>(props: T::Props) -> Response<T>

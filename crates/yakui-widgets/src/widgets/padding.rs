@@ -69,11 +69,11 @@ impl Widget for PadWidget {
     type Props = Pad;
     type Response = PadResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self { props: Pad::ZERO }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -100,6 +100,4 @@ impl Widget for PadWidget {
 
         input.constrain(self_size)
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

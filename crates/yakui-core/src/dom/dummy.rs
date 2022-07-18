@@ -10,13 +10,10 @@ impl Widget for DummyWidget {
     type Response = ();
 
     #[inline]
-    fn new(_props: Self::Props) -> Self {
+    fn new() -> Self {
         Self
     }
 
     #[inline]
-    fn update(&mut self, _props: Self::Props) {}
-
-    #[inline]
-    fn respond(&mut self) {}
+    fn update(&mut self, _props: Self::Props) -> Self::Response {}
 }

@@ -31,19 +31,11 @@ pub trait Widget: 'static + fmt::Debug {
     /// was clicked, had keyboard input, or other info that might be useful.
     type Response;
 
-    /// Create the widget with the given props.
-    fn new(props: Self::Props) -> Self;
+    /// Create the widget.
+    fn new() -> Self;
 
     /// Update the widget with new props.
-    fn update(&mut self, props: Self::Props);
-
-    /// Return a response, which lets users receive information from the widget
-    /// like whether it was clicked.
-    fn respond(&mut self) -> Self::Response;
-
-    /// Construct the widget's children, helpful for reusing functionality
-    /// between widgets.
-    fn children(&self) {}
+    fn update(&mut self, props: Self::Props) -> Self::Response;
 
     /// Returns whether this widget should grow to fill a flexible layout, and
     /// if so, what weight should be applied to it if other widgets also want to
@@ -99,9 +91,6 @@ pub trait Widget: 'static + fmt::Debug {
 
 /// A type-erased version of [`Widget`].
 pub trait ErasedWidget: Any + fmt::Debug {
-    /// See [`Widget::children`].
-    fn children(&self) {}
-
     /// See [`Widget::layout`].
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
 
@@ -122,10 +111,6 @@ impl<T> ErasedWidget for T
 where
     T: Widget,
 {
-    fn children(&self) {
-        <T as Widget>::children(self)
-    }
-
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
         <T as Widget>::layout(self, dom, layout, constraints)
     }

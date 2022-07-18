@@ -32,11 +32,16 @@ impl Widget for ConstrainedBoxWidget {
     type Props = ConstrainedBox;
     type Response = ConstrainedBoxResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: ConstrainedBox::new(Constraints {
+                min: Vec2::ZERO,
+                max: Vec2::ZERO,
+            }),
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
 
@@ -55,6 +60,4 @@ impl Widget for ConstrainedBoxWidget {
 
         input.constrain(size)
     }
-
-    fn respond(&mut self) -> Self::Response {}
 }

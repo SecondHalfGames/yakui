@@ -41,15 +41,15 @@ impl Widget for FlexWidget {
     type Props = Flexible;
     type Response = FlexResponse;
 
-    fn new(props: Self::Props) -> Self {
-        Self { props }
+    fn new() -> Self {
+        Self {
+            props: Flexible::new(0),
+        }
     }
 
-    fn update(&mut self, props: Self::Props) {
+    fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
     }
-
-    fn respond(&mut self) -> Self::Response {}
 
     fn flex(&self) -> (u32, FlexFit) {
         (self.props.flex, self.props.fit)
