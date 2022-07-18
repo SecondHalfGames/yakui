@@ -57,7 +57,7 @@ pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> Response<TextWidg
     Text::new(size, text.into()).show()
 }
 
-pub fn textbox<S: Into<Cow<'static, str>>>(size: f32, text: S) -> Response<TextBoxWidget> {
+pub fn textbox<S: Into<String>>(size: f32, text: S) -> Response<TextBoxWidget> {
     TextBox::new(size, text.into()).show()
 }
 

@@ -47,6 +47,9 @@ pub enum WidgetEvent {
 
     /// A keyboard button changed.
     KeyChanged(KeyboardKey, bool),
+
+    /// Text was sent to the widget.
+    TextInput(char),
 }
 
 /// Responses that can be given to an event.

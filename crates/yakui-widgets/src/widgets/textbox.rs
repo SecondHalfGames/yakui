@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 
@@ -18,25 +17,17 @@ use crate::{colors, icons};
 
 #[derive(Debug, Clone)]
 pub struct TextBox {
-    pub text: Cow<'static, str>,
+    pub text: String,
     pub color: Color3,
     pub font_size: f32,
 }
 
 impl TextBox {
-    pub fn new(font_size: f32, text: Cow<'static, str>) -> Self {
+    pub fn new<S: Into<String>>(font_size: f32, text: S) -> Self {
         Self {
-            text,
+            text: text.into(),
             color: Color3::WHITE,
             font_size,
-        }
-    }
-
-    pub fn label(text: Cow<'static, str>) -> Self {
-        Self {
-            text,
-            color: Color3::WHITE,
-            font_size: 14.0,
         }
     }
 
@@ -47,6 +38,7 @@ impl TextBox {
 
 pub struct TextBoxWidget {
     props: TextBox,
+    updated_text: Option<String>,
     selected: bool,
     cursor: usize,
     cursor_pos: RefCell<Vec2>,
@@ -54,7 +46,7 @@ pub struct TextBoxWidget {
 }
 
 pub struct TextBoxResponse {
-    pub text: Cow<'static, str>,
+    pub text: Option<String>,
 }
 
 impl Widget for TextBoxWidget {
@@ -66,7 +58,8 @@ impl Widget for TextBoxWidget {
         let cursor = 0;
 
         Self {
-            props: TextBox::new(0.0, Cow::Borrowed("")),
+            props: TextBox::new(0.0, ""),
+            updated_text: None,
             selected: false,
             cursor,
             cursor_pos: RefCell::new(Vec2::ZERO),
@@ -76,15 +69,15 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-
         self.selected = context::is_selected();
 
         Self::Response {
-            text: self.props.text.clone(),
+            text: self.updated_text.clone(),
         }
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+        let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
         let global = dom.get_global_or_init(TextGlobalState::new);
 
         let (max_width, max_height) = if input.is_bounded() {
@@ -105,7 +98,7 @@ impl Widget for TextBoxWidget {
             ..LayoutSettings::default()
         });
 
-        let before_cursor = &self.props.text[..self.cursor];
+        let before_cursor = &text[..self.cursor];
         text_layout.append(
             &[global.default_font.as_ref()],
             &TextStyle::new(before_cursor, font_size, 0),
@@ -120,7 +113,7 @@ impl Widget for TextBoxWidget {
             .unwrap_or(Vec2::ZERO);
         *self.cursor_pos.borrow_mut() = cursor_pos;
 
-        let after_cursor = &self.props.text[self.cursor..];
+        let after_cursor = &text[self.cursor..];
         text_layout.append(
             &[global.default_font.as_ref()],
             &TextStyle::new(after_cursor, font_size, 0),
@@ -190,16 +183,65 @@ impl Widget for TextBoxWidget {
                 EventResponse::Sink
             }
             WidgetEvent::KeyChanged(KeyboardKey::Left, true) => {
-                self.cursor = self.cursor.saturating_sub(1);
+                let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+
+                loop {
+                    self.cursor = self.cursor.saturating_sub(1);
+                    if text.is_char_boundary(self.cursor) {
+                        break;
+                    }
+                }
+
                 EventResponse::Sink
             }
             WidgetEvent::KeyChanged(KeyboardKey::Right, true) => {
-                self.cursor += 1;
-                self.cursor = self.cursor.min(self.props.text.len());
+                let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+
+                loop {
+                    self.cursor += 1;
+                    self.cursor = self.cursor.min(self.props.text.len());
+                    if text.is_char_boundary(self.cursor) {
+                        break;
+                    }
+                }
+
+                EventResponse::Sink
+            }
+            WidgetEvent::KeyChanged(KeyboardKey::Backspace, true) => {
+                let text = self
+                    .updated_text
+                    .get_or_insert_with(|| self.props.text.clone());
+
+                if self.cursor == 0 {
+                    return EventResponse::Sink;
+                }
+
+                let start = self.cursor - 1;
+                let c = text.remove(start);
+                self.cursor = self.cursor.saturating_sub(c.len_utf8());
                 EventResponse::Sink
             }
             WidgetEvent::KeyChanged(KeyboardKey::Escape, true) => {
                 context::remove_selection();
+                EventResponse::Sink
+            }
+            WidgetEvent::TextInput(c) => {
+                if c.is_control() {
+                    return EventResponse::Bubble;
+                }
+
+                let text = self
+                    .updated_text
+                    .get_or_insert_with(|| self.props.text.clone());
+
+                if text.is_empty() {
+                    text.push(*c);
+                } else {
+                    text.insert(self.cursor, *c);
+                }
+
+                self.cursor += c.len_utf8();
+
                 EventResponse::Sink
             }
             _ => EventResponse::Bubble,

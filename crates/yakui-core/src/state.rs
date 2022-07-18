@@ -58,9 +58,10 @@ impl State {
 
                 response == EventResponse::Sink
             }
-            Event::TextInput(_c) => {
-                // TODO
-                false
+            Event::TextInput(c) => {
+                let response = self.input.text_input(&self.dom, &self.layout, c);
+
+                response == EventResponse::Sink
             }
         };
 

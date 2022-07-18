@@ -1,7 +1,6 @@
 mod examples;
 mod graphics;
 
-use std::borrow::Cow;
 use std::time::Instant;
 
 use clap::Parser;
@@ -35,7 +34,7 @@ pub struct ExampleState {
     pub checked: bool,
 
     /// A string to feed into components.
-    pub name: Cow<'static, str>,
+    pub name: String,
 }
 
 async fn run() {

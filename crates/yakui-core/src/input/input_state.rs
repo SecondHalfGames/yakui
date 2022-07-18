@@ -69,6 +69,10 @@ impl InputState {
         self.inner.keyboard_key_changed(dom, layout, key, down)
     }
 
+    pub(crate) fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
+        self.inner.text_input(dom, layout, c)
+    }
+
     pub(crate) fn finish(&self) {
         self.inner.finish()
     }
@@ -223,6 +227,24 @@ impl InputStateInner {
             {
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::KeyChanged(key, down);
+                return fire_event(dom, id, &mut node, &event);
+            }
+        }
+
+        EventResponse::Bubble
+    }
+
+    fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
+        let selected = *self.selection.borrow();
+        if let Some(id) = selected {
+            let layout_node = layout.get(id).unwrap();
+
+            if layout_node
+                .event_interest
+                .contains(EventInterest::FOCUSED_KEYBOARD)
+            {
+                let mut node = dom.get_mut(id).unwrap();
+                let event = WidgetEvent::TextInput(c);
                 return fire_event(dom, id, &mut node, &event);
             }
         }

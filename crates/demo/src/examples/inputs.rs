@@ -9,7 +9,9 @@ pub fn run(state: &mut ExampleState) {
 
             state.checked = yakui::checkbox(state.checked).checked;
 
-            state.name = yakui::textbox(18.0, state.name.clone()).text.clone();
+            if let Some(new_name) = yakui::textbox(18.0, &state.name).text.as_ref() {
+                state.name = new_name.clone();
+            }
         });
     });
 }
