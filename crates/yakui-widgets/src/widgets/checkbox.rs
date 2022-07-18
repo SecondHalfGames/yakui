@@ -71,15 +71,13 @@ impl Widget for CheckboxWidget {
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let layout_node = layout.get(dom.current()).unwrap();
-        let outer_rect = layout_node.rect.div_vec2(layout.viewport().size());
 
         let padding = Vec2::splat(OUTER_SIZE - INNER_SIZE);
         let mut check_rect = layout_node.rect;
         check_rect.set_pos(check_rect.pos() + padding / 2.0);
         check_rect.set_size(check_rect.size() - padding);
-        check_rect = check_rect.div_vec2(layout.viewport().size());
 
-        let mut bg = PaintRect::new(outer_rect);
+        let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
         paint.add_rect(bg);
 

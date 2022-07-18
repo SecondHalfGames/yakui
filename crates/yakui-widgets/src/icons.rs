@@ -1,3 +1,5 @@
+use std::f32::consts::TAU;
+
 use yakui_core::geometry::{Color3, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, Vertex};
 
@@ -96,4 +98,51 @@ pub fn outline(output: &mut PaintDom, rect: Rect, thickness: Vec2, color: Color3
 
     let mesh = PaintMesh::new(vertices, INDICES);
     output.add_mesh(mesh);
+}
+
+pub struct PaintCircle {
+    pub center: Vec2,
+    pub radius: f32,
+    pub segments: u16,
+    pub color: Color3,
+}
+
+impl PaintCircle {
+    pub fn new(center: Vec2, radius: f32) -> Self {
+        Self {
+            center,
+            radius,
+            segments: 24,
+            color: Color3::WHITE,
+        }
+    }
+
+    pub fn add(&self, output: &mut PaintDom) {
+        let color = self.color.to_linear().extend(1.0);
+        let mut vertices = Vec::new();
+        let segments = self.segments as f32;
+
+        for i in 0..self.segments {
+            let angle = TAU * (i as f32) / segments;
+            let (y, x) = angle.sin_cos();
+            let pos = self.center + Vec2::new(x, y) * self.radius;
+
+            vertices.push(Vertex::new(pos, [0.0, 0.0], color));
+        }
+
+        vertices.push(Vertex::new(self.center, [0.0, 0.0], color));
+        let middle_vertex = (vertices.len() - 1) as u16;
+
+        let mut indices = Vec::new();
+        let segments = self.segments as i16;
+
+        for i in 0i16..segments {
+            indices.push(i as u16);
+            indices.push((i - 1).rem_euclid(segments) as u16);
+            indices.push(middle_vertex);
+        }
+
+        let mesh = PaintMesh::new(vertices, indices);
+        output.add_mesh(mesh);
+    }
 }
