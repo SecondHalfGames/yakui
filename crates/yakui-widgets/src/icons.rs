@@ -48,11 +48,13 @@ pub fn cross(output: &mut PaintDom, rect: Rect, color: Color3) {
     output.add_mesh(mesh);
 }
 
-pub fn outline(output: &mut PaintDom, rect: Rect, thickness: Vec2, color: Color3) {
+pub fn selection_halo(output: &mut PaintDom, rect: Rect) {
+    outline(output, rect, 2.0, Color3::WHITE);
+}
+
+pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color3) {
     let vw = rect.size().x;
     let vh = rect.size().y;
-    let w = thickness.x;
-    let h = thickness.y;
 
     #[rustfmt::skip]
     let positions: [[f32; 2]; 12] = [
@@ -62,15 +64,15 @@ pub fn outline(output: &mut PaintDom, rect: Rect, thickness: Vec2, color: Color3
         [ vw, vh], // 2
         [ vw, 0.0], // 3
         // Left border
-        [0.0,      h], // 4
-        [0.0, vh - h], // 5
-        [  w, vh - h], // 6
-        [  w,      h], // 7
+        [0.0,      w], // 4
+        [0.0, vh - w], // 5
+        [  w, vh - w], // 6
+        [  w,      w], // 7
         // Right border
-        [vw - w,      h], // 8
-        [vw - w, vh - h], // 9
-        [    vw, vh - h], // 10
-        [    vw,      h], // 11
+        [vw - w,      w], // 8
+        [vw - w, vh - w], // 9
+        [    vw, vh - w], // 10
+        [    vw,      w], // 11
     ];
 
     #[rustfmt::skip]

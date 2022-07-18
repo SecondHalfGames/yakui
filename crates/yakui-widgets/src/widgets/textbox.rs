@@ -12,9 +12,9 @@ use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::{context, Response};
 
-use crate::colors;
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
+use crate::{colors, icons};
 
 #[derive(Debug, Clone)]
 pub struct TextBox {
@@ -47,7 +47,7 @@ impl TextBox {
 
 pub struct TextBoxWidget {
     props: TextBox,
-    focused: bool,
+    selected: bool,
     cursor: usize,
     cursor_pos: RefCell<Vec2>,
     layout: RefCell<Layout>,
@@ -67,7 +67,7 @@ impl Widget for TextBoxWidget {
 
         Self {
             props: TextBox::new(0.0, Cow::Borrowed("")),
-            focused: false,
+            selected: false,
             cursor,
             cursor_pos: RefCell::new(Vec2::ZERO),
             layout: RefCell::new(layout),
@@ -77,9 +77,7 @@ impl Widget for TextBoxWidget {
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
 
-        if context::is_selected() {
-            println!("TextBox selected!");
-        }
+        self.selected = context::is_selected();
 
         Self::Response {
             text: self.props.text.clone(),
@@ -175,6 +173,10 @@ impl Widget for TextBoxWidget {
         let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
         rect.color = Color3::RED;
         paint.add_rect(rect);
+
+        if self.selected {
+            icons::selection_halo(paint, layout_node.rect);
+        }
     }
 
     fn event_interest(&self) -> EventInterest {
