@@ -27,6 +27,12 @@ impl InputState {
         }
     }
 
+    pub(crate) fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+
     /// Return the currently selected widget, if there is one.
     pub fn selection(&self) -> Option<WidgetId> {
         let inner = self.inner.borrow();
