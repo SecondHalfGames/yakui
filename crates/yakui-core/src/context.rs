@@ -8,7 +8,7 @@ use crate::dom::Dom;
 type Storage = Rc<RefCell<Option<Dom>>>;
 
 thread_local! {
-    static CURRENT_CONTEXT: Storage = Rc::new(RefCell::new(None));
+    static CURRENT_DOM: Storage = Rc::new(RefCell::new(None));
 }
 
 /// If there is a DOM currently being updated on this thread, returns a
@@ -17,7 +17,7 @@ thread_local! {
 /// # Panics
 /// Panics if there is no DOM currently being updated on this thread.
 pub fn dom() -> Ref<'static, Dom> {
-    CURRENT_CONTEXT.with(|context| {
+    CURRENT_DOM.with(|context| {
         // SAFETY: Rust won't give us a 'static reference here because this
         // thread could send the 'static value to another thread and then die
         // prematurely. This would be bad.
@@ -37,7 +37,7 @@ pub fn dom() -> Ref<'static, Dom> {
 }
 
 pub(crate) fn give_dom(dom: Dom) {
-    let context = CURRENT_CONTEXT.with(Rc::clone);
+    let context = CURRENT_DOM.with(Rc::clone);
     let mut context = context.borrow_mut();
     if context.is_some() {
         panic!("Cannot start a Dom while one is already in progress.");
@@ -46,7 +46,7 @@ pub(crate) fn give_dom(dom: Dom) {
 }
 
 pub(crate) fn take_dom() -> Dom {
-    let context = CURRENT_CONTEXT.with(Rc::clone);
+    let context = CURRENT_DOM.with(Rc::clone);
     let mut context = context.borrow_mut();
 
     context.take().unwrap_or_else(|| {
