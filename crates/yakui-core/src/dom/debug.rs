@@ -1,14 +1,16 @@
 use std::fmt;
 
-use super::{Dom, DomInner};
+use thunderdome::Arena;
+
+use super::{Dom, DomNode};
 
 impl fmt::Debug for Dom {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.inner.try_borrow() {
-            Ok(inner) => f
+        match self.inner.nodes.try_borrow() {
+            Ok(nodes) => f
                 .debug_struct("Dom")
-                .field("root", &self.root)
-                .field("nodes", &ViewTree(&inner))
+                .field("root", &self.inner.root)
+                .field("nodes", &ViewTree(&nodes))
                 .finish(),
 
             Err(_) => f.debug_struct("Dom (Locked)").finish(),
@@ -16,12 +18,12 @@ impl fmt::Debug for Dom {
     }
 }
 
-struct ViewTree<'a>(&'a DomInner);
+struct ViewTree<'a>(&'a Arena<DomNode>);
 
 impl<'a> fmt::Debug for ViewTree<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let dom = &self.0;
-        let iter = dom.nodes.iter().map(|(id, node)| {
+        let nodes = &self.0;
+        let iter = nodes.iter().map(|(id, node)| {
             format!("{id:?}: {:?}, children: {:?}", &node.widget, &node.children)
         });
 

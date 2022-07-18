@@ -9,7 +9,7 @@ use crate::paint::{PaintDom, Texture};
 /// The entrypoint for yakui.
 #[derive(Debug)]
 pub struct State {
-    dom: Option<Dom>,
+    dom: Dom,
     layout: LayoutDom,
     paint: PaintDom,
     input: InputState,
@@ -20,7 +20,7 @@ impl State {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
-            dom: Some(Dom::new()),
+            dom: Dom::new(),
             layout: LayoutDom::new(),
             paint: PaintDom::new(),
             input: InputState::new(),
@@ -32,24 +32,19 @@ impl State {
     pub fn handle_event(&mut self, event: Event) -> bool {
         log::debug!("State::handle_event({event:?})");
 
-        let dom = match &self.dom {
-            Some(dom) => dom,
-            None => panic!("Cannot handle_event() while DOM is being built."),
-        };
-
         match event {
             Event::ViewportChanged(viewport) => {
                 self.layout.set_unscaled_viewport(viewport);
                 false
             }
             Event::CursorMoved(pos) => {
-                self.input.mouse_moved(dom, &self.layout, pos);
+                self.input.mouse_moved(&self.dom, &self.layout, pos);
                 false
             }
             Event::MouseButtonChanged(button, down) => {
-                let response = self
-                    .input
-                    .mouse_button_changed(dom, &self.layout, button, down);
+                let response =
+                    self.input
+                        .mouse_button_changed(&self.dom, &self.layout, button, down);
 
                 response == EventResponse::Sink
             }
@@ -90,12 +85,8 @@ impl State {
     ///
     /// When finished, call [`Dom::finish`].
     pub fn start(&mut self) {
-        if let Some(dom) = self.dom.take() {
-            dom.start();
-            context::give_dom(dom);
-        } else {
-            panic!("Cannot call start() when already started.");
-        }
+        self.dom.start();
+        context::bind_dom(&self.dom);
     }
 
     /// Finishes building the DOM. Must be called on a thread that previously
@@ -103,10 +94,10 @@ impl State {
     ///
     /// This method will finalize the DOM for this frame and compute layouts.
     pub fn finish(&mut self) {
-        let dom = self.dom.insert(context::take_dom());
-        dom.finish();
+        context::unbind_dom();
 
-        self.layout.calculate_all(dom);
+        self.dom.finish();
+        self.layout.calculate_all(&self.dom);
         self.input.finish();
     }
 
@@ -114,12 +105,8 @@ impl State {
     /// access to the [`PaintDom`], which holds information about how to paint
     /// widgets.
     pub fn paint(&mut self) -> &PaintDom {
-        let dom = self.dom.as_ref().unwrap_or_else(|| {
-            panic!("Cannot paint() while DOM is being built.");
-        });
-
         self.paint.set_viewport(self.layout.viewport());
-        self.paint.paint_all(dom, &self.layout);
+        self.paint.paint_all(&self.dom, &self.layout);
         &self.paint
     }
 }

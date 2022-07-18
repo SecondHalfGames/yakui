@@ -1,14 +1,13 @@
 //! Provides access to the currently active DOM while it is being updated.
 
 use std::cell::{Ref, RefCell};
-use std::rc::Rc;
 
 use crate::dom::Dom;
 
-type Storage = Rc<RefCell<Option<Dom>>>;
+type Storage = RefCell<Option<Dom>>;
 
 thread_local! {
-    static CURRENT_DOM: Storage = Rc::new(RefCell::new(None));
+    static CURRENT_DOM: Storage = RefCell::new(None);
 }
 
 /// If there is a DOM currently being updated on this thread, returns a
@@ -36,22 +35,24 @@ pub fn dom() -> Ref<'static, Dom> {
     })
 }
 
-pub(crate) fn give_dom(dom: Dom) {
-    let context = CURRENT_DOM.with(Rc::clone);
-    let mut context = context.borrow_mut();
-    if context.is_some() {
-        panic!("Cannot start a Dom while one is already in progress.");
-    }
-    *context = Some(dom);
+pub(crate) fn bind_dom(dom: &Dom) {
+    CURRENT_DOM.with(|current| {
+        let mut current = current.borrow_mut();
+        if current.is_some() {
+            panic!("Cannot start a Dom while one is already in progress.");
+        }
+        *current = Some(dom.clone());
+    });
 }
 
-pub(crate) fn take_dom() -> Dom {
-    let context = CURRENT_DOM.with(Rc::clone);
-    let mut context = context.borrow_mut();
+pub(crate) fn unbind_dom() {
+    CURRENT_DOM.with(|dom| {
+        let mut dom = dom.borrow_mut();
 
-    context.take().unwrap_or_else(|| {
-        panic!("Cannot stop a Dom when there is not one in progress.");
-    })
+        dom.take().unwrap_or_else(|| {
+            panic!("Cannot stop a Dom when there is not one in progress.");
+        });
+    });
 }
 
 unsafe fn extend_lifetime<'a, T>(value: &'a T) -> &'static T {
