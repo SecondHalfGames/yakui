@@ -10,4 +10,10 @@ edition = "2021"
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.1.0" }
+
 fontdue = "0.7.2"
+
+[dev-dependencies]
+yakui = { path = "../yakui" }
+
+insta = "1.15.0"

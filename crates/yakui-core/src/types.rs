@@ -9,9 +9,11 @@ use crate::geometry::Vec2;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum MainAxisSize {
-    /// Make the container fill all available space along the main axis.
+    /// Make the container fill all available space along its main axis.
     Max,
-    // Min,
+
+    /// Make the container fill the minimum amount of space along its main axis.
+    Min,
 }
 
 /// Defines alignment along a container's main axis.

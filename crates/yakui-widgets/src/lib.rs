@@ -11,15 +11,7 @@ pub mod colors;
 pub mod shorthand;
 pub mod widgets;
 
-#[doc(inline)]
 pub use self::shorthand::*;
-
-#[doc(hidden)]
-pub mod doc_yakui {
-    pub use crate::*;
-    pub use yakui_core::geometry::*;
-    pub use yakui_core::*;
-}
 
 #[doc(hidden)]
 pub struct DocTest {

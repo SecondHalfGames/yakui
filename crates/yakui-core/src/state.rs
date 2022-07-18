@@ -1,6 +1,7 @@
 use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
+use crate::geometry::Rect;
 use crate::id::TextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
@@ -80,6 +81,11 @@ impl State {
         self.paint.textures()
     }
 
+    /// Set the size of the viewport in physical units.
+    pub fn set_unscaled_viewport(&mut self, view: Rect) {
+        self.layout.set_unscaled_viewport(view);
+    }
+
     /// Manually sets the scale factor used for laying out widgets.
     ///
     /// Platform integrations will usually do this automatically. If you'd like
@@ -105,14 +111,13 @@ impl State {
     /// called [`Dom::start`].
     ///
     /// This method will finalize the DOM for this frame and compute layouts.
-    pub fn finish(&mut self) -> &LayoutDom {
+    pub fn finish(&mut self) {
         context::unbind_dom();
         context::unbind_input();
 
         self.dom.finish();
         self.layout.calculate_all(&self.dom);
         self.input.finish();
-        &self.layout
     }
 
     /// Calculates the geometry needed to render the current state and gives
@@ -122,5 +127,15 @@ impl State {
         self.paint.set_viewport(self.layout.viewport());
         self.paint.paint_all(&self.dom, &self.layout);
         &self.paint
+    }
+
+    /// Returns access to the state's DOM.
+    pub fn dom(&self) -> &Dom {
+        &self.dom
+    }
+
+    /// Returns access to the state's Layout DOM.
+    pub fn layout_dom(&self) -> &LayoutDom {
+        &self.layout
     }
 }

@@ -20,7 +20,6 @@ Responds with [TextResponse].
 
 ## Examples
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 # use yakui::widgets::Text;
 yakui::label("Default text label style");

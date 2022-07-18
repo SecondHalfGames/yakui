@@ -15,7 +15,6 @@ Responds with [ListResponse].
 
 Shorthand:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 yakui::column(|| {
     yakui::label("on top");
@@ -159,6 +158,20 @@ impl Widget for ListWidget {
             next_pos += direction.only_main_axis(child_layout.rect.size());
         }
 
-        input.constrain(direction.vec2(total_main_axis_size, max_cross_axis_size))
+        let main_axis_size = match self.props.main_axis_size {
+            MainAxisSize::Min => total_main_axis_size,
+            MainAxisSize::Max => {
+                let main_max = direction.get_main_axis(input.max);
+
+                if main_max.is_finite() {
+                    f32::max(total_main_axis_size, main_max)
+                } else {
+                    total_main_axis_size
+                }
+            }
+            other => panic!("Unsupported MainAxisSize {other:?}"),
+        };
+
+        input.constrain(direction.vec2(main_axis_size, max_cross_axis_size))
     }
 }

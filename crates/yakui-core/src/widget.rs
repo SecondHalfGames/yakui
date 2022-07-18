@@ -106,6 +106,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
 
     /// See [`Widget::event`].
     fn event(&mut self, event: &WidgetEvent) -> EventResponse;
+
+    /// Returns the type name of the widget, usable only for debugging.
+    fn type_name(&self) -> &'static str;
 }
 
 impl<T> ErasedWidget for T
@@ -132,6 +135,10 @@ where
         log::debug!("Event on {}: {event:?}", type_name::<T>());
 
         <T as Widget>::event(self, event)
+    }
+
+    fn type_name(&self) -> &'static str {
+        type_name::<T>()
     }
 }
 

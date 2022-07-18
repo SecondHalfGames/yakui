@@ -17,7 +17,6 @@ Responds with [ButtonResponse].
 
 Shorthand:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 if yakui::button("Hello").clicked {
     println!("The button was clicked");

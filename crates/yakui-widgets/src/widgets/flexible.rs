@@ -11,7 +11,6 @@ Responds with [FlexibleResponse].
 
 Shorthand:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 yakui::expanded(|| {
     yakui::button("This will expand to fill the container");

@@ -19,7 +19,6 @@ Responds with [CheckboxResponse].
 
 Shorthand:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 let mut value = false;
 

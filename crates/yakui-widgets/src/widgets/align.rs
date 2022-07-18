@@ -14,7 +14,6 @@ Responds with [AlignResponse].
 
 Shorthand:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 yakui::center(|| {
     yakui::label("Centered!");
@@ -27,7 +26,6 @@ yakui::align(yakui::Alignment::BOTTOM_LEFT, || {
 
 Extended:
 ```rust
-# use yakui_widgets::doc_yakui as yakui;
 # let _handle = yakui_widgets::DocTest::start();
 use yakui::widgets::Align;
 
