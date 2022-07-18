@@ -13,6 +13,18 @@ thread_local! {
     static CURRENT_INPUT: Storage<InputState> = RefCell::new(None);
 }
 
+/// Select the currently active widget.
+pub fn capture_selection() {
+    let id = dom().current();
+    input().set_selection(Some(id));
+}
+
+/// Tells whether the current widget is selected.
+pub fn is_selected() -> bool {
+    let id = dom().current();
+    input().selection() == Some(id)
+}
+
 /// If there is a DOM currently being updated on this thread, returns a
 /// reference to it.
 ///

@@ -16,14 +16,14 @@ use super::button::MouseButton;
 /// widgets.
 #[derive(Debug)]
 pub struct InputState {
-    inner: Rc<RefCell<InputStateInner>>,
+    inner: Rc<InputStateInner>,
 }
 
 impl InputState {
     /// Create a new, empty `InputState`.
     pub fn new() -> Self {
         Self {
-            inner: Rc::new(RefCell::new(InputStateInner::new())),
+            inner: Rc::new(InputStateInner::new()),
         }
     }
 
@@ -35,19 +35,17 @@ impl InputState {
 
     /// Return the currently selected widget, if there is one.
     pub fn selection(&self) -> Option<WidgetId> {
-        let inner = self.inner.borrow();
-        inner.selection
+        *self.inner.selection.borrow()
     }
 
     /// Set the currently selected widget.
     pub fn set_selection(&self, id: Option<WidgetId>) {
-        let mut inner = self.inner.borrow_mut();
-        inner.selection = id;
+        let mut selection = self.inner.selection.borrow_mut();
+        *selection = id;
     }
 
     pub(crate) fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
-        let mut inner = self.inner.borrow_mut();
-        inner.mouse_moved(dom, layout, pos)
+        self.inner.mouse_moved(dom, layout, pos);
     }
 
     pub(crate) fn mouse_button_changed(
@@ -57,25 +55,38 @@ impl InputState {
         button: MouseButton,
         down: bool,
     ) -> EventResponse {
-        let mut inner = self.inner.borrow_mut();
-        inner.mouse_button_changed(dom, layout, button, down)
+        self.inner.mouse_button_changed(dom, layout, button, down)
     }
 
     pub(crate) fn finish(&self) {
-        let mut inner = self.inner.borrow_mut();
-        inner.finish()
+        self.inner.finish()
     }
 }
 
 #[derive(Debug)]
 struct InputStateInner {
+    /// State for the mouse, like buttons and position.
+    mouse: RefCell<Mouse>,
+
+    /// Details about widgets and their mouse intersections.
+    intersections: RefCell<Intersections>,
+
+    /// The widget that is currently selected.
+    selection: RefCell<Option<WidgetId>>,
+}
+
+#[derive(Debug)]
+struct Mouse {
     /// The current mouse position, or `None` if it's outside the window.
-    mouse_position: Option<Vec2>,
+    position: Option<Vec2>,
 
     /// The state of each mouse button. If missing from the map, the button is
     /// up and has not yet been pressed.
-    mouse_buttons: HashMap<MouseButton, ButtonState>,
+    buttons: HashMap<MouseButton, ButtonState>,
+}
 
+#[derive(Debug)]
+struct Intersections {
     /// All of the widgets with mouse interest that the current mouse position
     /// intersects with.
     ///
@@ -97,9 +108,6 @@ struct InputStateInner {
     /// mouse cursor was over them.
     #[allow(unused)]
     mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
-
-    /// The widget that is currently selected.
-    selection: Option<WidgetId>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -131,21 +139,27 @@ impl ButtonState {
 impl InputStateInner {
     fn new() -> Self {
         Self {
-            mouse_position: None,
-            mouse_buttons: HashMap::new(),
-
-            mouse_hit: Vec::new(),
-            mouse_entered: Vec::new(),
-            mouse_entered_and_sunk: Vec::new(),
-            mouse_down_in: HashMap::new(),
-
-            selection: None,
+            mouse: RefCell::new(Mouse {
+                position: None,
+                buttons: HashMap::new(),
+            }),
+            intersections: RefCell::new(Intersections {
+                mouse_hit: Vec::new(),
+                mouse_entered: Vec::new(),
+                mouse_entered_and_sunk: Vec::new(),
+                mouse_down_in: HashMap::new(),
+            }),
+            selection: RefCell::new(None),
         }
     }
 
     /// Signal that the mouse has moved.
-    pub(crate) fn mouse_moved(&mut self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
-        self.mouse_position = pos;
+    pub(crate) fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
+        {
+            let mut mouse = self.mouse.borrow_mut();
+            mouse.position = pos;
+        }
+
         self.mouse_hit_test(dom, layout);
         self.send_mouse_enter(dom);
         self.send_mouse_leave(dom);
@@ -153,33 +167,42 @@ impl InputStateInner {
 
     /// Signal that a mouse button's state has changed.
     pub(crate) fn mouse_button_changed(
-        &mut self,
+        &self,
         dom: &Dom,
         layout: &LayoutDom,
         button: MouseButton,
         down: bool,
     ) -> EventResponse {
-        let state = self.mouse_buttons.entry(button).or_insert(ButtonState::Up);
+        let change = {
+            let mut mouse = self.mouse.borrow_mut();
+            let state = mouse.buttons.entry(button).or_insert(ButtonState::Up);
 
-        match (state.is_down(), down) {
-            // If the state didn't actually change, leave the current value
-            // alone.
-            (true, true) | (false, false) => EventResponse::Bubble,
+            match (state.is_down(), down) {
+                // If the state didn't actually change, leave the current value
+                // alone.
+                (true, true) | (false, false) => None,
 
-            (false, true) => {
-                *state = ButtonState::JustDown;
-                self.send_button_change(dom, layout, button, true)
+                (false, true) => {
+                    *state = ButtonState::JustDown;
+                    Some(true)
+                }
+
+                (true, false) => {
+                    *state = ButtonState::JustUp;
+                    Some(false)
+                }
             }
+        };
 
-            (true, false) => {
-                *state = ButtonState::JustUp;
-                self.send_button_change(dom, layout, button, false)
-            }
+        match change {
+            Some(true) => self.send_button_change(dom, layout, button, true),
+            Some(false) => self.send_button_change(dom, layout, button, false),
+            None => EventResponse::Bubble,
         }
     }
 
     /// Finish applying input events for this frame.
-    pub(crate) fn finish(&mut self) {
+    pub(crate) fn finish(&self) {
         self.settle_buttons();
     }
 
@@ -190,9 +213,10 @@ impl InputStateInner {
         button: MouseButton,
         value: bool,
     ) -> EventResponse {
+        let intersections = self.intersections.borrow();
         let mut overall_response = EventResponse::Bubble;
 
-        for &id in &self.mouse_hit {
+        for &id in &intersections.mouse_hit {
             if let Some(mut node) = dom.get_mut(id) {
                 let event = WidgetEvent::MouseButtonChanged(button, value);
                 let response = fire_event(dom, id, &mut node, &event);
@@ -209,7 +233,9 @@ impl InputStateInner {
         let interest_mouse = layout.interest_mouse.iter().copied().rev();
 
         for (id, interest) in interest_mouse {
-            if interest.contains(EventInterest::MOUSE_OUTSIDE) && !self.mouse_hit.contains(&id) {
+            if interest.contains(EventInterest::MOUSE_OUTSIDE)
+                && !intersections.mouse_hit.contains(&id)
+            {
                 if let Some(mut node) = dom.get_mut(id) {
                     let event = WidgetEvent::MouseButtonChangedOutside(button, value);
                     fire_event(dom, id, &mut node, &event);
@@ -220,19 +246,22 @@ impl InputStateInner {
         overall_response
     }
 
-    fn send_mouse_enter(&mut self, dom: &Dom) {
-        for &hit in &self.mouse_hit {
+    fn send_mouse_enter(&self, dom: &Dom) {
+        let mut intersections = self.intersections.borrow_mut();
+        let intersections = &mut *intersections;
+
+        for &hit in &intersections.mouse_hit {
             if let Some(mut node) = dom.get_mut(hit) {
-                if !self.mouse_entered.contains(&hit) {
-                    self.mouse_entered.push(hit);
+                if !intersections.mouse_entered.contains(&hit) {
+                    intersections.mouse_entered.push(hit);
 
                     let response = fire_event(dom, hit, &mut node, &WidgetEvent::MouseEnter);
 
                     if response == EventResponse::Sink {
-                        self.mouse_entered_and_sunk.push(hit);
+                        intersections.mouse_entered_and_sunk.push(hit);
                         break;
                     }
-                } else if self.mouse_entered_and_sunk.contains(&hit) {
+                } else if intersections.mouse_entered_and_sunk.contains(&hit) {
                     // This widget was hovered previously, is still hovered, and
                     // sunk the mouse enter event before. In order to prevent
                     // erroneously hovering other widgets, continue sinking this
@@ -243,11 +272,13 @@ impl InputStateInner {
         }
     }
 
-    fn send_mouse_leave(&mut self, dom: &Dom) {
+    fn send_mouse_leave(&self, dom: &Dom) {
+        let mut intersections = self.intersections.borrow_mut();
+
         let mut to_remove = SmallVec::<[WidgetId; 4]>::new();
 
-        for &hit in &self.mouse_entered {
-            if !self.mouse_hit.contains(&hit) {
+        for &hit in &intersections.mouse_entered {
+            if !intersections.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
                     fire_event(dom, hit, &mut node, &WidgetEvent::MouseLeave);
                 }
@@ -257,22 +288,29 @@ impl InputStateInner {
         }
 
         for remove in to_remove {
-            self.mouse_entered.retain(|&id| id != remove);
-            self.mouse_entered_and_sunk.retain(|&id| id != remove);
+            intersections.mouse_entered.retain(|&id| id != remove);
+            intersections
+                .mouse_entered_and_sunk
+                .retain(|&id| id != remove);
         }
     }
 
-    fn mouse_hit_test(&mut self, dom: &Dom, layout: &LayoutDom) {
-        self.mouse_hit.clear();
+    fn mouse_hit_test(&self, dom: &Dom, layout: &LayoutDom) {
+        let mut intersections = self.intersections.borrow_mut();
+        let mouse = self.mouse.borrow();
 
-        if let Some(mut mouse_pos) = self.mouse_position {
+        intersections.mouse_hit.clear();
+
+        if let Some(mut mouse_pos) = mouse.position {
             mouse_pos /= layout.scale_factor();
-            hit_test(dom, layout, mouse_pos, &mut self.mouse_hit);
+            hit_test(dom, layout, mouse_pos, &mut intersections.mouse_hit);
         }
     }
 
-    fn settle_buttons(&mut self) {
-        for state in self.mouse_buttons.values_mut() {
+    fn settle_buttons(&self) {
+        let mut mouse = self.mouse.borrow_mut();
+
+        for state in mouse.buttons.values_mut() {
             state.settle();
         }
     }

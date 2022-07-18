@@ -4,11 +4,13 @@ use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use yakui_core::dom::Dom;
+use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
+use yakui_core::input::MouseButton;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
-use yakui_core::Response;
+use yakui_core::{context, Response};
 
 use crate::colors;
 use crate::text_renderer::TextGlobalState;
@@ -74,6 +76,10 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
+
+        if context::is_selected() {
+            println!("TextBox selected!");
+        }
 
         Self::Response {
             text: self.props.text.clone(),
@@ -169,6 +175,20 @@ impl Widget for TextBoxWidget {
         let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
         rect.color = Color3::RED;
         paint.add_rect(rect);
+    }
+
+    fn event_interest(&self) -> EventInterest {
+        EventInterest::MOUSE_INSIDE
+    }
+
+    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+        match event {
+            WidgetEvent::MouseButtonChanged(MouseButton::One, true) => {
+                context::capture_selection();
+                EventResponse::Sink
+            }
+            _ => EventResponse::Bubble,
+        }
     }
 }
 

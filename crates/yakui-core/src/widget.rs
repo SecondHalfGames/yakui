@@ -84,7 +84,8 @@ pub trait Widget: 'static + fmt::Debug {
     /// Handle the given event and update the widget's state.
     ///
     /// The default implementation will bubble all events.
-    fn event(&mut self, _event: &WidgetEvent) -> EventResponse {
+    #[allow(unused)]
+    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
         EventResponse::Bubble
     }
 }
