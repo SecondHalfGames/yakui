@@ -32,7 +32,9 @@ impl State {
     pub fn handle_event(&mut self, event: Event) -> bool {
         log::debug!("State::handle_event({event:?})");
 
-        match event {
+        context::bind_dom(&self.dom);
+
+        let sink = match event {
             Event::ViewportChanged(viewport) => {
                 self.layout.set_unscaled_viewport(viewport);
                 false
@@ -56,7 +58,10 @@ impl State {
                 // TODO
                 false
             }
-        }
+        };
+
+        context::unbind_dom();
+        sink
     }
 
     /// Creates a texture for use within yakui.
