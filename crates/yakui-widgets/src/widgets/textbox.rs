@@ -6,7 +6,7 @@ use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
 use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
-use yakui_core::input::MouseButton;
+use yakui_core::input::{KeyboardKey, MouseButton};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
@@ -167,26 +167,39 @@ impl Widget for TextBoxWidget {
             paint.add_rect(rect);
         }
 
-        let cursor_pos = layout_node.rect.pos() + *self.cursor_pos.borrow();
-        let cursor_size = Vec2::new(1.0, self.props.font_size);
-
-        let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
-        rect.color = Color3::RED;
-        paint.add_rect(rect);
-
         if self.selected {
+            let cursor_pos = layout_node.rect.pos() + *self.cursor_pos.borrow();
+            let cursor_size = Vec2::new(1.0, self.props.font_size);
+
+            let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
+            rect.color = Color3::RED;
+            paint.add_rect(rect);
+
             icons::selection_halo(paint, layout_node.rect);
         }
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE
+        EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
     fn event(&mut self, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseButtonChanged(MouseButton::One, true) => {
                 context::capture_selection();
+                EventResponse::Sink
+            }
+            WidgetEvent::KeyChanged(KeyboardKey::Left, true) => {
+                self.cursor = self.cursor.saturating_sub(1);
+                EventResponse::Sink
+            }
+            WidgetEvent::KeyChanged(KeyboardKey::Right, true) => {
+                self.cursor += 1;
+                self.cursor = self.cursor.min(self.props.text.len());
+                EventResponse::Sink
+            }
+            WidgetEvent::KeyChanged(KeyboardKey::Escape, true) => {
+                context::remove_selection();
                 EventResponse::Sink
             }
             _ => EventResponse::Bubble,

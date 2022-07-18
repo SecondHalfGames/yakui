@@ -16,9 +16,12 @@ pub enum MouseButton {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(missing_docs)]
 pub enum KeyboardKey {
+    Escape,
     Tab,
     Space,
     Backspace,
     Delete,
     Return,
+    Left,
+    Right,
 }

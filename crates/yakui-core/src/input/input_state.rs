@@ -11,6 +11,7 @@ use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
 use super::button::MouseButton;
+use super::KeyboardKey;
 
 /// Holds yakui's input state, like cursor position, hovered, and selected
 /// widgets.
@@ -56,6 +57,16 @@ impl InputState {
         down: bool,
     ) -> EventResponse {
         self.inner.mouse_button_changed(dom, layout, button, down)
+    }
+
+    pub(crate) fn keyboard_key_changed(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        key: KeyboardKey,
+        down: bool,
+    ) -> EventResponse {
+        self.inner.keyboard_key_changed(dom, layout, key, down)
     }
 
     pub(crate) fn finish(&self) {
@@ -154,7 +165,7 @@ impl InputStateInner {
     }
 
     /// Signal that the mouse has moved.
-    pub(crate) fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
+    fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
         {
             let mut mouse = self.mouse.borrow_mut();
             mouse.position = pos;
@@ -166,43 +177,61 @@ impl InputStateInner {
     }
 
     /// Signal that a mouse button's state has changed.
-    pub(crate) fn mouse_button_changed(
+    fn mouse_button_changed(
         &self,
         dom: &Dom,
         layout: &LayoutDom,
         button: MouseButton,
         down: bool,
     ) -> EventResponse {
-        let change = {
+        {
             let mut mouse = self.mouse.borrow_mut();
             let state = mouse.buttons.entry(button).or_insert(ButtonState::Up);
 
             match (state.is_down(), down) {
                 // If the state didn't actually change, leave the current value
                 // alone.
-                (true, true) | (false, false) => None,
+                (true, true) | (false, false) => (),
 
                 (false, true) => {
                     *state = ButtonState::JustDown;
-                    Some(true)
                 }
 
                 (true, false) => {
                     *state = ButtonState::JustUp;
-                    Some(false)
                 }
             }
-        };
-
-        match change {
-            Some(true) => self.send_button_change(dom, layout, button, true),
-            Some(false) => self.send_button_change(dom, layout, button, false),
-            None => EventResponse::Bubble,
         }
+
+        self.send_button_change(dom, layout, button, down)
+    }
+
+    fn keyboard_key_changed(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        key: KeyboardKey,
+        down: bool,
+    ) -> EventResponse {
+        let selected = *self.selection.borrow();
+        if let Some(id) = selected {
+            let layout_node = layout.get(id).unwrap();
+
+            if layout_node
+                .event_interest
+                .contains(EventInterest::FOCUSED_KEYBOARD)
+            {
+                let mut node = dom.get_mut(id).unwrap();
+                let event = WidgetEvent::KeyChanged(key, down);
+                return fire_event(dom, id, &mut node, &event);
+            }
+        }
+
+        EventResponse::Bubble
     }
 
     /// Finish applying input events for this frame.
-    pub(crate) fn finish(&self) {
+    fn finish(&self) {
         self.settle_buttons();
     }
 

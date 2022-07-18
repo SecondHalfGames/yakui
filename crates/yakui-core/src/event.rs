@@ -45,8 +45,8 @@ pub enum WidgetEvent {
     /// rectangle.
     MouseButtonChangedOutside(MouseButton, bool),
 
-    /// The widget was focused or unfocused.
-    FocusChanged(bool),
+    /// A keyboard button changed.
+    KeyChanged(KeyboardKey, bool),
 }
 
 /// Responses that can be given to an event.
@@ -78,5 +78,8 @@ bitflags::bitflags! {
 
         /// This widget can be focused.
         const FOCUS = 0b0000_0100;
+
+        /// If this widget is focused, it should receive keyboard events.
+        const FOCUSED_KEYBOARD = 0b0000_1000;
     }
 }

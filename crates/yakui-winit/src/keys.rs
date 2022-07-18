@@ -8,6 +8,9 @@ pub fn from_winit_key(key: VirtualKeyCode) -> Option<KeyboardKey> {
         VirtualKeyCode::Delete => KeyboardKey::Delete,
         VirtualKeyCode::Return => KeyboardKey::Return,
         VirtualKeyCode::Tab => KeyboardKey::Tab,
+        VirtualKeyCode::Left => KeyboardKey::Left,
+        VirtualKeyCode::Right => KeyboardKey::Right,
+        VirtualKeyCode::Escape => KeyboardKey::Escape,
         _ => return None,
     })
 }

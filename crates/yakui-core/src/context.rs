@@ -19,6 +19,11 @@ pub fn capture_selection() {
     input().set_selection(Some(id));
 }
 
+/// Deselect the currently active widget.
+pub fn remove_selection() {
+    input().set_selection(None);
+}
+
 /// Tells whether the current widget is selected.
 pub fn is_selected() -> bool {
     let id = dom().current();

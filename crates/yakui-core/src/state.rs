@@ -51,9 +51,12 @@ impl State {
 
                 response == EventResponse::Sink
             }
-            Event::KeyChanged(_key, _down) => {
-                // TODO
-                false
+            Event::KeyChanged(key, down) => {
+                let response = self
+                    .input
+                    .keyboard_key_changed(&self.dom, &self.layout, key, down);
+
+                response == EventResponse::Sink
             }
             Event::TextInput(_c) => {
                 // TODO
