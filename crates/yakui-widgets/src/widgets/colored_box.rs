@@ -7,7 +7,13 @@ use yakui_core::Response;
 
 use crate::util::{widget, widget_children};
 
+/**
+A colored box that can contain children.
+
+Responds with [ColoredBoxResponse].
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct ColoredBox {
     pub color: Color3,
     pub min_size: Vec2,

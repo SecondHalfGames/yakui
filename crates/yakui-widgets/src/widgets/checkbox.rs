@@ -12,6 +12,20 @@ use crate::colors;
 const OUTER_SIZE: f32 = 32.0;
 const INNER_SIZE: f32 = 24.0;
 
+/**
+A checkbox with a provided value.
+
+Responds with [CheckboxResponse].
+
+Shorthand:
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+let mut value = false;
+
+value = yakui::checkbox(value).checked;
+```
+*/
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct Checkbox {

@@ -7,7 +7,37 @@ use yakui_core::{Alignment, Response};
 
 use crate::util::widget_children;
 
+/**
+Aligns its child according to the given alignment.
+
+Responds with [AlignResponse].
+
+Shorthand:
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+yakui::center(|| {
+    yakui::label("Centered!");
+});
+
+yakui::align(yakui::Alignment::BOTTOM_LEFT, || {
+    yakui::label("Bottom left aligned");
+});
+```
+
+Extended:
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+use yakui::widgets::Align;
+
+Align::new(yakui::Alignment::TOP_RIGHT).show(|| {
+    yakui::label("Top right aligned");
+});
+```
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Align {
     pub alignment: Alignment,
 }

@@ -6,6 +6,28 @@ use yakui_core::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize,
 
 use crate::util::widget_children;
 
+/**
+Lays out children in a single direction. Supports flex sizing.
+
+This is one of the most common and useful layout widgets.
+
+Responds with [ListResponse].
+
+Shorthand:
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+yakui::column(|| {
+    yakui::label("on top");
+    yakui::label("on bottom");
+});
+
+yakui::row(|| {
+    yakui::label("left");
+    yakui::label("right");
+});
+```
+*/
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct List {

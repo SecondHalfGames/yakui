@@ -15,7 +15,13 @@ use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 use crate::{colors, icons};
 
+/**
+Text that can be edited.
+
+Responds with [TextBoxResponse].
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct TextBox {
     pub text: String,
     pub color: Color3,

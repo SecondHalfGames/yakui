@@ -7,7 +7,13 @@ use yakui_core::{Response, TextureId};
 
 use crate::util::widget;
 
+/**
+Displays an image.
+
+Responds with [ImageResponse].
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Image {
     pub image: Option<TextureId>,
     pub size: Vec2,

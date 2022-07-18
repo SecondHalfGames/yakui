@@ -8,6 +8,11 @@ use crate::colors;
 use crate::util::widget;
 use crate::widgets::{List, Pad};
 
+/**
+A floating window within the application.
+
+Responds with [WindowResponse].
+*/
 pub struct Window {
     pub initial_size: Vec2,
     children: Option<Box<dyn Fn()>>,

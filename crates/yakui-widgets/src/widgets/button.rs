@@ -10,7 +10,22 @@ use crate::colors;
 use crate::util::widget;
 use crate::widgets::Pad;
 
+/**
+A button containing some text.
+
+Responds with [ButtonResponse].
+
+Shorthand:
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+if yakui::button("Hello").clicked {
+    println!("The button was clicked");
+}
+```
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Button {
     pub text: Cow<'static, str>,
     pub padding: Pad,

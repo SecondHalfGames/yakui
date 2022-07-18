@@ -6,7 +6,13 @@ use yakui_core::Response;
 
 use crate::util::widget_children;
 
+/**
+Applies padding around a single child widget.
+
+Responds with [PadResponse].
+*/
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct Pad {
     pub left: f32,
     pub right: f32,

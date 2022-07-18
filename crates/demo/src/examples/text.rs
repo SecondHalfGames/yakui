@@ -8,7 +8,7 @@ pub fn run(_state: &mut ExampleState) {
         yakui::row(|| {
             yakui::label("Hello, world!");
 
-            let mut text = Text::new(48.0, "colored text!".into());
+            let mut text = Text::new(48.0, "colored text!");
             text.color = Color3::RED;
             text.show();
         });

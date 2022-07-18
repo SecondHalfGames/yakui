@@ -20,6 +20,7 @@ yakui has the following priorities:
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Examples](#examples)
+* [Widgets](#widgets)
 * [Rationale](#rationale)
 * [Architecture](#architecture)
 * [Crates](#crates)

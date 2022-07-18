@@ -13,7 +13,27 @@ use yakui_core::Response;
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
+/**
+Draws text.
+
+Responds with [TextResponse].
+
+## Examples
+```rust
+# use yakui_widgets::doc_yakui as yakui;
+# let _handle = yakui_widgets::DocTest::start();
+# use yakui::widgets::Text;
+yakui::label("Default text label style");
+
+yakui::text(32.0, "Custom font size");
+
+let mut text = Text::new(32.0, "Title");
+text.color = yakui::Color3::RED;
+text.show();
+```
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct Text {
     pub text: Cow<'static, str>,
     pub color: Color3,
@@ -21,9 +41,9 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new(font_size: f32, text: Cow<'static, str>) -> Self {
+    pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
         Self {
-            text,
+            text: text.into(),
             color: Color3::WHITE,
             font_size,
         }

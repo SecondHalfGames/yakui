@@ -6,7 +6,13 @@ use yakui_core::Response;
 
 use crate::util::widget_children;
 
+/**
+A box that forces specific constraints onto its child.
+
+Responds with [ConstrainedBoxResponse].
+*/
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct ConstrainedBox {
     pub constraints: Constraints,
 }
