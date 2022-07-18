@@ -105,13 +105,14 @@ impl State {
     /// called [`Dom::start`].
     ///
     /// This method will finalize the DOM for this frame and compute layouts.
-    pub fn finish(&mut self) {
+    pub fn finish(&mut self) -> &LayoutDom {
         context::unbind_dom();
         context::unbind_input();
 
         self.dom.finish();
         self.layout.calculate_all(&self.dom);
         self.input.finish();
+        &self.layout
     }
 
     /// Calculates the geometry needed to render the current state and gives
