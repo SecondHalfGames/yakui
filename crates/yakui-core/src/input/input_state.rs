@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use glam::Vec2;
 use smallvec::SmallVec;
@@ -14,6 +16,53 @@ use super::button::MouseButton;
 /// widgets.
 #[derive(Debug)]
 pub struct InputState {
+    inner: Rc<RefCell<InputStateInner>>,
+}
+
+impl InputState {
+    /// Create a new, empty `InputState`.
+    pub fn new() -> Self {
+        Self {
+            inner: Rc::new(RefCell::new(InputStateInner::new())),
+        }
+    }
+
+    /// Return the currently selected widget, if there is one.
+    pub fn selection(&self) -> Option<WidgetId> {
+        let inner = self.inner.borrow();
+        inner.selection
+    }
+
+    /// Set the currently selected widget.
+    pub fn set_selection(&self, id: Option<WidgetId>) {
+        let mut inner = self.inner.borrow_mut();
+        inner.selection = id;
+    }
+
+    pub(crate) fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
+        let mut inner = self.inner.borrow_mut();
+        inner.mouse_moved(dom, layout, pos)
+    }
+
+    pub(crate) fn mouse_button_changed(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        button: MouseButton,
+        down: bool,
+    ) -> EventResponse {
+        let mut inner = self.inner.borrow_mut();
+        inner.mouse_button_changed(dom, layout, button, down)
+    }
+
+    pub(crate) fn finish(&self) {
+        let mut inner = self.inner.borrow_mut();
+        inner.finish()
+    }
+}
+
+#[derive(Debug)]
+struct InputStateInner {
     /// The current mouse position, or `None` if it's outside the window.
     mouse_position: Option<Vec2>,
 
@@ -40,6 +89,7 @@ pub struct InputState {
 
     /// All widgets that had the corresponding mouse button pressed while the
     /// mouse cursor was over them.
+    #[allow(unused)]
     mouse_down_in: HashMap<MouseButton, Vec<WidgetId>>,
 
     /// The widget that is currently selected.
@@ -72,9 +122,8 @@ impl ButtonState {
     }
 }
 
-impl InputState {
-    /// Create a new, empty `InputState`.
-    pub fn new() -> Self {
+impl InputStateInner {
+    fn new() -> Self {
         Self {
             mouse_position: None,
             mouse_buttons: HashMap::new(),
@@ -86,16 +135,6 @@ impl InputState {
 
             selection: None,
         }
-    }
-
-    /// Return the currently selected widget, if there is one.
-    pub fn selection(&self) -> Option<WidgetId> {
-        self.selection
-    }
-
-    /// Set the currently selected widget.
-    pub fn set_selection(&mut self, id: Option<WidgetId>) {
-        self.selection = id;
     }
 
     /// Signal that the mouse has moved.
