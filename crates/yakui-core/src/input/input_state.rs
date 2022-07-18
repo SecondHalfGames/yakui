@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use glam::Vec2;
 use smallvec::SmallVec;
 
-use crate::dom::Dom;
+use crate::dom::{Dom, DomNode};
 use crate::event::{EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
@@ -149,9 +149,8 @@ impl InputState {
 
         for &id in &self.mouse_hit {
             if let Some(mut node) = dom.get_mut(id) {
-                let response = node
-                    .widget
-                    .event(&WidgetEvent::MouseButtonChanged(button, value));
+                let event = WidgetEvent::MouseButtonChanged(button, value);
+                let response = fire_event(dom, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
                     overall_response = response;
@@ -167,8 +166,8 @@ impl InputState {
         for (id, interest) in interest_mouse {
             if interest.contains(EventInterest::MOUSE_OUTSIDE) && !self.mouse_hit.contains(&id) {
                 if let Some(mut node) = dom.get_mut(id) {
-                    node.widget
-                        .event(&WidgetEvent::MouseButtonChangedOutside(button, value));
+                    let event = WidgetEvent::MouseButtonChangedOutside(button, value);
+                    fire_event(dom, id, &mut node, &event);
                 }
             }
         }
@@ -181,7 +180,8 @@ impl InputState {
             if let Some(mut node) = dom.get_mut(hit) {
                 if !self.mouse_entered.contains(&hit) {
                     self.mouse_entered.push(hit);
-                    let response = node.widget.event(&WidgetEvent::MouseEnter);
+
+                    let response = fire_event(dom, hit, &mut node, &WidgetEvent::MouseEnter);
 
                     if response == EventResponse::Sink {
                         self.mouse_entered_and_sunk.push(hit);
@@ -204,7 +204,7 @@ impl InputState {
         for &hit in &self.mouse_entered {
             if !self.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
-                    node.widget.event(&WidgetEvent::MouseLeave);
+                    fire_event(dom, hit, &mut node, &WidgetEvent::MouseLeave);
                 }
 
                 to_remove.push(hit);
@@ -231,6 +231,17 @@ impl InputState {
             state.settle();
         }
     }
+}
+
+/// Notify the widget of an event, pushing it onto the stack first to ensure
+/// that the DOM will have the correct widget at the top of the stack if
+/// queried.
+fn fire_event(dom: &Dom, id: WidgetId, node: &mut DomNode, event: &WidgetEvent) -> EventResponse {
+    dom.enter(id);
+    let response = node.widget.event(event);
+    dom.exit(id);
+
+    response
 }
 
 #[profiling::function]

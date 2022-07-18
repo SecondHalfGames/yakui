@@ -23,13 +23,13 @@ use self::root::RootWidget;
 /// The DOM that contains the tree of active widgets.
 pub struct Dom {
     inner: RefCell<DomInner>,
+    stack: RefCell<Vec<WidgetId>>,
+    root: WidgetId,
     globals: RefCell<AnyMap>,
 }
 
 struct DomInner {
     nodes: Arena<DomNode>,
-    root: WidgetId,
-    stack: RefCell<Vec<WidgetId>>,
 }
 
 /// A node in the [`Dom`].
@@ -52,9 +52,19 @@ pub struct DomNode {
 impl Dom {
     /// Create a new, empty DOM.
     pub fn new() -> Self {
+        let mut nodes = Arena::new();
+        let root = nodes.insert(DomNode {
+            widget: Box::new(RootWidget),
+            parent: None,
+            children: Vec::new(),
+            next_child: 0,
+        });
+
         Self {
             globals: RefCell::new(AnyMap::new()),
-            inner: RefCell::new(DomInner::new()),
+            inner: RefCell::new(DomInner { nodes }),
+            stack: RefCell::new(Vec::new()),
+            root: WidgetId::new(root),
         }
     }
 
@@ -64,7 +74,7 @@ impl Dom {
 
         let mut dom = self.inner.borrow_mut();
 
-        let root = dom.root;
+        let root = self.root;
         let root = dom.nodes.get_mut(root.index()).unwrap();
         root.next_child = 0;
     }
@@ -76,22 +86,19 @@ impl Dom {
 
     /// Gives the root widget in the DOM. This widget will always exist.
     pub fn root(&self) -> WidgetId {
-        let dom = self.inner.borrow();
-        dom.root
+        self.root
     }
 
     /// Enter the context of the given widget, pushing it onto the stack so that
     /// [`Dom::current`] will report the correct widget.
     pub(crate) fn enter(&self, id: WidgetId) {
-        let dom = self.inner.borrow();
-        dom.stack.borrow_mut().push(id);
+        self.stack.borrow_mut().push(id);
     }
 
     /// Pop the given widget off of the traversal stack. Panics if the widget on
     /// top of the stack is not the one with the given ID.
     pub(crate) fn exit(&self, id: WidgetId) {
-        let dom = self.inner.borrow();
-        assert_eq!(dom.stack.borrow_mut().pop(), Some(id));
+        assert_eq!(self.stack.borrow_mut().pop(), Some(id));
     }
 
     /// If the DOM is being built, tells which widget is currently being built.
@@ -99,15 +106,14 @@ impl Dom {
     /// This method only gives valid results when called from inside a
     /// [`Widget`] lifecycle method.
     pub fn current(&self) -> WidgetId {
-        let dom = self.inner.borrow();
-        let stack = dom.stack.borrow();
-        stack.last().copied().unwrap_or(dom.root)
+        let stack = self.stack.borrow();
+        stack.last().copied().unwrap_or(self.root)
     }
 
     /// Returns a reference to the current DOM node. See [`Dom::current`].
     pub fn get_current(&self) -> Ref<'_, DomNode> {
         let dom = self.inner.borrow();
-        let index = dom.current_widget().index();
+        let index = self.current().index();
 
         Ref::map(dom, |dom| dom.nodes.get(index).unwrap())
     }
@@ -165,8 +171,8 @@ impl Dom {
 
         let (id, widget) = {
             let mut dom = self.inner.borrow_mut();
-            let id = dom.next_widget();
-            dom.stack.borrow_mut().push(id);
+            let id = dom.next_widget(self.current());
+            self.stack.borrow_mut().push(id);
             dom.update_widget::<T>(id, props);
 
             // Component::children needs mutable access to the DOM, so we need
@@ -200,7 +206,7 @@ impl Dom {
 
         let mut dom = self.inner.borrow_mut();
 
-        let old_top = dom.stack.borrow_mut().pop().unwrap_or_else(|| {
+        let old_top = self.stack.borrow_mut().pop().unwrap_or_else(|| {
             panic!("Cannot end_widget without an in-progress widget.");
         });
 
@@ -218,30 +224,7 @@ impl Dom {
 }
 
 impl DomInner {
-    fn new() -> Self {
-        let mut nodes = Arena::new();
-        let root = nodes.insert(DomNode {
-            widget: Box::new(RootWidget),
-            parent: None,
-            children: Vec::new(),
-            next_child: 0,
-        });
-
-        Self {
-            nodes,
-            root: WidgetId::new(root),
-            stack: RefCell::new(Vec::new()),
-        }
-    }
-
-    fn current_widget(&self) -> WidgetId {
-        let stack = self.stack.borrow();
-        stack.last().copied().unwrap_or(self.root)
-    }
-
-    fn next_widget(&mut self) -> WidgetId {
-        let parent_id = self.current_widget();
-
+    fn next_widget(&mut self, parent_id: WidgetId) -> WidgetId {
         let parent = self.nodes.get_mut(parent_id.index()).unwrap();
         if parent.next_child < parent.children.len() {
             let id = parent.children[parent.next_child];
@@ -294,27 +277,5 @@ impl DomInner {
                 queue.extend(child.children);
             }
         }
-    }
-
-    #[allow(unused)]
-    fn debug_tree(&self) -> String {
-        use std::fmt::Write;
-
-        let mut output = String::new();
-        let mut visit = VecDeque::new();
-        visit.push_back((self.root, 0));
-
-        while let Some((id, depth)) = visit.pop_back() {
-            let indent = "  ".repeat(depth);
-            let node = self.nodes.get(id.index()).unwrap();
-
-            writeln!(output, "{indent}{id:?} ({:?})", &node.children).unwrap();
-
-            for &child in node.children.iter().rev() {
-                visit.push_back((child, depth + 1));
-            }
-        }
-
-        output
     }
 }
