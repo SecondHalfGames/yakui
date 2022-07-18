@@ -33,6 +33,7 @@ impl State {
         log::debug!("State::handle_event({event:?})");
 
         context::bind_dom(&self.dom);
+        context::bind_input(&self.input);
 
         let sink = match event {
             Event::ViewportChanged(viewport) => {
@@ -61,6 +62,7 @@ impl State {
         };
 
         context::unbind_dom();
+        context::unbind_input();
         sink
     }
 
@@ -92,6 +94,7 @@ impl State {
     pub fn start(&mut self) {
         self.dom.start();
         context::bind_dom(&self.dom);
+        context::bind_input(&self.input);
     }
 
     /// Finishes building the DOM. Must be called on a thread that previously
@@ -100,6 +103,7 @@ impl State {
     /// This method will finalize the DOM for this frame and compute layouts.
     pub fn finish(&mut self) {
         context::unbind_dom();
+        context::unbind_input();
 
         self.dom.finish();
         self.layout.calculate_all(&self.dom);

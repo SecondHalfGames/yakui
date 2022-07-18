@@ -1,4 +1,4 @@
-//! Provides access to the currently active DOM while it is being updated.
+//! Provides access to the currently active DOM or input context.
 
 use std::cell::{Ref, RefCell};
 use std::thread::LocalKey;
