@@ -15,5 +15,6 @@ fontdue = "0.7.2"
 
 [dev-dependencies]
 yakui = { path = "../yakui" }
+yakui-test = { path = "../yakui-test" }
 
 insta = "1.15.0"

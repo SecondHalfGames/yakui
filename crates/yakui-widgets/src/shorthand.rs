@@ -16,12 +16,12 @@ use crate::widgets::{
 
 /// See [List].
 pub fn column<F: FnOnce()>(children: F) -> Response<ListWidget> {
-    List::vertical().show(children)
+    List::column().show(children)
 }
 
 /// See [List].
 pub fn row<F: FnOnce()>(children: F) -> Response<ListWidget> {
-    List::horizontal().show(children)
+    List::row().show(children)
 }
 
 /// See [Align].

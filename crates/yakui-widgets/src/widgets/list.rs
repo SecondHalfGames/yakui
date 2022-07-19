@@ -46,11 +46,11 @@ impl List {
         }
     }
 
-    pub fn vertical() -> Self {
+    pub fn column() -> Self {
         Self::new(Direction::Down)
     }
 
-    pub fn horizontal() -> Self {
+    pub fn row() -> Self {
         Self::new(Direction::Right)
     }
 
@@ -71,9 +71,7 @@ impl Widget for ListWidget {
     type Response = ListResponse;
 
     fn new() -> Self {
-        Self {
-            props: List::horizontal(),
-        }
+        Self { props: List::row() }
     }
 
     fn update(&mut self, props: Self::Props) -> Self::Response {

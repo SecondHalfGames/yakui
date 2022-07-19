@@ -1,0 +1,13 @@
+[package]
+name = "yakui-test"
+description = "Testing utilities for yakui widgets"
+publish = false
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+yakui-core = { path = "../yakui-core" }
+
+insta = "1.15.0"

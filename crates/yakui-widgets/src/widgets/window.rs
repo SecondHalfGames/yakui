@@ -6,7 +6,7 @@ use yakui_core::Response;
 
 use crate::colors;
 use crate::util::widget;
-use crate::widgets::{List, Pad};
+use crate::widgets::Pad;
 
 /**
 A floating window within the application.
@@ -58,8 +58,7 @@ impl Widget for WindowWidget {
                 let constraints = Constraints::loose(self.props.initial_size);
                 crate::constrained(constraints, || {
                     crate::pad(Pad::all(8.0), || {
-                        let row = List::horizontal();
-                        row.show(|| {
+                        crate::row(|| {
                             crate::colored_box(Color3::BLUE, [16.0, 16.0]);
                             crate::expanded(|| {
                                 crate::pad(Pad::balanced(8.0, 0.0), || {
