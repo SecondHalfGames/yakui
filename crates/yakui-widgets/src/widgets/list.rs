@@ -88,6 +88,16 @@ impl Widget for ListWidget {
         let mut total_main_axis_size = 0.0;
         let mut max_cross_axis_size = 0.0;
 
+        let (cross_axis_min, cross_axis_max) = match self.props.cross_axis_alignment {
+            CrossAxisAlignment::Start => (0.0, direction.get_cross_axis(input.max)),
+            CrossAxisAlignment::Stretch => {
+                let max = direction.get_cross_axis(input.max);
+
+                (max, max)
+            }
+            other => unimplemented!("CrossAxisAlignment::{other:?}"),
+        };
+
         // First, we lay out any children that do not flex, giving them unbound
         // main axis constraints. This ensures that we don't unfairly squish
         // later widgets in the layout.
@@ -105,8 +115,8 @@ impl Widget for ListWidget {
             }
 
             let constraints = Constraints {
-                min: Vec2::ZERO,
-                max: direction.vec2(f32::INFINITY, direction.get_cross_axis(input.max)),
+                min: direction.vec2(0.0, cross_axis_min),
+                max: direction.vec2(f32::INFINITY, cross_axis_max),
             };
 
             let size = layout.calculate(dom, child_index, constraints);
@@ -133,12 +143,14 @@ impl Widget for ListWidget {
             //
             // We pass along the maximum cross axis size from our incoming
             // constraints.
-            let max = direction.vec2(main_axis_size, direction.get_cross_axis(input.max));
             let constraints = match fit {
-                FlexFit::Loose => Constraints::loose(max),
+                FlexFit::Loose => Constraints {
+                    min: direction.vec2(0.0, cross_axis_min),
+                    max: direction.vec2(main_axis_size, cross_axis_max),
+                },
                 FlexFit::Tight => Constraints {
-                    min: direction.vec2(main_axis_size, 0.0),
-                    max,
+                    min: direction.vec2(main_axis_size, cross_axis_min),
+                    max: direction.vec2(main_axis_size, cross_axis_max),
                 },
             };
 
@@ -167,7 +179,7 @@ impl Widget for ListWidget {
                     total_main_axis_size
                 }
             }
-            other => panic!("Unsupported MainAxisSize {other:?}"),
+            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         input.constrain(direction.vec2(main_axis_size, max_cross_axis_size))

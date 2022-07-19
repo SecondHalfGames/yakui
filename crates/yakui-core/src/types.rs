@@ -51,7 +51,8 @@ pub enum CrossAxisAlignment {
     Start,
     // Center,
     // End,
-    // Stretch,
+    /// Stretch items to fill the maximum size of the container's cross axis.
+    Stretch,
 }
 
 /// Defines the direction that a container will lay out its children.

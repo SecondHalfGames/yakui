@@ -1,4 +1,4 @@
-use yakui::MainAxisSize;
+use yakui::{CrossAxisAlignment, MainAxisSize};
 use yakui_core::geometry::Color3;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
@@ -94,6 +94,32 @@ fn column_min() {
             rect_50x50();
             rect(100, 50);
             rect(50, 100);
+        });
+    });
+}
+
+#[test]
+fn column_cross_stretch() {
+    run!({
+        let mut column = List::column();
+        column.cross_axis_alignment = CrossAxisAlignment::Stretch;
+        column.show(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
+fn row_cross_stretch() {
+    run!({
+        let mut row = List::row();
+        row.cross_axis_alignment = CrossAxisAlignment::Stretch;
+        row.show(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
