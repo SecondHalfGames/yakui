@@ -34,6 +34,58 @@ fn row() {
 }
 
 #[test]
+fn row_grow_first() {
+    run!({
+        yakui_widgets::row(|| {
+            yakui_widgets::expanded(|| {
+                yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            });
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
+fn row_grow_middle() {
+    run!({
+        yakui_widgets::row(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::expanded(|| {
+                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            });
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
+fn row_grow_last() {
+    run!({
+        yakui_widgets::row(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::expanded(|| {
+                yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            });
+        });
+    });
+}
+
+#[test]
+fn column_grow_middle() {
+    run!({
+        yakui_widgets::column(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::expanded(|| {
+                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            });
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
 fn column_min() {
     run!({
         let mut column = List::column();
