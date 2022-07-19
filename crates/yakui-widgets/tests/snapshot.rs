@@ -7,7 +7,7 @@ use yakui_widgets::widgets::List;
 #[test]
 fn colored_box() {
     run!({
-        yakui_widgets::colored_box(Color3::WHITE, [50.0, 50.0]);
+        yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
     });
 }
 

@@ -1,7 +1,7 @@
 ---
 source: crates/yakui-widgets/tests/snapshot.rs
-assertion_line: 87
-expression: "view(dom, layout)"
+assertion_line: 60
+expression: view
 ---
 - AlignWidget pos(0, 0) size(1000, 1000)
   - ColoredBoxWidget pos(950, 950) size(50, 50)

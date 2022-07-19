@@ -82,6 +82,11 @@ impl LayoutDom {
         self.scaled_viewport
     }
 
+    /// Get the viewport in unscaled units.
+    pub fn unscaled_viewport(&self) -> Rect {
+        self.viewport
+    }
+
     /// Calculate the layout of all elements in the given DOM.
     pub fn calculate_all(&mut self, dom: &Dom) {
         profiling::scope!("LayoutDom::calculate_all");
