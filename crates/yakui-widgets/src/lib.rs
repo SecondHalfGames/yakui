@@ -1,6 +1,7 @@
 #![allow(
     clippy::let_unit_value, // When implementing widgets, we want to spell
                             // out our Response type even if it's unit.
+    clippy::new_without_default,
 )]
 
 mod icons;

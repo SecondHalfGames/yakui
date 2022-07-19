@@ -9,6 +9,7 @@ mod list;
 mod pad;
 mod text;
 mod textbox;
+mod unconstrained_box;
 mod window;
 
 pub use self::align::*;
@@ -22,4 +23,5 @@ pub use self::list::*;
 pub use self::pad::*;
 pub use self::text::*;
 pub use self::textbox::*;
+pub use self::unconstrained_box::*;
 pub use self::window::*;
