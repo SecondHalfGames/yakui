@@ -2,7 +2,7 @@ use yakui::{CrossAxisAlignment, MainAxisSize};
 use yakui_core::geometry::Color3;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
-use yakui_widgets::widgets::List;
+use yakui_widgets::widgets::{List, UnconstrainedBox};
 
 #[test]
 fn colored_box() {
@@ -120,6 +120,22 @@ fn row_cross_stretch() {
             yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
             yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
             yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+/// When given infinite constraints, widgets like List need to pick the minimum
+/// size that fits their content, not infinity.
+#[test]
+fn row_unconstrained() {
+    run!({
+        let container = UnconstrainedBox::new();
+        container.show(|| {
+            yakui_widgets::row(|| {
+                yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+                yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            });
         });
     });
 }

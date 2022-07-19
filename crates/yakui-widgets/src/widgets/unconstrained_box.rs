@@ -58,15 +58,15 @@ impl Widget for UnconstrainedBoxWidget {
         let node = dom.get_current();
 
         let (min_x, max_x) = if self.props.constrain_x {
-            (input.min.x, input.max.x)
+            (0.0, input.max.x)
         } else {
-            (INFINITY, INFINITY)
+            (0.0, INFINITY)
         };
 
         let (min_y, max_y) = if self.props.constrain_y {
-            (input.min.y, input.max.y)
+            (0.0, input.max.y)
         } else {
-            (INFINITY, INFINITY)
+            (0.0, INFINITY)
         };
 
         let constraints = Constraints {
