@@ -8,7 +8,8 @@ use yakui_core::{Alignment, Response};
 use crate::util::widget_children;
 
 /**
-Aligns its child according to the given alignment.
+Aligns its child according to the given alignment. Align should contain only one
+child.
 
 Responds with [AlignResponse].
 
@@ -80,12 +81,17 @@ impl Widget for AlignWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
 
-        // FIXME: Need to behave when given unbound constraints
+        // Align allows its children to be smaller than the minimum size
+        // enforced by the incoming constraints.
+        let constraints = Constraints::loose(input.max);
+
+        // FIXME: Align should behave when given unbounded constraints.
+        // Currently, this will cause Align's child to be pushed off the screen.
         let self_size = input.max;
         let align = self.props.alignment.as_vec2();
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, input);
+            let child_size = layout.calculate(dom, child, constraints);
             layout.set_pos(child, align * self_size - align * child_size);
         }
 

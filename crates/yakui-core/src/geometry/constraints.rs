@@ -20,6 +20,15 @@ impl Constraints {
         }
     }
 
+    /// Create a new `Constraints` whose minimum and maximum constraints are the
+    /// given value.
+    pub fn tight(value: Vec2) -> Self {
+        Self {
+            min: value,
+            max: value,
+        }
+    }
+
     /// Returns the size closest to the given size that fits the constraints.
     pub fn constrain(&self, base: Vec2) -> Vec2 {
         base.max(self.min).min(self.max)

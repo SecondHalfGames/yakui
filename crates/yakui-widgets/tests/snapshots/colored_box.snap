@@ -3,5 +3,5 @@ source: crates/yakui-widgets/tests/snapshot.rs
 assertion_line: 9
 expression: view
 ---
-- ColoredBoxWidget pos(0, 0) size(50, 50)
+- ColoredBoxWidget pos(0, 0) size(1000, 1000)
 

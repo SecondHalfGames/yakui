@@ -94,10 +94,7 @@ impl LayoutDom {
 
         self.interest_mouse.clear();
 
-        let constraints = Constraints {
-            min: Vec2::ZERO,
-            max: self.viewport.size() / self.scale_factor,
-        };
+        let constraints = Constraints::tight(self.viewport.size() / self.scale_factor);
 
         self.calculate(dom, dom.root(), constraints);
         self.resolve_positions(dom);

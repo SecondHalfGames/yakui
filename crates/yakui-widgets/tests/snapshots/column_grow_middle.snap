@@ -1,9 +1,9 @@
 ---
 source: crates/yakui-widgets/tests/snapshot.rs
-assertion_line: 51
+assertion_line: 77
 expression: view
 ---
-- ListWidget pos(0, 0) size(50, 1000)
+- ListWidget pos(0, 0) size(1000, 1000)
   - ColoredBoxWidget pos(0, 0) size(50, 50)
   - FlexibleWidget pos(0, 50) size(50, 900)
     - ColoredBoxWidget pos(0, 50) size(50, 900)
