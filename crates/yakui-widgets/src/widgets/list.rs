@@ -89,13 +89,12 @@ impl Widget for ListWidget {
         let mut max_cross_axis_size = 0.0;
 
         let (cross_axis_min, cross_axis_max) = match self.props.cross_axis_alignment {
-            CrossAxisAlignment::Start => (0.0, direction.get_cross_axis(input.max)),
             CrossAxisAlignment::Stretch => {
                 let max = direction.get_cross_axis(input.max);
 
                 (max, max)
             }
-            other => unimplemented!("CrossAxisAlignment::{other:?}"),
+            _ => (0.0, direction.get_cross_axis(input.max)),
         };
 
         // First, we lay out any children that do not flex, giving them unbound
@@ -159,13 +158,22 @@ impl Widget for ListWidget {
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
 
+        let cross_size = direction.constrain_cross_axis(input, max_cross_axis_size);
+
         // Finally, position all children based on the sizes calculated above.
-        let mut next_pos = Vec2::ZERO;
+        let mut next_main = 0.0;
         for &child_index in &node.children {
             let child_layout = layout.get_mut(child_index).unwrap();
-            child_layout.rect.set_pos(next_pos);
 
-            next_pos += direction.only_main_axis(child_layout.rect.size());
+            let cross = match self.props.cross_axis_alignment {
+                CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
+                CrossAxisAlignment::Center => (cross_size - child_layout.rect.size().y) / 2.0,
+                CrossAxisAlignment::End => cross_size - child_layout.rect.size().y,
+                other => unimplemented!("CrossAxisAlignment::{other:?}"),
+            };
+            child_layout.rect.set_pos(direction.vec2(next_main, cross));
+
+            next_main += direction.get_main_axis(child_layout.rect.size());
         }
 
         let main_axis_size = match self.props.main_axis_size {
@@ -182,6 +190,6 @@ impl Widget for ListWidget {
             other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
-        input.constrain(direction.vec2(main_axis_size, max_cross_axis_size))
+        input.constrain(direction.vec2(main_axis_size, cross_size))
     }
 }

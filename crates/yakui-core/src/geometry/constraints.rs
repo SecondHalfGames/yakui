@@ -34,6 +34,16 @@ impl Constraints {
         base.max(self.min).min(self.max)
     }
 
+    /// Returns the width closest to the given width that fits the constraints.
+    pub fn constrain_width(&self, width: f32) -> f32 {
+        width.max(self.min.x).min(self.max.x)
+    }
+
+    /// Returns the height closest to the given height that fits the constraints.
+    pub fn constrain_height(&self, height: f32) -> f32 {
+        height.max(self.min.y).min(self.max.y)
+    }
+
     /// Constraints are loose if there is no minimum size.
     pub fn is_loose(&self) -> bool {
         self.min == Vec2::ZERO

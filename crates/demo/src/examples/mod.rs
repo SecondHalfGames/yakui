@@ -7,7 +7,18 @@ use crate::ExampleState;
 
 macro_rules! examples {
     ($macro:ident) => {
-        $macro!(bench, sandbox, align, images, text, window, row_column, flex, inputs);
+        $macro!(
+            align,
+            bench,
+            cross_alignment,
+            flex,
+            images,
+            inputs,
+            row_column,
+            sandbox,
+            text,
+            window,
+        );
     };
 }
 

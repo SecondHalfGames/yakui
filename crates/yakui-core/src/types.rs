@@ -1,6 +1,6 @@
 //! Types used by various yakui widgets.
 
-use crate::geometry::Vec2;
+use crate::geometry::{Constraints, Vec2};
 
 /// Defines sizing along a container's main axis.
 ///
@@ -49,8 +49,17 @@ pub enum CrossAxisAlignment {
     ///
     /// For a top-down list, this is the left side of the container.
     Start,
-    // Center,
-    // End,
+
+    /// Align items to the center of the container's cross axis.
+    Center,
+
+    /// Align items to the end of the container's cross axis.
+    ///
+    /// For a left-to-right list, this is the bottom of the container.
+    ///
+    /// For a top-down list, this is the right side of the container.
+    End,
+
     /// Stretch items to fill the maximum size of the container's cross axis.
     Stretch,
 }
@@ -97,6 +106,15 @@ impl Direction {
         match self {
             Self::Down => Vec2::new(0.0, vec.y),
             Self::Right => Vec2::new(vec.x, 0.0),
+        }
+    }
+
+    /// Constrains a value to fit within the cross-axis limits defined by the
+    /// constraints.
+    pub fn constrain_cross_axis(&self, constraints: Constraints, value: f32) -> f32 {
+        match self {
+            Self::Down => constraints.constrain_width(value),
+            Self::Right => constraints.constrain_height(value),
         }
     }
 }

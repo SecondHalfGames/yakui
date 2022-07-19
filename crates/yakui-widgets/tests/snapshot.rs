@@ -112,6 +112,45 @@ fn column_cross_stretch() {
 }
 
 #[test]
+fn row_cross_start() {
+    run!({
+        let mut row = List::row();
+        row.cross_axis_alignment = CrossAxisAlignment::Start;
+        row.show(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
+fn row_cross_center() {
+    run!({
+        let mut row = List::row();
+        row.cross_axis_alignment = CrossAxisAlignment::Center;
+        row.show(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
+fn row_cross_end() {
+    run!({
+        let mut row = List::row();
+        row.cross_axis_alignment = CrossAxisAlignment::End;
+        row.show(|| {
+            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
 fn row_cross_stretch() {
     run!({
         let mut row = List::row();
