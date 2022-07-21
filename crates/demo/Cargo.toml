@@ -4,8 +4,6 @@ version = "0.0.0"
 publish = false
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
 profile = ["profiling/profile-with-tracy", "tracy-client"]
 
