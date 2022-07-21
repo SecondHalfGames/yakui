@@ -37,6 +37,9 @@ pub enum WidgetEvent {
     /// The mouse left the widget's layout rectangle.
     MouseLeave,
 
+    /// The mouse moved.
+    MouseMoved(Option<Vec2>),
+
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.
     MouseButtonChanged(MouseButton, bool),

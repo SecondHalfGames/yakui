@@ -102,6 +102,7 @@ pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color3) {
     output.add_mesh(mesh);
 }
 
+#[allow(unused)]
 pub struct PaintCircle {
     pub center: Vec2,
     pub radius: f32,
@@ -109,6 +110,7 @@ pub struct PaintCircle {
     pub color: Color3,
 }
 
+#[allow(unused)]
 impl PaintCircle {
     pub fn new(center: Vec2, radius: f32) -> Self {
         Self {
