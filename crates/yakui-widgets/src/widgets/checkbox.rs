@@ -98,7 +98,7 @@ impl Widget for CheckboxWidget {
     }
 
     fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        constraints.constrain(Vec2::splat(OUTER_SIZE))
+        constraints.constrain_min(Vec2::splat(OUTER_SIZE))
     }
 
     fn event_interest(&self) -> EventInterest {

@@ -80,7 +80,7 @@ impl Widget for ColoredBoxWidget {
             size = size.max(child_size);
         }
 
-        input.constrain(size)
+        input.constrain_min(size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {

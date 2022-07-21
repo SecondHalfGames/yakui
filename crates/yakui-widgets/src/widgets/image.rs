@@ -57,7 +57,7 @@ impl Widget for ImageWidget {
     }
 
     fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        input.constrain(self.props.size)
+        input.constrain_min(self.props.size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {

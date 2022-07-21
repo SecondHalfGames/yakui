@@ -54,12 +54,9 @@ impl Widget for PanelWidget {
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
-        let mut size = self.size;
+        let mut size = input.constrain(self.size);
 
-        let child_constraints = Constraints {
-            min: self.size,
-            max: input.max,
-        };
+        let child_constraints = Constraints::tight(size);
 
         for &child in &node.children {
             let child_size = layout.calculate(dom, child, child_constraints);

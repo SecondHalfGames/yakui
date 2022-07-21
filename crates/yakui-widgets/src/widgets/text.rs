@@ -133,7 +133,7 @@ impl Widget for TextWidget {
             size = size.max(max);
         }
 
-        input.constrain(size)
+        input.constrain_min(size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {

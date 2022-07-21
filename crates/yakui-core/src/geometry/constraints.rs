@@ -29,6 +29,12 @@ impl Constraints {
         }
     }
 
+    /// Returns the size closest to the given size that satisfies the minimun
+    /// constraints.
+    pub fn constrain_min(&self, base: Vec2) -> Vec2 {
+        base.max(self.min)
+    }
+
     /// Returns the size closest to the given size that fits the constraints.
     pub fn constrain(&self, base: Vec2) -> Vec2 {
         base.max(self.min).min(self.max)

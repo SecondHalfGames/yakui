@@ -104,6 +104,6 @@ impl Widget for PadWidget {
             layout.set_pos(child, offset);
         }
 
-        input.constrain(self_size)
+        input.constrain_min(self_size)
     }
 }

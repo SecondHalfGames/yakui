@@ -80,6 +80,6 @@ impl Widget for UnconstrainedBoxWidget {
             size = size.max(child_size);
         }
 
-        input.constrain(size)
+        size
     }
 }

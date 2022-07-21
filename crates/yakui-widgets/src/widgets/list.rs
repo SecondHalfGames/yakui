@@ -94,6 +94,11 @@ impl Widget for ListWidget {
             _ => 0.0,
         };
 
+        let mut main_axis_max = direction.get_main_axis(input.max);
+        if main_axis_max.is_infinite() {
+            main_axis_max = direction.get_main_axis(input.min);
+        };
+
         // First, we lay out any children that do not flex, giving them unbound
         // main axis constraints. This ensures that we don't unfairly squish
         // later widgets in the layout.
@@ -122,8 +127,7 @@ impl Widget for ListWidget {
 
         // Next, lay out all flexible elements, giving them each some portion of
         // the remaining space based on their flex factor.
-        let remaining_main_axis =
-            (direction.get_main_axis(input.max) - total_main_axis_size).max(0.0);
+        let remaining_main_axis = (main_axis_max - total_main_axis_size).max(0.0);
         for &child_index in &node.children {
             let child = dom.get(child_index).unwrap();
             let (flex, fit) = child.widget.flex();
@@ -190,6 +194,6 @@ impl Widget for ListWidget {
             other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
-        input.constrain(direction.vec2(main_axis_size, cross_size))
+        direction.vec2(main_axis_size, cross_size)
     }
 }

@@ -61,7 +61,7 @@ pub trait Widget: 'static + fmt::Debug {
             size = size.max(child_size);
         }
 
-        constraints.constrain(size)
+        constraints.constrain_min(size)
     }
 
     /// Paint the widget based on its current state.
