@@ -164,16 +164,19 @@ impl Widget for ListWidget {
         let mut next_main = 0.0;
         for &child_index in &node.children {
             let child_layout = layout.get_mut(child_index).unwrap();
+            let child_size = child_layout.rect.size();
+            let child_main = direction.get_main_axis(child_size);
+            let child_cross = direction.get_cross_axis(child_size);
 
             let cross = match self.props.cross_axis_alignment {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
-                CrossAxisAlignment::Center => (cross_size - child_layout.rect.size().y) / 2.0,
-                CrossAxisAlignment::End => cross_size - child_layout.rect.size().y,
+                CrossAxisAlignment::Center => (cross_size - child_cross) / 2.0,
+                CrossAxisAlignment::End => cross_size - child_cross,
                 other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
             child_layout.rect.set_pos(direction.vec2(next_main, cross));
 
-            next_main += direction.get_main_axis(child_layout.rect.size());
+            next_main += child_main;
         }
 
         let main_axis_size = match self.props.main_axis_size {
