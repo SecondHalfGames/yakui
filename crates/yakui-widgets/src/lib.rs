@@ -9,6 +9,7 @@ mod text_renderer;
 mod util;
 
 pub mod colors;
+pub mod font;
 pub mod shorthand;
 pub mod widgets;
 

@@ -11,6 +11,7 @@ use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::{context, Response};
 
+use crate::font::{FontName, Fonts};
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 use crate::{colors, icons};
@@ -25,6 +26,7 @@ Responds with [TextBoxResponse].
 pub struct TextBox {
     pub text: String,
     pub color: Color3,
+    pub font: FontName,
     pub font_size: f32,
 }
 
@@ -33,6 +35,7 @@ impl TextBox {
         Self {
             text: text.into(),
             color: Color3::WHITE,
+            font: FontName::new("default"),
             font_size,
         }
     }
@@ -83,8 +86,16 @@ impl Widget for TextBoxWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+        let fonts = dom.get_global_or_init(Fonts::default);
+        let font = match fonts.get(&self.props.font) {
+            Some(font) => font,
+            None => {
+                // TODO: Log once that we were unable to find this font.
+                return input.min;
+            }
+        };
+
         let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
-        let global = dom.get_global_or_init(TextGlobalState::new);
 
         let (max_width, max_height) = if input.is_bounded() {
             (
@@ -105,10 +116,7 @@ impl Widget for TextBoxWidget {
         });
 
         let before_cursor = &text[..self.cursor];
-        text_layout.append(
-            &[global.default_font.as_ref()],
-            &TextStyle::new(before_cursor, font_size, 0),
-        );
+        text_layout.append(&[&*font], &TextStyle::new(before_cursor, font_size, 0));
 
         let cursor_pos = text_layout
             .glyphs()
@@ -120,10 +128,7 @@ impl Widget for TextBoxWidget {
         *self.cursor_pos.borrow_mut() = cursor_pos;
 
         let after_cursor = &text[self.cursor..];
-        text_layout.append(
-            &[global.default_font.as_ref()],
-            &TextStyle::new(after_cursor, font_size, 0),
-        );
+        text_layout.append(&[&*font], &TextStyle::new(after_cursor, font_size, 0));
 
         let mut size = Vec2::ZERO;
 
@@ -137,7 +142,13 @@ impl Widget for TextBoxWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+        let fonts = dom.get_global_or_init(Fonts::default);
         let global = dom.get_global_or_init(TextGlobalState::new);
+
+        let font = match fonts.get(&self.props.font) {
+            Some(font) => font,
+            None => return,
+        };
 
         let text_layout = self.layout.borrow_mut();
         let mut glyph_cache = global.glyph_cache.borrow_mut();
@@ -152,7 +163,7 @@ impl Widget for TextBoxWidget {
 
         for glyph in text_layout.glyphs() {
             let tex_rect = glyph_cache
-                .get_or_insert(paint, &global.default_font, glyph.key)
+                .get_or_insert(paint, &*font, glyph.key)
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
 

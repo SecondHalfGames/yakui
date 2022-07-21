@@ -3,14 +3,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use fontdue::layout::GlyphRasterConfig;
-use fontdue::{Font, FontSettings};
+use fontdue::Font;
 use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
 use yakui_core::TextureId;
 
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {
-    pub default_font: Rc<Font>,
     pub glyph_cache: Rc<RefCell<GlyphCache>>,
 }
 
@@ -98,12 +97,6 @@ pub fn blit(
 
 impl TextGlobalState {
     pub fn new() -> Self {
-        let default_font = Font::from_bytes(
-            include_bytes!("../assets/Roboto-Regular.ttf").as_slice(),
-            FontSettings::default(),
-        )
-        .unwrap();
-
         let glyph_cache = GlyphCache {
             texture: None,
             glyphs: HashMap::new(),
@@ -116,7 +109,6 @@ impl TextGlobalState {
         };
 
         Self {
-            default_font: Rc::new(default_font),
             glyph_cache: Rc::new(RefCell::new(glyph_cache)),
         }
     }

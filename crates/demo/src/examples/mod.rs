@@ -11,6 +11,7 @@ macro_rules! examples {
             align,
             bench,
             cross_alignment,
+            custom_font,
             flex,
             images,
             inputs,

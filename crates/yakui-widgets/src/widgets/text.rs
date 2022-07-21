@@ -10,6 +10,7 @@ use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
+use crate::font::{FontName, Fonts};
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
@@ -36,6 +37,7 @@ text.show();
 pub struct Text {
     pub text: Cow<'static, str>,
     pub color: Color3,
+    pub font: FontName,
     pub font_size: f32,
 }
 
@@ -44,6 +46,7 @@ impl Text {
         Self {
             text: text.into(),
             color: Color3::WHITE,
+            font: FontName::new("default"),
             font_size,
         }
     }
@@ -52,6 +55,7 @@ impl Text {
         Self {
             text,
             color: Color3::WHITE,
+            font: FontName::new("default"),
             font_size: 14.0,
         }
     }
@@ -86,7 +90,15 @@ impl Widget for TextWidget {
     }
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let global = dom.get_global_or_init(TextGlobalState::new);
+        let fonts = dom.get_global_or_init(Fonts::default);
+
+        let font = match fonts.get(&self.props.font) {
+            Some(font) => font,
+            None => {
+                // TODO: Log once that we were unable to find this font.
+                return input.min;
+            }
+        };
 
         let (max_width, max_height) = if input.is_bounded() {
             (
@@ -105,7 +117,7 @@ impl Widget for TextWidget {
         });
 
         text_layout.append(
-            &[global.default_font.as_ref()],
+            &[&*font],
             &TextStyle::new(
                 &self.props.text,
                 self.props.font_size * layout.scale_factor(),
@@ -125,7 +137,13 @@ impl Widget for TextWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+        let fonts = dom.get_global_or_init(Fonts::default);
         let global = dom.get_global_or_init(TextGlobalState::new);
+
+        let font = match fonts.get(&self.props.font) {
+            Some(font) => font,
+            None => return,
+        };
 
         let text_layout = self.layout.borrow_mut();
         let mut glyph_cache = global.glyph_cache.borrow_mut();
@@ -136,7 +154,7 @@ impl Widget for TextWidget {
 
         for glyph in text_layout.glyphs() {
             let tex_rect = glyph_cache
-                .get_or_insert(paint, &global.default_font, glyph.key)
+                .get_or_insert(paint, &font, glyph.key)
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
 

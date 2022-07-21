@@ -10,6 +10,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
 use graphics::Graphics;
+use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFormat};
 use yakui::{TextureId, UVec2};
 
@@ -80,9 +81,19 @@ async fn run() {
         yak.set_scale_factor(scale);
     }
 
-    // Preload a texture for the examples to use and set up some default state
-    // that we'll modify later.
+    // Preload a texture for the examples to use.
     let monkey = yak.add_texture(load_texture(MONKEY_PNG));
+
+    // Add a custom font for some of the examples.
+    let fonts = yak.dom().get_global_or_init(Fonts::default);
+    let font = Font::from_bytes(
+        include_bytes!("../assets/Hack-Regular.ttf").as_slice(),
+        FontSettings::default(),
+    )
+    .unwrap();
+    fonts.add(font, Some("monospace"));
+
+    // Set up some default state that we'll modify later.
     let mut state = ExampleState {
         time: 0.0,
         monkey,
