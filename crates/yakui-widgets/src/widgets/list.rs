@@ -88,13 +88,10 @@ impl Widget for ListWidget {
         let mut total_main_axis_size = 0.0;
         let mut max_cross_axis_size = 0.0;
 
-        let (cross_axis_min, cross_axis_max) = match self.props.cross_axis_alignment {
-            CrossAxisAlignment::Stretch => {
-                let max = direction.get_cross_axis(input.max);
-
-                (max, max)
-            }
-            _ => (0.0, direction.get_cross_axis(input.max)),
+        let cross_axis_max = direction.get_cross_axis(input.max);
+        let cross_axis_min = match self.props.cross_axis_alignment {
+            CrossAxisAlignment::Stretch => cross_axis_max,
+            _ => 0.0,
         };
 
         // First, we lay out any children that do not flex, giving them unbound
