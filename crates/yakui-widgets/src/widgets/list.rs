@@ -159,7 +159,7 @@ impl Widget for ListWidget {
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
 
-        let cross_size = direction.constrain_cross_axis(input, max_cross_axis_size);
+        let cross_size = max_cross_axis_size.max(direction.get_cross_axis(input.min));
 
         // Finally, position all children based on the sizes calculated above.
         let mut next_main = 0.0;

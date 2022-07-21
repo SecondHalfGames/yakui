@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
@@ -32,7 +34,7 @@ impl Panel {
 #[derive(Debug)]
 pub struct PanelWidget {
     props: Panel,
-    size: Vec2,
+    size: RefCell<Vec2>,
 }
 
 pub type PanelResponse = ();
@@ -44,7 +46,7 @@ impl Widget for PanelWidget {
     fn new() -> Self {
         Self {
             props: Panel::side(),
-            size: Vec2::ZERO,
+            size: RefCell::new(Vec2::ZERO),
         }
     }
 
@@ -54,7 +56,7 @@ impl Widget for PanelWidget {
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
-        let mut size = input.constrain(self.size);
+        let mut size = input.constrain(*self.size.borrow());
 
         let child_constraints = Constraints::tight(size);
 
@@ -62,6 +64,12 @@ impl Widget for PanelWidget {
             let child_size = layout.calculate(dom, child, child_constraints);
             size = size.max(child_size);
         }
+
+        // TODO: If our children overflowed the size set in the panel, we should
+        // recompute the layout of our children. If any of our children depend
+        // on our size, their layout will change next frame.
+
+        *self.size.borrow_mut() = size;
 
         input.constrain(size)
     }
