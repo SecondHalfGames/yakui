@@ -1,5 +1,4 @@
 mod examples;
-mod graphics;
 
 use std::time::Instant;
 
@@ -9,7 +8,6 @@ use winit::event::{Event, StartCause, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
-use graphics::Graphics;
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFormat};
 use yakui::{TextureId, UVec2};
@@ -52,8 +50,8 @@ async fn run() {
         .build(&event_loop)
         .unwrap();
 
-    // The demo app has a small graphics abstraction using wgpu.
-    let mut graphics = Graphics::new(&window).await;
+    // yakui_app has a helper for setting up wgpu.
+    let mut graphics = yakui_app::Graphics::new(&window).await;
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
@@ -134,7 +132,15 @@ async fn run() {
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
                 // about how to paint widgets.
-                graphics.paint(&mut yak, &mut yak_renderer);
+                graphics.paint(&mut yak, &mut yak_renderer, {
+                    let bg = yakui::colors::BACKGROUND_1.to_linear();
+                    wgpu::Color {
+                        r: bg.x.into(),
+                        g: bg.y.into(),
+                        b: bg.z.into(),
+                        a: 1.0,
+                    }
+                });
 
                 profiling::finish_frame!();
             }

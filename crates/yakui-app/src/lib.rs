@@ -1,5 +1,6 @@
 use winit::{dpi::PhysicalSize, window::Window};
 
+/// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
@@ -75,8 +76,13 @@ impl Graphics {
         }
     }
 
-    #[profiling::function]
-    pub fn paint(&self, yak: &mut yakui::State, yak_renderer: &mut yakui_wgpu::State) {
+    #[cfg_attr(feature = "profiling", profiling::function)]
+    pub fn paint(
+        &self,
+        yak: &mut yakui_core::State,
+        yak_renderer: &mut yakui_wgpu::State,
+        bg: wgpu::Color,
+    ) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,
@@ -93,20 +99,13 @@ impl Graphics {
             });
 
         {
-            let bg = yakui::colors::BACKGROUND_1.to_linear();
-
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: bg.x as f64,
-                            g: bg.y as f64,
-                            b: bg.z as f64,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Clear(bg),
                         store: true,
                     },
                 })],
