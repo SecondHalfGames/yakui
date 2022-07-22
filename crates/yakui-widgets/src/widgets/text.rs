@@ -125,13 +125,22 @@ impl Widget for TextWidget {
             ),
         );
 
-        let mut size = Vec2::ZERO;
+        let height = text_layout
+            .lines()
+            .iter()
+            .flat_map(|line_pos_vec| line_pos_vec.iter())
+            .map(|line| line.baseline_y - line.min_descent)
+            .max_by(|a, b| a.total_cmp(&b))
+            .unwrap_or_default();
 
-        for glyph in text_layout.glyphs() {
-            let max = Vec2::new(glyph.x + glyph.width as f32, glyph.y + glyph.height as f32)
-                / layout.scale_factor();
-            size = size.max(max);
-        }
+        let width = text_layout
+            .glyphs()
+            .iter()
+            .map(|glyph| glyph.x + glyph.width as f32)
+            .max_by(|a, b| a.total_cmp(&b))
+            .unwrap_or_default();
+
+        let size = Vec2::new(width, height) / layout.scale_factor();
 
         input.constrain_min(size)
     }
