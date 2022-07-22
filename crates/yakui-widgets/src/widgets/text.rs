@@ -125,22 +125,7 @@ impl Widget for TextWidget {
             ),
         );
 
-        let height = text_layout
-            .lines()
-            .iter()
-            .flat_map(|line_pos_vec| line_pos_vec.iter())
-            .map(|line| line.baseline_y - line.min_descent)
-            .max_by(|a, b| a.total_cmp(&b))
-            .unwrap_or_default();
-
-        let width = text_layout
-            .glyphs()
-            .iter()
-            .map(|glyph| glyph.x + glyph.width as f32)
-            .max_by(|a, b| a.total_cmp(&b))
-            .unwrap_or_default();
-
-        let size = Vec2::new(width, height) / layout.scale_factor();
+        let size = get_text_layout_size(&text_layout, layout.scale_factor());
 
         input.constrain_min(size)
     }
@@ -186,4 +171,23 @@ impl fmt::Debug for TextWidget {
             .field("layout", &"(no debug impl)")
             .finish()
     }
+}
+
+pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> Vec2 {
+    let height = text_layout
+        .lines()
+        .iter()
+        .flat_map(|line_pos_vec| line_pos_vec.iter())
+        .map(|line| line.baseline_y - line.min_descent)
+        .max_by(|a, b| a.total_cmp(&b))
+        .unwrap_or_default();
+
+    let width = text_layout
+        .glyphs()
+        .iter()
+        .map(|glyph| glyph.x + glyph.width as f32)
+        .max_by(|a, b| a.total_cmp(&b))
+        .unwrap_or_default();
+
+    Vec2::new(width, height) / scale_factor
 }

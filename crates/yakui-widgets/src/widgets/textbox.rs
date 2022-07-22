@@ -16,6 +16,8 @@ use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 use crate::{colors, icons};
 
+use super::get_text_layout_size;
+
 /**
 Text that can be edited.
 
@@ -130,13 +132,7 @@ impl Widget for TextBoxWidget {
         let after_cursor = &text[self.cursor..];
         text_layout.append(&[&*font], &TextStyle::new(after_cursor, font_size, 0));
 
-        let mut size = Vec2::ZERO;
-
-        for glyph in text_layout.glyphs() {
-            let max = Vec2::new(glyph.x + glyph.width as f32, glyph.y + glyph.height as f32)
-                / layout.scale_factor();
-            size = size.max(max);
-        }
+        let size = get_text_layout_size(&text_layout, layout.scale_factor());
 
         input.constrain_min(size)
     }
