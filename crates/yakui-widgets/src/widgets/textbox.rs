@@ -120,13 +120,17 @@ impl Widget for TextBoxWidget {
         let before_cursor = &text[..self.cursor];
         text_layout.append(&[&*font], &TextStyle::new(before_cursor, font_size, 0));
 
-        let cursor_pos = text_layout
+        let cursor_y = text_layout
+            .lines()
+            .and_then(|lines| lines.last())
+            .map(|line| line.baseline_y - line.max_ascent)
+            .unwrap_or_default();
+        let cursor_x = text_layout
             .glyphs()
             .last()
-            .map(|glyph| {
-                Vec2::new(glyph.x + glyph.width as f32 + 1.0, glyph.y) / layout.scale_factor()
-            })
-            .unwrap_or(Vec2::ZERO);
+            .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
+            .unwrap_or_default();
+        let cursor_pos = Vec2::new(cursor_x, cursor_y) / layout.scale_factor();
         *self.cursor_pos.borrow_mut() = cursor_pos;
 
         let after_cursor = &text[self.cursor..];
