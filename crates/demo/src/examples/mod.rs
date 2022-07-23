@@ -10,6 +10,7 @@ macro_rules! examples {
         $macro!(
             align,
             bench,
+            buttons,
             cross_alignment,
             custom_font,
             flex,

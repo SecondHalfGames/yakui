@@ -19,11 +19,28 @@ const _RESIZE_HANDLE_WIDTH: f32 = 6.0;
 /// detection and movement within a single widget?
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct Panel {}
+pub struct Panel {
+    pub kind: PanelKind,
+}
+
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum PanelKind {
+    Side,
+    TopBottom,
+}
 
 impl Panel {
     pub fn side() -> Self {
-        Self {}
+        Self {
+            kind: PanelKind::Side,
+        }
+    }
+
+    pub fn top_bottom() -> Self {
+        Self {
+            kind: PanelKind::TopBottom,
+        }
     }
 
     pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelWidget> {
@@ -57,6 +74,20 @@ impl Widget for PanelWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
         let mut size = input.constrain(*self.size.borrow());
+
+        match self.props.kind {
+            PanelKind::Side => {
+                if input.max.y.is_finite() {
+                    size.y = input.max.y;
+                }
+            }
+
+            PanelKind::TopBottom => {
+                if input.max.x.is_finite() {
+                    size.x = input.max.x;
+                }
+            }
+        }
 
         let child_constraints = Constraints::tight(size);
 

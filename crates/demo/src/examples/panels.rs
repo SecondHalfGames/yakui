@@ -1,10 +1,17 @@
 use yakui::widgets::{List, Panel};
-use yakui::{button, expanded, label, row, textbox, CrossAxisAlignment};
+use yakui::{button, center, column, expanded, label, row, textbox, CrossAxisAlignment};
 
 use crate::ExampleState;
 
 pub fn run(state: &mut ExampleState) {
-    row(|| {
+    column(|| {
+        let panel = Panel::top_bottom();
+        panel.show(|| {
+            center(|| {
+                label("Yakui Game Editor Demo");
+            });
+        });
+
         let panel = Panel::side();
         panel.show(|| {
             let mut column = List::column();
