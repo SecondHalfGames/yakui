@@ -74,8 +74,8 @@ pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<RenderTextWidget> 
 }
 
 /// See [TextBox].
-pub fn textbox<S: Into<String>>(size: f32, text: S) -> Response<TextBoxWidget> {
-    TextBox::new(size, text.into()).show()
+pub fn textbox<S: Into<String>>(text: S) -> Response<TextBoxWidget> {
+    TextBox::new(text.into()).show()
 }
 
 /// See [Flexible].

@@ -1,86 +1,68 @@
-use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 
-use fontdue::layout::{
-    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle as FontdueTextStyle,
-};
+use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Constraints, Rect, Vec2};
+use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
 use crate::font::Fonts;
-use crate::style::{TextAlignment, TextStyle};
+use crate::style::TextStyle;
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
+use super::get_text_layout_size;
+
 /**
-Draws text.
+Text that can be edited.
 
-Responds with [RenderTextResponse].
-
-## Examples
-```rust
-# let _handle = yakui_widgets::DocTest::start();
-# use yakui::widgets::RenderText;
-yakui::label("Default text label style");
-
-yakui::text(32.0, "Custom font size");
-
-let mut text = RenderText::new(32.0, "Title");
-text.style.color = yakui::Color3::RED;
-text.show();
-```
+Responds with [RenderTextBoxResponse].
 */
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
-pub struct RenderText {
-    pub text: Cow<'static, str>,
+pub struct RenderTextBox {
+    pub text: String,
     pub style: TextStyle,
+    pub selected: bool,
+    pub cursor: usize,
 }
 
-impl RenderText {
-    pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
-        let mut style = TextStyle::label();
-        style.font_size = font_size;
-
+impl RenderTextBox {
+    pub fn new<S: Into<String>>(text: S) -> Self {
         Self {
             text: text.into(),
-            style,
-        }
-    }
-
-    pub fn label(text: Cow<'static, str>) -> Self {
-        Self {
-            text,
             style: TextStyle::label(),
+            selected: false,
+            cursor: 0,
         }
     }
 
-    pub fn show(self) -> Response<RenderTextWidget> {
-        widget::<RenderTextWidget>(self)
+    pub fn show(self) -> Response<RenderTextBoxWidget> {
+        widget::<RenderTextBoxWidget>(self)
     }
 }
 
-pub struct RenderTextWidget {
-    props: RenderText,
+pub struct RenderTextBoxWidget {
+    props: RenderTextBox,
+    cursor_pos: RefCell<Vec2>,
     layout: RefCell<Layout>,
 }
 
-pub type RenderTextResponse = ();
+pub type RenderTextBoxResponse = ();
 
-impl Widget for RenderTextWidget {
-    type Props = RenderText;
-    type Response = RenderTextResponse;
+impl Widget for RenderTextBoxWidget {
+    type Props = RenderTextBox;
+    type Response = RenderTextBoxResponse;
 
     fn new() -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Self {
-            props: RenderText::new(0.0, Cow::Borrowed("")),
+            props: RenderTextBox::new(""),
+            cursor_pos: RefCell::new(Vec2::ZERO),
             layout: RefCell::new(layout),
         }
     }
@@ -91,7 +73,6 @@ impl Widget for RenderTextWidget {
 
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let fonts = dom.get_global_or_init(Fonts::default);
-
         let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
             None => {
@@ -99,6 +80,8 @@ impl Widget for RenderTextWidget {
                 return input.min;
             }
         };
+
+        let text = &self.props.text;
 
         let (max_width, max_height) = if input.is_bounded() {
             (
@@ -109,27 +92,38 @@ impl Widget for RenderTextWidget {
             (None, None)
         };
 
-        let fontdue_align = match self.props.style.align {
-            TextAlignment::Start => HorizontalAlign::Left,
-            TextAlignment::Center => HorizontalAlign::Center,
-            TextAlignment::End => HorizontalAlign::Right,
-        };
+        let font_size = self.props.style.font_size * layout.scale_factor();
 
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
             max_width,
             max_height,
-            horizontal_align: fontdue_align,
             ..LayoutSettings::default()
         });
 
+        let before_cursor = &text[..self.props.cursor];
         text_layout.append(
             &[&*font],
-            &FontdueTextStyle::new(
-                &self.props.text,
-                self.props.style.font_size * layout.scale_factor(),
-                0,
-            ),
+            &FontdueTextStyle::new(before_cursor, font_size, 0),
+        );
+
+        let cursor_y = text_layout
+            .lines()
+            .and_then(|lines| lines.last())
+            .map(|line| line.baseline_y - line.max_ascent)
+            .unwrap_or_default();
+        let cursor_x = text_layout
+            .glyphs()
+            .last()
+            .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
+            .unwrap_or_default();
+        let cursor_pos = Vec2::new(cursor_x, cursor_y) / layout.scale_factor();
+        *self.cursor_pos.borrow_mut() = cursor_pos;
+
+        let after_cursor = &text[self.props.cursor..];
+        text_layout.append(
+            &[&*font],
+            &FontdueTextStyle::new(after_cursor, font_size, 0),
         );
 
         let size = get_text_layout_size(&text_layout, layout.scale_factor());
@@ -155,7 +149,7 @@ impl Widget for RenderTextWidget {
 
         for glyph in text_layout.glyphs() {
             let tex_rect = glyph_cache
-                .get_or_insert(paint, &font, glyph.key)
+                .get_or_insert(paint, &*font, glyph.key)
                 .as_rect()
                 .div_vec2(glyph_cache.texture_size.as_vec2());
 
@@ -168,33 +162,23 @@ impl Widget for RenderTextWidget {
             rect.pipeline = Pipeline::Text;
             paint.add_rect(rect);
         }
+
+        if self.props.selected {
+            let cursor_pos = layout_node.rect.pos() + *self.cursor_pos.borrow();
+            let cursor_size = Vec2::new(1.0, self.props.style.font_size);
+
+            let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
+            rect.color = Color3::RED;
+            paint.add_rect(rect);
+        }
     }
 }
 
-impl fmt::Debug for RenderTextWidget {
+impl fmt::Debug for RenderTextBoxWidget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TextComponent")
+        f.debug_struct("RenderTextBoxWidget")
             .field("props", &self.props)
             .field("layout", &"(no debug impl)")
             .finish()
     }
-}
-
-pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> Vec2 {
-    let height = text_layout
-        .lines()
-        .iter()
-        .flat_map(|line_pos_vec| line_pos_vec.iter())
-        .map(|line| line.baseline_y - line.min_descent)
-        .max_by(|a, b| a.total_cmp(b))
-        .unwrap_or_default();
-
-    let width = text_layout
-        .glyphs()
-        .iter()
-        .map(|glyph| glyph.x + glyph.width as f32)
-        .max_by(|a, b| a.total_cmp(b))
-        .unwrap_or_default();
-
-    Vec2::new(width, height) / scale_factor
 }
