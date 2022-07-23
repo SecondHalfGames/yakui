@@ -129,7 +129,7 @@ impl Widget for RenderTextBoxWidget {
         let mut size = get_text_layout_size(&text_layout, layout.scale_factor());
         size = size.max(Vec2::new(0.0, ascent));
 
-        input.constrain_min(size)
+        input.constrain(size)
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
