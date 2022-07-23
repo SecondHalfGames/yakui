@@ -1,0 +1,9 @@
+---
+source: crates/yakui-widgets/tests/snapshot.rs
+assertion_line: 222
+expression: view
+---
+- AlignWidget pos(0, 0) size(1000, 1000)
+  - ColoredBoxWidget pos(0, 0) size(40, 40)
+    - PadWidget pos(0, 0) size(40, 40)
+

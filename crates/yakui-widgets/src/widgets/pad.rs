@@ -86,8 +86,6 @@ impl Widget for PadWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let node = dom.get_current();
 
-        let mut self_size = Vec2::ZERO;
-
         let total_padding = Vec2::new(
             self.props.left + self.props.right,
             self.props.top + self.props.bottom,
@@ -99,11 +97,14 @@ impl Widget for PadWidget {
             max: input.max - total_padding,
         };
 
+        let mut self_size = Vec2::ZERO;
+
         for &child in &node.children {
             self_size = layout.calculate(dom, child, child_constraints) + total_padding;
             layout.set_pos(child, offset);
         }
 
+        self_size = self_size.max(total_padding);
         input.constrain_min(self_size)
     }
 }

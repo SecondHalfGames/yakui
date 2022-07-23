@@ -1,20 +1,23 @@
-use yakui::{CrossAxisAlignment, MainAxisSize};
+use yakui::{CrossAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color3;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
-use yakui_widgets::widgets::{List, UnconstrainedBox};
+use yakui_widgets::widgets::{List, Pad, UnconstrainedBox};
+use yakui_widgets::{
+    align, center, colored_box, colored_box_container, column, expanded, pad, row,
+};
 
 #[test]
-fn colored_box() {
+fn colored_box_basic() {
     run!({
-        yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+        colored_box(Color3::RED, [50.0, 50.0]);
     });
 }
 
 #[test]
-fn column() {
+fn column_basic() {
     run!({
-        yakui_widgets::column(|| {
+        column(|| {
             rect_50x50();
             rect_50x50();
             rect_50x50();
@@ -23,9 +26,9 @@ fn column() {
 }
 
 #[test]
-fn row() {
+fn row_basic() {
     run!({
-        yakui_widgets::row(|| {
+        row(|| {
             rect_50x50();
             rect_50x50();
             rect_50x50();
@@ -36,12 +39,12 @@ fn row() {
 #[test]
 fn row_grow_first() {
     run!({
-        yakui_widgets::row(|| {
-            yakui_widgets::expanded(|| {
-                yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
+        row(|| {
+            expanded(|| {
+                colored_box(Color3::RED, [50.0, 50.0]);
             });
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -49,12 +52,12 @@ fn row_grow_first() {
 #[test]
 fn row_grow_middle() {
     run!({
-        yakui_widgets::row(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::expanded(|| {
-                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+        row(|| {
+            colored_box(Color3::RED, [50.0, 50.0]);
+            expanded(|| {
+                colored_box(Color3::GREEN, [50.0, 50.0]);
             });
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -62,11 +65,11 @@ fn row_grow_middle() {
 #[test]
 fn row_grow_last() {
     run!({
-        yakui_widgets::row(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::expanded(|| {
-                yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+        row(|| {
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            expanded(|| {
+                colored_box(Color3::BLUE, [50.0, 50.0]);
             });
         });
     });
@@ -75,12 +78,12 @@ fn row_grow_last() {
 #[test]
 fn column_grow_middle() {
     run!({
-        yakui_widgets::column(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::expanded(|| {
-                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
+        column(|| {
+            colored_box(Color3::RED, [50.0, 50.0]);
+            expanded(|| {
+                colored_box(Color3::GREEN, [50.0, 50.0]);
             });
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -104,9 +107,9 @@ fn column_cross_stretch() {
         let mut column = List::column();
         column.cross_axis_alignment = CrossAxisAlignment::Stretch;
         column.show(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -117,9 +120,9 @@ fn row_cross_start() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Start;
         row.show(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -130,9 +133,9 @@ fn row_cross_center() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Center;
         row.show(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -143,9 +146,9 @@ fn row_cross_end() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::End;
         row.show(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -156,9 +159,9 @@ fn row_cross_stretch() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Stretch;
         row.show(|| {
-            yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-            yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color3::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -170,10 +173,10 @@ fn row_unconstrained() {
     run!({
         let container = UnconstrainedBox::new();
         container.show(|| {
-            yakui_widgets::row(|| {
-                yakui_widgets::colored_box(Color3::RED, [50.0, 50.0]);
-                yakui_widgets::colored_box(Color3::GREEN, [50.0, 50.0]);
-                yakui_widgets::colored_box(Color3::BLUE, [50.0, 50.0]);
+            row(|| {
+                colored_box(Color3::RED, [50.0, 50.0]);
+                colored_box(Color3::GREEN, [50.0, 50.0]);
+                colored_box(Color3::BLUE, [50.0, 50.0]);
             });
         });
     });
@@ -182,7 +185,7 @@ fn row_unconstrained() {
 #[test]
 fn align_center() {
     run!({
-        yakui_widgets::center(|| {
+        center(|| {
             rect_50x50();
         });
     });
@@ -191,14 +194,42 @@ fn align_center() {
 #[test]
 fn align_bottom_right() {
     run!({
-        yakui_widgets::align(Alignment::BOTTOM_RIGHT, || {
+        align(Alignment::BOTTOM_RIGHT, || {
             rect_50x50();
         });
     });
 }
 
+#[test]
+fn pad_basic() {
+    let padding = Pad::all(20.0);
+
+    run!({
+        align(Alignment::TOP_LEFT, || {
+            colored_box_container(Color3::RED, || {
+                pad(padding, || {
+                    colored_box(Color3::GREEN, Vec2::splat(50.0));
+                });
+            });
+        });
+    });
+}
+
+#[test]
+fn pad_empty() {
+    let padding = Pad::all(20.0);
+
+    run!({
+        align(Alignment::TOP_LEFT, || {
+            colored_box_container(Color3::RED, || {
+                pad(padding, || {});
+            });
+        });
+    });
+}
+
 fn rect<V: Dim>(w: V, h: V) {
-    yakui_widgets::colored_box(Color3::WHITE, [w.to_f32(), h.to_f32()]);
+    colored_box(Color3::WHITE, [w.to_f32(), h.to_f32()]);
 }
 
 fn rect_50x50() {
