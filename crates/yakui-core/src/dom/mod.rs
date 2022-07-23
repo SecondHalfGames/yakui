@@ -52,6 +52,10 @@ impl Dom {
     /// End the DOM's build phase.
     pub fn finish(&self) {
         log::debug!("Dom::finish()");
+
+        let mut nodes = self.inner.nodes.borrow_mut();
+        let root = self.inner.root;
+        trim_children(&mut nodes, root);
     }
 
     /// Gives the root widget in the DOM. This widget will always exist.
