@@ -24,4 +24,6 @@ pub enum KeyboardKey {
     Return,
     Left,
     Right,
+    Home,
+    End,
 }

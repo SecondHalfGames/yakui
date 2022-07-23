@@ -11,6 +11,8 @@ pub fn from_winit_key(key: VirtualKeyCode) -> Option<KeyboardKey> {
         VirtualKeyCode::Left => KeyboardKey::Left,
         VirtualKeyCode::Right => KeyboardKey::Right,
         VirtualKeyCode::Escape => KeyboardKey::Escape,
+        VirtualKeyCode::Home => KeyboardKey::Home,
+        VirtualKeyCode::End => KeyboardKey::End,
         _ => return None,
     })
 }

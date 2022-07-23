@@ -110,49 +110,49 @@ impl Widget for TextBoxWidget {
                 context::capture_selection();
                 EventResponse::Sink
             }
-            WidgetEvent::KeyChanged(KeyboardKey::Left, true) => {
-                let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
 
-                loop {
-                    self.cursor = self.cursor.saturating_sub(1);
-                    if text.is_char_boundary(self.cursor) {
-                        break;
-                    }
+            WidgetEvent::KeyChanged(key, true) => match key {
+                KeyboardKey::Left => {
+                    self.move_cursor(-1);
+                    EventResponse::Sink
                 }
 
-                EventResponse::Sink
-            }
-            WidgetEvent::KeyChanged(KeyboardKey::Right, true) => {
-                let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
-
-                loop {
-                    self.cursor += 1;
-                    self.cursor = self.cursor.min(self.props.text.len());
-                    if text.is_char_boundary(self.cursor) {
-                        break;
-                    }
+                KeyboardKey::Right => {
+                    self.move_cursor(1);
+                    EventResponse::Sink
                 }
 
-                EventResponse::Sink
-            }
-            WidgetEvent::KeyChanged(KeyboardKey::Backspace, true) => {
-                let text = self
-                    .updated_text
-                    .get_or_insert_with(|| self.props.text.clone());
-
-                if self.cursor == 0 {
-                    return EventResponse::Sink;
+                KeyboardKey::Backspace => {
+                    self.delete(-1);
+                    EventResponse::Sink
                 }
 
-                let start = self.cursor - 1;
-                let c = text.remove(start);
-                self.cursor = self.cursor.saturating_sub(c.len_utf8());
-                EventResponse::Sink
-            }
-            WidgetEvent::KeyChanged(KeyboardKey::Escape, true) => {
-                context::remove_selection();
-                EventResponse::Sink
-            }
+                KeyboardKey::Delete => {
+                    self.delete(1);
+                    EventResponse::Sink
+                }
+
+                KeyboardKey::Home => {
+                    self.home();
+                    EventResponse::Sink
+                }
+
+                KeyboardKey::End => {
+                    self.end();
+                    EventResponse::Sink
+                }
+
+                KeyboardKey::Return => {
+                    context::remove_selection();
+                    EventResponse::Sink
+                }
+
+                KeyboardKey::Escape => {
+                    context::remove_selection();
+                    EventResponse::Sink
+                }
+                _ => EventResponse::Bubble,
+            },
             WidgetEvent::TextInput(c) => {
                 if c.is_control() {
                     return EventResponse::Bubble;
@@ -174,5 +174,63 @@ impl Widget for TextBoxWidget {
             }
             _ => EventResponse::Bubble,
         }
+    }
+}
+
+impl TextBoxWidget {
+    fn move_cursor(&mut self, delta: i32) {
+        let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+        let mut cursor = self.cursor as i32;
+        let mut remaining = delta.abs();
+
+        while remaining > 0 {
+            cursor = cursor.saturating_add(delta.signum());
+            cursor = cursor.min(self.props.text.len() as i32);
+            cursor = cursor.max(0);
+            self.cursor = cursor as usize;
+
+            if text.is_char_boundary(self.cursor) {
+                remaining -= 1;
+            }
+        }
+    }
+
+    fn home(&mut self) {
+        self.cursor = 0;
+    }
+
+    fn end(&mut self) {
+        let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+        self.cursor = text.len();
+    }
+
+    fn delete(&mut self, dir: i32) {
+        let text = self
+            .updated_text
+            .get_or_insert_with(|| self.props.text.clone());
+
+        let anchor = self.cursor as i32;
+        let mut end = anchor;
+        let mut remaining = dir.abs();
+        let mut len = 0;
+
+        while remaining > 0 {
+            end = end.saturating_add(dir.signum());
+            end = end.min(self.props.text.len() as i32);
+            end = end.max(0);
+            len += 1;
+
+            if text.is_char_boundary(end as usize) {
+                remaining -= 1;
+            }
+        }
+
+        if dir < 0 {
+            self.cursor = self.cursor.saturating_sub(len);
+        }
+
+        let min = anchor.min(end) as usize;
+        let max = anchor.max(end) as usize;
+        text.replace_range(min..max, "");
     }
 }
