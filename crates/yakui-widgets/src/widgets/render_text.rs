@@ -18,22 +18,8 @@ use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
 /**
-Draws text.
-
-Responds with [RenderTextResponse].
-
-## Examples
-```rust
-# let _handle = yakui_widgets::DocTest::start();
-# use yakui::widgets::RenderText;
-yakui::label("Default text label style");
-
-yakui::text(32.0, "Custom font size");
-
-let mut text = RenderText::new(32.0, "Title");
-text.style.color = yakui::Color3::RED;
-text.show();
-```
+Renders text. You probably want to use [Text][super::Text] instead, which
+supports features like padding.
 */
 #[derive(Debug)]
 #[non_exhaustive]
@@ -43,14 +29,11 @@ pub struct RenderText {
 }
 
 impl RenderText {
-    pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
+    pub fn new(size: f32, text: Cow<'static, str>) -> Self {
         let mut style = TextStyle::label();
-        style.font_size = font_size;
+        style.font_size = size;
 
-        Self {
-            text: text.into(),
-            style,
-        }
+        Self { text, style }
     }
 
     pub fn label(text: Cow<'static, str>) -> Self {

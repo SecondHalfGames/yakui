@@ -11,8 +11,7 @@ use yakui_core::{Alignment, Response, TextureId};
 use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
     ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Flexible, FlexibleWidget, Image,
-    ImageWidget, List, ListWidget, Pad, PadWidget, RenderText, RenderTextWidget, TextBox,
-    TextBoxWidget,
+    ImageWidget, List, ListWidget, Pad, PadWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -64,13 +63,13 @@ pub fn pad<F: FnOnce()>(padding: Pad, children: F) -> Response<PadWidget> {
 }
 
 /// See [Text].
-pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> Response<RenderTextWidget> {
-    RenderText::new(size, text.into()).show()
+pub fn text<S: Into<Cow<'static, str>>>(size: f32, text: S) -> Response<TextWidget> {
+    Text::new(size, text.into()).show()
 }
 
 /// See [Text].
-pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<RenderTextWidget> {
-    RenderText::label(text.into()).show()
+pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<TextWidget> {
+    Text::label(text.into()).show()
 }
 
 /// See [TextBox].

@@ -17,7 +17,7 @@ use crate::util::widget;
 use super::get_text_layout_size;
 
 /**
-Text that can be edited.
+Rendering and layout logic for a textbox, holding no state.
 
 Responds with [RenderTextBoxResponse].
 */
