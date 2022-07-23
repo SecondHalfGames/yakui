@@ -50,20 +50,12 @@ async fn run() {
         .build(&event_loop)
         .unwrap();
 
-    // yakui_app has a helper for setting up wgpu.
+    // yakui_app has a helper for setting up winit and wgpu.
     let mut graphics = yakui_app::Graphics::new(&window).await;
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
     let mut yak = yakui::State::new();
-
-    // yakui_wgpu takes paint output from yakui and renders it for us using
-    // wgpu.
-    let mut yak_renderer =
-        yakui_wgpu::State::new(&graphics.device, &graphics.queue, graphics.surface_format());
-
-    // yakui_winit processes winit events and applies them to our yakui state.
-    let mut yak_window = yakui_winit::State::new(&window);
 
     // By default, yakui_winit will measure the system's scale factor and pass
     // it to yakui.
@@ -75,7 +67,7 @@ async fn run() {
     // In these examples, setting the YAKUI_FORCE_SCALE environment variable to
     // a number will override the automatic scaling.
     if let Some(scale) = get_scale_override() {
-        yak_window.set_automatic_scale_factor(false);
+        graphics.window_mut().set_automatic_scale_factor(false);
         yak.set_scale_factor(scale);
     }
 
@@ -104,14 +96,7 @@ async fn run() {
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
-        // yakui_winit will return whether it handled an event. This means that
-        // yakui believes it should handle that event exclusively, like if a
-        // button in the UI was clicked.
-        if yak_window.handle_event(&mut yak, &event) {
-            return;
-        }
-
-        if graphics.handle_event(&event, control_flow) {
+        if graphics.handle_event(&mut yak, &event, control_flow) {
             return;
         }
 
@@ -135,7 +120,7 @@ async fn run() {
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
                 // about how to paint widgets.
-                graphics.paint(&mut yak, &mut yak_renderer, {
+                graphics.paint(&mut yak, {
                     let bg = yakui::colors::BACKGROUND_1.to_linear();
                     wgpu::Color {
                         r: bg.x.into(),

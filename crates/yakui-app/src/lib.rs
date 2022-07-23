@@ -14,6 +14,9 @@ pub struct Graphics {
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
 
+    window: yakui_winit::State,
+    renderer: yakui_wgpu::State,
+
     /// Tracks whether winit is still initializing
     is_init: bool,
 }
@@ -61,6 +64,14 @@ impl Graphics {
         };
         surface.configure(&device, &surface_config);
 
+        // yakui_wgpu takes paint output from yakui and renders it for us using
+        // wgpu.
+        let renderer = yakui_wgpu::State::new(&device, &queue, surface_config.format);
+
+        // yakui_winit processes winit events and applies them to our yakui
+        // state.
+        let window = yakui_winit::State::new(&window);
+
         Self {
             device,
             queue,
@@ -69,8 +80,19 @@ impl Graphics {
             surface_config,
             size,
 
+            renderer,
+            window,
+
             is_init: true,
         }
+    }
+
+    pub fn renderer_mut(&mut self) -> &mut yakui_wgpu::State {
+        &mut self.renderer
+    }
+
+    pub fn window_mut(&mut self) -> &mut yakui_winit::State {
+        &mut self.window
     }
 
     pub fn surface_format(&self) -> wgpu::TextureFormat {
@@ -87,12 +109,7 @@ impl Graphics {
     }
 
     #[cfg_attr(feature = "profiling", profiling::function)]
-    pub fn paint(
-        &self,
-        yak: &mut yakui_core::State,
-        yak_renderer: &mut yakui_wgpu::State,
-        bg: wgpu::Color,
-    ) {
+    pub fn paint(&mut self, yak: &mut yakui_core::State, bg: wgpu::Color) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,
@@ -124,7 +141,7 @@ impl Graphics {
         }
 
         let clear = encoder.finish();
-        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, &view);
+        let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, &view);
 
         self.queue.submit([clear, paint_yak]);
         output.present();
@@ -132,9 +149,17 @@ impl Graphics {
 
     pub fn handle_event<T>(
         &mut self,
+        yak: &mut yakui::State,
         event: &Event<T>,
         control_flow: &mut ControlFlow,
     ) -> bool {
+        // yakui_winit will return whether it handled an event. This means that
+        // yakui believes it should handle that event exclusively, like if a
+        // button in the UI was clicked.
+        if self.window.handle_event(yak, &event) {
+            return true;
+        }
+
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
