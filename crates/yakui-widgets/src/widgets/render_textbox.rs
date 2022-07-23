@@ -47,7 +47,7 @@ impl RenderTextBox {
 
 pub struct RenderTextBoxWidget {
     props: RenderTextBox,
-    cursor_pos: RefCell<Vec2>,
+    cursor_pos_size: RefCell<(Vec2, f32)>,
     layout: RefCell<Layout>,
 }
 
@@ -62,7 +62,7 @@ impl Widget for RenderTextBoxWidget {
 
         Self {
             props: RenderTextBox::new(""),
-            cursor_pos: RefCell::new(Vec2::ZERO),
+            cursor_pos_size: RefCell::new((Vec2::ZERO, 0.0)),
             layout: RefCell::new(layout),
         }
     }
@@ -107,18 +107,18 @@ impl Widget for RenderTextBoxWidget {
             &FontdueTextStyle::new(before_cursor, font_size, 0),
         );
 
-        let cursor_y = text_layout
-            .lines()
-            .and_then(|lines| lines.last())
-            .map(|line| line.baseline_y - line.max_ascent)
-            .unwrap_or_default();
+        let metrics = font.vertical_line_metrics(font_size);
+        let ascent = metrics.map(|m| m.ascent).unwrap_or(font_size);
+        let cursor_size = ascent;
+
+        let cursor_y = 0.0;
         let cursor_x = text_layout
             .glyphs()
             .last()
             .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
             .unwrap_or_default();
         let cursor_pos = Vec2::new(cursor_x, cursor_y) / layout.scale_factor();
-        *self.cursor_pos.borrow_mut() = cursor_pos;
+        *self.cursor_pos_size.borrow_mut() = (cursor_pos, cursor_size);
 
         let after_cursor = &text[self.props.cursor..];
         text_layout.append(
@@ -126,7 +126,8 @@ impl Widget for RenderTextBoxWidget {
             &FontdueTextStyle::new(after_cursor, font_size, 0),
         );
 
-        let size = get_text_layout_size(&text_layout, layout.scale_factor());
+        let mut size = get_text_layout_size(&text_layout, layout.scale_factor());
+        size = size.max(Vec2::new(0.0, ascent));
 
         input.constrain_min(size)
     }
@@ -164,8 +165,10 @@ impl Widget for RenderTextBoxWidget {
         }
 
         if self.props.selected {
-            let cursor_pos = layout_node.rect.pos() + *self.cursor_pos.borrow();
-            let cursor_size = Vec2::new(1.0, self.props.style.font_size);
+            let (pos, size) = *self.cursor_pos_size.borrow();
+
+            let cursor_pos = layout_node.rect.pos() + pos;
+            let cursor_size = Vec2::new(1.0, size);
 
             let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
             rect.color = Color3::RED;
