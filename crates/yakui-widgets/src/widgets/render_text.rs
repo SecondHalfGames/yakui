@@ -2,85 +2,83 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 
-use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle};
+use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
+use yakui_core::geometry::{Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
-use crate::font::{FontName, Fonts};
+use crate::font::Fonts;
+use crate::style::TextStyle;
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
 /**
 Draws text.
 
-Responds with [TextResponse].
+Responds with [RenderTextResponse].
 
 ## Examples
 ```rust
 # let _handle = yakui_widgets::DocTest::start();
-# use yakui::widgets::Text;
+# use yakui::widgets::RenderText;
 yakui::label("Default text label style");
 
 yakui::text(32.0, "Custom font size");
 
-let mut text = Text::new(32.0, "Title");
-text.color = yakui::Color3::RED;
+let mut text = RenderText::new(32.0, "Title");
+text.style.color = yakui::Color3::RED;
 text.show();
 ```
 */
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
-pub struct Text {
+pub struct RenderText {
     pub text: Cow<'static, str>,
-    pub color: Color3,
-    pub font: FontName,
-    pub font_size: f32,
+    pub style: TextStyle,
 }
 
-impl Text {
+impl RenderText {
     pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
+        let mut style = TextStyle::label();
+        style.font_size = font_size;
+
         Self {
             text: text.into(),
-            color: Color3::WHITE,
-            font: FontName::new("default"),
-            font_size,
+            style,
         }
     }
 
     pub fn label(text: Cow<'static, str>) -> Self {
         Self {
             text,
-            color: Color3::WHITE,
-            font: FontName::new("default"),
-            font_size: 14.0,
+            style: TextStyle::label(),
         }
     }
 
-    pub fn show(self) -> Response<TextWidget> {
-        widget::<TextWidget>(self)
+    pub fn show(self) -> Response<RenderTextWidget> {
+        widget::<RenderTextWidget>(self)
     }
 }
 
-pub struct TextWidget {
-    props: Text,
+pub struct RenderTextWidget {
+    props: RenderText,
     layout: RefCell<Layout>,
 }
 
-pub type TextResponse = ();
+pub type RenderTextResponse = ();
 
-impl Widget for TextWidget {
-    type Props = Text;
-    type Response = TextResponse;
+impl Widget for RenderTextWidget {
+    type Props = RenderText;
+    type Response = RenderTextResponse;
 
     fn new() -> Self {
         let layout = Layout::new(CoordinateSystem::PositiveYDown);
 
         Self {
-            props: Text::new(0.0, Cow::Borrowed("")),
+            props: RenderText::new(0.0, Cow::Borrowed("")),
             layout: RefCell::new(layout),
         }
     }
@@ -92,7 +90,7 @@ impl Widget for TextWidget {
     fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
         let fonts = dom.get_global_or_init(Fonts::default);
 
-        let font = match fonts.get(&self.props.font) {
+        let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
             None => {
                 // TODO: Log once that we were unable to find this font.
@@ -118,9 +116,9 @@ impl Widget for TextWidget {
 
         text_layout.append(
             &[&*font],
-            &TextStyle::new(
+            &FontdueTextStyle::new(
                 &self.props.text,
-                self.props.font_size * layout.scale_factor(),
+                self.props.style.font_size * layout.scale_factor(),
                 0,
             ),
         );
@@ -140,7 +138,7 @@ impl Widget for TextWidget {
         let fonts = dom.get_global_or_init(Fonts::default);
         let global = dom.get_global_or_init(TextGlobalState::new);
 
-        let font = match fonts.get(&self.props.font) {
+        let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
             None => return,
         };
@@ -162,7 +160,7 @@ impl Widget for TextWidget {
             let pos = layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
 
             let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
-            rect.color = self.props.color;
+            rect.color = self.props.style.color;
             rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
             rect.pipeline = Pipeline::Text;
             paint.add_rect(rect);
@@ -170,7 +168,7 @@ impl Widget for TextWidget {
     }
 }
 
-impl fmt::Debug for TextWidget {
+impl fmt::Debug for RenderTextWidget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("TextComponent")
             .field("props", &self.props)

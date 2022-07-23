@@ -1,4 +1,4 @@
-use yakui::{Alignment, Color3};
+use yakui::{align, colored_box, Alignment, Color3};
 
 use crate::ExampleState;
 
@@ -18,7 +18,7 @@ pub fn run(state: &mut ExampleState) {
     let index = (state.time as usize) % ALIGNMENTS.len();
     let alignment = ALIGNMENTS[index];
 
-    yakui::align(alignment, || {
-        yakui::colored_box(Color3::REBECCA_PURPLE, [100.0, 100.0]);
+    align(alignment, || {
+        colored_box(Color3::REBECCA_PURPLE, [100.0, 100.0]);
     });
 }

@@ -1,18 +1,18 @@
-use yakui::widgets::Text;
-use yakui::Color3;
+use yakui::widgets::RenderText;
+use yakui::{column, label, row, text, Color3};
 
 use crate::ExampleState;
 
 pub fn run(_state: &mut ExampleState) {
-    yakui::column(|| {
-        yakui::row(|| {
-            yakui::label("Hello, world!");
+    column(|| {
+        row(|| {
+            label("Hello, world!");
 
-            let mut text = Text::new(48.0, "colored text!");
-            text.color = Color3::RED;
+            let mut text = RenderText::new(48.0, "colored text!");
+            text.style.color = Color3::RED;
             text.show();
         });
 
-        yakui::text(96.0, "yakui text demo!");
+        text(96.0, "yakui text demo!");
     });
 }
