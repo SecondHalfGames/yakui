@@ -1,0 +1,20 @@
+[package]
+name = "yakui-app"
+description = "Wrapper crate for yakui, a UI library for games"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/LPGhatguy/yakui"
+edition = "2021"
+
+[features]
+
+[dependencies]
+yakui = { path = "../yakui", version = "0.1.0" }
+yakui-core = { path = "../yakui-core", version = "0.1.0" }
+yakui-widgets = { path = "../yakui-widgets", version = "0.1.0", default-features = false }
+yakui-winit = { path = "../yakui-winit", version = "0.1.0" }
+yakui-wgpu = { path = "../yakui-wgpu", version = "0.1.0" }
+
+profiling = { version = "1.0.6", optional = true }
+wgpu = "0.13.1"
+winit = "0.26.1"

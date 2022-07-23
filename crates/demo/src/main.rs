@@ -1,15 +1,13 @@
 mod examples;
-mod graphics;
 
 use std::time::Instant;
 
 use clap::Parser;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, StartCause, WindowEvent};
+use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
-use graphics::Graphics;
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFormat};
 use yakui::{TextureId, UVec2};
@@ -52,20 +50,12 @@ async fn run() {
         .build(&event_loop)
         .unwrap();
 
-    // The demo app has a small graphics abstraction using wgpu.
-    let mut graphics = Graphics::new(&window).await;
+    // yakui_app has a helper for setting up winit and wgpu.
+    let mut graphics = yakui_app::Graphics::new(&window).await;
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
     let mut yak = yakui::State::new();
-
-    // yakui_wgpu takes paint output from yakui and renders it for us using
-    // wgpu.
-    let mut yak_renderer =
-        yakui_wgpu::State::new(&graphics.device, &graphics.queue, graphics.surface_format());
-
-    // yakui_winit processes winit events and applies them to our yakui state.
-    let mut yak_window = yakui_winit::State::new(&window);
 
     // By default, yakui_winit will measure the system's scale factor and pass
     // it to yakui.
@@ -77,7 +67,7 @@ async fn run() {
     // In these examples, setting the YAKUI_FORCE_SCALE environment variable to
     // a number will override the automatic scaling.
     if let Some(scale) = get_scale_override() {
-        yak_window.set_automatic_scale_factor(false);
+        graphics.window_mut().set_automatic_scale_factor(false);
         yak.set_scale_factor(scale);
     }
 
@@ -102,15 +92,11 @@ async fn run() {
     };
 
     let start = Instant::now();
-    let mut is_init = false;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
-        // yakui_winit will return whether it handled an event. This means that
-        // yakui believes it should handle that event exclusively, like if a
-        // button in the UI was clicked.
-        if yak_window.handle_event(&mut yak, &event) {
+        if graphics.handle_event(&mut yak, &event, control_flow) {
             return;
         }
 
@@ -134,7 +120,15 @@ async fn run() {
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
                 // about how to paint widgets.
-                graphics.paint(&mut yak, &mut yak_renderer);
+                graphics.paint(&mut yak, {
+                    let bg = yakui::colors::BACKGROUND_1.to_linear();
+                    wgpu::Color {
+                        r: bg.x.into(),
+                        g: bg.y.into(),
+                        b: bg.z.into(),
+                        a: 1.0,
+                    }
+                });
 
                 profiling::finish_frame!();
             }
@@ -149,44 +143,6 @@ async fn run() {
                 if button == winit::event::MouseButton::Left {
                     println!("Left mouse button {state:?}");
                 }
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                *control_flow = ControlFlow::Exit;
-            }
-
-            Event::NewEvents(cause) => {
-                if cause == StartCause::Init {
-                    is_init = true;
-                } else {
-                    is_init = false;
-                }
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
-                // Ignore any resize events that happen during Winit's
-                // initialization in order to avoid racing the wgpu swapchain
-                // and causing issues.
-                //
-                // https://github.com/rust-windowing/winit/issues/2094
-                if is_init {
-                    return;
-                }
-
-                graphics.resize(size);
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
-                ..
-            } => {
-                graphics.resize(*new_inner_size);
             }
 
             _ => (),

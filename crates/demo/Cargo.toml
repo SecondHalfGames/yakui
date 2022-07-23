@@ -9,6 +9,7 @@ profile = ["profiling/profile-with-tracy", "tracy-client"]
 
 [dependencies]
 yakui = { path = "../yakui" }
+yakui-app = { path = "../yakui-app" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 yakui-winit = { path = "../yakui-winit" }
 
