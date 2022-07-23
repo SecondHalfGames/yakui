@@ -1,4 +1,9 @@
-use winit::{dpi::PhysicalSize, window::Window};
+use winit::{
+    dpi::PhysicalSize,
+    event::{Event, StartCause, WindowEvent},
+    event_loop::ControlFlow,
+    window::Window,
+};
 
 /// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
@@ -8,6 +13,9 @@ pub struct Graphics {
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
+
+    /// Tracks whether winit is still initializing
+    is_init: bool,
 }
 
 impl Graphics {
@@ -60,6 +68,8 @@ impl Graphics {
             surface,
             surface_config,
             size,
+
+            is_init: true,
         }
     }
 
@@ -118,5 +128,57 @@ impl Graphics {
 
         self.queue.submit([clear, paint_yak]);
         output.present();
+    }
+
+    pub fn handle_event<T>(
+        &mut self,
+        event: &Event<T>,
+        control_flow: &mut ControlFlow,
+    ) -> bool {
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => {
+                *control_flow = ControlFlow::Exit;
+                true
+            }
+
+            Event::NewEvents(cause) => {
+                if *cause == StartCause::Init {
+                    self.is_init = true;
+                } else {
+                    self.is_init = false;
+                }
+                true
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::Resized(size),
+                ..
+            } => {
+                // Ignore any resize events that happen during Winit's
+                // initialization in order to avoid racing the wgpu swapchain
+                // and causing issues.
+                //
+                // https://github.com/rust-windowing/winit/issues/2094
+                if self.is_init {
+                    return true;
+                }
+
+                self.resize(*size);
+                true
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
+                ..
+            } => {
+                self.resize(**new_inner_size);
+                true
+            }
+
+            _ => false,
+        }
     }
 }

@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use winit::dpi::LogicalSize;
-use winit::event::{Event, StartCause, WindowEvent};
+use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
@@ -100,7 +100,6 @@ async fn run() {
     };
 
     let start = Instant::now();
-    let mut is_init = false;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -109,6 +108,10 @@ async fn run() {
         // yakui believes it should handle that event exclusively, like if a
         // button in the UI was clicked.
         if yak_window.handle_event(&mut yak, &event) {
+            return;
+        }
+
+        if graphics.handle_event(&event, control_flow) {
             return;
         }
 
@@ -155,44 +158,6 @@ async fn run() {
                 if button == winit::event::MouseButton::Left {
                     println!("Left mouse button {state:?}");
                 }
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                *control_flow = ControlFlow::Exit;
-            }
-
-            Event::NewEvents(cause) => {
-                if cause == StartCause::Init {
-                    is_init = true;
-                } else {
-                    is_init = false;
-                }
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
-                // Ignore any resize events that happen during Winit's
-                // initialization in order to avoid racing the wgpu swapchain
-                // and causing issues.
-                //
-                // https://github.com/rust-windowing/winit/issues/2094
-                if is_init {
-                    return;
-                }
-
-                graphics.resize(size);
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
-                ..
-            } => {
-                graphics.resize(*new_inner_size);
             }
 
             _ => (),

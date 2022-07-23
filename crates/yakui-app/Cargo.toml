@@ -9,6 +9,7 @@ edition = "2021"
 [features]
 
 [dependencies]
+yakui = { path = "../yakui", version = "0.1.0" }
 yakui-core = { path = "../yakui-core", version = "0.1.0" }
 yakui-widgets = { path = "../yakui-widgets", version = "0.1.0", default-features = false }
 yakui-winit = { path = "../yakui-winit", version = "0.1.0" }
