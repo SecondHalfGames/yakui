@@ -87,11 +87,16 @@ impl Widget for AlignWidget {
 
         // FIXME: Align should behave when given unbounded constraints.
         // Currently, this will cause Align's child to be pushed off the screen.
-        let self_size = input.max;
+        let mut self_size = if input.max.is_finite() {
+            input.max
+        } else {
+            input.min
+        };
         let align = self.props.alignment.as_vec2();
 
         for &child in &node.children {
             let child_size = layout.calculate(dom, child, constraints);
+            self_size = self_size.max(child_size);
             layout.set_pos(child, align * self_size - align * child_size);
         }
 
