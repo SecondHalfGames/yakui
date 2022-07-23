@@ -3,7 +3,7 @@
     <p>yakui is a declarative Rust UI library for games.</p>
 </div>
 
-**yakui is an early work in progress. Feedback is welcome, but mind the dragons, sharp edges, and exposed nails!**
+**yakui is a work in progress. Feedback is welcome, but mind the dragons, sharp edges, and exposed nails!**
 
 yakui combines a layout model inspired by [Flutter] with the ease-of-use of an immediate mode UI library like [Dear Imgui] or [egui].
 
@@ -12,6 +12,11 @@ yakui has the following priorities:
 1. Flexibility — yakui must be able to represent any widget
 2. Ergonomics — yakui must be terse, but must enable the user to go outside the box
 3. Performance — yakui must be fast enough to use in a shipping game
+
+<div align="center">
+    <div><img id="panels" src="assets/panels-demo.png" /></div>
+    <label for="#panels">yakui <code>panels</code> demo — <code>cargo run panels</code></label>
+</div>
 
 [Flutter]: https://flutter.dev/
 [Dear Imgui]: https://github.com/ocornut/imgui
@@ -160,6 +165,13 @@ The `yakui-wgpu` crate is a yakui renderer that uses [wgpu].
 
 [`yakui-wgpu`]: https://crates.io/crates/yakui-wgpu
 [wgpu]: https://wgpu.rs/
+
+### [`yakui-app`]
+The `yakui-app` crate is a wrapper around `yakui-winit` and `yakui-wgpu` intended to make getting started with yakui easier.
+
+If you are writing your own integration for yakui, this crate is intended to be a good learning resource.
+
+[`yakui-app`]: https://crates.io/crates/yakui-app
 
 ## Name
 yakui is all lowercase.
