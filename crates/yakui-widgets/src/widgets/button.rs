@@ -4,11 +4,14 @@ use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Color3;
 use yakui_core::input::MouseButton;
 use yakui_core::widget::Widget;
-use yakui_core::Response;
+use yakui_core::{Alignment, Response};
 
 use crate::colors;
+use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
+
+use super::RenderText;
 
 /**
 A button containing some text.
@@ -23,10 +26,11 @@ if yakui::button("Hello").clicked {
 }
 ```
 */
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct Button {
     pub text: Cow<'static, str>,
+    pub text_style: TextStyle,
     pub padding: Pad,
     pub fill: Color3,
     pub hover_fill: Option<Color3>,
@@ -35,8 +39,12 @@ pub struct Button {
 
 impl Button {
     pub fn unstyled(text: Cow<'static, str>) -> Self {
+        let mut text_style = TextStyle::label();
+        text_style.align = TextAlignment::Center;
+
         Self {
             text,
+            text_style,
             padding: Pad::ZERO,
             fill: Color3::GRAY,
             hover_fill: None,
@@ -45,8 +53,12 @@ impl Button {
     }
 
     pub fn styled(text: Cow<'static, str>) -> Self {
+        let mut text_style = TextStyle::label();
+        text_style.align = TextAlignment::Center;
+
         Self {
             text,
+            text_style,
             padding: Pad::balanced(20.0, 10.0),
             fill: colors::BACKGROUND_3,
             hover_fill: Some(colors::BACKGROUND_3.adjust(1.2)),
@@ -97,9 +109,19 @@ impl Widget for ButtonWidget {
             color = hover
         }
 
+        let alignment = match self.props.text_style.align {
+            TextAlignment::Start => Alignment::CENTER_LEFT,
+            TextAlignment::Center => Alignment::CENTER,
+            TextAlignment::End => Alignment::CENTER_RIGHT,
+        };
+
         crate::colored_box_container(color, || {
             crate::pad(self.props.padding, || {
-                crate::text(16.0, self.props.text.clone());
+                crate::align(alignment, || {
+                    let mut text = RenderText::label(self.props.text.clone());
+                    text.style = self.props.text_style.clone();
+                    text.show();
+                });
             });
         });
 

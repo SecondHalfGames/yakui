@@ -1,23 +1,29 @@
-use yakui::widgets::Pad;
+use yakui::widgets::{Button, Pad};
+use yakui::{button, column, pad, row, Color3};
 
 use crate::ExampleState;
 
 pub fn run(_state: &mut ExampleState) {
-    yakui::column(|| {
-        let res = yakui::button("First button");
+    column(|| {
+        let res = button("First button");
         if res.clicked {
             println!("Clicked the first button!");
         }
 
         let padding = Pad::all(8.0);
-        yakui::pad(padding, || {
-            yakui::row(|| {
-                yakui::button("Hello");
-                yakui::button("World");
-                yakui::button("I'm Yakui!");
+        pad(padding, || {
+            row(|| {
+                button("Hello");
+
+                let mut big_button = Button::styled("World".into());
+                big_button.text_style.color = Color3::RED;
+                big_button.text_style.font_size = 30.0;
+                big_button.show();
+
+                button("I'm Yakui!");
             });
         });
 
-        yakui::button("Sincerely, Yakui");
+        button("Sincerely, Yakui");
     });
 }
