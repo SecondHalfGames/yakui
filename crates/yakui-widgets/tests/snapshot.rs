@@ -37,6 +37,32 @@ fn row_basic() {
 }
 
 #[test]
+fn column_item_spacing() {
+    run!({
+        let mut container = List::column();
+        container.item_spacing = 10.0;
+        container.show(|| {
+            rect_50x50();
+            rect_50x50();
+            rect_50x50();
+        });
+    });
+}
+
+#[test]
+fn row_item_spacing() {
+    run!({
+        let mut container = List::row();
+        container.item_spacing = 10.0;
+        container.show(|| {
+            rect_50x50();
+            rect_50x50();
+            rect_50x50();
+        });
+    });
+}
+
+#[test]
 fn row_grow_first() {
     run!({
         row(|| {

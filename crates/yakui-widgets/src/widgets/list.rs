@@ -31,6 +31,7 @@ yakui::row(|| {
 #[non_exhaustive]
 pub struct List {
     pub direction: Direction,
+    pub item_spacing: f32,
     pub main_axis_size: MainAxisSize,
     pub main_axis_alignment: MainAxisAlignment,
     pub cross_axis_alignment: CrossAxisAlignment,
@@ -40,6 +41,7 @@ impl List {
     pub fn new(direction: Direction) -> Self {
         Self {
             direction,
+            item_spacing: 0.0,
             main_axis_size: MainAxisSize::Max,
             main_axis_alignment: MainAxisAlignment::Start,
             cross_axis_alignment: CrossAxisAlignment::Start,
@@ -85,7 +87,9 @@ impl Widget for ListWidget {
         let node = dom.get_current();
         let direction = self.props.direction;
 
-        let mut total_main_axis_size = 0.0;
+        let total_item_spacing = self.props.item_spacing * (node.children.len() - 1) as f32;
+
+        let mut total_main_axis_size = total_item_spacing;
         let mut max_cross_axis_size = 0.0;
 
         let cross_axis_max = direction.get_cross_axis(input.max);
@@ -178,6 +182,7 @@ impl Widget for ListWidget {
             child_layout.rect.set_pos(direction.vec2(next_main, cross));
 
             next_main += child_main;
+            next_main += self.props.item_spacing;
         }
 
         let main_axis_size = match self.props.main_axis_size {
