@@ -85,12 +85,12 @@ impl Widget for AlignWidget {
         // enforced by the incoming constraints.
         let constraints = Constraints::loose(input.max);
 
-        // FIXME: Align should behave when given unbounded constraints.
-        // Currently, this will cause Align's child to be pushed off the screen.
         let mut self_size = if input.max.is_finite() {
             input.max
-        } else {
+        } else if input.min.is_finite() {
             input.min
+        } else {
+            Vec2::ZERO
         };
         let align = self.props.alignment.as_vec2();
 
