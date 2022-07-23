@@ -2,3 +2,4 @@
 /Cargo.lock
 
 **/snapshot-images
+**/*.snap.new

@@ -102,6 +102,21 @@ fn row_grow_last() {
 }
 
 #[test]
+fn row_grow_middle_spacing() {
+    run!({
+        let mut container = List::row();
+        container.item_spacing = 10.0;
+        container.show(|| {
+            colored_box(Color3::RED, [50.0, 50.0]);
+            expanded(|| {
+                colored_box(Color3::GREEN, [50.0, 50.0]);
+            });
+            colored_box(Color3::BLUE, [50.0, 50.0]);
+        });
+    });
+}
+
+#[test]
 fn column_grow_middle() {
     run!({
         column(|| {
