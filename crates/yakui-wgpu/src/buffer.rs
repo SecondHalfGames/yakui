@@ -42,6 +42,8 @@ impl Buffer {
         I::IntoIter: ExactSizeIterator,
         T: NoUninit,
     {
+        profiling::scope!("Buffer::extend");
+
         let iter = iter.into_iter();
         self.len += iter.len();
         self.cpu_buffer.reserve(iter.len() * size_of::<T>());

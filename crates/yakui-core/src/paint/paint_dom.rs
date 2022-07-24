@@ -50,6 +50,8 @@ impl PaintDom {
     ///
     /// Must only be called once per widget per paint pass.
     pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, id: WidgetId) {
+        profiling::scope!("PaintDom::paint");
+
         let node = dom.get(id).unwrap();
         dom.enter(id);
         node.widget.paint(dom, layout, self);
@@ -111,6 +113,8 @@ impl PaintDom {
         V: IntoIterator<Item = Vertex>,
         I: IntoIterator<Item = u16>,
     {
+        profiling::scope!("PaintDom::add_mesh");
+
         let texture_id = mesh.texture.map(|(index, _rect)| index);
 
         let call = match self.calls.last_mut() {

@@ -190,6 +190,8 @@ impl State {
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,
     ) -> wgpu::CommandBuffer {
+        profiling::scope!("yakui-wgpu paint");
+
         self.update_textures(state, device, queue);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -240,6 +242,8 @@ impl State {
     }
 
     fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
+        profiling::scope!("update_buffers");
+
         self.vertices.clear();
         self.indices.clear();
         self.commands.clear();
@@ -296,6 +300,8 @@ impl State {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) {
+        profiling::scope!("update_textures");
+
         for (id, texture) in state.textures() {
             match self.textures.get_mut(&id) {
                 Some(existing) => existing.update_if_newer(device, queue, texture),
