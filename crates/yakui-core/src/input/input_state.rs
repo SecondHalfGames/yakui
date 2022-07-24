@@ -169,7 +169,7 @@ impl InputStateInner {
             mouse.position = pos;
         }
 
-        self.send_mouse_move(dom);
+        self.send_mouse_move(dom, layout);
         self.mouse_hit_test(dom, layout);
         self.send_mouse_enter(dom);
         self.send_mouse_leave(dom);
@@ -303,8 +303,18 @@ impl InputStateInner {
         overall_response
     }
 
-    fn send_mouse_move(&self, _dom: &Dom) {
-        // TODO
+    fn send_mouse_move(&self, dom: &Dom, layout: &LayoutDom) {
+        let mouse = self.mouse.borrow();
+        let interest_mouse = layout.interest_mouse.iter().copied().rev();
+
+        let event = WidgetEvent::MouseMoved(mouse.position);
+
+        for (id, interest) in interest_mouse {
+            if interest.intersects(EventInterest::MOUSE_MOVE) {
+                let mut node = dom.get_mut(id).unwrap();
+                node.widget.event(&event);
+            }
+        }
     }
 
     fn send_mouse_enter(&self, dom: &Dom) {
