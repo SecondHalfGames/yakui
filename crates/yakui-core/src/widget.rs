@@ -14,10 +14,9 @@ use crate::paint::PaintDom;
 
 /// Trait that's automatically implemented for all widget props.
 ///
-/// This trait is used by yakui to enforce that props hold no non-`'static`
-/// references and implement `Debug`.
-pub trait Props: 'static + fmt::Debug {}
-impl<T> Props for T where T: 'static + fmt::Debug {}
+/// This trait is used by yakui to enforce that props implement `Debug`.
+pub trait Props: fmt::Debug {}
+impl<T> Props for T where T: fmt::Debug {}
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
 /// existing widgets does not solve your use case.
