@@ -104,18 +104,22 @@ async fn run() {
             Event::MainEventsCleared => {
                 state.time = (Instant::now() - start).as_secs_f32();
 
-                // Every frame, call yak.start() to begin building the UI for
-                // this frame. Any yakui widget calls that happen on this thread
-                // between start() and finish() will be applied to this yakui
-                // State.
-                yak.start();
+                {
+                    profiling::scope!("Build UI");
 
-                // Here, we call out to our example code. See `src/examples` for
-                // the code, which runs each frame.
-                example(&mut state);
+                    // Every frame, call yak.start() to begin building the UI for
+                    // this frame. Any yakui widget calls that happen on this thread
+                    // between start() and finish() will be applied to this yakui
+                    // State.
+                    yak.start();
 
-                // Finish building the UI and compute this frame's layout.
-                yak.finish();
+                    // Here, we call out to our example code. See `src/examples` for
+                    // the code, which runs each frame.
+                    example(&mut state);
+
+                    // Finish building the UI and compute this frame's layout.
+                    yak.finish();
+                }
 
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
