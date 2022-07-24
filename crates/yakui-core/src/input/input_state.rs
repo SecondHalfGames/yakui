@@ -6,7 +6,7 @@ use glam::Vec2;
 use smallvec::SmallVec;
 
 use crate::dom::{Dom, DomNode};
-use crate::event::{EventInterest, EventResponse, WidgetEvent};
+use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
@@ -45,32 +45,26 @@ impl InputState {
         *selection = id;
     }
 
-    pub(crate) fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
-        self.inner.mouse_moved(dom, layout, pos);
-    }
-
-    pub(crate) fn mouse_button_changed(
+    pub(crate) fn handle_event(
         &self,
         dom: &Dom,
         layout: &LayoutDom,
-        button: MouseButton,
-        down: bool,
+        event: &Event,
     ) -> EventResponse {
-        self.inner.mouse_button_changed(dom, layout, button, down)
-    }
-
-    pub(crate) fn keyboard_key_changed(
-        &self,
-        dom: &Dom,
-        layout: &LayoutDom,
-        key: KeyboardKey,
-        down: bool,
-    ) -> EventResponse {
-        self.inner.keyboard_key_changed(dom, layout, key, down)
-    }
-
-    pub(crate) fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
-        self.inner.text_input(dom, layout, c)
+        match event {
+            Event::CursorMoved(pos) => {
+                self.inner.mouse_moved(dom, layout, *pos);
+                EventResponse::Bubble
+            }
+            Event::MouseButtonChanged { button, down } => {
+                self.inner.mouse_button_changed(dom, layout, *button, *down)
+            }
+            Event::KeyChanged(key, down) => {
+                self.inner.keyboard_key_changed(dom, layout, *key, *down)
+            }
+            Event::TextInput(c) => self.inner.text_input(dom, layout, *c),
+            _ => EventResponse::Bubble,
+        }
     }
 
     pub(crate) fn finish(&self) {
@@ -175,6 +169,7 @@ impl InputStateInner {
             mouse.position = pos;
         }
 
+        self.send_mouse_move(dom);
         self.mouse_hit_test(dom, layout);
         self.send_mouse_enter(dom);
         self.send_mouse_leave(dom);
@@ -264,6 +259,7 @@ impl InputStateInner {
         button: MouseButton,
         down: bool,
     ) -> EventResponse {
+        let mouse = self.mouse.borrow();
         let intersections = self.intersections.borrow();
         let mut overall_response = EventResponse::Bubble;
 
@@ -273,6 +269,7 @@ impl InputStateInner {
                     button,
                     down,
                     inside: true,
+                    position: mouse.position.unwrap_or(Vec2::ZERO),
                 };
                 let response = fire_event(dom, id, &mut node, &event);
 
@@ -296,6 +293,7 @@ impl InputStateInner {
                         button,
                         down,
                         inside: false,
+                        position: mouse.position.unwrap_or(Vec2::ZERO),
                     };
                     fire_event(dom, id, &mut node, &event);
                 }
@@ -303,6 +301,10 @@ impl InputStateInner {
         }
 
         overall_response
+    }
+
+    fn send_mouse_move(&self, _dom: &Dom) {
+        // TODO
     }
 
     fn send_mouse_enter(&self, dom: &Dom) {

@@ -47,6 +47,7 @@ pub enum WidgetEvent {
 
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.
+    #[non_exhaustive]
     MouseButtonChanged {
         /// Which button was changed.
         button: MouseButton,
@@ -56,6 +57,9 @@ pub enum WidgetEvent {
 
         /// Whether the button is inside the widget's layout rectangle.
         inside: bool,
+
+        /// The position of the mouse cursor at the time of the event.
+        position: Vec2,
     },
 
     /// A keyboard button changed.

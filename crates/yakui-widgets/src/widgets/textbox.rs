@@ -110,6 +110,7 @@ impl Widget for TextBoxWidget {
                 button: MouseButton::One,
                 down: true,
                 inside: true,
+                ..
             } => {
                 context::capture_selection();
                 EventResponse::Sink

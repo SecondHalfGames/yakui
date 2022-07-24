@@ -152,6 +152,7 @@ impl Widget for ButtonWidget {
                 button: MouseButton::One,
                 down,
                 inside,
+                ..
             } => {
                 if *inside {
                     if *down {

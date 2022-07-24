@@ -119,6 +119,7 @@ impl Widget for CheckboxWidget {
                 button: MouseButton::One,
                 down,
                 inside,
+                ..
             } => {
                 if *inside {
                     if *down {

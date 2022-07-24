@@ -36,39 +36,15 @@ impl State {
         context::bind_dom(&self.dom);
         context::bind_input(&self.input);
 
-        let sink = match event {
-            Event::ViewportChanged(viewport) => {
-                self.layout.set_unscaled_viewport(viewport);
-                false
-            }
-            Event::CursorMoved(pos) => {
-                self.input.mouse_moved(&self.dom, &self.layout, pos);
-                false
-            }
-            Event::MouseButtonChanged { button, down } => {
-                let response =
-                    self.input
-                        .mouse_button_changed(&self.dom, &self.layout, button, down);
+        let response = self.input.handle_event(&self.dom, &self.layout, &event);
 
-                response == EventResponse::Sink
-            }
-            Event::KeyChanged(key, down) => {
-                let response = self
-                    .input
-                    .keyboard_key_changed(&self.dom, &self.layout, key, down);
-
-                response == EventResponse::Sink
-            }
-            Event::TextInput(c) => {
-                let response = self.input.text_input(&self.dom, &self.layout, c);
-
-                response == EventResponse::Sink
-            }
-        };
+        if let Event::ViewportChanged(viewport) = event {
+            self.layout.set_unscaled_viewport(viewport);
+        }
 
         context::unbind_dom();
         context::unbind_input();
-        sink
+        response == EventResponse::Sink
     }
 
     /// Creates a texture for use within yakui.
