@@ -15,6 +15,21 @@ impl Color3 {
         Self { r, g, b }
     }
 
+    /// Create a color from a number, intended to be written as a hex literal.
+    ///
+    /// ```rust
+    /// # use yakui_core::geometry::Color3;
+    /// let orange = Color3::hex(0xff6137);
+    /// assert_eq!(orange, Color3::rgb(255, 97, 55));
+    /// ```
+    pub const fn hex(value: u32) -> Self {
+        let r = ((value >> 16) & 255) as u8;
+        let g = ((value >> 8) & 255) as u8;
+        let b = (value & 255) as u8;
+
+        Self { r, g, b }
+    }
+
     /// Create a new `Color3` from a linear RGB color.
     pub fn from_linear(value: Vec3) -> Self {
         let linear = palette::LinSrgb::new(value.x, value.y, value.z);

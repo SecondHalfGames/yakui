@@ -70,7 +70,7 @@ impl Graphics {
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.
-        let window = yakui_winit::State::new(&window);
+        let window = yakui_winit::State::new(window);
 
         Self {
             device,
@@ -156,7 +156,7 @@ impl Graphics {
         // yakui_winit will return whether it handled an event. This means that
         // yakui believes it should handle that event exclusively, like if a
         // button in the UI was clicked.
-        if self.window.handle_event(yak, &event) {
+        if self.window.handle_event(yak, event) {
             return true;
         }
 
