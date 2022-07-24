@@ -26,6 +26,30 @@ pub struct Dom {
     inner: Rc<DomInner>,
 }
 
+struct DomInner {
+    nodes: RefCell<Arena<DomNode>>,
+    stack: RefCell<Vec<WidgetId>>,
+    root: WidgetId,
+    globals: RefCell<AnyMap>,
+}
+
+/// A node in the [`Dom`].
+pub struct DomNode {
+    /// The widget implementation. Only a subset of the methods from [`Widget`]
+    /// are available without downcasting the widget first.
+    pub widget: Box<dyn ErasedWidget>,
+
+    /// The parent of this node, if it has one.
+    pub parent: Option<WidgetId>,
+
+    /// All of this node's children.
+    pub children: Vec<WidgetId>,
+
+    /// Used when building the tree. The index of the next child if a new child
+    /// starts being built.
+    next_child: usize,
+}
+
 impl Dom {
     /// Create a new, empty DOM.
     pub fn new() -> Self {
@@ -196,30 +220,6 @@ impl Dom {
         let mut nodes = self.inner.nodes.borrow_mut();
         trim_children(&mut nodes, id);
     }
-}
-
-struct DomInner {
-    nodes: RefCell<Arena<DomNode>>,
-    stack: RefCell<Vec<WidgetId>>,
-    root: WidgetId,
-    globals: RefCell<AnyMap>,
-}
-
-/// A node in the [`Dom`].
-pub struct DomNode {
-    /// The widget implementation. Only a subset of the methods from [`Widget`]
-    /// are available without downcasting the widget first.
-    pub widget: Box<dyn ErasedWidget>,
-
-    /// The parent of this node, if it has one.
-    pub parent: Option<WidgetId>,
-
-    /// All of this node's children.
-    pub children: Vec<WidgetId>,
-
-    /// Used when building the tree. The index of the next child if a new child
-    /// starts being built.
-    next_child: usize,
 }
 
 impl DomInner {
