@@ -102,7 +102,7 @@ impl Widget for CheckboxWidget {
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
     fn event(&mut self, event: &WidgetEvent) -> EventResponse {
@@ -115,21 +115,26 @@ impl Widget for CheckboxWidget {
                 self.hovering = false;
                 EventResponse::Sink
             }
-            WidgetEvent::MouseButtonChanged(MouseButton::One, down) => {
-                if *down {
-                    self.mouse_down = true;
-                    EventResponse::Sink
-                } else if self.mouse_down {
-                    self.mouse_down = false;
-                    self.just_toggled = true;
-                    EventResponse::Sink
+            WidgetEvent::MouseButtonChanged {
+                button: MouseButton::One,
+                down,
+                inside,
+            } => {
+                if *inside {
+                    if *down {
+                        self.mouse_down = true;
+                        EventResponse::Sink
+                    } else if self.mouse_down {
+                        self.mouse_down = false;
+                        self.just_toggled = true;
+                        EventResponse::Sink
+                    } else {
+                        EventResponse::Bubble
+                    }
                 } else {
+                    self.mouse_down = false;
                     EventResponse::Bubble
                 }
-            }
-            WidgetEvent::MouseButtonChangedOutside(MouseButton::One, _) => {
-                self.mouse_down = false;
-                EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
         }

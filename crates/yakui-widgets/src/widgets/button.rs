@@ -135,7 +135,7 @@ impl Widget for ButtonWidget {
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
     fn event(&mut self, event: &WidgetEvent) -> EventResponse {
@@ -148,24 +148,29 @@ impl Widget for ButtonWidget {
                 self.hovering = false;
                 EventResponse::Sink
             }
-            WidgetEvent::MouseButtonChanged(MouseButton::One, down) => {
-                if *down {
-                    self.mouse_down = true;
-                    EventResponse::Sink
-                } else if self.mouse_down {
-                    self.mouse_down = false;
-                    self.clicked = true;
-                    EventResponse::Sink
+            WidgetEvent::MouseButtonChanged {
+                button: MouseButton::One,
+                down,
+                inside,
+            } => {
+                if *inside {
+                    if *down {
+                        self.mouse_down = true;
+                        EventResponse::Sink
+                    } else if self.mouse_down {
+                        self.mouse_down = false;
+                        self.clicked = true;
+                        EventResponse::Sink
+                    } else {
+                        EventResponse::Bubble
+                    }
                 } else {
+                    if !*down {
+                        self.mouse_down = false;
+                    }
+
                     EventResponse::Bubble
                 }
-            }
-            WidgetEvent::MouseButtonChangedOutside(MouseButton::One, down) => {
-                if !*down {
-                    self.mouse_down = false;
-                }
-
-                EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
         }

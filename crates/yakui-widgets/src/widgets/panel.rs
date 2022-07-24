@@ -118,7 +118,7 @@ impl Widget for PanelWidget {
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
     fn event(&mut self, event: &WidgetEvent) -> EventResponse {

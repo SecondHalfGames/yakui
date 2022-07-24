@@ -106,7 +106,11 @@ impl Widget for TextBoxWidget {
 
     fn event(&mut self, event: &WidgetEvent) -> EventResponse {
         match event {
-            WidgetEvent::MouseButtonChanged(MouseButton::One, true) => {
+            WidgetEvent::MouseButtonChanged {
+                button: MouseButton::One,
+                down: true,
+                inside: true,
+            } => {
                 context::capture_selection();
                 EventResponse::Sink
             }

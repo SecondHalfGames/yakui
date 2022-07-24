@@ -111,7 +111,7 @@ impl LayoutDom {
         let size = dom_node.widget.layout(dom, self, constraints);
         let event_interest = dom_node.widget.event_interest();
 
-        if event_interest.intersects(EventInterest::MOUSE) {
+        if event_interest.intersects(EventInterest::MOUSE_ALL) {
             self.interest_mouse.push((id, event_interest));
         }
 

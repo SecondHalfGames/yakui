@@ -45,7 +45,7 @@ impl State {
                 self.input.mouse_moved(&self.dom, &self.layout, pos);
                 false
             }
-            Event::MouseButtonChanged(button, down) => {
+            Event::MouseButtonChanged { button, down } => {
                 let response =
                     self.input
                         .mouse_button_changed(&self.dom, &self.layout, button, down);

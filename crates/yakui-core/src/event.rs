@@ -17,7 +17,13 @@ pub enum Event {
     CursorMoved(Option<Vec2>),
 
     /// A mouse button changed, telling whether it is now pressed.
-    MouseButtonChanged(MouseButton, bool),
+    MouseButtonChanged {
+        /// Which mouse button was changed.
+        button: MouseButton,
+
+        /// Whether the button now down.
+        down: bool,
+    },
 
     /// A key changed, telling whether it is now pressed.
     KeyChanged(KeyboardKey, bool),
@@ -28,7 +34,6 @@ pub enum Event {
 
 /// An event that can be handled by an individual widget.
 #[derive(Debug)]
-#[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 pub enum WidgetEvent {
     /// The mouse entered the widget's layout rectangle.
@@ -42,11 +47,16 @@ pub enum WidgetEvent {
 
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.
-    MouseButtonChanged(MouseButton, bool),
+    MouseButtonChanged {
+        /// Which button was changed.
+        button: MouseButton,
 
-    /// A mouse button changed state while the cursor was outside the widget's
-    /// rectangle.
-    MouseButtonChangedOutside(MouseButton, bool),
+        /// Whether the button is down or up.
+        down: bool,
+
+        /// Whether the button is inside the widget's layout rectangle.
+        inside: bool,
+    },
 
     /// A keyboard button changed.
     KeyChanged(KeyboardKey, bool),
@@ -73,19 +83,22 @@ bitflags::bitflags! {
     pub struct EventInterest: u8 {
         /// Notify this widget of mouse events occuring within its layout
         /// rectangle.
-        const MOUSE_INSIDE  = 0b0000_0001;
+        const MOUSE_INSIDE = 1;
 
         /// Notify this widget of mouse events occuring outside its layout
         /// rectangle.
-        const MOUSE_OUTSIDE = 0b0000_0010;
+        const MOUSE_OUTSIDE = 2;
 
-        /// Notify this widget of all mouse events.
-        const MOUSE = Self::MOUSE_INSIDE.bits | Self::MOUSE_OUTSIDE.bits;
+        /// Notify this widget whenever the mouse cursor moves.
+        const MOUSE_MOVE = 4;
 
         /// This widget can be focused.
-        const FOCUS = 0b0000_0100;
+        const FOCUS = 8;
 
         /// If this widget is focused, it should receive keyboard events.
-        const FOCUSED_KEYBOARD = 0b0000_1000;
+        const FOCUSED_KEYBOARD = 16;
+
+        /// Notify this widget of all mouse events.
+        const MOUSE_ALL = Self::MOUSE_INSIDE.bits | Self::MOUSE_OUTSIDE.bits | Self::MOUSE_MOVE.bits;
     }
 }

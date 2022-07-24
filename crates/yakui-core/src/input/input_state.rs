@@ -262,14 +262,18 @@ impl InputStateInner {
         dom: &Dom,
         layout: &LayoutDom,
         button: MouseButton,
-        value: bool,
+        down: bool,
     ) -> EventResponse {
         let intersections = self.intersections.borrow();
         let mut overall_response = EventResponse::Bubble;
 
         for &id in &intersections.mouse_hit {
             if let Some(mut node) = dom.get_mut(id) {
-                let event = WidgetEvent::MouseButtonChanged(button, value);
+                let event = WidgetEvent::MouseButtonChanged {
+                    button,
+                    down,
+                    inside: true,
+                };
                 let response = fire_event(dom, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
@@ -288,7 +292,11 @@ impl InputStateInner {
                 && !intersections.mouse_hit.contains(&id)
             {
                 if let Some(mut node) = dom.get_mut(id) {
-                    let event = WidgetEvent::MouseButtonChangedOutside(button, value);
+                    let event = WidgetEvent::MouseButtonChanged {
+                        button,
+                        down,
+                        inside: false,
+                    };
                     fire_event(dom, id, &mut node, &event);
                 }
             }

@@ -102,7 +102,7 @@ impl State {
                     ElementState::Released => false,
                 };
 
-                state.handle_event(Event::MouseButtonChanged(button, down))
+                state.handle_event(Event::MouseButtonChanged { button, down })
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::ReceivedCharacter(c),
