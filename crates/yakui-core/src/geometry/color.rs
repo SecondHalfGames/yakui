@@ -1,7 +1,7 @@
 use glam::Vec4;
 
 /// An sRGB color with alpha.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub struct Color {
     pub r: u8,
