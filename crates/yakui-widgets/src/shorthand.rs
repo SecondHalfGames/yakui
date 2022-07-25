@@ -11,7 +11,7 @@ use yakui_core::{Alignment, Response, TextureId};
 use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
     ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget, Flexible,
-    FlexibleWidget, Image, ImageWidget, List, ListWidget, Ninepatch, NinepatchWidget, Offset,
+    FlexibleWidget, Image, ImageWidget, List, ListWidget, Nineslice, NinesliceWidget, Offset,
     OffsetWidget, Pad, PadWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
@@ -108,12 +108,12 @@ pub fn draggable<F: FnOnce()>(children: F) -> Response<DraggableWidget> {
     Draggable::new().show(children)
 }
 
-/// See [Ninepatch].
-pub fn ninepatch(
+/// See [Nineslice].
+pub fn nineslice(
     texture: TextureId,
     margins: Pad,
     scale: f32,
     children: impl FnOnce(),
-) -> Response<NinepatchWidget> {
-    Ninepatch::new(texture, margins, scale).show(children)
+) -> Response<NinesliceWidget> {
+    Nineslice::new(texture, margins, scale).show(children)
 }

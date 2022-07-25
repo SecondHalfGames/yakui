@@ -11,15 +11,15 @@ use yakui_core::{
 use crate::{shorthand::pad, util::widget_children, widgets::pad::Pad};
 
 #[derive(Debug)]
-pub struct Ninepatch {
+pub struct Nineslice {
     texture: TextureId,
-    /// Texture margins in pixels around the central ninepatch region, before
+    /// Texture margins in pixels around the central Nineslice region, before
     /// scaling.
     margins: Pad,
     scale: f32,
 }
 
-impl Ninepatch {
+impl Nineslice {
     pub fn new(texture: TextureId, margins: Pad, scale: f32) -> Self {
         Self {
             texture,
@@ -28,7 +28,7 @@ impl Ninepatch {
         }
     }
 
-    pub fn show(self, children: impl FnOnce()) -> Response<NinepatchWidget> {
+    pub fn show(self, children: impl FnOnce()) -> Response<NinesliceWidget> {
         let scaled_margins = {
             let mut m = self.margins;
             m.left *= self.scale;
@@ -38,7 +38,7 @@ impl Ninepatch {
             m
         };
 
-        widget_children::<NinepatchWidget, _>(
+        widget_children::<NinesliceWidget, _>(
             || {
                 pad(scaled_margins, children);
             },
@@ -48,12 +48,12 @@ impl Ninepatch {
 }
 
 #[derive(Debug)]
-pub struct NinepatchWidget {
-    props: Option<Ninepatch>,
+pub struct NinesliceWidget {
+    props: Option<Nineslice>,
 }
 
-impl Widget for NinepatchWidget {
-    type Props = Ninepatch;
+impl Widget for NinesliceWidget {
+    type Props = Nineslice;
     type Response = ();
 
     fn new() -> Self {
@@ -66,7 +66,7 @@ impl Widget for NinepatchWidget {
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
         let props = self.props.as_ref().unwrap();
-        let Ninepatch {
+        let Nineslice {
             texture,
             margins:
                 Pad {
