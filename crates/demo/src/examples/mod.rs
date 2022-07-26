@@ -9,6 +9,7 @@ macro_rules! examples {
     ($macro:ident) => {
         $macro!(
             align,
+            alpha,
             bench,
             buttons,
             cross_alignment,

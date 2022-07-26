@@ -1,18 +1,24 @@
-use glam::Vec3;
+use glam::Vec4;
 
-/// An sRGB color.
+/// An sRGB color with alpha.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[allow(missing_docs)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
     pub b: u8,
+    pub a: u8,
 }
 
 impl Color {
     /// Create a new `Color`.
+    pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
+    }
+
+    /// Create a new `Color` with full opacity.
     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b }
+        Self { r, g, b, a: 255 }
     }
 
     /// Create a color from a number, intended to be written as a hex literal.
@@ -27,17 +33,17 @@ impl Color {
         let g = ((value >> 8) & 255) as u8;
         let b = (value & 255) as u8;
 
-        Self { r, g, b }
+        Self { r, g, b, a: 255 }
     }
 
     /// Create a new `Color` from a linear RGB color.
-    pub fn from_linear(value: Vec3) -> Self {
-        let linear = palette::LinSrgb::new(value.x, value.y, value.z);
-        let (r, g, b) = palette::Srgb::from_linear(linear)
-            .into_format::<u8>()
+    pub fn from_linear(value: Vec4) -> Self {
+        let linear = palette::LinSrgba::new(value.x, value.y, value.z, value.w);
+        let (r, g, b, a) = palette::Srgba::from_linear(linear)
+            .into_format::<u8, u8>()
             .into_components();
 
-        Self::rgb(r, g, b)
+        Self::rgba(r, g, b, a)
     }
 
     /// Brighten or darken the color by multiplying it by a factor.
@@ -47,13 +53,17 @@ impl Color {
     ///
     /// This operation is gamma-correct.
     pub fn adjust(&self, factor: f32) -> Self {
-        Self::from_linear(self.to_linear() * factor)
+        let linear = self.to_linear();
+        let color = linear.truncate() * factor;
+        let adjusted = color.extend(linear.w);
+
+        Self::from_linear(adjusted)
     }
 
     /// Convert this color to a linear RGB color.
-    pub fn to_linear(&self) -> Vec3 {
-        palette::Srgb::new(self.r, self.g, self.b)
-            .into_format::<f32>()
+    pub fn to_linear(&self) -> Vec4 {
+        palette::Srgba::new(self.r, self.g, self.b, self.a)
+            .into_format::<f32, f32>()
             .into_linear()
             .into_components()
             .into()
@@ -93,6 +103,19 @@ impl From<[u8; 3]> for Color {
             r: value[0],
             g: value[1],
             b: value[2],
+            a: 255,
+        }
+    }
+}
+
+impl From<[u8; 4]> for Color {
+    #[inline]
+    fn from(value: [u8; 4]) -> Self {
+        Self {
+            r: value[0],
+            g: value[1],
+            b: value[2],
+            a: value[3],
         }
     }
 }

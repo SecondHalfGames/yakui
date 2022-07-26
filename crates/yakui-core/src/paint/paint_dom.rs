@@ -147,7 +147,7 @@ impl PaintDom {
     pub fn add_rect(&mut self, rect: PaintRect) {
         let size = rect.rect.size();
         let pos = rect.rect.pos();
-        let color = rect.color.to_linear().extend(1.0);
+        let color = rect.color.to_linear();
         let texture_rect = match rect.texture {
             Some((_index, rect)) => rect,
             None => Rect::from_pos_size(Vec2::ZERO, Vec2::ONE),

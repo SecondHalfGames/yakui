@@ -37,7 +37,7 @@ pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
         11, 6, 1,
     ];
 
-    let color = color.to_linear().extend(1.0);
+    let color = color.to_linear();
 
     let vertices = POSITIONS
         .into_iter()
@@ -91,7 +91,7 @@ pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color) {
         10, 11, 8,
     ];
 
-    let color = color.to_linear().extend(1.0);
+    let color = color.to_linear();
 
     let vertices = positions
         .into_iter()
@@ -122,7 +122,7 @@ impl PaintCircle {
     }
 
     pub fn add(&self, output: &mut PaintDom) {
-        let color = self.color.to_linear().extend(1.0);
+        let color = self.color.to_linear();
         let mut vertices = Vec::new();
         let segments = self.segments as f32;
 
