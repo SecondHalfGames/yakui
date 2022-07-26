@@ -190,18 +190,31 @@ impl State {
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,
     ) -> wgpu::CommandBuffer {
-        profiling::scope!("yakui-wgpu paint");
-
-        self.update_textures(state, device, queue);
-
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("yakui Encoder"),
         });
 
+        self.paint_with_encoder(state, device, queue, &mut encoder, color_attachment);
+
+        encoder.finish()
+    }
+
+    pub fn paint_with_encoder(
+        &mut self,
+        state: &mut yakui_core::State,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        color_attachment: &wgpu::TextureView,
+    ) {
+        profiling::scope!("yakui-wgpu paint_with_encoder");
+
+        self.update_textures(state, device, queue);
+
         let paint = state.paint();
 
         if paint.calls().is_empty() {
-            return encoder.finish();
+            return;
         }
 
         self.update_buffers(device, paint);
@@ -211,7 +224,7 @@ impl State {
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
+                label: Some("yakui Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: color_attachment,
                     resolve_target: None,
@@ -237,8 +250,6 @@ impl State {
                 render_pass.draw_indexed(command.index_range.clone(), 0, 0..1);
             }
         }
-
-        encoder.finish()
     }
 
     fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
