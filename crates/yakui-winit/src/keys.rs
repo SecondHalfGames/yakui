@@ -13,6 +13,10 @@ pub fn from_winit_key(key: VirtualKeyCode) -> Option<KeyboardKey> {
         VirtualKeyCode::Escape => KeyboardKey::Escape,
         VirtualKeyCode::Home => KeyboardKey::Home,
         VirtualKeyCode::End => KeyboardKey::End,
+        VirtualKeyCode::Up => KeyboardKey::Up,
+        VirtualKeyCode::Down => KeyboardKey::Down,
+        VirtualKeyCode::PageUp => KeyboardKey::PageUp,
+        VirtualKeyCode::PageDown => KeyboardKey::PageDown,
         _ => return None,
     })
 }

@@ -26,4 +26,8 @@ pub enum KeyboardKey {
     Right,
     Home,
     End,
+    Up,
+    Down,
+    PageUp,
+    PageDown,
 }
