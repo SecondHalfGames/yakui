@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -11,7 +11,7 @@ use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
 use super::button::MouseButton;
-use super::KeyboardKey;
+use super::{KeyboardKey, ModifiersState};
 
 /// Holds yakui's input state, like cursor position, hovered, and selected
 /// widgets.
@@ -62,6 +62,7 @@ impl InputState {
             Event::KeyChanged { key, down } => {
                 self.inner.keyboard_key_changed(dom, layout, *key, *down)
             }
+            Event::ModifiersChanged(modifiers) => self.inner.modifiers_changed(modifiers),
             Event::TextInput(c) => self.inner.text_input(dom, layout, *c),
             _ => EventResponse::Bubble,
         }
@@ -76,6 +77,9 @@ impl InputState {
 struct InputStateInner {
     /// State for the mouse, like buttons and position.
     mouse: RefCell<Mouse>,
+
+    /// State of the keyboard modifier keys
+    modifiers: Cell<ModifiersState>,
 
     /// Details about widgets and their mouse intersections.
     intersections: RefCell<Intersections>,
@@ -152,6 +156,7 @@ impl InputStateInner {
                 position: None,
                 buttons: HashMap::new(),
             }),
+            modifiers: Cell::new(ModifiersState::default()),
             intersections: RefCell::new(Intersections {
                 mouse_hit: Vec::new(),
                 mouse_entered: Vec::new(),
@@ -221,11 +226,20 @@ impl InputStateInner {
                 .contains(EventInterest::FOCUSED_KEYBOARD)
             {
                 let mut node = dom.get_mut(id).unwrap();
-                let event = WidgetEvent::KeyChanged(key, down);
+                let event = WidgetEvent::KeyChanged {
+                    key,
+                    down,
+                    modifiers: self.modifiers.get(),
+                };
                 return fire_event(dom, id, &mut node, &event);
             }
         }
 
+        EventResponse::Bubble
+    }
+
+    fn modifiers_changed(&self, modifiers: &ModifiersState) -> EventResponse {
+        self.modifiers.set(*modifiers);
         EventResponse::Bubble
     }
 
@@ -270,6 +284,7 @@ impl InputStateInner {
                     down,
                     inside: true,
                     position: mouse.position.unwrap_or(Vec2::ZERO),
+                    modifiers: self.modifiers.get(),
                 };
                 let response = fire_event(dom, id, &mut node, &event);
 
@@ -294,6 +309,7 @@ impl InputStateInner {
                         down,
                         inside: false,
                         position: mouse.position.unwrap_or(Vec2::ZERO),
+                        modifiers: self.modifiers.get(),
                     };
                     fire_event(dom, id, &mut node, &event);
                 }

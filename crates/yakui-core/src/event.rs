@@ -3,7 +3,7 @@
 use glam::Vec2;
 
 use crate::geometry::Rect;
-use crate::input::{KeyboardKey, MouseButton};
+use crate::input::{KeyboardKey, ModifiersState, MouseButton};
 
 /// An event that can be handled by yakui.
 #[derive(Debug)]
@@ -35,17 +35,7 @@ pub enum Event {
     },
 
     /// The state of the keyboard modifiers keys changed.
-    ModifiersChanged {
-        /// Whether the SHIFT key is now down.
-        shift: bool,
-        /// Whether the CTRL key is now down.
-        ctrl: bool,
-        /// Whether the ALT key is now down.
-        alt: bool,
-        /// Whether the logo key is now down. This is the "windows" key on PC
-        /// and "command" key on Mac.
-        logo: bool,
-    },
+    ModifiersChanged(ModifiersState),
 
     /// A Unicode codepoint was typed in the window.
     TextInput(char),
@@ -79,10 +69,23 @@ pub enum WidgetEvent {
 
         /// The position of the mouse cursor at the time of the event.
         position: Vec2,
+
+        /// The current state of the keyboard modifier keys.
+        modifiers: ModifiersState,
     },
 
-    /// A keyboard button changed.
-    KeyChanged(KeyboardKey, bool),
+    /// A keyboard key changed.
+    #[non_exhaustive]
+    KeyChanged {
+        /// Which key was changed.
+        key: KeyboardKey,
+
+        /// Whether the key is down or up.
+        down: bool,
+
+        /// The current state of the keyboard modifier keys.
+        modifiers: ModifiersState,
+    },
 
     /// Text was sent to the widget.
     TextInput(char),

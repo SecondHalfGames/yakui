@@ -116,7 +116,9 @@ impl Widget for TextBoxWidget {
                 EventResponse::Sink
             }
 
-            WidgetEvent::KeyChanged(key, true) => match key {
+            WidgetEvent::KeyChanged {
+                key, down: true, ..
+            } => match key {
                 KeyboardKey::Left => {
                     self.move_cursor(-1);
                     EventResponse::Sink
