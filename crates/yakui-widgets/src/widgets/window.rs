@@ -1,6 +1,6 @@
 use std::fmt;
 
-use yakui_core::geometry::{Color3, Constraints, Vec2};
+use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
@@ -59,13 +59,13 @@ impl Widget for WindowWidget {
                 crate::constrained(constraints, || {
                     crate::pad(Pad::all(8.0), || {
                         crate::row(|| {
-                            crate::colored_box(Color3::BLUE, [16.0, 16.0]);
+                            crate::colored_box(Color::BLUE, [16.0, 16.0]);
                             crate::expanded(|| {
                                 crate::pad(Pad::balanced(8.0, 0.0), || {
                                     crate::text(16.0, "Yakui Window");
                                 });
                             });
-                            crate::colored_box(Color3::RED, [16.0, 16.0]);
+                            crate::colored_box(Color::RED, [16.0, 16.0]);
                         });
                     });
                 });

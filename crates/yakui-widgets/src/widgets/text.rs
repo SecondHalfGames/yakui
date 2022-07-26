@@ -23,7 +23,7 @@ yakui::label("Default text label style");
 yakui::text(32.0, "Custom font size");
 
 let mut text = Text::new(32.0, "Title");
-text.style.color = yakui::Color3::RED;
+text.style.color = yakui::Color::RED;
 text.show();
 ```
 */

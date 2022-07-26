@@ -1,5 +1,5 @@
 use yakui::{CrossAxisAlignment, MainAxisSize, Vec2};
-use yakui_core::geometry::Color3;
+use yakui_core::geometry::Color;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
 use yakui_widgets::widgets::{List, Pad, UnconstrainedBox};
@@ -10,7 +10,7 @@ use yakui_widgets::{
 #[test]
 fn colored_box_basic() {
     run!({
-        colored_box(Color3::RED, [50.0, 50.0]);
+        colored_box(Color::RED, [50.0, 50.0]);
     });
 }
 
@@ -67,10 +67,10 @@ fn row_grow_first() {
     run!({
         row(|| {
             expanded(|| {
-                colored_box(Color3::RED, [50.0, 50.0]);
+                colored_box(Color::RED, [50.0, 50.0]);
             });
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -79,11 +79,11 @@ fn row_grow_first() {
 fn row_grow_middle() {
     run!({
         row(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
             expanded(|| {
-                colored_box(Color3::GREEN, [50.0, 50.0]);
+                colored_box(Color::GREEN, [50.0, 50.0]);
             });
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -92,10 +92,10 @@ fn row_grow_middle() {
 fn row_grow_last() {
     run!({
         row(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
             expanded(|| {
-                colored_box(Color3::BLUE, [50.0, 50.0]);
+                colored_box(Color::BLUE, [50.0, 50.0]);
             });
         });
     });
@@ -107,11 +107,11 @@ fn row_grow_middle_spacing() {
         let mut container = List::row();
         container.item_spacing = 10.0;
         container.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
             expanded(|| {
-                colored_box(Color3::GREEN, [50.0, 50.0]);
+                colored_box(Color::GREEN, [50.0, 50.0]);
             });
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -120,11 +120,11 @@ fn row_grow_middle_spacing() {
 fn column_grow_middle() {
     run!({
         column(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
             expanded(|| {
-                colored_box(Color3::GREEN, [50.0, 50.0]);
+                colored_box(Color::GREEN, [50.0, 50.0]);
             });
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -148,9 +148,9 @@ fn column_cross_stretch() {
         let mut column = List::column();
         column.cross_axis_alignment = CrossAxisAlignment::Stretch;
         column.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -161,9 +161,9 @@ fn row_cross_start() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Start;
         row.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -174,9 +174,9 @@ fn row_cross_center() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Center;
         row.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -187,9 +187,9 @@ fn row_cross_end() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::End;
         row.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -200,9 +200,9 @@ fn row_cross_stretch() {
         let mut row = List::row();
         row.cross_axis_alignment = CrossAxisAlignment::Stretch;
         row.show(|| {
-            colored_box(Color3::RED, [50.0, 50.0]);
-            colored_box(Color3::GREEN, [50.0, 50.0]);
-            colored_box(Color3::BLUE, [50.0, 50.0]);
+            colored_box(Color::RED, [50.0, 50.0]);
+            colored_box(Color::GREEN, [50.0, 50.0]);
+            colored_box(Color::BLUE, [50.0, 50.0]);
         });
     });
 }
@@ -215,9 +215,9 @@ fn row_unconstrained() {
         let container = UnconstrainedBox::new();
         container.show(|| {
             row(|| {
-                colored_box(Color3::RED, [50.0, 50.0]);
-                colored_box(Color3::GREEN, [50.0, 50.0]);
-                colored_box(Color3::BLUE, [50.0, 50.0]);
+                colored_box(Color::RED, [50.0, 50.0]);
+                colored_box(Color::GREEN, [50.0, 50.0]);
+                colored_box(Color::BLUE, [50.0, 50.0]);
             });
         });
     });
@@ -247,9 +247,9 @@ fn pad_basic() {
 
     run!({
         align(Alignment::TOP_LEFT, || {
-            colored_box_container(Color3::RED, || {
+            colored_box_container(Color::RED, || {
                 pad(padding, || {
-                    colored_box(Color3::GREEN, Vec2::splat(50.0));
+                    colored_box(Color::GREEN, Vec2::splat(50.0));
                 });
             });
         });
@@ -262,7 +262,7 @@ fn pad_empty() {
 
     run!({
         align(Alignment::TOP_LEFT, || {
-            colored_box_container(Color3::RED, || {
+            colored_box_container(Color::RED, || {
                 pad(padding, || {});
             });
         });
@@ -270,7 +270,7 @@ fn pad_empty() {
 }
 
 fn rect<V: Dim>(w: V, h: V) {
-    colored_box(Color3::WHITE, [w.to_f32(), h.to_f32()]);
+    colored_box(Color::WHITE, [w.to_f32(), h.to_f32()]);
 }
 
 fn rect_50x50() {

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
-use yakui_core::geometry::Color3;
+use yakui_core::geometry::Color;
 use yakui_core::input::MouseButton;
 use yakui_core::widget::Widget;
 use yakui_core::{Alignment, Response};
@@ -32,9 +32,9 @@ pub struct Button {
     pub text: Cow<'static, str>,
     pub text_style: TextStyle,
     pub padding: Pad,
-    pub fill: Color3,
-    pub hover_fill: Option<Color3>,
-    pub down_fill: Option<Color3>,
+    pub fill: Color,
+    pub hover_fill: Option<Color>,
+    pub down_fill: Option<Color>,
 }
 
 impl Button {
@@ -46,7 +46,7 @@ impl Button {
             text,
             text_style,
             padding: Pad::ZERO,
-            fill: Color3::GRAY,
+            fill: Color::GRAY,
             hover_fill: None,
             down_fill: None,
         }

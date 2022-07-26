@@ -1,5 +1,5 @@
 use yakui::widgets::{Button, Pad};
-use yakui::{button, column, pad, row, Color3};
+use yakui::{button, column, pad, row, Color};
 
 use crate::ExampleState;
 
@@ -16,7 +16,7 @@ pub fn run(_state: &mut ExampleState) {
                 button("Hello");
 
                 let mut big_button = Button::styled("World".into());
-                big_button.text_style.color = Color3::RED;
+                big_button.text_style.color = Color::RED;
                 big_button.text_style.font_size = 30.0;
                 big_button.show();
 

@@ -1,7 +1,7 @@
 //! Defines built-in colors that look pretty good.
 #![allow(missing_docs)]
 
-use yakui_core::geometry::Color3;
+use yakui_core::geometry::Color;
 
 macro_rules! colors {
     (
@@ -11,7 +11,7 @@ macro_rules! colors {
     ) => {
         $(
             #[doc = concat!("rgb(", $r, ", ", $g, ", ", $b, ")")]
-            pub const $name: Color3 = Color3::rgb($r, $g, $b);
+            pub const $name: Color = Color::rgb($r, $g, $b);
         )*
     };
 }

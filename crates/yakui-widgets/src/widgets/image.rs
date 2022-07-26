@@ -1,5 +1,5 @@
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
+use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::widget::Widget;
@@ -65,7 +65,7 @@ impl Widget for ImageWidget {
 
         if let Some(image) = self.props.image {
             let mut rect = PaintRect::new(layout_node.rect);
-            rect.color = Color3::WHITE;
+            rect.color = Color::WHITE;
             rect.texture = Some((image, Rect::ONE));
             output.add_rect(rect);
         }

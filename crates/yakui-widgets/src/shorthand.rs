@@ -5,7 +5,7 @@
 
 use std::borrow::Cow;
 
-use yakui_core::geometry::{Color3, Constraints, Vec2};
+use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::{Alignment, Response, TextureId};
 
 use crate::widgets::{
@@ -40,15 +40,12 @@ pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonWidget> {
 }
 
 /// See [ColoredBox].
-pub fn colored_box<S: Into<Vec2>>(color: Color3, size: S) -> Response<ColoredBoxWidget> {
+pub fn colored_box<S: Into<Vec2>>(color: Color, size: S) -> Response<ColoredBoxWidget> {
     ColoredBox::sized(color, size.into()).show()
 }
 
 /// See [ColoredBox].
-pub fn colored_box_container<F: FnOnce()>(
-    color: Color3,
-    children: F,
-) -> Response<ColoredBoxWidget> {
+pub fn colored_box_container<F: FnOnce()>(color: Color, children: F) -> Response<ColoredBoxWidget> {
     ColoredBox::container(color).show_children(children)
 }
 

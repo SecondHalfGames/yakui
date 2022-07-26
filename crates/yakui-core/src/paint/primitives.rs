@@ -1,13 +1,13 @@
 use glam::{Vec2, Vec4};
 
-use crate::geometry::{Color3, Rect};
+use crate::geometry::{Color, Rect};
 use crate::id::TextureId;
 
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub struct PaintRect {
     pub rect: Rect,
-    pub color: Color3,
+    pub color: Color,
     pub texture: Option<(TextureId, Rect)>,
     pub pipeline: Pipeline,
 }
@@ -22,7 +22,7 @@ impl PaintRect {
     pub fn new(rect: Rect) -> Self {
         Self {
             rect,
-            color: Color3::WHITE,
+            color: Color::WHITE,
             texture: None,
             pipeline: Pipeline::Main,
         }

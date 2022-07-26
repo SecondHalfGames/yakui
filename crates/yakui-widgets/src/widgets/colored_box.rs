@@ -1,5 +1,5 @@
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Color3, Constraints, Vec2};
+use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::widget::Widget;
@@ -15,26 +15,26 @@ Responds with [ColoredBoxResponse].
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct ColoredBox {
-    pub color: Color3,
+    pub color: Color,
     pub min_size: Vec2,
 }
 
 impl ColoredBox {
     pub fn empty() -> Self {
         Self {
-            color: Color3::WHITE,
+            color: Color::WHITE,
             min_size: Vec2::ZERO,
         }
     }
 
-    pub fn sized(color: Color3, size: Vec2) -> Self {
+    pub fn sized(color: Color, size: Vec2) -> Self {
         Self {
             color,
             min_size: size,
         }
     }
 
-    pub fn container(color: Color3) -> Self {
+    pub fn container(color: Color) -> Self {
         Self {
             color,
             min_size: Vec2::ZERO,

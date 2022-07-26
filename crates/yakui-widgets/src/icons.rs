@@ -1,9 +1,9 @@
 use std::f32::consts::TAU;
 
-use yakui_core::geometry::{Color3, Rect, Vec2};
+use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, Vertex};
 
-pub fn cross(output: &mut PaintDom, rect: Rect, color: Color3) {
+pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
         // Top
         [0.25, 0.0], // 0
@@ -49,10 +49,10 @@ pub fn cross(output: &mut PaintDom, rect: Rect, color: Color3) {
 }
 
 pub fn selection_halo(output: &mut PaintDom, rect: Rect) {
-    outline(output, rect, 2.0, Color3::WHITE);
+    outline(output, rect, 2.0, Color::WHITE);
 }
 
-pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color3) {
+pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color) {
     let vw = rect.size().x;
     let vh = rect.size().y;
 
@@ -107,7 +107,7 @@ pub struct PaintCircle {
     pub center: Vec2,
     pub radius: f32,
     pub segments: u16,
-    pub color: Color3,
+    pub color: Color,
 }
 
 #[allow(unused)]
@@ -117,7 +117,7 @@ impl PaintCircle {
             center,
             radius,
             segments: 24,
-            color: Color3::WHITE,
+            color: Color::WHITE,
         }
     }
 

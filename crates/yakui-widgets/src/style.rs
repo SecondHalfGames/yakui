@@ -1,4 +1,4 @@
-use yakui_core::geometry::Color3;
+use yakui_core::geometry::Color;
 
 use crate::font::FontName;
 
@@ -7,14 +7,14 @@ use crate::font::FontName;
 pub struct TextStyle {
     pub font: FontName,
     pub font_size: f32,
-    pub color: Color3,
+    pub color: Color,
     pub align: TextAlignment,
 }
 
 impl TextStyle {
     pub fn label() -> Self {
         Self {
-            color: Color3::WHITE,
+            color: Color::WHITE,
             font: FontName::new("default"),
             font_size: 14.0,
             align: TextAlignment::Start,

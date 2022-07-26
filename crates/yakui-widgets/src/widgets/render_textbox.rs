@@ -3,7 +3,7 @@ use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Color3, Constraints, Rect, Vec2};
+use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
@@ -171,7 +171,7 @@ impl Widget for RenderTextBoxWidget {
             let cursor_size = Vec2::new(1.0, size);
 
             let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
-            rect.color = Color3::RED;
+            rect.color = Color::RED;
             paint.add_rect(rect);
         }
     }

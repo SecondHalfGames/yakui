@@ -3,14 +3,14 @@ use glam::Vec3;
 /// An sRGB color.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[allow(missing_docs)]
-pub struct Color3 {
+pub struct Color {
     pub r: u8,
     pub g: u8,
     pub b: u8,
 }
 
-impl Color3 {
-    /// Create a new `Color3`.
+impl Color {
+    /// Create a new `Color`.
     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
@@ -18,9 +18,9 @@ impl Color3 {
     /// Create a color from a number, intended to be written as a hex literal.
     ///
     /// ```rust
-    /// # use yakui_core::geometry::Color3;
-    /// let orange = Color3::hex(0xff6137);
-    /// assert_eq!(orange, Color3::rgb(255, 97, 55));
+    /// # use yakui_core::geometry::Color;
+    /// let orange = Color::hex(0xff6137);
+    /// assert_eq!(orange, Color::rgb(255, 97, 55));
     /// ```
     pub const fn hex(value: u32) -> Self {
         let r = ((value >> 16) & 255) as u8;
@@ -30,7 +30,7 @@ impl Color3 {
         Self { r, g, b }
     }
 
-    /// Create a new `Color3` from a linear RGB color.
+    /// Create a new `Color` from a linear RGB color.
     pub fn from_linear(value: Vec3) -> Self {
         let linear = palette::LinSrgb::new(value.x, value.y, value.z);
         let (r, g, b) = palette::Srgb::from_linear(linear)
@@ -63,7 +63,7 @@ impl Color3 {
 macro_rules! builtin_colors {
     ($($name:ident ($($color:literal),*),)*) => {
         #[allow(missing_docs)]
-        impl Color3 {
+        impl Color {
             $(
                 pub const $name: Self = Self::rgb($($color),*);
             )*
@@ -86,7 +86,7 @@ builtin_colors! {
     REBECCA_PURPLE(102, 51, 153),
 }
 
-impl From<[u8; 3]> for Color3 {
+impl From<[u8; 3]> for Color {
     #[inline]
     fn from(value: [u8; 3]) -> Self {
         Self {

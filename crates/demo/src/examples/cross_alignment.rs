@@ -1,5 +1,5 @@
 use yakui::widgets::List;
-use yakui::{colored_box, expanded, label, Color3, CrossAxisAlignment};
+use yakui::{colored_box, expanded, label, Color, CrossAxisAlignment};
 
 use crate::ExampleState;
 
@@ -17,11 +17,11 @@ pub fn run(state: &mut ExampleState) {
     let mut row = List::row();
     row.cross_axis_alignment = alignment;
     row.show(|| {
-        colored_box(Color3::RED, [100.0, 100.0]);
+        colored_box(Color::RED, [100.0, 100.0]);
         expanded(|| {
-            colored_box(Color3::GREEN, [100.0, 100.0]);
+            colored_box(Color::GREEN, [100.0, 100.0]);
         });
-        colored_box(Color3::BLUE, [100.0, 100.0]);
+        colored_box(Color::BLUE, [100.0, 100.0]);
         label(format!("CrossAxisAlignment::{alignment:?}"));
     });
 }
