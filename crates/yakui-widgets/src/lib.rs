@@ -6,12 +6,12 @@
 
 mod icons;
 mod text_renderer;
-mod util;
 
 pub mod colors;
 pub mod font;
 pub mod shorthand;
 pub mod style;
+pub mod util;
 pub mod widgets;
 
 pub use self::shorthand::*;
