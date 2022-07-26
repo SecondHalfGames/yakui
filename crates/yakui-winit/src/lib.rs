@@ -1,5 +1,6 @@
 mod keys;
 
+use winit::dpi::PhysicalSize;
 use winit::event::{
     DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
 };
@@ -13,17 +14,23 @@ pub use self::keys::from_winit_key;
 #[non_exhaustive]
 pub struct State {
     auto_scale: bool,
-    unapplied_scale: Option<f32>,
+    init: Option<InitState>,
+}
+
+struct InitState {
+    size: PhysicalSize<u32>,
+    scale: f32,
 }
 
 impl State {
     #[allow(clippy::new_without_default)]
     pub fn new(window: &Window) -> Self {
-        let unapplied_scale = Some(window.scale_factor() as f32);
+        let size = window.inner_size();
+        let scale = window.scale_factor() as f32;
 
         Self {
             auto_scale: true,
-            unapplied_scale,
+            init: Some(InitState { size, scale }),
         }
     }
 
@@ -41,9 +48,15 @@ impl State {
         state: &mut yakui_core::State,
         event: &WinitEvent<T>,
     ) -> bool {
-        if let Some(scale) = self.unapplied_scale {
+        if let Some(init) = self.init.take() {
+            let rect = Rect::from_pos_size(
+                Vec2::ZERO,
+                Vec2::new(init.size.width as f32, init.size.height as f32),
+            );
+            state.set_unscaled_viewport(rect);
+
             if self.auto_scale {
-                state.set_scale_factor(scale);
+                state.set_scale_factor(init.scale);
             }
         }
 
