@@ -6,7 +6,7 @@ pub fn from_winit_key(key: VirtualKeyCode) -> Option<KeyboardKey> {
         VirtualKeyCode::Space => KeyboardKey::Space,
         VirtualKeyCode::Back => KeyboardKey::Backspace,
         VirtualKeyCode::Delete => KeyboardKey::Delete,
-        VirtualKeyCode::Return => KeyboardKey::Return,
+        VirtualKeyCode::Return | VirtualKeyCode::NumpadEnter => KeyboardKey::Return,
         VirtualKeyCode::Tab => KeyboardKey::Tab,
         VirtualKeyCode::Left => KeyboardKey::Left,
         VirtualKeyCode::Right => KeyboardKey::Right,
