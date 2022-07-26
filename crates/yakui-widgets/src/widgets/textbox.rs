@@ -1,6 +1,6 @@
 use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
-use yakui_core::input::{KeyboardKey, MouseButton};
+use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::widget::Widget;
@@ -119,42 +119,42 @@ impl Widget for TextBoxWidget {
             WidgetEvent::KeyChanged {
                 key, down: true, ..
             } => match key {
-                KeyboardKey::Left => {
+                KeyCode::ArrowLeft => {
                     self.move_cursor(-1);
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Right => {
+                KeyCode::ArrowRight => {
                     self.move_cursor(1);
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Backspace => {
+                KeyCode::Backspace => {
                     self.delete(-1);
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Delete => {
+                KeyCode::Delete => {
                     self.delete(1);
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Home => {
+                KeyCode::Home => {
                     self.home();
                     EventResponse::Sink
                 }
 
-                KeyboardKey::End => {
+                KeyCode::End => {
                     self.end();
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Return => {
+                KeyCode::Enter | KeyCode::NumpadEnter => {
                     context::remove_selection();
                     EventResponse::Sink
                 }
 
-                KeyboardKey::Escape => {
+                KeyCode::Escape => {
                     context::remove_selection();
                     EventResponse::Sink
                 }

@@ -7,9 +7,9 @@ use winit::event::{
 use winit::window::Window;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, Vec2};
-use yakui_core::input::{ModifiersState, MouseButton};
+use yakui_core::input::MouseButton;
 
-pub use self::keys::from_winit_key;
+pub use self::keys::{from_winit_key, from_winit_modifiers};
 
 #[non_exhaustive]
 pub struct State {
@@ -124,12 +124,7 @@ impl State {
             WinitEvent::WindowEvent {
                 event: WindowEvent::ModifiersChanged(mods),
                 ..
-            } => state.handle_event(Event::ModifiersChanged(ModifiersState {
-                shift: mods.shift(),
-                ctrl: mods.ctrl(),
-                alt: mods.alt(),
-                logo: mods.logo(),
-            })),
+            } => state.handle_event(Event::ModifiersChanged(from_winit_modifiers(*mods))),
             WinitEvent::DeviceEvent {
                 event: DeviceEvent::Key(input),
                 ..

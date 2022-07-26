@@ -11,7 +11,7 @@ use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
 use super::button::MouseButton;
-use super::{KeyboardKey, ModifiersState};
+use super::{KeyCode, Modifiers};
 
 /// Holds yakui's input state, like cursor position, hovered, and selected
 /// widgets.
@@ -79,7 +79,7 @@ struct InputStateInner {
     mouse: RefCell<Mouse>,
 
     /// State of the keyboard modifier keys
-    modifiers: Cell<ModifiersState>,
+    modifiers: Cell<Modifiers>,
 
     /// Details about widgets and their mouse intersections.
     intersections: RefCell<Intersections>,
@@ -156,7 +156,7 @@ impl InputStateInner {
                 position: None,
                 buttons: HashMap::new(),
             }),
-            modifiers: Cell::new(ModifiersState::default()),
+            modifiers: Cell::new(Modifiers::default()),
             intersections: RefCell::new(Intersections {
                 mouse_hit: Vec::new(),
                 mouse_entered: Vec::new(),
@@ -214,7 +214,7 @@ impl InputStateInner {
         &self,
         dom: &Dom,
         layout: &LayoutDom,
-        key: KeyboardKey,
+        key: KeyCode,
         down: bool,
     ) -> EventResponse {
         let selected = *self.selection.borrow();
@@ -238,7 +238,7 @@ impl InputStateInner {
         EventResponse::Bubble
     }
 
-    fn modifiers_changed(&self, modifiers: &ModifiersState) -> EventResponse {
+    fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
         self.modifiers.set(*modifiers);
         EventResponse::Bubble
     }

@@ -184,7 +184,7 @@ pub fn paint_text(
 
     for glyph in text_layout.glyphs() {
         let tex_rect = glyph_cache
-            .get_or_insert(paint, &*font, glyph.key)
+            .get_or_insert(paint, &font, glyph.key)
             .as_rect()
             .div_vec2(glyph_cache.texture_size.as_vec2());
 
