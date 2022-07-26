@@ -59,7 +59,7 @@ impl InputState {
             Event::MouseButtonChanged { button, down } => {
                 self.inner.mouse_button_changed(dom, layout, *button, *down)
             }
-            Event::KeyChanged(key, down) => {
+            Event::KeyChanged { key, down } => {
                 self.inner.keyboard_key_changed(dom, layout, *key, *down)
             }
             Event::TextInput(c) => self.inner.text_input(dom, layout, *c),

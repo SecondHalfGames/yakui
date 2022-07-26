@@ -121,6 +121,15 @@ impl State {
                 event: WindowEvent::ReceivedCharacter(c),
                 ..
             } => state.handle_event(Event::TextInput(*c)),
+            WinitEvent::WindowEvent {
+                event: WindowEvent::ModifiersChanged(mods),
+                ..
+            } => state.handle_event(Event::ModifiersChanged {
+                shift: mods.shift(),
+                ctrl: mods.ctrl(),
+                alt: mods.alt(),
+                logo: mods.logo(),
+            }),
             WinitEvent::DeviceEvent {
                 event: DeviceEvent::Key(input),
                 ..
@@ -131,7 +140,7 @@ impl State {
                         ElementState::Released => false,
                     };
 
-                    state.handle_event(Event::KeyChanged(key, pressed))
+                    state.handle_event(Event::KeyChanged { key, down: pressed })
                 } else {
                     false
                 }

@@ -21,12 +21,31 @@ pub enum Event {
         /// Which mouse button was changed.
         button: MouseButton,
 
-        /// Whether the button now down.
+        /// Whether the button is now down.
         down: bool,
     },
 
     /// A key changed, telling whether it is now pressed.
-    KeyChanged(KeyboardKey, bool),
+    KeyChanged {
+        /// Which key's state was changed.
+        key: KeyboardKey,
+
+        /// Whether the key is now down.
+        down: bool,
+    },
+
+    /// The state of the keyboard modifiers keys changed.
+    ModifiersChanged {
+        /// Whether the SHIFT key is now down.
+        shift: bool,
+        /// Whether the CTRL key is now down.
+        ctrl: bool,
+        /// Whether the ALT key is now down.
+        alt: bool,
+        /// Whether the logo key is now down. This is the "windows" key on PC
+        /// and "command" key on Mac.
+        logo: bool,
+    },
 
     /// A Unicode codepoint was typed in the window.
     TextInput(char),
