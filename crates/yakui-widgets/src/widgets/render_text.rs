@@ -6,13 +6,13 @@ use fontdue::layout::{
     CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle as FontdueTextStyle,
 };
 use yakui_core::dom::Dom;
-use yakui_core::geometry::{Constraints, Rect, Vec2};
+use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
-use crate::font::Fonts;
+use crate::font::{FontName, Fonts};
 use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
@@ -121,36 +121,17 @@ impl Widget for RenderTextWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let fonts = dom.get_global_or_init(Fonts::default);
-        let global = dom.get_global_or_init(TextGlobalState::new);
-
-        let font = match fonts.get(&self.props.style.font) {
-            Some(font) => font,
-            None => return,
-        };
-
         let text_layout = self.layout.borrow_mut();
-        let mut glyph_cache = global.glyph_cache.borrow_mut();
-
-        glyph_cache.ensure_texture(paint);
-
         let layout_node = layout.get(dom.current()).unwrap();
-
-        for glyph in text_layout.glyphs() {
-            let tex_rect = glyph_cache
-                .get_or_insert(paint, &font, glyph.key)
-                .as_rect()
-                .div_vec2(glyph_cache.texture_size.as_vec2());
-
-            let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
-            let pos = layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
-
-            let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
-            rect.color = self.props.style.color;
-            rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
-            rect.pipeline = Pipeline::Text;
-            paint.add_rect(rect);
-        }
+        paint_text(
+            dom,
+            layout,
+            paint,
+            &self.props.style.font,
+            layout_node.rect.pos(),
+            &text_layout,
+            self.props.style.color,
+        );
     }
 }
 
@@ -180,4 +161,40 @@ pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> V
         .unwrap_or_default();
 
     Vec2::new(width, height) / scale_factor
+}
+
+pub fn paint_text(
+    dom: &Dom,
+    layout: &LayoutDom,
+    paint: &mut PaintDom,
+    font: &FontName,
+    pos: Vec2,
+    text_layout: &Layout,
+    color: Color,
+) {
+    let fonts = dom.get_global_or_init(Fonts::default);
+    let font = match fonts.get(font) {
+        Some(font) => font,
+        None => return,
+    };
+
+    let text_global = dom.get_global_or_init(TextGlobalState::new);
+    let mut glyph_cache = text_global.glyph_cache.borrow_mut();
+    glyph_cache.ensure_texture(paint);
+
+    for glyph in text_layout.glyphs() {
+        let tex_rect = glyph_cache
+            .get_or_insert(paint, &*font, glyph.key)
+            .as_rect()
+            .div_vec2(glyph_cache.texture_size.as_vec2());
+
+        let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
+        let pos = pos + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
+
+        let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
+        rect.color = color;
+        rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
+        rect.pipeline = Pipeline::Text;
+        paint.add_rect(rect);
+    }
 }

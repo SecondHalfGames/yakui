@@ -5,16 +5,15 @@ use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as Fon
 use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
+use yakui_core::paint::{PaintDom, PaintRect};
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
 use crate::font::Fonts;
 use crate::style::TextStyle;
-use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
-use super::get_text_layout_size;
+use super::render_text::{get_text_layout_size, paint_text};
 
 /**
 Rendering and layout logic for a textbox, holding no state.
@@ -133,36 +132,17 @@ impl Widget for RenderTextBoxWidget {
     }
 
     fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let fonts = dom.get_global_or_init(Fonts::default);
-        let global = dom.get_global_or_init(TextGlobalState::new);
-
-        let font = match fonts.get(&self.props.style.font) {
-            Some(font) => font,
-            None => return,
-        };
-
         let text_layout = self.layout.borrow_mut();
-        let mut glyph_cache = global.glyph_cache.borrow_mut();
-
-        glyph_cache.ensure_texture(paint);
-
         let layout_node = layout.get(dom.current()).unwrap();
-
-        for glyph in text_layout.glyphs() {
-            let tex_rect = glyph_cache
-                .get_or_insert(paint, &*font, glyph.key)
-                .as_rect()
-                .div_vec2(glyph_cache.texture_size.as_vec2());
-
-            let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
-            let pos = layout_node.rect.pos() + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
-
-            let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
-            rect.color = self.props.style.color;
-            rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
-            rect.pipeline = Pipeline::Text;
-            paint.add_rect(rect);
-        }
+        paint_text(
+            dom,
+            layout,
+            paint,
+            &self.props.style.font,
+            layout_node.rect.pos(),
+            &text_layout,
+            self.props.style.color,
+        );
 
         if self.props.selected {
             let (pos, size) = *self.cursor_pos_size.borrow();
