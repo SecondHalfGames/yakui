@@ -191,7 +191,7 @@ pub fn paint_text(
         let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
         let pos = pos + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
 
-        let mut rect = PaintRect::new(Rect::from_pos_size(pos.round(), size.round()));
+        let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
         rect.color = color;
         rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
         rect.pipeline = Pipeline::Text;
