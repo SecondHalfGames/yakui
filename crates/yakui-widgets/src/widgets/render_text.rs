@@ -110,7 +110,7 @@ impl Widget for RenderTextWidget {
             &[&*font],
             &FontdueTextStyle::new(
                 &self.props.text,
-                self.props.style.font_size * layout.scale_factor(),
+                (self.props.style.font_size * layout.scale_factor()).ceil(),
                 0,
             ),
         );
@@ -172,6 +172,7 @@ pub fn paint_text(
     text_layout: &Layout,
     color: Color,
 ) {
+    let pos = pos.round();
     let fonts = dom.get_global_or_init(Fonts::default);
     let font = match fonts.get(font) {
         Some(font) => font,

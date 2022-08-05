@@ -91,7 +91,7 @@ impl Widget for RenderTextBoxWidget {
             (None, None)
         };
 
-        let font_size = self.props.style.font_size * layout.scale_factor();
+        let font_size = (self.props.style.font_size * layout.scale_factor()).ceil();
 
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
