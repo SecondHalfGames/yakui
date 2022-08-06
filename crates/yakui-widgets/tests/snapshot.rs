@@ -4,8 +4,8 @@ use yakui_core::Alignment;
 use yakui_test::{run, Test};
 use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
-    align, center, colored_box, colored_box_container, column, constrained, expanded, pad, row,
-    text,
+    align, center, checkbox, colored_box, colored_box_container, column, constrained, expanded,
+    pad, row, text,
 };
 
 #[test]
@@ -288,6 +288,19 @@ fn button_text_alignment() {
                 let mut button = Button::styled("X X X X X".into());
                 button.text_style.font_size = 60.0;
                 button.show();
+            });
+        });
+    });
+}
+
+#[test]
+fn constrain_checkbox() {
+    run!({
+        let constraints = Constraints::tight(Vec2::splat(100.0));
+
+        center(|| {
+            constrained(constraints, || {
+                checkbox(true);
             });
         });
     });

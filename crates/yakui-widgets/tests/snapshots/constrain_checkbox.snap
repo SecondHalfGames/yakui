@@ -1,0 +1,9 @@
+---
+source: crates/yakui-widgets/tests/snapshot.rs
+assertion_line: 298
+expression: view
+---
+- AlignWidget pos(0, 0) size(1000, 1000)
+  - ConstrainedBoxWidget pos(450, 450) size(100, 100)
+    - CheckboxWidget pos(450, 450) size(100, 100)
+
