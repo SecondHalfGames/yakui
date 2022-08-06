@@ -160,7 +160,11 @@ fn load_texture(bytes: &[u8]) -> Texture {
     let image = image::load_from_memory(bytes).unwrap().into_rgba8();
     let size = UVec2::new(image.width(), image.height());
 
-    Texture::new(TextureFormat::Rgba8Srgb, size, image.into_raw())
+    // For fun, let's change our mag_filter to Nearest here to make our loaded
+    // images pixelated.
+    let mut texture = Texture::new(TextureFormat::Rgba8Srgb, size, image.into_raw());
+    texture.mag_filter = yakui::paint::TextureFilter::Nearest;
+    texture
 }
 
 /// Initialize our logging, adjusting the default log levels of some of our

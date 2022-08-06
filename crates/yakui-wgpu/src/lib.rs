@@ -1,6 +1,7 @@
 #![allow(clippy::new_without_default)]
 
 mod buffer;
+mod samplers;
 mod texture;
 
 use std::collections::HashMap;
@@ -14,6 +15,7 @@ use yakui_core::geometry::{Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
 use yakui_core::TextureId;
 
+use self::samplers::Samplers;
 use self::texture::GpuTexture;
 
 pub struct State {
@@ -21,7 +23,7 @@ pub struct State {
     text_pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
     default_texture: GpuTexture,
-    default_sampler: wgpu::Sampler,
+    samplers: Samplers,
     textures: HashMap<TextureId, GpuTexture>,
 
     vertices: Buffer,
@@ -155,26 +157,18 @@ impl State {
             multiview: None,
         });
 
+        let samplers = Samplers::new(device);
+
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
         let default_texture = GpuTexture::new(device, queue, &default_texture_data);
-
-        let default_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
 
         Self {
             main_pipeline,
             text_pipeline,
             layout,
             default_texture,
-            default_sampler,
+            samplers,
             textures: HashMap::new(),
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
@@ -280,17 +274,19 @@ impl State {
                 .and_then(|index| self.textures.get(&index))
                 .unwrap_or(&self.default_texture);
 
+            let sampler = self.samplers.get(texture.min_filter, texture.mag_filter);
+
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("yakui Bind Group"),
                 layout: &self.layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(texture.view()),
+                        resource: wgpu::BindingResource::TextureView(&texture.view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&self.default_sampler),
+                        resource: wgpu::BindingResource::Sampler(sampler),
                     },
                 ],
             });
