@@ -21,7 +21,7 @@ macro_rules! run {
     ($test:expr, $body:expr) => {
         let mut settings = ::yakui_test::insta::Settings::clone_current();
         settings.set_prepend_module_to_snapshot(false);
-        settings.bind_to_scope();
+        let _guard = settings.bind_to_scope();
 
         let test = $test;
         let mut state = ::yakui_test::yakui_core::State::new();
