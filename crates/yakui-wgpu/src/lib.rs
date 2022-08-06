@@ -10,9 +10,8 @@ use std::ops::Range;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
-use glam::UVec2;
 use yakui_core::geometry::{Vec2, Vec4};
-use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
+use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureEdit};
 use yakui_core::TextureId;
 
 use self::samplers::Samplers;
@@ -22,9 +21,9 @@ pub struct State {
     main_pipeline: wgpu::RenderPipeline,
     text_pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
-    default_texture: GpuTexture,
     samplers: Samplers,
     textures: HashMap<TextureId, GpuTexture>,
+    texture_counter: u64,
 
     vertices: Buffer,
     indices: Buffer,
@@ -52,11 +51,7 @@ impl Vertex {
 }
 
 impl State {
-    pub fn new(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        surface_format: wgpu::TextureFormat,
-    ) -> Self {
+    pub fn new(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> Self {
         let main_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Main Shader"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/main.wgsl").into()),
@@ -159,17 +154,13 @@ impl State {
 
         let samplers = Samplers::new(device);
 
-        let default_texture_data =
-            Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
-        let default_texture = GpuTexture::new(device, queue, &default_texture_data);
-
         Self {
             main_pipeline,
             text_pipeline,
             layout,
-            default_texture,
             samplers,
             textures: HashMap::new(),
+            texture_counter: 0,
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
@@ -204,6 +195,7 @@ impl State {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
         let paint = state.paint();
+        self.update_textures(paint.texture_edits(), device, queue);
 
         if paint.calls().is_empty() {
             return;
@@ -245,6 +237,27 @@ impl State {
         }
     }
 
+    pub fn add_texture(
+        &mut self,
+        texture: Texture,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> TextureId {
+        let id = self.make_new_id();
+
+        self.textures
+            .insert(id, GpuTexture::new(device, queue, &texture));
+
+        id
+    }
+
+    /// Generates a new texture id, which should be placed into the map.
+    fn make_new_id(&mut self) -> TextureId {
+        let id = self.texture_counter;
+        self.texture_counter += 1;
+        TextureId::new(id)
+    }
+
     fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
         profiling::scope!("update_buffers");
 
@@ -271,7 +284,7 @@ impl State {
             let texture = mesh
                 .texture
                 .and_then(|index| self.textures.get(&index))
-                .unwrap_or(&self.default_texture);
+                .expect("we did not have a texture we expected to have");
 
             let sampler = self.samplers.get(texture.min_filter, texture.mag_filter);
 
@@ -300,18 +313,39 @@ impl State {
         self.commands.extend(commands);
     }
 
-    fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
+    fn update_textures(
+        &mut self,
+        texture_edits: &[TextureEdit],
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) {
         profiling::scope!("update_textures");
 
-        for (id, texture) in paint.textures() {
-            match self.textures.get_mut(&id) {
-                Some(existing) => existing.update_if_newer(device, queue, texture),
-                None => {
-                    self.textures
-                        .insert(id, GpuTexture::new(device, queue, texture));
+        for texture_edit in texture_edits {
+            match texture_edit {
+                TextureEdit::Modify(id, texture) => {
+                    let gpu_texture = self
+                        .textures
+                        .get_mut(id)
+                        .expect("we dropped a texture incorrectly!");
+
+                    gpu_texture.update(device, queue, texture);
+                }
+                TextureEdit::Remove(_) => {
+                    todo!("FOR PR REVIEW -- this writer doesn't know wgpu and so does not know how to implement this!")
                 }
             }
         }
+
+        // for (id, texture) in state.textures() {
+        //     match self.textures.get_mut(&id) {
+        //         Some(existing) => existing.update_if_newer(device, queue, texture),
+        //         None => {
+        //             self.textures
+        //                 .insert(id, GpuTexture::new(device, queue, texture));
+        //         }
+        //     }
+        // }
     }
 }
 

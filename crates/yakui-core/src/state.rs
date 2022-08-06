@@ -2,10 +2,9 @@ use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
 use crate::geometry::Rect;
-use crate::id::TextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{PaintDom, Texture};
+use crate::paint::PaintDom;
 
 /// The entrypoint for yakui.
 #[derive(Debug)]
@@ -47,16 +46,6 @@ impl State {
         response == EventResponse::Sink
     }
 
-    /// Creates a texture for use within yakui.
-    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
-        self.paint.add_texture(texture)
-    }
-
-    /// Returns an iterator of all textures managed by yakui.
-    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
-        self.paint.textures()
-    }
-
     /// Set the size of the viewport in physical units.
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
         self.layout.set_unscaled_viewport(view);
@@ -79,6 +68,7 @@ impl State {
     /// When finished, call [`Dom::finish`].
     pub fn start(&mut self) {
         self.dom.start();
+        self.paint.start();
         context::bind_dom(&self.dom);
         context::bind_input(&self.input);
     }

@@ -78,7 +78,7 @@ async fn run() {
     }
 
     // Preload a texture for the examples to use.
-    let monkey = yak.add_texture(load_texture(MONKEY_PNG));
+    let monkey = graphics.add_texture(load_texture(MONKEY_PNG));
 
     // Add a custom font for some of the examples.
     let fonts = yak.dom().get_global_or_init(Fonts::default);

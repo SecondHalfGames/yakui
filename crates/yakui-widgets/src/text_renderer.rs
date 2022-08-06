@@ -10,32 +10,43 @@ use yakui_core::TextureId;
 
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {
-    pub glyph_cache: Rc<RefCell<GlyphCache>>,
+    pub glyph_cache: Rc<RefCell<LateBindingGlyphCache>>,
+}
+
+/// This is somewhat a default right now
+const TEXTURE_SIZE: u32 = 4096;
+
+impl TextGlobalState {
+    pub fn new(font_atlas_id: TextureId) -> Self {
+        let glyph_cache = LateBindingGlyphCache {
+            font_atlas_id,
+            font_atlas: Texture::new(
+                TextureFormat::R8,
+                UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE),
+                vec![0; (TEXTURE_SIZE * TEXTURE_SIZE) as usize],
+            ),
+
+            glyphs: HashMap::new(),
+            next_pos: UVec2::ONE,
+            row_height: 0,
+        };
+
+        Self {
+            glyph_cache: Rc::new(RefCell::new(glyph_cache)),
+        }
+    }
 }
 
 #[derive(Debug)]
-pub struct GlyphCache {
-    pub texture: Option<TextureId>,
-    pub texture_size: UVec2,
+pub struct LateBindingGlyphCache {
+    font_atlas_id: TextureId,
+    font_atlas: Texture,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,
     row_height: u32,
 }
 
-impl GlyphCache {
-    pub fn ensure_texture(&mut self, paint: &mut PaintDom) {
-        if self.texture.is_none() {
-            let texture = paint.add_texture(Texture::new(
-                TextureFormat::R8,
-                UVec2::new(4096, 4096),
-                vec![0; 4096 * 4096],
-            ));
-
-            self.texture = Some(texture);
-            self.texture_size = UVec2::new(4096, 4096);
-        }
-    }
-
+impl LateBindingGlyphCache {
     pub fn get_or_insert(
         &mut self,
         paint: &mut PaintDom,
@@ -43,13 +54,13 @@ impl GlyphCache {
         key: GlyphRasterConfig,
     ) -> URect {
         *self.glyphs.entry(key).or_insert_with(|| {
-            let texture = paint.modify_texture(self.texture.unwrap()).unwrap();
+            let atlas_size = self.font_atlas.size();
 
             let (metrics, bitmap) = font.rasterize_indexed(key.glyph_index, key.px);
             let glyph_size = UVec2::new(metrics.width as u32, metrics.height as u32);
 
             let glyph_max = self.next_pos + glyph_size;
-            let pos = if glyph_max.x < self.texture_size.x {
+            let pos = if glyph_max.x < atlas_size.x {
                 let pos = self.next_pos;
                 self.row_height = self.row_height.max(glyph_size.y + 1);
                 pos
@@ -60,11 +71,26 @@ impl GlyphCache {
             };
             self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
 
-            let size = texture.size();
-            blit(pos, &bitmap, glyph_size, texture.data_mut(), size);
+            blit(
+                pos,
+                &bitmap,
+                glyph_size,
+                self.font_atlas.data_mut(),
+                atlas_size,
+            );
+
+            paint.modify_texture(self.font_atlas_id, self.font_atlas.clone());
 
             URect::from_pos_size(pos, glyph_size)
         })
+    }
+
+    pub fn texture_size(&self) -> UVec2 {
+        UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE)
+    }
+
+    pub fn font_atlas_id(&self) -> TextureId {
+        self.font_atlas_id
     }
 }
 
@@ -91,25 +117,6 @@ pub fn blit(
 
             let value = get_pixel(source_data, source_size, UVec2::new(w, h));
             set_pixel(dest_data, dest_size, pos, value);
-        }
-    }
-}
-
-impl TextGlobalState {
-    pub fn new() -> Self {
-        let glyph_cache = GlyphCache {
-            texture: None,
-            glyphs: HashMap::new(),
-            next_pos: UVec2::ONE,
-            row_height: 0,
-
-            // Not initializing to zero to avoid divide by zero issues if we do
-            // intialize the texture incorrectly.
-            texture_size: UVec2::ONE,
-        };
-
-        Self {
-            glyph_cache: Rc::new(RefCell::new(glyph_cache)),
         }
     }
 }

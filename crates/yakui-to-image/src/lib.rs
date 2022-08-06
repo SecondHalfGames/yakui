@@ -24,6 +24,6 @@ pub fn paint_and_save_to<P: AsRef<Path>>(state: &mut yakui_core::State, path: P)
 
 pub fn paint(state: &mut yakui_core::State) -> RgbaImage {
     let graphics = pollster::block_on(Graphics::new());
-    let mut renderer = yakui_wgpu::State::new(&graphics.device, &graphics.queue, graphics.format);
+    let mut renderer = yakui_wgpu::State::new(&graphics.device, graphics.format);
     graphics.paint(state, &mut renderer)
 }

@@ -154,6 +154,17 @@ impl Dom {
         globals.entry::<T>().or_insert_with(init).clone()
     }
 
+    /// Get a piece of DOM-global state.
+    ///
+    /// This is intended for any state that is global. It's not a perfect fit
+    /// for scoped state like themes.
+    pub fn get_global<T>(&self) -> Option<T>
+    where
+        T: 'static + Clone,
+    {
+        self.inner.globals.borrow_mut().get::<T>().cloned()
+    }
+
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
     pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T> {

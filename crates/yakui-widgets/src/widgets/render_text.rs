@@ -170,22 +170,23 @@ pub fn paint_text(
         None => return,
     };
 
-    let text_global = dom.get_global_or_init(TextGlobalState::new);
+    let text_global = dom
+        .get_global::<TextGlobalState>()
+        .expect("please initialize the glyph cache");
     let mut glyph_cache = text_global.glyph_cache.borrow_mut();
-    glyph_cache.ensure_texture(paint);
 
     for glyph in text_layout.glyphs() {
         let tex_rect = glyph_cache
             .get_or_insert(paint, &font, glyph.key)
             .as_rect()
-            .div_vec2(glyph_cache.texture_size.as_vec2());
+            .div_vec2(glyph_cache.texture_size().as_vec2());
 
         let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
         let pos = pos + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
 
         let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
         rect.color = color;
-        rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
+        rect.texture = Some((glyph_cache.font_atlas_id(), tex_rect));
         rect.pipeline = Pipeline::Text;
         paint.add_rect(rect);
     }

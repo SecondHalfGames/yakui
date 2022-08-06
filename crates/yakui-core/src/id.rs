@@ -26,24 +26,22 @@ impl fmt::Debug for WidgetId {
 }
 
 /// Identifies a texture that has been given to yakui to manage.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct TextureId(Index);
+pub struct TextureId(u64);
 
 impl TextureId {
+    /// Creates a new [TextureId].
+    ///
+    /// This is intended as a thin wrapper around a u64, which can mean whatever users want it to mean.
     #[inline]
-    pub(crate) fn new(index: Index) -> Self {
+    pub const fn new(index: u64) -> Self {
         Self(index)
     }
 
+    /// Unwraps a [TextureId] into a `u64`.
     #[inline]
-    pub(crate) fn index(&self) -> Index {
+    pub fn inner(self) -> u64 {
         self.0
-    }
-}
-
-impl fmt::Debug for TextureId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TextureId({}, {})", self.0.slot(), self.0.generation())
     }
 }

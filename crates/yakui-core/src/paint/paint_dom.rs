@@ -1,5 +1,4 @@
 use glam::Vec2;
-use thunderdome::Arena;
 
 use crate::dom::Dom;
 use crate::geometry::Rect;
@@ -26,7 +25,7 @@ const RECT_INDEX: [u16; 6] = [
 /// Contains all information about how to paint the current set of widgets.
 #[derive(Debug)]
 pub struct PaintDom {
-    textures: Arena<Texture>,
+    texture_edits: Vec<TextureEdit>,
     calls: Vec<PaintCall>,
     viewport: Rect,
 }
@@ -35,10 +34,15 @@ impl PaintDom {
     /// Create a new, empty Paint DOM.
     pub fn new() -> Self {
         Self {
-            textures: Arena::new(),
+            texture_edits: Vec::new(),
             calls: Vec::new(),
             viewport: Rect::ONE,
         }
+    }
+
+    /// Just clears the texture edits, which should have been consumed last frame
+    pub(crate) fn start(&mut self) {
+        self.texture_edits.clear();
     }
 
     pub(crate) fn set_viewport(&mut self, viewport: Rect) {
@@ -69,37 +73,18 @@ impl PaintDom {
         node.widget.paint(dom, layout, self);
     }
 
-    /// Add a texture to the Paint DOM, returning an ID that can be used to
-    /// reference it later.
-    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
-        TextureId::new(self.textures.insert(texture))
-    }
-
-    /// Remove a texture from the Paint DOM.
-    pub fn remove_texture(&mut self, id: TextureId) {
-        self.textures.remove(id.index());
-    }
-
-    /// Retrieve a texture by its ID, if it exists.
-    pub fn get_texture(&self, id: TextureId) -> Option<&Texture> {
-        self.textures.get(id.index())
-    }
-
     /// Returns a mutable handle to a texture given its ID.
     ///
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
-    pub fn modify_texture(&mut self, id: TextureId) -> Option<&mut Texture> {
-        let texture = self.textures.get_mut(id.index())?;
-        texture.generation = texture.generation.wrapping_add(1);
-        Some(texture)
+    pub fn modify_texture(&mut self, id: TextureId, texture: Texture) {
+        self.texture_edits.push(TextureEdit::Modify(id, texture));
     }
 
-    /// Returns an iterator over all textures known to the Paint DOM.
-    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
-        self.textures
-            .iter()
-            .map(|(index, texture)| (TextureId::new(index), texture))
+    /// Takes all the texture edits. These must be consumed *before* processing the [PaintCall]s for
+    /// this frame.
+    pub fn texture_edits(&self) -> &[TextureEdit] {
+        &self.texture_edits
     }
 
     /// Returns a list of paint calls that could be used to draw the UI.
@@ -167,4 +152,14 @@ impl PaintDom {
 
         self.add_mesh(mesh);
     }
+}
+
+/// An edit to a texture id. Clients must consume these edits as appropriate.
+#[derive(Debug)]
+pub enum TextureEdit {
+    // how does *add* work?
+    /// This texture id has been modified.
+    Modify(TextureId, Texture),
+    /// This texture has been removed.
+    Remove(TextureId),
 }

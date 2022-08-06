@@ -66,7 +66,7 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::State::new(&device, &queue, surface_config.format);
+        let renderer = yakui_wgpu::State::new(&device, surface_config.format);
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.
@@ -106,6 +106,12 @@ impl Graphics {
             self.surface_config.height = new_size.height;
             self.surface.configure(&self.device, &self.surface_config);
         }
+    }
+
+    /// Adds a texture, uploading it to the Gpu, and returns a TextureId for it.
+    pub fn add_texture(&mut self, texture: yakui::paint::Texture) -> yakui::TextureId {
+        self.renderer
+            .add_texture(texture, &self.device, &self.queue)
     }
 
     #[cfg_attr(feature = "profiling", profiling::function)]

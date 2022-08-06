@@ -1,6 +1,7 @@
 use glam::UVec2;
 
 /// A texture that is managed by yakui.
+#[derive(Clone)]
 pub struct Texture {
     format: TextureFormat,
     size: UVec2,
@@ -11,10 +12,6 @@ pub struct Texture {
 
     /// How to filter the texture when it needs to be magnified (made larger)
     pub mag_filter: TextureFilter,
-
-    /// Generation attached to the texture to indicate that it has been
-    /// completely invalidated and should be reuploaded.
-    pub(super) generation: u8,
 }
 
 impl std::fmt::Debug for Texture {
@@ -24,7 +21,6 @@ impl std::fmt::Debug for Texture {
             .field("size", &self.size)
             .field("min_filter", &self.min_filter)
             .field("mag_filter", &self.mag_filter)
-            .field("generation", &self.generation)
             .finish_non_exhaustive()
     }
 }
@@ -60,7 +56,6 @@ impl Texture {
             data,
             min_filter: TextureFilter::Nearest,
             mag_filter: TextureFilter::Linear,
-            generation: 0,
         }
     }
 
@@ -82,11 +77,5 @@ impl Texture {
     /// The texture's format.
     pub fn format(&self) -> TextureFormat {
         self.format
-    }
-
-    /// The texture's generation. This is incremented every time the texture has
-    /// potentially been modified.
-    pub fn generation(&self) -> u8 {
-        self.generation
     }
 }
