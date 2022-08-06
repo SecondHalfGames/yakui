@@ -7,6 +7,8 @@
 mod icons;
 mod text_renderer;
 
+pub use text_renderer::{GlyphCache, LateBindingGlyphCache, TextGlobalState};
+
 pub mod colors;
 pub mod font;
 pub mod shorthand;

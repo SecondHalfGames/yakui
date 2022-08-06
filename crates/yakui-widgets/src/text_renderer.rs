@@ -8,38 +8,54 @@ use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
 use yakui_core::TextureId;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TextGlobalState {
-    pub glyph_cache: Rc<RefCell<LateBindingGlyphCache>>,
+    pub glyph_cache: Rc<RefCell<dyn GlyphCache>>,
 }
 
-/// This is somewhat a default right now
-const TEXTURE_SIZE: u32 = 4096;
-
 impl TextGlobalState {
-    pub fn new(font_atlas_id: TextureId) -> Self {
-        let glyph_cache = LateBindingGlyphCache {
-            font_atlas_id,
-            font_atlas: Texture::new(
-                TextureFormat::R8,
-                UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE),
-                vec![0; (TEXTURE_SIZE * TEXTURE_SIZE) as usize],
-            ),
-
-            glyphs: HashMap::new(),
-            next_pos: UVec2::ONE,
-            row_height: 0,
-        };
-
+    pub fn new<T: GlyphCache + 'static>(glyph_cache: T) -> Self {
         Self {
             glyph_cache: Rc::new(RefCell::new(glyph_cache)),
         }
     }
+
+    pub fn new_late_binding() -> Self {
+        Self {
+            glyph_cache: Rc::new(RefCell::new(LateBindingGlyphCache::new())),
+        }
+    }
 }
+
+pub trait GlyphCache {
+    fn get_or_insert(
+        &mut self,
+        paint: &mut PaintDom,
+        font: &Font,
+        key: GlyphRasterConfig,
+    ) -> Result<(TextureId, URect), GlyphCacheErr>;
+
+    fn texture_size(&self, font: &Font, key: &GlyphRasterConfig) -> UVec2;
+}
+
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum GlyphCacheErr {
+    NeedsTextureAllocation,
+}
+
+impl std::fmt::Display for GlyphCacheErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GlyphCacheErr::NeedsTextureAllocation => f.write_str("needs new texture"),
+        }
+    }
+}
+impl std::error::Error for GlyphCacheErr {}
 
 #[derive(Debug)]
 pub struct LateBindingGlyphCache {
-    font_atlas_id: TextureId,
+    font_atlas_id: Option<TextureId>,
     font_atlas: Texture,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,
@@ -47,13 +63,37 @@ pub struct LateBindingGlyphCache {
 }
 
 impl LateBindingGlyphCache {
-    pub fn get_or_insert(
+    /// This is somewhat a default right now
+    const TEXTURE_SIZE: u32 = 4096;
+
+    /// Creates a new LateBindingGlyphCache
+    pub fn new() -> Self {
+        LateBindingGlyphCache {
+            font_atlas_id: None,
+            font_atlas: Texture::new(
+                TextureFormat::R8,
+                UVec2::new(Self::TEXTURE_SIZE, Self::TEXTURE_SIZE),
+                vec![0; (Self::TEXTURE_SIZE * Self::TEXTURE_SIZE) as usize],
+            ),
+            glyphs: HashMap::new(),
+            next_pos: UVec2::ONE,
+            row_height: 0,
+        }
+    }
+}
+
+impl GlyphCache for LateBindingGlyphCache {
+    fn get_or_insert(
         &mut self,
         paint: &mut PaintDom,
         font: &Font,
         key: GlyphRasterConfig,
-    ) -> URect {
-        *self.glyphs.entry(key).or_insert_with(|| {
+    ) -> Result<(TextureId, URect), GlyphCacheErr> {
+        let font_atlas_id = self
+            .font_atlas_id
+            .ok_or(GlyphCacheErr::NeedsTextureAllocation)?;
+
+        let u_rect = *self.glyphs.entry(key).or_insert_with(|| {
             let atlas_size = self.font_atlas.size();
 
             let (metrics, bitmap) = font.rasterize_indexed(key.glyph_index, key.px);
@@ -79,18 +119,17 @@ impl LateBindingGlyphCache {
                 atlas_size,
             );
 
-            paint.modify_texture(self.font_atlas_id, self.font_atlas.clone());
+            // let the painter know that we modified our own texture...
+            paint.modify_texture(font_atlas_id, self.font_atlas.clone());
 
             URect::from_pos_size(pos, glyph_size)
-        })
+        });
+
+        Ok((font_atlas_id, u_rect))
     }
 
-    pub fn texture_size(&self) -> UVec2 {
-        UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE)
-    }
-
-    pub fn font_atlas_id(&self) -> TextureId {
-        self.font_atlas_id
+    fn texture_size(&self, _font: &Font, _key: &GlyphRasterConfig) -> UVec2 {
+        UVec2::new(Self::TEXTURE_SIZE, Self::TEXTURE_SIZE)
     }
 }
 
