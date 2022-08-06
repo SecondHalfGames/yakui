@@ -2,9 +2,7 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 
-use fontdue::layout::{
-    CoordinateSystem, HorizontalAlign, Layout, LayoutSettings, TextStyle as FontdueTextStyle,
-};
+use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
 use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
@@ -13,7 +11,7 @@ use yakui_core::widget::Widget;
 use yakui_core::Response;
 
 use crate::font::{FontName, Fonts};
-use crate::style::{TextAlignment, TextStyle};
+use crate::style::TextStyle;
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
@@ -92,17 +90,10 @@ impl Widget for RenderTextWidget {
             (None, None)
         };
 
-        let fontdue_align = match self.props.style.align {
-            TextAlignment::Start => HorizontalAlign::Left,
-            TextAlignment::Center => HorizontalAlign::Center,
-            TextAlignment::End => HorizontalAlign::Right,
-        };
-
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
             max_width,
             max_height,
-            horizontal_align: fontdue_align,
             ..LayoutSettings::default()
         });
 

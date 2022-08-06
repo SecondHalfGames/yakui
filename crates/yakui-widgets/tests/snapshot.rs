@@ -1,10 +1,11 @@
-use yakui::{CrossAxisAlignment, MainAxisSize, Vec2};
+use yakui::{Constraints, CrossAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
-use yakui_widgets::widgets::{List, Pad, UnconstrainedBox};
+use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
-    align, center, colored_box, colored_box_container, column, expanded, pad, row,
+    align, center, colored_box, colored_box_container, column, constrained, expanded, pad, row,
+    text,
 };
 
 #[test]
@@ -233,6 +234,15 @@ fn align_center() {
 }
 
 #[test]
+fn align_text_center() {
+    run!({
+        center(|| {
+            text(60.0, "X X X X X");
+        });
+    });
+}
+
+#[test]
 fn align_bottom_right() {
     run!({
         align(Alignment::BOTTOM_RIGHT, || {
@@ -264,6 +274,20 @@ fn pad_empty() {
         align(Alignment::TOP_LEFT, || {
             colored_box_container(Color::RED, || {
                 pad(padding, || {});
+            });
+        });
+    });
+}
+
+#[test]
+fn button_text_alignment() {
+    run!({
+        let constraints = Constraints::tight(Vec2::splat(800.0));
+        align(Alignment::TOP_LEFT, || {
+            constrained(constraints, || {
+                let mut button = Button::styled("X X X X X".into());
+                button.text_style.font_size = 60.0;
+                button.show();
             });
         });
     });
