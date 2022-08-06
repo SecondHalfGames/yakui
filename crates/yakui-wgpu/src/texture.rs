@@ -1,13 +1,15 @@
 use std::num::NonZeroU32;
 
 use glam::UVec2;
-use yakui_core::paint::{Texture, TextureFormat};
+use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
 
-pub struct GpuTexture {
+pub(crate) struct GpuTexture {
     size: UVec2,
     format: TextureFormat,
     gpu_texture: wgpu::Texture,
-    view: wgpu::TextureView,
+    pub view: wgpu::TextureView,
+    pub min_filter: wgpu::FilterMode,
+    pub mag_filter: wgpu::FilterMode,
     generation: u8,
 }
 
@@ -43,11 +45,16 @@ impl GpuTexture {
 
         let gpu_view = gpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+        let min_filter = wgpu_filter_mode(texture.min_filter);
+        let mag_filter = wgpu_filter_mode(texture.mag_filter);
+
         Self {
             size: texture.size(),
             format: texture.format(),
             gpu_texture,
             view: gpu_view,
+            min_filter,
+            mag_filter,
             generation: texture.generation(),
         }
     }
@@ -86,10 +93,6 @@ impl GpuTexture {
             size,
         );
     }
-
-    pub fn view(&self) -> &wgpu::TextureView {
-        &self.view
-    }
 }
 
 fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
@@ -113,5 +116,12 @@ fn wgpu_format(format: TextureFormat) -> wgpu::TextureFormat {
         TextureFormat::Rgba8Srgb => wgpu::TextureFormat::Rgba8UnormSrgb,
         TextureFormat::R8 => wgpu::TextureFormat::R8Unorm,
         _ => panic!("Unsupported texture format {format:?}"),
+    }
+}
+
+fn wgpu_filter_mode(filter: TextureFilter) -> wgpu::FilterMode {
+    match filter {
+        TextureFilter::Linear => wgpu::FilterMode::Linear,
+        TextureFilter::Nearest => wgpu::FilterMode::Nearest,
     }
 }

@@ -6,6 +6,15 @@ pub struct Texture {
     format: TextureFormat,
     size: UVec2,
     data: Vec<u8>,
+
+    /// How to filter the texture when it needs to be minified (made smaller)
+    pub min_filter: TextureFilter,
+
+    /// How to filter the texture when it needs to be magnified (made larger)
+    pub mag_filter: TextureFilter,
+
+    /// Generation attached to the texture to indicate that it has been
+    /// completely invalidated and should be reuploaded.
     pub(super) generation: u8,
 }
 
@@ -21,6 +30,16 @@ pub enum TextureFormat {
     R8,
 }
 
+/// Which kind of filtering to use when scaling the texture.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TextureFilter {
+    /// Blend the nearest pixels in the texture.
+    Linear,
+
+    /// Pick the nearest pixel. Useful for pixel art.
+    Nearest,
+}
+
 impl Texture {
     /// Create a new texture from its format, size, and data.
     pub fn new(format: TextureFormat, size: UVec2, data: Vec<u8>) -> Self {
@@ -28,6 +47,8 @@ impl Texture {
             format,
             size,
             data,
+            min_filter: TextureFilter::Nearest,
+            mag_filter: TextureFilter::Linear,
             generation: 0,
         }
     }
