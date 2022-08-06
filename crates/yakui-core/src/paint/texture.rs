@@ -1,7 +1,6 @@
 use glam::UVec2;
 
 /// A texture that is managed by yakui.
-#[derive(Debug)]
 pub struct Texture {
     format: TextureFormat,
     size: UVec2,
@@ -16,6 +15,16 @@ pub struct Texture {
     /// Generation attached to the texture to indicate that it has been
     /// completely invalidated and should be reuploaded.
     pub(super) generation: u8,
+}
+
+impl std::fmt::Debug for Texture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Texture")
+            .field("format", &self.format)
+            .field("size", &self.size)
+            .field("generation", &self.generation)
+            .finish_non_exhaustive()
+    }
 }
 
 /// A texture format that yakui can manage.
