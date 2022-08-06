@@ -9,8 +9,8 @@ use yakui_core::Response;
 
 use crate::colors;
 
-const OUTER_SIZE: f32 = 32.0;
-const INNER_SIZE: f32 = 24.0;
+const OUTER_SIZE: f32 = 24.0;
+const INNER_SIZE: f32 = 16.0;
 
 /**
 A checkbox with a provided value.
