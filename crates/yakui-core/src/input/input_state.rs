@@ -283,7 +283,7 @@ impl InputStateInner {
                     button,
                     down,
                     inside: true,
-                    position: mouse.position.unwrap_or(Vec2::ZERO),
+                    position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                     modifiers: self.modifiers.get(),
                 };
                 let response = fire_event(dom, id, &mut node, &event);
@@ -308,7 +308,7 @@ impl InputStateInner {
                         button,
                         down,
                         inside: false,
-                        position: mouse.position.unwrap_or(Vec2::ZERO),
+                        position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                         modifiers: self.modifiers.get(),
                     };
                     fire_event(dom, id, &mut node, &event);
@@ -323,7 +323,8 @@ impl InputStateInner {
         let mouse = self.mouse.borrow();
         let interest_mouse = layout.interest_mouse.iter().copied().rev();
 
-        let event = WidgetEvent::MouseMoved(mouse.position);
+        let pos = mouse.position.map(|pos| pos / layout.scale_factor());
+        let event = WidgetEvent::MouseMoved(pos);
 
         for (id, interest) in interest_mouse {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
