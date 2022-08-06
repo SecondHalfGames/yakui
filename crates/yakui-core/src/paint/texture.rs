@@ -22,6 +22,8 @@ impl std::fmt::Debug for Texture {
         f.debug_struct("Texture")
             .field("format", &self.format)
             .field("size", &self.size)
+            .field("min_filter", &self.min_filter)
+            .field("mag_filter", &self.mag_filter)
             .field("generation", &self.generation)
             .finish_non_exhaustive()
     }
