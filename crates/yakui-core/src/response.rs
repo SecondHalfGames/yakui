@@ -18,6 +18,11 @@ impl<T: Widget> Response<T> {
     pub(crate) fn new(id: WidgetId, inner: T::Response) -> Self {
         Self { id, inner }
     }
+
+    /// Unwrap the response into the underlying type.
+    pub fn into_inner(self) -> T::Response {
+        self.inner
+    }
 }
 
 impl<T: Widget> Deref for Response<T> {
