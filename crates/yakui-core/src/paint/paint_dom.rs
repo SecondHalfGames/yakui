@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use glam::Vec2;
 
 use crate::dom::Dom;
 use crate::geometry::Rect;
-use crate::id::{TextureId, WidgetId};
+use crate::id::{ExternalTexture, TextureId2, WidgetId, YakuiTexture};
 use crate::layout::LayoutDom;
 
 use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
@@ -26,6 +28,7 @@ const RECT_INDEX: [u16; 6] = [
 #[derive(Debug)]
 pub struct PaintDom {
     texture_edits: Vec<TextureEdit>,
+    internal_to_external_tex_map: HashMap<YakuiTexture, ExternalTexture>,
     calls: Vec<PaintCall>,
     viewport: Rect,
 }
@@ -35,6 +38,7 @@ impl PaintDom {
     pub fn new() -> Self {
         Self {
             texture_edits: Vec::new(),
+            internal_to_external_tex_map: HashMap::default(),
             calls: Vec::new(),
             viewport: Rect::ONE,
         }
@@ -77,7 +81,14 @@ impl PaintDom {
     ///
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
-    pub fn modify_texture(&mut self, id: TextureId, texture: Texture) {
+    pub fn modify_texture(&mut self, id: TextureId2, texture: Texture) {
+        let id = match id {
+            TextureId2::Yakui(id) => *self
+                .internal_to_external_tex_map
+                .get(&id)
+                .expect("PR we should handle this"),
+            TextureId2::External(id) => id,
+        };
         self.texture_edits.push(TextureEdit::Modify(id, texture));
     }
 
@@ -159,7 +170,7 @@ impl PaintDom {
 pub enum TextureEdit {
     // how does *add* work?
     /// This texture id has been modified.
-    Modify(TextureId, Texture),
+    Modify(ExternalTexture, Texture),
     /// This texture has been removed.
-    Remove(TextureId),
+    Remove(ExternalTexture),
 }

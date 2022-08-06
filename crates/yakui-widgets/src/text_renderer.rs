@@ -6,7 +6,7 @@ use fontdue::layout::GlyphRasterConfig;
 use fontdue::Font;
 use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
-use yakui_core::TextureId;
+use yakui_core::TextureId2;
 
 #[derive(Clone)]
 pub struct TextGlobalState {
@@ -33,7 +33,7 @@ pub trait GlyphCache {
         paint: &mut PaintDom,
         font: &Font,
         key: GlyphRasterConfig,
-    ) -> Result<(TextureId, URect), GlyphCacheErr>;
+    ) -> Result<(TextureId2, URect), GlyphCacheErr>;
 
     fn texture_size(&self, font: &Font, key: &GlyphRasterConfig) -> UVec2;
 }
@@ -55,7 +55,7 @@ impl std::error::Error for GlyphCacheErr {}
 
 #[derive(Debug)]
 pub struct LateBindingGlyphCache {
-    font_atlas_id: Option<TextureId>,
+    font_atlas_id: Option<TextureId2>,
     font_atlas: Texture,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,
@@ -88,7 +88,7 @@ impl GlyphCache for LateBindingGlyphCache {
         paint: &mut PaintDom,
         font: &Font,
         key: GlyphRasterConfig,
-    ) -> Result<(TextureId, URect), GlyphCacheErr> {
+    ) -> Result<(TextureId2, URect), GlyphCacheErr> {
         let font_atlas_id = self
             .font_atlas_id
             .ok_or(GlyphCacheErr::NeedsTextureAllocation)?;
