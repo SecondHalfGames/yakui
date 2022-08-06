@@ -10,8 +10,9 @@ use yakui_core::{Alignment, Response, TextureId};
 
 use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
-    ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Flexible, FlexibleWidget, Image,
-    ImageWidget, List, ListWidget, Pad, PadWidget, Text, TextBox, TextBoxWidget, TextWidget,
+    ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget, Flexible,
+    FlexibleWidget, Image, ImageWidget, List, ListWidget, Offset, OffsetWidget, Pad, PadWidget,
+    Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -95,4 +96,14 @@ pub fn constrained<F: FnOnce()>(
 /// See [Checkbox].
 pub fn checkbox(checked: bool) -> Response<CheckboxWidget> {
     Checkbox::new(checked).show()
+}
+
+/// See [Offset].
+pub fn offset<F: FnOnce()>(offset: Vec2, children: F) -> Response<OffsetWidget> {
+    Offset::new(offset).show(children)
+}
+
+/// See [Draggable].
+pub fn draggable<F: FnOnce()>(children: F) -> Response<DraggableWidget> {
+    Draggable::new().show(children)
 }

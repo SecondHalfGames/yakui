@@ -14,6 +14,7 @@ macro_rules! examples {
             buttons,
             cross_alignment,
             custom_font,
+            draggable,
             flex,
             images,
             inputs,

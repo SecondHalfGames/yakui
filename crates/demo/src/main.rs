@@ -10,7 +10,7 @@ use winit::window::WindowBuilder;
 
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFormat};
-use yakui::{TextureId, UVec2};
+use yakui::{TextureId, UVec2, Vec2};
 
 use crate::examples::Args;
 
@@ -34,6 +34,12 @@ pub struct ExampleState {
 
     /// A string to feed into components.
     pub name: String,
+
+    /// A position used by some examples.
+    pub pos: Vec2,
+
+    /// Current drag offset.
+    pub offset: Vec2,
 }
 
 async fn run() {
@@ -89,6 +95,8 @@ async fn run() {
         monkey,
         checked: false,
         name: "Hello".into(),
+        pos: Vec2::ZERO,
+        offset: Vec2::ZERO,
     };
 
     let start = Instant::now();
