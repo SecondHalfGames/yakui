@@ -203,14 +203,13 @@ impl State {
     ) {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
-        self.update_textures(state, device, queue);
-
         let paint = state.paint();
 
         if paint.calls().is_empty() {
             return;
         }
 
+        self.update_textures(device, paint, queue);
         self.update_buffers(device, paint);
         let vertices = self.vertices.upload(device, queue);
         let indices = self.indices.upload(device, queue);
@@ -301,15 +300,10 @@ impl State {
         self.commands.extend(commands);
     }
 
-    fn update_textures(
-        &mut self,
-        state: &yakui_core::State,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
+    fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
         profiling::scope!("update_textures");
 
-        for (id, texture) in state.textures() {
+        for (id, texture) in paint.textures() {
             match self.textures.get_mut(&id) {
                 Some(existing) => existing.update_if_newer(device, queue, texture),
                 None => {
