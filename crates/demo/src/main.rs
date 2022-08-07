@@ -25,7 +25,7 @@ pub struct ExampleState {
     /// current time as an input.
     pub time: f32,
 
-    /// `TextureId` is a handle to a texture we previously gave to yakui. This
+    /// `ExternalTexture` is a handle to a texture we previously gave to yakui. This
     /// is an image that's usable from any of the examples.
     pub monkey: TextureId,
 
