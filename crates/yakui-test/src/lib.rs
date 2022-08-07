@@ -24,7 +24,9 @@ macro_rules! run {
         let _guard = settings.bind_to_scope();
 
         let test = $test;
-        let mut state = ::yakui_test::yakui_core::State::new();
+        let mut state = ::yakui_test::yakui_core::State::new(|_| {
+            (::yakui_core::TextureId::new(0), ::yakui_core::paint::TextureReservation::Completed)
+        });
         state.set_unscaled_viewport(test.viewport);
         state.start();
         $body

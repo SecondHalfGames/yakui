@@ -33,25 +33,10 @@ pub trait GlyphCache {
         paint: &mut PaintDom,
         font: &Font,
         key: GlyphRasterConfig,
-    ) -> Result<(TextureId, URect), GlyphCacheErr>;
+    ) -> (TextureId, URect);
 
     fn texture_size(&self, font: &Font, key: &GlyphRasterConfig) -> UVec2;
 }
-
-#[derive(Debug, Clone, Copy)]
-#[non_exhaustive]
-pub enum GlyphCacheErr {
-    NeedsTextureAllocation,
-}
-
-impl std::fmt::Display for GlyphCacheErr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            GlyphCacheErr::NeedsTextureAllocation => f.write_str("needs new texture"),
-        }
-    }
-}
-impl std::error::Error for GlyphCacheErr {}
 
 #[derive(Debug)]
 pub struct LateBindingGlyphCache {
@@ -80,6 +65,18 @@ impl LateBindingGlyphCache {
             row_height: 0,
         }
     }
+
+    pub fn font_atlas_id(&mut self, paint: &mut PaintDom, _font: &Font) -> TextureId {
+        match self.font_atlas_id {
+            Some(v) => v,
+            None => {
+                let font_atlas_id = paint.add_texture(self.font_atlas.clone());
+                self.font_atlas_id = Some(font_atlas_id);
+
+                font_atlas_id
+            }
+        }
+    }
 }
 
 impl GlyphCache for LateBindingGlyphCache {
@@ -88,10 +85,8 @@ impl GlyphCache for LateBindingGlyphCache {
         paint: &mut PaintDom,
         font: &Font,
         key: GlyphRasterConfig,
-    ) -> Result<(TextureId, URect), GlyphCacheErr> {
-        let font_atlas_id = self
-            .font_atlas_id
-            .ok_or(GlyphCacheErr::NeedsTextureAllocation)?;
+    ) -> (TextureId, URect) {
+        let font_atlas_id = self.font_atlas_id(paint, font);
 
         let u_rect = *self.glyphs.entry(key).or_insert_with(|| {
             let atlas_size = self.font_atlas.size();
@@ -125,7 +120,7 @@ impl GlyphCache for LateBindingGlyphCache {
             URect::from_pos_size(pos, glyph_size)
         });
 
-        Ok((font_atlas_id, u_rect))
+        (font_atlas_id, u_rect)
     }
 
     fn texture_size(&self, _font: &Font, _key: &GlyphRasterConfig) -> UVec2 {

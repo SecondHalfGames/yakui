@@ -7,6 +7,7 @@ mod texture;
 use std::collections::HashMap;
 use std::mem::size_of;
 use std::ops::Range;
+use std::sync::atomic::AtomicU64;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
@@ -23,7 +24,6 @@ pub struct State {
     layout: wgpu::BindGroupLayout,
     samplers: Samplers,
     textures: HashMap<TextureId, GpuTexture>,
-    texture_counter: u64,
 
     vertices: Buffer,
     indices: Buffer,
@@ -160,7 +160,6 @@ impl State {
             layout,
             samplers,
             textures: HashMap::new(),
-            texture_counter: 0,
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
@@ -243,19 +242,12 @@ impl State {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) -> TextureId {
-        let id = self.make_new_id();
+        let id = reserve_id();
 
         self.textures
             .insert(id, GpuTexture::new(device, queue, &texture));
 
         id
-    }
-
-    /// Generates a new texture id, which should be placed into the map.
-    fn make_new_id(&mut self) -> TextureId {
-        let id = self.texture_counter;
-        self.texture_counter += 1;
-        TextureId::new(id)
     }
 
     fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
@@ -323,6 +315,10 @@ impl State {
 
         for texture_edit in texture_edits {
             match texture_edit {
+                TextureEdit::Add(id, texture) => {
+                    let texture = GpuTexture::new(device, queue, texture);
+                    self.textures.insert(*id, texture);
+                }
                 TextureEdit::Modify(id, texture) => {
                     let gpu_texture = self
                         .textures
@@ -347,6 +343,15 @@ impl State {
         //     }
         // }
     }
+}
+
+/// Generates a new texture id, which should be placed into the map.
+pub fn reserve_id() -> TextureId {
+    static TEXTURE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+    let id = TEXTURE_ID_COUNTER.load(std::sync::atomic::Ordering::Acquire);
+    TEXTURE_ID_COUNTER.store(id + 1, std::sync::atomic::Ordering::Release);
+
+    TextureId::new(id)
 }
 
 struct DrawCommand {

@@ -4,6 +4,7 @@ use winit::{
     event_loop::ControlFlow,
     window::Window,
 };
+use yakui::{paint::TextureReservation, TextureId};
 
 /// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
@@ -211,5 +212,9 @@ impl Graphics {
 
             _ => false,
         }
+    }
+
+    pub fn texture_reserver(_texture: &yakui::paint::Texture) -> (TextureId, TextureReservation) {
+        (yakui_wgpu::reserve_id(), TextureReservation::OnlyReserved)
     }
 }

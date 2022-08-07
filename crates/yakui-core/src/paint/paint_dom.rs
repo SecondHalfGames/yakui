@@ -23,20 +23,24 @@ const RECT_INDEX: [u16; 6] = [
 ];
 
 /// Contains all information about how to paint the current set of widgets.
-#[derive(Debug)]
 pub struct PaintDom {
     texture_edits: Vec<TextureEdit>,
     calls: Vec<PaintCall>,
     viewport: Rect,
+    reserve_texture_id: Box<dyn Fn(&Texture) -> (TextureId, TextureReservation)>,
 }
 
 impl PaintDom {
     /// Create a new, empty Paint DOM.
-    pub fn new() -> Self {
+    pub fn new<T>(reserve_texture_id: T) -> Self
+    where
+        T: Fn(&Texture) -> (TextureId, TextureReservation) + 'static,
+    {
         Self {
             texture_edits: Vec::new(),
             calls: Vec::new(),
             viewport: Rect::ONE,
+            reserve_texture_id: Box::new(reserve_texture_id),
         }
     }
 
@@ -71,6 +75,16 @@ impl PaintDom {
 
         let node = dom.get(dom.root()).unwrap();
         node.widget.paint(dom, layout, self);
+    }
+
+    /// Adds a given texture, returning the TextureId to use for it.
+    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
+        let (id, reservation) = (self.reserve_texture_id)(&texture);
+        if reservation == TextureReservation::OnlyReserved {
+            self.texture_edits.push(TextureEdit::Add(id, texture));
+        }
+
+        id
     }
 
     /// Returns a mutable handle to a texture given its ID.
@@ -153,12 +167,36 @@ impl PaintDom {
     }
 }
 
+impl std::fmt::Debug for PaintDom {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PaintDom")
+            .field("texture_edits", &self.texture_edits)
+            .field("calls", &self.calls)
+            .field("viewport", &self.viewport)
+            .finish_non_exhaustive()
+    }
+}
+
+/// Defines if the texture has been fully uploaded yet.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum TextureReservation {
+    /// The texture has been uploaded fully. As a result, a `TextureEdit::Add`
+    /// will *not* be sent.
+    Completed,
+    /// The texture id has been reserved, but *not* uploaded, so a `TextureEdit::Add`
+    /// will be sent.
+    OnlyReserved,
+}
+
 /// An edit to a texture id. Clients must consume these edits as appropriate.
 #[derive(Debug)]
 pub enum TextureEdit {
-    // how does *add* work?
+    /// A new texture has been made. The id was previously reserved.
+    Add(TextureId, Texture),
+
     /// This texture id has been modified.
     Modify(TextureId, Texture),
+
     /// This texture has been removed.
     Remove(TextureId),
 }
