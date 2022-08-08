@@ -21,6 +21,7 @@ macro_rules! examples {
             panels,
             row_column,
             sandbox,
+            state,
             text,
             window,
         );

@@ -5,7 +5,7 @@ mod debug;
 mod dummy;
 mod root;
 
-use std::any::{type_name, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;
@@ -28,6 +28,7 @@ pub struct Dom {
 
 struct DomInner {
     nodes: RefCell<Arena<DomNode>>,
+    topo_states: RefCell<Arena<TopoState>>,
     stack: RefCell<Vec<WidgetId>>,
     root: WidgetId,
     globals: RefCell<AnyMap>,
@@ -48,6 +49,11 @@ pub struct DomNode {
     /// Used when building the tree. The index of the next child if a new child
     /// starts being built.
     next_child: usize,
+}
+
+struct TopoState {
+    values: Vec<Rc<dyn Any>>,
+    next_value: usize,
 }
 
 impl Dom {
@@ -154,6 +160,55 @@ impl Dom {
         globals.entry::<T>().or_insert_with(init).clone()
     }
 
+    /// Retrieve topologically-stored state or initialize it with a function.
+    pub fn get_state_or_init<T, F>(&self, init: F) -> RefMut<'_, T>
+    where
+        T: 'static,
+        F: FnOnce() -> T,
+    {
+        let current = self.current();
+        let mut states = self.inner.topo_states.borrow_mut();
+
+        if let Some(mut state) = states.get_mut(current.index()) {
+            match state.values.get(state.next_value) {
+                Some(value) => {
+                    if let Some(cast) = value.downcast_ref::<RefCell<T>>() {
+                        return cast.borrow_mut();
+                    } else {
+                        panic!("Type mismatch: use_state must always be the same type");
+                    }
+                }
+                None => {
+                    let value = Rc::new(RefCell::new(init()));
+                    if state.next_value == state.values.len() {
+                        state.values.push(value);
+                    } else {
+                        state.values.insert(state.next_value, value);
+                    }
+
+                    let value = &state.values[state.next_value];
+                    state.next_value += 1;
+                    value.downcast_ref::<RefCell<T>>().unwrap().borrow_mut()
+                }
+            }
+        } else {
+            let value = Rc::new(RefCell::new(init()));
+            states.insert_at(
+                current.index(),
+                TopoState {
+                    values: vec![value],
+                    next_value: 1,
+                },
+            );
+
+            let state = states.get(current.index()).unwrap();
+            state.values[0]
+                .downcast_ref::<RefCell<T>>()
+                .unwrap()
+                .borrow_mut()
+        }
+    }
+
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
     pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T> {
@@ -182,6 +237,13 @@ impl Dom {
             node.next_child = 0;
             (id, widget)
         };
+
+        {
+            let mut states = self.inner.topo_states.borrow_mut();
+            if let Some(state) = states.get_mut(id.index()) {
+                state.next_value = 0;
+            }
+        }
 
         // Potentially recreate the widget, then update it.
         let response = {
@@ -235,6 +297,7 @@ impl DomInner {
         Self {
             globals: RefCell::new(AnyMap::new()),
             nodes: RefCell::new(nodes),
+            topo_states: RefCell::new(Arena::new()),
             stack: RefCell::new(Vec::new()),
             root: WidgetId::new(root),
         }

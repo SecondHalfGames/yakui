@@ -1,6 +1,6 @@
 //! Provides access to the currently active DOM or input context.
 
-use std::cell::{Ref, RefCell};
+use std::cell::{Ref, RefCell, RefMut};
 use std::thread::LocalKey;
 
 use crate::dom::Dom;
@@ -28,6 +28,16 @@ pub fn remove_selection() {
 pub fn is_selected() -> bool {
     let id = dom().current();
     input().selection() == Some(id)
+}
+
+/// Potentially initialize and then get the value of some topologically-aware
+/// state.
+pub fn use_state<T, F>(init: F) -> RefMut<'static, T>
+where
+    T: 'static,
+    F: FnOnce() -> T,
+{
+    dom().get_state_or_init(init)
 }
 
 /// If there is a DOM currently being updated on this thread, returns a
