@@ -1,6 +1,8 @@
 //! Provides access to the currently active DOM or input context.
 
 use std::cell::{Ref, RefCell, RefMut};
+use std::fmt::{self, Display};
+use std::ops::{Deref, DerefMut};
 use std::thread::LocalKey;
 
 use crate::dom::Dom;
@@ -30,14 +32,61 @@ pub fn is_selected() -> bool {
     input().selection() == Some(id)
 }
 
+/// Holds onto some state along with the DOM that it came from.
+pub struct StateHandle<T: 'static> {
+    dom: Ref<'static, Dom>,
+    value: RefMut<'static, T>,
+}
+
+impl<T> StateHandle<T> {
+    fn get_or_init<F>(dom: Ref<'static, Dom>, init: F) -> Self
+    where
+        F: FnOnce() -> T,
+    {
+        let value = {
+            // SAFETY: I dunno, we're figuring this out.
+            let dom = unsafe { extend_lifetime(&*dom) };
+            dom.get_state_or_init(init)
+        };
+
+        Self {
+            dom: Ref::clone(&dom),
+            value,
+        }
+    }
+}
+
+impl<T> Deref for StateHandle<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.value.deref()
+    }
+}
+
+impl<T> DerefMut for StateHandle<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.value.deref_mut()
+    }
+}
+
+impl<T> Display for StateHandle<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.value.fmt(f)
+    }
+}
+
 /// Potentially initialize and then get the value of some topologically-aware
 /// state.
-pub fn use_state<T, F>(init: F) -> RefMut<'static, T>
+pub fn use_state<T, F>(init: F) -> StateHandle<T>
 where
     T: 'static,
     F: FnOnce() -> T,
 {
-    dom().get_state_or_init(init)
+    StateHandle::get_or_init(dom(), init)
 }
 
 /// If there is a DOM currently being updated on this thread, returns a

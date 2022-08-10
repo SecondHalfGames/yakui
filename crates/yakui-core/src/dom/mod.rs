@@ -52,8 +52,7 @@ pub struct DomNode {
 }
 
 struct TopoState {
-    values: Vec<Rc<dyn Any>>,
-    next_value: usize,
+    value: Box<dyn Any>,
 }
 
 impl Dom {
@@ -161,7 +160,7 @@ impl Dom {
     }
 
     /// Retrieve topologically-stored state or initialize it with a function.
-    pub fn get_state_or_init<T, F>(&self, init: F) -> RefMut<'_, T>
+    pub fn get_state_or_init<'a, T, F>(self: Ref<'a, Self>, init: F) -> RefMut<'a, T>
     where
         T: 'static,
         F: FnOnce() -> T,
@@ -170,42 +169,13 @@ impl Dom {
         let mut states = self.inner.topo_states.borrow_mut();
 
         if let Some(mut state) = states.get_mut(current.index()) {
-            match state.values.get(state.next_value) {
-                Some(value) => {
-                    if let Some(cast) = value.downcast_ref::<RefCell<T>>() {
-                        return cast.borrow_mut();
-                    } else {
-                        panic!("Type mismatch: use_state must always be the same type");
-                    }
-                }
-                None => {
-                    let value = Rc::new(RefCell::new(init()));
-                    if state.next_value == state.values.len() {
-                        state.values.push(value);
-                    } else {
-                        state.values.insert(state.next_value, value);
-                    }
-
-                    let value = &state.values[state.next_value];
-                    state.next_value += 1;
-                    value.downcast_ref::<RefCell<T>>().unwrap().borrow_mut()
-                }
-            }
-        } else {
-            let value = Rc::new(RefCell::new(init()));
-            states.insert_at(
-                current.index(),
-                TopoState {
-                    values: vec![value],
-                    next_value: 1,
-                },
-            );
-
-            let state = states.get(current.index()).unwrap();
-            state.values[0]
-                .downcast_ref::<RefCell<T>>()
+            state
+                .value
+                .downcast_mut::<RefCell<T>>()
                 .unwrap()
                 .borrow_mut()
+        } else {
+            todo!()
         }
     }
 
@@ -237,13 +207,6 @@ impl Dom {
             node.next_child = 0;
             (id, widget)
         };
-
-        {
-            let mut states = self.inner.topo_states.borrow_mut();
-            if let Some(state) = states.get_mut(id.index()) {
-                state.next_value = 0;
-            }
-        }
 
         // Potentially recreate the widget, then update it.
         let response = {
