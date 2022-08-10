@@ -24,20 +24,20 @@ const RECT_INDEX: [u16; 6] = [
 
 /// Contains all information about how to paint the current set of widgets.
 pub struct PaintDom {
-    texture_edits: Vec<TextureEdit>,
+    texture_deltas: Vec<TextureDelta>,
     calls: Vec<PaintCall>,
     viewport: Rect,
-    reserve_texture_id: Box<dyn Fn(&Texture) -> (TextureId, TextureReservation)>,
+    reserve_texture_id: Box<dyn FnMut(&Texture) -> (TextureId, TextureReservation)>,
 }
 
 impl PaintDom {
     /// Create a new, empty Paint DOM.
     pub fn new<T>(reserve_texture_id: T) -> Self
     where
-        T: Fn(&Texture) -> (TextureId, TextureReservation) + 'static,
+        T: FnMut(&Texture) -> (TextureId, TextureReservation) + 'static,
     {
         Self {
-            texture_edits: Vec::new(),
+            texture_deltas: Vec::new(),
             calls: Vec::new(),
             viewport: Rect::ONE,
             reserve_texture_id: Box::new(reserve_texture_id),
@@ -46,7 +46,7 @@ impl PaintDom {
 
     /// Just clears the texture edits, which should have been consumed last frame
     pub(crate) fn start(&mut self) {
-        self.texture_edits.clear();
+        self.texture_deltas.clear();
     }
 
     pub(crate) fn set_viewport(&mut self, viewport: Rect) {
@@ -81,7 +81,7 @@ impl PaintDom {
     pub fn add_texture(&mut self, texture: Texture) -> TextureId {
         let (id, reservation) = (self.reserve_texture_id)(&texture);
         if reservation == TextureReservation::OnlyReserved {
-            self.texture_edits.push(TextureEdit::Add(id, texture));
+            self.texture_deltas.push(TextureDelta::Add(id, texture));
         }
 
         id
@@ -92,13 +92,13 @@ impl PaintDom {
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
     pub fn modify_texture(&mut self, id: TextureId, texture: Texture) {
-        self.texture_edits.push(TextureEdit::Modify(id, texture));
+        self.texture_deltas.push(TextureDelta::Modify(id, texture));
     }
 
     /// Takes all the texture edits. These must be consumed *before* processing the [PaintCall]s for
     /// this frame.
-    pub fn texture_edits(&self) -> &[TextureEdit] {
-        &self.texture_edits
+    pub fn texture_deltas(&self) -> &[TextureDelta] {
+        &self.texture_deltas
     }
 
     /// Returns a list of paint calls that could be used to draw the UI.
@@ -170,7 +170,7 @@ impl PaintDom {
 impl std::fmt::Debug for PaintDom {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PaintDom")
-            .field("texture_edits", &self.texture_edits)
+            .field("texture_edits", &self.texture_deltas)
             .field("calls", &self.calls)
             .field("viewport", &self.viewport)
             .finish_non_exhaustive()
@@ -190,7 +190,7 @@ pub enum TextureReservation {
 
 /// An edit to a texture id. Clients must consume these edits as appropriate.
 #[derive(Debug)]
-pub enum TextureEdit {
+pub enum TextureDelta {
     /// A new texture has been made. The id was previously reserved.
     Add(TextureId, Texture),
 

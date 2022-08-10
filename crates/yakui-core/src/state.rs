@@ -20,7 +20,7 @@ impl State {
     #[allow(clippy::new_without_default)]
     pub fn new<T>(texture_reservation: T) -> Self
     where
-        T: Fn(&Texture) -> (TextureId, TextureReservation) + 'static,
+        T: FnMut(&Texture) -> (TextureId, TextureReservation) + 'static,
     {
         Self {
             dom: Dom::new(),
