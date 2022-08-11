@@ -12,7 +12,7 @@ use std::sync::atomic::AtomicU64;
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use yakui_core::geometry::{Vec2, Vec4};
-use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureEdit};
+use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureDelta};
 use yakui_core::TextureId;
 
 use self::samplers::Samplers;
@@ -194,7 +194,7 @@ impl State {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
         let paint = state.paint();
-        self.update_textures(paint.texture_edits(), device, queue);
+        self.update_textures(paint.texture_deltas(), device, queue);
 
         if paint.calls().is_empty() {
             return;
@@ -307,7 +307,7 @@ impl State {
 
     fn update_textures(
         &mut self,
-        texture_edits: &[TextureEdit],
+        texture_edits: &[TextureDelta],
         device: &wgpu::Device,
         queue: &wgpu::Queue,
     ) {
@@ -315,11 +315,11 @@ impl State {
 
         for texture_edit in texture_edits {
             match texture_edit {
-                TextureEdit::Add(id, texture) => {
+                TextureDelta::Add(id, texture) => {
                     let texture = GpuTexture::new(device, queue, texture);
                     self.textures.insert(*id, texture);
                 }
-                TextureEdit::Modify(id, texture) => {
+                TextureDelta::Modify(id, texture) => {
                     let gpu_texture = self
                         .textures
                         .get_mut(id)
@@ -327,7 +327,7 @@ impl State {
 
                     gpu_texture.update(device, queue, texture);
                 }
-                TextureEdit::Remove(_) => {
+                TextureDelta::Remove(_) => {
                     todo!("FOR PR REVIEW -- this writer doesn't know wgpu and so does not know how to implement this!")
                 }
             }
