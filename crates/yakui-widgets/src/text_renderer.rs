@@ -41,7 +41,6 @@ pub trait GlyphCache {
 #[derive(Debug)]
 pub struct LateBindingGlyphCache {
     font_atlas_id: Option<TextureId>,
-    font_atlas: Texture,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,
     row_height: u32,
@@ -55,11 +54,6 @@ impl LateBindingGlyphCache {
     pub fn new() -> Self {
         LateBindingGlyphCache {
             font_atlas_id: None,
-            font_atlas: Texture::new(
-                TextureFormat::R8,
-                UVec2::new(Self::TEXTURE_SIZE, Self::TEXTURE_SIZE),
-                vec![0; (Self::TEXTURE_SIZE * Self::TEXTURE_SIZE) as usize],
-            ),
             glyphs: HashMap::new(),
             next_pos: UVec2::ONE,
             row_height: 0,
@@ -70,7 +64,12 @@ impl LateBindingGlyphCache {
         match self.font_atlas_id {
             Some(v) => v,
             None => {
-                let font_atlas_id = paint.add_texture(self.font_atlas.clone());
+                let empty_texture = Texture::new(
+                    TextureFormat::R8,
+                    UVec2::new(Self::TEXTURE_SIZE, Self::TEXTURE_SIZE),
+                    vec![0; (Self::TEXTURE_SIZE * Self::TEXTURE_SIZE) as usize],
+                );
+                let font_atlas_id = paint.add_texture(empty_texture);
                 self.font_atlas_id = Some(font_atlas_id);
 
                 font_atlas_id
@@ -89,7 +88,11 @@ impl GlyphCache for LateBindingGlyphCache {
         let font_atlas_id = self.font_atlas_id(paint, font);
 
         let u_rect = *self.glyphs.entry(key).or_insert_with(|| {
-            let atlas_size = self.font_atlas.size();
+            let font_atlas = paint
+                .texture_mut(font_atlas_id)
+                .expect("after calling `font_atlas_id` we always have a valid texture to lookup");
+
+            let atlas_size = font_atlas.size();
 
             let (metrics, bitmap) = font.rasterize_indexed(key.glyph_index, key.px);
             let glyph_size = UVec2::new(metrics.width as u32, metrics.height as u32);
@@ -106,16 +109,14 @@ impl GlyphCache for LateBindingGlyphCache {
             };
             self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
 
-            blit(
-                pos,
-                &bitmap,
-                glyph_size,
-                self.font_atlas.data_mut(),
-                atlas_size,
-            );
+            blit(pos, &bitmap, glyph_size, font_atlas.data_mut(), atlas_size);
 
-            // let the painter know that we modified our own texture...
-            paint.modify_texture(font_atlas_id, self.font_atlas.clone());
+            // let the painter know that we modified the texture
+            let yak_tex = match font_atlas_id {
+                TextureId::Yak(v) => v,
+                _ => panic!(),
+            };
+            paint.modify_texture(yak_tex);
 
             URect::from_pos_size(pos, glyph_size)
         });

@@ -25,23 +25,14 @@ impl fmt::Debug for WidgetId {
     }
 }
 
-/// Identifies a texture that has been given to yakui to manage.
+/// Identifies a yakui texture.
 #[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct TextureId(u64);
-
-impl TextureId {
-    /// Creates a new [TextureId].
-    ///
-    /// This is intended as a thin wrapper around a u64, which can mean whatever users want it to mean.
-    #[inline]
-    pub const fn new(index: u64) -> Self {
-        Self(index)
-    }
-
-    /// Unwraps a [TextureId] into a `u64`.
-    #[inline]
-    pub const fn inner(self) -> u64 {
-        self.0
-    }
+pub enum TextureId {
+    /// This is a user submitted texture. Yakui treats these as opaque u64s
+    User(u64),
+    /// This is a yakui originating texture.
+    Yak(Index),
+    /// This indicates the use of the White Pixel. This might be a real user supplied texture,
+    /// or it could be implement by users in other ways.
+    WhitePixel,
 }

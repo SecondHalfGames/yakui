@@ -194,7 +194,7 @@ impl State {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
         let paint = state.paint();
-        self.update_textures(paint.texture_deltas(), device, queue);
+        self.update_textures(paint, device, queue);
 
         if paint.calls().is_empty() {
             return;
@@ -305,24 +305,19 @@ impl State {
         self.commands.extend(commands);
     }
 
-    fn update_textures(
-        &mut self,
-        texture_edits: &[TextureDelta],
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
+    fn update_textures(&mut self, paint: &PaintDom, device: &wgpu::Device, queue: &wgpu::Queue) {
         profiling::scope!("update_textures");
 
-        for texture_edit in texture_edits {
+        for texture_edit in paint.texture_deltas() {
             match texture_edit {
                 TextureDelta::Add(id, texture) => {
                     let texture = GpuTexture::new(device, queue, texture);
-                    self.textures.insert(*id, texture);
+                    self.textures.insert(id, texture);
                 }
                 TextureDelta::Modify(id, texture) => {
                     let gpu_texture = self
                         .textures
-                        .get_mut(id)
+                        .get_mut(&id)
                         .expect("we dropped a texture incorrectly!");
 
                     gpu_texture.update(device, queue, texture);
@@ -351,7 +346,7 @@ pub fn reserve_id() -> TextureId {
     let id = TEXTURE_ID_COUNTER.load(std::sync::atomic::Ordering::Acquire);
     TEXTURE_ID_COUNTER.store(id + 1, std::sync::atomic::Ordering::Release);
 
-    TextureId::new(id)
+    TextureId::User(id)
 }
 
 struct DrawCommand {

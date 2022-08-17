@@ -82,7 +82,6 @@ impl PaintCall {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 #[allow(missing_docs)]
-#[repr(C)]
 pub struct Vertex {
     pub position: Vec2,
     pub texcoord: Vec2,

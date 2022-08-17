@@ -8,7 +8,6 @@ mod icons;
 mod text_renderer;
 
 pub use text_renderer::{GlyphCache, LateBindingGlyphCache, TextGlobalState};
-use yakui_core::paint::TextureReservation;
 
 pub mod colors;
 pub mod font;
@@ -26,10 +25,7 @@ pub struct DocTest {
 
 impl DocTest {
     pub fn start() -> Self {
-        let mut state = yakui_core::State::new(|_| {
-            // this is a dummy response
-            (yakui_core::TextureId::new(0), TextureReservation::Completed)
-        });
+        let mut state = yakui_core::State::new();
         state.start();
         Self { state }
     }

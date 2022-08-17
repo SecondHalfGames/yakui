@@ -1,10 +1,10 @@
+use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
 use crate::geometry::Rect;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{PaintDom, Texture, TextureReservation};
-use crate::{context, TextureId};
+use crate::paint::PaintDom;
 
 /// The entrypoint for yakui.
 #[derive(Debug)]
@@ -18,14 +18,11 @@ pub struct State {
 impl State {
     /// Creates a new yakui State.
     #[allow(clippy::new_without_default)]
-    pub fn new<T>(texture_reservation: T) -> Self
-    where
-        T: FnMut(&Texture) -> (TextureId, TextureReservation) + 'static,
-    {
+    pub fn new() -> Self {
         Self {
             dom: Dom::new(),
             layout: LayoutDom::new(),
-            paint: PaintDom::new(texture_reservation),
+            paint: PaintDom::new(),
             input: InputState::new(),
         }
     }

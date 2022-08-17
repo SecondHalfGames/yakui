@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use glam::Vec2;
+use thunderdome::Arena;
 
 use crate::dom::Dom;
 use crate::geometry::Rect;
@@ -24,23 +27,20 @@ const RECT_INDEX: [u16; 6] = [
 
 /// Contains all information about how to paint the current set of widgets.
 pub struct PaintDom {
-    texture_deltas: Vec<TextureDelta>,
+    texture_deltas: HashMap<thunderdome::Index, TextureEdit>,
     calls: Vec<PaintCall>,
     viewport: Rect,
-    reserve_texture_id: Box<dyn FnMut(&Texture) -> (TextureId, TextureReservation)>,
+    textures: Arena<Texture>,
 }
 
 impl PaintDom {
     /// Create a new, empty Paint DOM.
-    pub fn new<T>(reserve_texture_id: T) -> Self
-    where
-        T: FnMut(&Texture) -> (TextureId, TextureReservation) + 'static,
-    {
+    pub fn new() -> Self {
         Self {
-            texture_deltas: Vec::new(),
+            texture_deltas: HashMap::new(),
             calls: Vec::new(),
             viewport: Rect::ONE,
-            reserve_texture_id: Box::new(reserve_texture_id),
+            textures: Arena::new(),
         }
     }
 
@@ -79,26 +79,56 @@ impl PaintDom {
 
     /// Adds a given texture, returning the TextureId to use for it.
     pub fn add_texture(&mut self, texture: Texture) -> TextureId {
-        let (id, reservation) = (self.reserve_texture_id)(&texture);
-        if reservation == TextureReservation::OnlyReserved {
-            self.texture_deltas.push(TextureDelta::Add(id, texture));
-        }
+        let id = self.textures.insert(texture);
+        self.texture_deltas.insert(id, TextureEdit::Add);
+        TextureId::Yak(id)
+    }
 
-        id
+    /// Retrieve a texture by its ID, if it exists.
+    pub fn texture(&self, id: TextureId) -> Option<&Texture> {
+        match id {
+            TextureId::Yak(id) => self.textures.get(id),
+            _ => None,
+        }
+    }
+
+    /// Retrieve a texture by its ID, if it exists.
+    ///
+    /// Note: if you mutate this texture, you'll need to call `modify_texture` for
+    /// clients to be notified that they need to update the texture.
+    pub fn texture_mut(&mut self, id: TextureId) -> Option<&mut Texture> {
+        match id {
+            TextureId::Yak(id) => self.textures.get_mut(id),
+            _ => None,
+        }
     }
 
     /// Returns a mutable handle to a texture given its ID.
     ///
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
-    pub fn modify_texture(&mut self, id: TextureId, texture: Texture) {
-        self.texture_deltas.push(TextureDelta::Modify(id, texture));
+    pub fn modify_texture(&mut self, id: thunderdome::Index) {
+        self.texture_deltas.insert(id, TextureEdit::Modify);
+    }
+
+    /// Remove a texture from the Paint DOM.
+    pub fn remove_texture(&mut self, id: thunderdome::Index) {
+        self.textures.remove(id);
+
+        self.texture_deltas.insert(id, TextureEdit::Remove);
     }
 
     /// Takes all the texture edits. These must be consumed *before* processing the [PaintCall]s for
     /// this frame.
-    pub fn texture_deltas(&self) -> &[TextureDelta] {
-        &self.texture_deltas
+    pub fn texture_deltas(&self) -> impl Iterator<Item = TextureDelta<'_>> {
+        self.texture_deltas.iter().map(|(&k, &v)| {
+            let tex_id = TextureId::Yak(k);
+            match v {
+                TextureEdit::Add => TextureDelta::Add(tex_id, self.texture(tex_id).unwrap()),
+                TextureEdit::Modify => TextureDelta::Modify(tex_id, self.texture(tex_id).unwrap()),
+                TextureEdit::Remove => TextureDelta::Remove(tex_id),
+            }
+        })
     }
 
     /// Returns a list of paint calls that could be used to draw the UI.
@@ -170,32 +200,29 @@ impl PaintDom {
 impl std::fmt::Debug for PaintDom {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PaintDom")
-            .field("texture_edits", &self.texture_deltas)
+            .field("texture_deltas", &self.texture_deltas)
             .field("calls", &self.calls)
             .field("viewport", &self.viewport)
+            .field("textures", &self.textures)
             .finish_non_exhaustive()
     }
 }
 
-/// Defines if the texture has been fully uploaded yet.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum TextureReservation {
-    /// The texture has been uploaded fully. As a result, a `TextureEdit::Add`
-    /// will *not* be sent.
-    Completed,
-    /// The texture id has been reserved, but *not* uploaded, so a `TextureEdit::Add`
-    /// will be sent.
-    OnlyReserved,
+#[derive(Debug, Clone, Copy)]
+enum TextureEdit {
+    Add,
+    Modify,
+    Remove,
 }
 
 /// An edit to a texture id. Clients must consume these edits as appropriate.
 #[derive(Debug)]
-pub enum TextureDelta {
-    /// A new texture has been made. The id was previously reserved.
-    Add(TextureId, Texture),
+pub enum TextureDelta<'a> {
+    /// A new texture has been made.
+    Add(TextureId, &'a Texture),
 
     /// This texture id has been modified.
-    Modify(TextureId, Texture),
+    Modify(TextureId, &'a Texture),
 
     /// This texture has been removed.
     Remove(TextureId),
