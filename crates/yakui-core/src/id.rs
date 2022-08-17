@@ -32,7 +32,4 @@ pub enum TextureId {
     User(u64),
     /// This is a yakui originating texture.
     Yak(Index),
-    /// This indicates the use of the White Pixel. This might be a real user supplied texture,
-    /// or it could be implement by users in other ways.
-    WhitePixel,
 }
