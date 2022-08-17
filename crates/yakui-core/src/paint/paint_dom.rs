@@ -108,7 +108,11 @@ impl PaintDom {
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
     pub fn modify_texture(&mut self, id: thunderdome::Index) {
-        self.texture_deltas.insert(id, TextureEdit::Modify);
+        if self.textures.contains(id) {
+            // only put modify in there if there's no other command (ie, if we add and modify)
+            // in the same frame, we only need to say "add"
+            self.texture_deltas.entry(id).or_insert(TextureEdit::Modify);
+        }
     }
 
     /// Remove a texture from the Paint DOM.
