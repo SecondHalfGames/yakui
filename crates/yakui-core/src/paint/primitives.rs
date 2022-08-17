@@ -77,7 +77,7 @@ impl PaintCall {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub struct Vertex {
