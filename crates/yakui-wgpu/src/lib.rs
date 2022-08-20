@@ -200,7 +200,7 @@ impl State {
             return;
         }
 
-        self.update_textures(device, paint, queue);
+        self.update_textures(paint, device, queue);
         self.update_buffers(device, paint);
         let vertices = self.vertices.upload(device, queue);
         let indices = self.indices.upload(device, queue);
