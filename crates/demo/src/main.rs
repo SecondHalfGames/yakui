@@ -9,12 +9,14 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
 use yakui::font::{Font, FontSettings, Fonts};
-use yakui::paint::{Texture, TextureFormat};
+use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{TextureId, UVec2, Vec2};
 
 use crate::examples::Args;
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
+
+const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
 
 /// This is the state that we provide to each demo.
 ///
@@ -28,6 +30,8 @@ pub struct ExampleState {
     /// `TextureId` is a handle to a texture we previously gave to yakui. This
     /// is an image that's usable from any of the examples.
     pub monkey: TextureId,
+
+    pub brown_inlay: TextureId,
 
     /// Just a random bool.
     pub checked: bool,
@@ -77,8 +81,9 @@ async fn run() {
         yak.set_scale_factor(scale);
     }
 
-    // Preload a texture for the examples to use.
-    let monkey = yak.add_texture(load_texture(MONKEY_PNG));
+    // Preload some textures for the examples to use.
+    let monkey = yak.add_texture(load_texture(MONKEY_PNG, TextureFilter::Linear));
+    let brown_inlay = yak.add_texture(load_texture(BROWN_INLAY_PNG, TextureFilter::Nearest));
 
     // Add a custom font for some of the examples.
     let fonts = yak.dom().get_global_or_init(Fonts::default);
@@ -93,6 +98,7 @@ async fn run() {
     let mut state = ExampleState {
         time: 0.0,
         monkey,
+        brown_inlay,
         checked: false,
         name: "Hello".into(),
         pos: Vec2::ZERO,
@@ -164,14 +170,12 @@ async fn run() {
 
 /// This function takes some bytes and turns it into a yakui `Texture` object so
 /// that we can reference it later in our UI.
-fn load_texture(bytes: &[u8]) -> Texture {
+fn load_texture(bytes: &[u8], filter: TextureFilter) -> Texture {
     let image = image::load_from_memory(bytes).unwrap().into_rgba8();
     let size = UVec2::new(image.width(), image.height());
 
-    // For fun, let's change our mag_filter to Nearest here to make our loaded
-    // images pixelated.
     let mut texture = Texture::new(TextureFormat::Rgba8Srgb, size, image.into_raw());
-    texture.mag_filter = yakui::paint::TextureFilter::Nearest;
+    texture.mag_filter = filter;
     texture
 }
 

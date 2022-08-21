@@ -3,7 +3,7 @@ use glam::UVec2;
 use super::Rect;
 
 /// A bounding rectangle with positive integer coordinates.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct URect {
     pos: UVec2,
     size: UVec2,
