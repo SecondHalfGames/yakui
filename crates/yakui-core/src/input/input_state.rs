@@ -62,7 +62,7 @@ impl InputState {
             Event::KeyChanged { key, down } => {
                 self.inner.keyboard_key_changed(dom, layout, *key, *down)
             }
-            Event::ModifiersChanged(modifiers) => self.inner.modifiers_changed(modifiers),
+            Event::ModifiersChanged(modifiers) => self.inner.modifiers_changed(*modifiers),
             Event::TextInput(c) => self.inner.text_input(dom, layout, *c),
             _ => EventResponse::Bubble,
         }
@@ -70,6 +70,64 @@ impl InputState {
 
     pub(crate) fn finish(&self) {
         self.inner.finish()
+    }
+}
+
+/// An editor for setting input state variables directly.
+pub struct InputStateEditor<'a> {
+    input_state: &'a InputState,
+    dom: &'a Dom,
+    layout: &'a LayoutDom,
+}
+
+impl<'a> InputStateEditor<'a> {
+    pub(crate) fn new(input_state: &'a InputState, dom: &'a Dom, layout: &'a LayoutDom) -> Self {
+        Self {
+            input_state,
+            dom,
+            layout,
+        }
+    }
+
+    /// Sets the mouse position. A `None` indicates that the mouse moved outside the window.
+    pub fn set_mouse_pos(&mut self, pos: Option<Vec2>) {
+        self.input_state
+            .inner
+            .mouse_moved(self.dom, self.layout, pos);
+    }
+
+    /// Sets a mouse button state. This may fire callbacks.
+    ///
+    /// Returns `true` if the event was sunk by yakui and should not be processed by the application.
+    #[must_use = "on `true`, the event was sunk by yakui and should not be processed by the application"]
+    pub fn set_mouse_button_state(&mut self, button: MouseButton, down: bool) -> bool {
+        self.input_state
+            .inner
+            .mouse_button_changed(self.dom, self.layout, button, down)
+            .is_sink()
+    }
+
+    /// Sets a kayboard key state. This may fire callbacks.
+    ///
+    /// Returns `true` if the event was sunk by yakui and should not be processed by the application.
+    #[must_use = "on `true`, the event was sunk by yakui and should not be processed by the application"]
+    pub fn set_keyboard_key_state(&mut self, key: KeyCode, down: bool) -> bool {
+        self.input_state
+            .inner
+            .keyboard_key_changed(self.dom, self.layout, key, down)
+            .is_sink()
+    }
+
+    /// Sets the modifiers for a keyboard.
+    pub fn set_modifiers(&mut self, modifiers: Modifiers) {
+        self.input_state.inner.modifiers_changed(modifiers);
+    }
+
+    /// A Unicode codepoint was typed.
+    ///
+    /// Returns `true` if the event was sunk by yakui and should not be processed by the application.
+    pub fn add_char_input(&mut self, c: char) {
+        self.input_state.inner.text_input(self.dom, self.layout, c);
     }
 }
 
@@ -238,8 +296,8 @@ impl InputStateInner {
         EventResponse::Bubble
     }
 
-    fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
-        self.modifiers.set(*modifiers);
+    fn modifiers_changed(&self, modifiers: Modifiers) -> EventResponse {
+        self.modifiers.set(modifiers);
         EventResponse::Bubble
     }
 

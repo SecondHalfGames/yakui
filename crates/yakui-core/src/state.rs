@@ -3,7 +3,7 @@ use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
 use crate::geometry::Rect;
 use crate::id::TextureId;
-use crate::input::InputState;
+use crate::input::{InputState, InputStateEditor};
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
 
@@ -45,6 +45,26 @@ impl State {
         context::unbind_dom();
         context::unbind_input();
         response == EventResponse::Sink
+    }
+
+    /// Grants access to the input state more directly.
+    ///
+    /// This is an alternative API to the [handle_event](Self::handle_event) based approach,
+    /// and works better for applications which don't want to pipe events to yakui.
+    ///
+    /// Note: to set the viewport, use [set_unscaled_viewport](Self::set_unscaled_viewport).
+    pub fn input_state_editor<'a, F>(&'a mut self, mut f: F)
+    where
+        F: FnMut(&mut InputStateEditor<'a>),
+    {
+        context::bind_dom(&self.dom);
+        context::bind_input(&self.input);
+
+        let mut editor = InputStateEditor::new(&self.input, &self.dom, &self.layout);
+        f(&mut editor);
+
+        context::unbind_dom();
+        context::unbind_input();
     }
 
     /// Creates a texture for use within yakui.

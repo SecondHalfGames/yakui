@@ -103,6 +103,16 @@ pub enum EventResponse {
     Sink,
 }
 
+impl EventResponse {
+    /// Returns `true` if the event response is [`Sink`].
+    ///
+    /// [`Sink`]: EventResponse::Sink
+    #[must_use]
+    pub fn is_sink(&self) -> bool {
+        matches!(self, Self::Sink)
+    }
+}
+
 bitflags::bitflags! {
     /// A bitfield of events that a widget can register to be notified about.
     #[derive(Default)]
