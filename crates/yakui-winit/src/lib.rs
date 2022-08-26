@@ -42,7 +42,6 @@ impl State {
         self.auto_scale = enabled;
     }
 
-    // TODO: How do we determine if an input event should be sunk by the UI?
     pub fn handle_event<T>(
         &mut self,
         state: &mut yakui_core::State,
@@ -60,7 +59,6 @@ impl State {
             }
         }
 
-        #[allow(clippy::single_match)]
         match event {
             WinitEvent::WindowEvent {
                 event: WindowEvent::Resized(size),
