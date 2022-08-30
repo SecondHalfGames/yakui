@@ -10,7 +10,7 @@ use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 
-use super::button::MouseButton;
+use super::mouse::MouseButton;
 use super::{KeyCode, Modifiers};
 
 /// Holds yakui's input state, like cursor position, hovered, and selected
