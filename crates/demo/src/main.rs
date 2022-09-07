@@ -10,7 +10,7 @@ use winit::window::WindowBuilder;
 
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
-use yakui::{TextureId, UVec2, Vec2};
+use yakui::{ManagedTextureId, UVec2, Vec2};
 
 use crate::examples::Args;
 
@@ -29,9 +29,9 @@ pub struct ExampleState {
 
     /// `TextureId` is a handle to a texture we previously gave to yakui. This
     /// is an image that's usable from any of the examples.
-    pub monkey: TextureId,
+    pub monkey: ManagedTextureId,
 
-    pub brown_inlay: TextureId,
+    pub brown_inlay: ManagedTextureId,
 
     /// Just a random bool.
     pub checked: bool,

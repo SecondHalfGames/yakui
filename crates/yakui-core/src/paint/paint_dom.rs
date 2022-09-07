@@ -3,7 +3,7 @@ use thunderdome::Arena;
 
 use crate::dom::Dom;
 use crate::geometry::Rect;
-use crate::id::{TextureId, WidgetId};
+use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
 
 use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
@@ -71,17 +71,17 @@ impl PaintDom {
 
     /// Add a texture to the Paint DOM, returning an ID that can be used to
     /// reference it later.
-    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
-        TextureId::new(self.textures.insert(texture))
+    pub fn add_texture(&mut self, texture: Texture) -> ManagedTextureId {
+        ManagedTextureId::new(self.textures.insert(texture))
     }
 
     /// Remove a texture from the Paint DOM.
-    pub fn remove_texture(&mut self, id: TextureId) {
+    pub fn remove_texture(&mut self, id: ManagedTextureId) {
         self.textures.remove(id.index());
     }
 
     /// Retrieve a texture by its ID, if it exists.
-    pub fn get_texture(&self, id: TextureId) -> Option<&Texture> {
+    pub fn get_texture(&self, id: ManagedTextureId) -> Option<&Texture> {
         self.textures.get(id.index())
     }
 
@@ -89,17 +89,17 @@ impl PaintDom {
     ///
     /// The texture will be marked as dirty, which may cause it to be reuploaded
     /// to the GPU by the renderer.
-    pub fn modify_texture(&mut self, id: TextureId) -> Option<&mut Texture> {
+    pub fn modify_texture(&mut self, id: ManagedTextureId) -> Option<&mut Texture> {
         let texture = self.textures.get_mut(id.index())?;
         texture.generation = texture.generation.wrapping_add(1);
         Some(texture)
     }
 
     /// Returns an iterator over all textures known to the Paint DOM.
-    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
+    pub fn textures(&self) -> impl Iterator<Item = (ManagedTextureId, &Texture)> {
         self.textures
             .iter()
-            .map(|(index, texture)| (TextureId::new(index), texture))
+            .map(|(index, texture)| (ManagedTextureId::new(index), texture))
     }
 
     /// Returns a list of paint calls that could be used to draw the UI.

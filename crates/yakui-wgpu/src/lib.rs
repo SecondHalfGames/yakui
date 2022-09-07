@@ -13,7 +13,7 @@ use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use yakui_core::geometry::{Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
-use yakui_core::TextureId;
+use yakui_core::ManagedTextureId;
 
 use self::samplers::Samplers;
 use self::texture::GpuTexture;
@@ -24,7 +24,7 @@ pub struct State {
     layout: wgpu::BindGroupLayout,
     default_texture: GpuTexture,
     samplers: Samplers,
-    textures: HashMap<TextureId, GpuTexture>,
+    textures: HashMap<ManagedTextureId, GpuTexture>,
 
     vertices: Buffer,
     indices: Buffer,

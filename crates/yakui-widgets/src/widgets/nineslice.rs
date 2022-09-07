@@ -5,14 +5,14 @@ use yakui_core::{
     layout::LayoutDom,
     paint::{PaintDom, PaintMesh, Vertex},
     widget::Widget,
-    Response, TextureId,
+    ManagedTextureId, Response,
 };
 
 use crate::{shorthand::pad, util::widget_children, widgets::pad::Pad};
 
 #[derive(Debug)]
 pub struct NineSlice {
-    texture: TextureId,
+    texture: ManagedTextureId,
     /// Texture margins in pixels around the central NineSlice region, before
     /// scaling.
     margins: Pad,
@@ -20,7 +20,7 @@ pub struct NineSlice {
 }
 
 impl NineSlice {
-    pub fn new(texture: TextureId, margins: Pad, scale: f32) -> Self {
+    pub fn new(texture: ManagedTextureId, margins: Pad, scale: f32) -> Self {
         Self {
             texture,
             margins,

@@ -6,7 +6,7 @@ use fontdue::layout::GlyphRasterConfig;
 use fontdue::Font;
 use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
-use yakui_core::TextureId;
+use yakui_core::ManagedTextureId;
 
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {
@@ -15,7 +15,7 @@ pub struct TextGlobalState {
 
 #[derive(Debug)]
 pub struct GlyphCache {
-    pub texture: Option<TextureId>,
+    pub texture: Option<ManagedTextureId>,
     pub texture_size: UVec2,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,

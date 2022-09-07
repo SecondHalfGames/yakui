@@ -2,7 +2,7 @@ use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
 use crate::geometry::Rect;
-use crate::id::TextureId;
+use crate::id::ManagedTextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, Texture};
@@ -48,12 +48,12 @@ impl State {
     }
 
     /// Creates a texture for use within yakui.
-    pub fn add_texture(&mut self, texture: Texture) -> TextureId {
+    pub fn add_texture(&mut self, texture: Texture) -> ManagedTextureId {
         self.paint.add_texture(texture)
     }
 
     /// Returns an iterator of all textures managed by yakui.
-    pub fn textures(&self) -> impl Iterator<Item = (TextureId, &Texture)> {
+    pub fn textures(&self) -> impl Iterator<Item = (ManagedTextureId, &Texture)> {
         self.paint.textures()
     }
 

@@ -6,7 +6,7 @@
 use std::borrow::Cow;
 
 use yakui_core::geometry::{Color, Constraints, Vec2};
-use yakui_core::{Alignment, Response, TextureId};
+use yakui_core::{Alignment, ManagedTextureId, Response};
 
 use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
@@ -51,7 +51,7 @@ pub fn colored_box_container<F: FnOnce()>(color: Color, children: F) -> Response
 }
 
 /// See [Image].
-pub fn image(image: TextureId, size: Vec2) -> Response<ImageWidget> {
+pub fn image(image: ManagedTextureId, size: Vec2) -> Response<ImageWidget> {
     Image::new(image, size).show()
 }
 
@@ -110,7 +110,7 @@ pub fn draggable<F: FnOnce()>(children: F) -> Response<DraggableWidget> {
 
 /// See [NineSlice].
 pub fn nineslice(
-    texture: TextureId,
+    texture: ManagedTextureId,
     margins: Pad,
     scale: f32,
     children: impl FnOnce(),
