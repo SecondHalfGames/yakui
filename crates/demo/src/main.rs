@@ -33,9 +33,6 @@ pub struct ExampleState {
 
     pub brown_inlay: ManagedTextureId,
 
-    /// Just a random bool.
-    pub checked: bool,
-
     /// A string to feed into components.
     pub name: String,
 }
@@ -93,7 +90,6 @@ async fn run() {
         time: 0.0,
         monkey,
         brown_inlay,
-        checked: false,
         name: "Hello".into(),
     };
 
