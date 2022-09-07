@@ -7,7 +7,7 @@ pub fn run(_state: &mut ExampleState) {
 
     center(|| {
         column(|| {
-            label(format!("Value: {}", value.borrow()));
+            label(format!("Value: {}", value.get()));
 
             if button("Increment").clicked {
                 *value.borrow_mut() += 1;
