@@ -43,8 +43,8 @@ impl Graphics {
 
     pub fn paint(
         &self,
-        yak: &mut yakui_core::State,
-        yak_renderer: &mut yakui_wgpu::State,
+        yak: &mut yakui_core::Yakui,
+        yak_renderer: &mut yakui_wgpu::YakuiWgpu,
     ) -> RgbaImage {
         let viewport = yak.layout_dom().unscaled_viewport();
         let size = wgpu::Extent3d {

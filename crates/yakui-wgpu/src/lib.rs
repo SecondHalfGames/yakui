@@ -18,7 +18,7 @@ use yakui_core::ManagedTextureId;
 use self::samplers::Samplers;
 use self::texture::GpuTexture;
 
-pub struct State {
+pub struct YakuiWgpu {
     main_pipeline: wgpu::RenderPipeline,
     text_pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
@@ -52,7 +52,7 @@ impl Vertex {
     };
 }
 
-impl State {
+impl YakuiWgpu {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -181,7 +181,7 @@ impl State {
 
     pub fn paint(
         &mut self,
-        state: &mut yakui_core::State,
+        state: &mut yakui_core::Yakui,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         color_attachment: &wgpu::TextureView,
@@ -197,7 +197,7 @@ impl State {
 
     pub fn paint_with_encoder(
         &mut self,
-        state: &mut yakui_core::State,
+        state: &mut yakui_core::Yakui,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,

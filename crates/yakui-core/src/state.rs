@@ -9,14 +9,14 @@ use crate::paint::{PaintDom, Texture};
 
 /// The entrypoint for yakui.
 #[derive(Debug)]
-pub struct State {
+pub struct Yakui {
     dom: Dom,
     layout: LayoutDom,
     paint: PaintDom,
     input: InputState,
 }
 
-impl State {
+impl Yakui {
     /// Creates a new yakui State.
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {

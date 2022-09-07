@@ -12,7 +12,7 @@ use yakui_core::input::MouseButton;
 pub use self::keys::{from_winit_key, from_winit_modifiers};
 
 #[non_exhaustive]
-pub struct State {
+pub struct YakuiWinit {
     auto_scale: bool,
     init: Option<InitState>,
 }
@@ -22,7 +22,7 @@ struct InitState {
     scale: f32,
 }
 
-impl State {
+impl YakuiWinit {
     #[allow(clippy::new_without_default)]
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
@@ -44,7 +44,7 @@ impl State {
 
     pub fn handle_event<T>(
         &mut self,
-        state: &mut yakui_core::State,
+        state: &mut yakui_core::Yakui,
         event: &WinitEvent<T>,
     ) -> bool {
         if let Some(init) = self.init.take() {

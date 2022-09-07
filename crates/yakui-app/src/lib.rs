@@ -14,8 +14,8 @@ pub struct Graphics {
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
 
-    window: yakui_winit::State,
-    renderer: yakui_wgpu::State,
+    window: yakui_winit::YakuiWinit,
+    renderer: yakui_wgpu::YakuiWgpu,
 
     /// Tracks whether winit is still initializing
     is_init: bool,
@@ -66,11 +66,11 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::State::new(&device, &queue, surface_config.format);
+        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue, surface_config.format);
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.
-        let window = yakui_winit::State::new(window);
+        let window = yakui_winit::YakuiWinit::new(window);
 
         Self {
             device,
@@ -87,11 +87,11 @@ impl Graphics {
         }
     }
 
-    pub fn renderer_mut(&mut self) -> &mut yakui_wgpu::State {
+    pub fn renderer_mut(&mut self) -> &mut yakui_wgpu::YakuiWgpu {
         &mut self.renderer
     }
 
-    pub fn window_mut(&mut self) -> &mut yakui_winit::State {
+    pub fn window_mut(&mut self) -> &mut yakui_winit::YakuiWinit {
         &mut self.window
     }
 
@@ -109,7 +109,7 @@ impl Graphics {
     }
 
     #[cfg_attr(feature = "profiling", profiling::function)]
-    pub fn paint(&mut self, yak: &mut yakui_core::State, bg: wgpu::Color) {
+    pub fn paint(&mut self, yak: &mut yakui_core::Yakui, bg: wgpu::Color) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,
@@ -149,7 +149,7 @@ impl Graphics {
 
     pub fn handle_event<T>(
         &mut self,
-        yak: &mut yakui::State,
+        yak: &mut yakui::Yakui,
         event: &Event<T>,
         control_flow: &mut ControlFlow,
     ) -> bool {

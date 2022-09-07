@@ -40,10 +40,10 @@ Add the [`yakui`] crate to your project:
 cargo add yakui
 ```
 
-Create a [`yakui::State`] when your game starts:
+Create a [`yakui::Yakui`] when your game starts:
 
 ```rust
-let mut yak = yakui::State::new();
+let mut yak = yakui::Yakui::new();
 ```
 
 Call `start()`, create your UI, then call `finish()`:
@@ -66,7 +66,7 @@ your_renderer.draw(yak.paint());
 
 You can use the [`yakui-winit`] and [`yakui-wgpu`] crates to integrate with [winit] and [wgpu], respectively.
 
-[`yakui::State`]: https://github.com/LPGhatguy/yakui/blob/main/crates/yakui-core/src/state.rs
+[`yakui::Yakui`]: https://github.com/LPGhatguy/yakui/blob/main/crates/yakui-core/src/state.rs
 
 ## Examples
 A complete demo application is contained available in [`crates/demo`](crates/demo).
@@ -113,16 +113,16 @@ A frame in yakui is divided up into distinct phases:
     * Events are piped from the application into yakui and tested against the current DOM.
     * Widgets can sink or bubble events. Events bubble by default, and any events that bubble are given back to the application.
 2. Update Phase
-    * This phase is started when `yakui::State::start` is called. This binds the DOM to the current thread.
+    * This phase is started when `Yakui::start` is called. This binds the DOM to the current thread.
     * Functions are called that declare widgets and their current state.
     * Widgets that existed last frame are updated with new props, the input to a widget.
     * Widgets that didn't exist are created from props.
 3. Layout Phase
-    * This phase is started when `yakui::State::finish` is called. This unbinds the DOM from the current thread.
+    * This phase is started when `Yakui::finish` is called. This unbinds the DOM from the current thread.
     * Each widget has its layout function run once, depth first.
     * Each widget is asked what events it is interested in receiving, like mouse or keyboard events.
 4. Paint Phase
-    * This phase is started when `yakui::State::paint` is called.
+    * This phase is started when `Yakui::paint` is called.
     * Each widget has its paint function run once, depth first.
     * Paint information is stored in the Paint DOM, which a renderer can use to draw the current set of widgets.
 

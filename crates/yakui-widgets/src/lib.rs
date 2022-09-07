@@ -18,12 +18,12 @@ pub use self::shorthand::*;
 
 #[doc(hidden)]
 pub struct DocTest {
-    state: yakui_core::State,
+    state: yakui_core::Yakui,
 }
 
 impl DocTest {
     pub fn start() -> Self {
-        let mut state = yakui_core::State::new();
+        let mut state = yakui_core::Yakui::new();
         state.start();
         Self { state }
     }

@@ -53,7 +53,7 @@ async fn run() {
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
-    let mut yak = yakui::State::new();
+    let mut yak = yakui::Yakui::new();
 
     // By default, yakui_winit will measure the system's scale factor and pass
     // it to yakui.
