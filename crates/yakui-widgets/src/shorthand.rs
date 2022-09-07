@@ -12,7 +12,7 @@ use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
     ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget, Flexible,
     FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget, Offset,
-    OffsetWidget, Pad, PadWidget, Text, TextBox, TextBoxWidget, TextWidget,
+    OffsetWidget, Pad, PadWidget, State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -116,4 +116,11 @@ pub fn nineslice(
     children: impl FnOnce(),
 ) -> Response<NineSliceWidget> {
     NineSlice::new(texture, margins, scale).show(children)
+}
+
+pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>
+where
+    F: FnOnce() -> T + 'static,
+{
+    State::new(default).show()
 }
