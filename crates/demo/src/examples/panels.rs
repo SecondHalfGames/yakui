@@ -1,9 +1,9 @@
 use yakui::widgets::{List, Panel};
-use yakui::{button, center, column, expanded, label, row, textbox, CrossAxisAlignment};
+use yakui::{button, center, column, expanded, label, row, textbox, use_state, CrossAxisAlignment};
 
 use crate::ExampleState;
 
-pub fn run(state: &mut ExampleState) {
+pub fn run(_state: &mut ExampleState) {
     column(|| {
         let panel = Panel::top_bottom();
         panel.show(|| {
@@ -34,8 +34,11 @@ pub fn run(state: &mut ExampleState) {
                     row(|| {
                         label("Input");
                         expanded(|| {
-                            if let Some(new_name) = textbox(&state.name).text.as_ref() {
-                                state.name = new_name.clone();
+                            let name = use_state(|| String::from("Hello"));
+
+                            let res = textbox(name.borrow().clone());
+                            if let Some(new_name) = res.text.as_ref() {
+                                name.set(new_name.clone());
                             }
                         });
                     });

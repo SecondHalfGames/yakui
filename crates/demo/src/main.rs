@@ -32,9 +32,6 @@ pub struct ExampleState {
     pub monkey: ManagedTextureId,
 
     pub brown_inlay: ManagedTextureId,
-
-    /// A string to feed into components.
-    pub name: String,
 }
 
 async fn run() {
@@ -90,7 +87,6 @@ async fn run() {
         time: 0.0,
         monkey,
         brown_inlay,
-        name: "Hello".into(),
     };
 
     let start = Instant::now();

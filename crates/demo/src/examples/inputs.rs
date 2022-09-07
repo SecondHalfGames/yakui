@@ -2,8 +2,9 @@ use yakui::{button, checkbox, column, textbox, use_state};
 
 use crate::ExampleState;
 
-pub fn run(state: &mut ExampleState) {
+pub fn run(_state: &mut ExampleState) {
     let checked = use_state(|| false);
+    let name = use_state(|| String::from("Hello"));
 
     column(|| {
         if button("Button").clicked {
@@ -13,8 +14,9 @@ pub fn run(state: &mut ExampleState) {
         let res = checkbox(checked.get());
         checked.set(res.checked);
 
-        if let Some(new_name) = textbox(&state.name).text.as_ref() {
-            state.name = new_name.clone();
+        let res = textbox(name.borrow().clone());
+        if let Some(new_name) = res.text.as_ref() {
+            name.set(new_name.clone());
         }
     });
 }
