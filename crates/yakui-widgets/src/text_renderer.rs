@@ -43,7 +43,8 @@ impl GlyphCache {
         key: GlyphRasterConfig,
     ) -> URect {
         *self.glyphs.entry(key).or_insert_with(|| {
-            let texture = paint.modify_texture(self.texture.unwrap()).unwrap();
+            paint.mark_texture_modified(self.texture.unwrap());
+            let texture = paint.texture_mut(self.texture.unwrap()).unwrap();
 
             let (metrics, bitmap) = font.rasterize_indexed(key.glyph_index, key.px);
             let glyph_size = UVec2::new(metrics.width as u32, metrics.height as u32);

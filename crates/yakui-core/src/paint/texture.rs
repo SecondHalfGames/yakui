@@ -11,10 +11,6 @@ pub struct Texture {
 
     /// How to filter the texture when it needs to be magnified (made larger)
     pub mag_filter: TextureFilter,
-
-    /// Generation attached to the texture to indicate that it has been
-    /// completely invalidated and should be reuploaded.
-    pub(super) generation: u8,
 }
 
 impl std::fmt::Debug for Texture {
@@ -24,7 +20,6 @@ impl std::fmt::Debug for Texture {
             .field("size", &self.size)
             .field("min_filter", &self.min_filter)
             .field("mag_filter", &self.mag_filter)
-            .field("generation", &self.generation)
             .finish_non_exhaustive()
     }
 }
@@ -60,7 +55,6 @@ impl Texture {
             data,
             min_filter: TextureFilter::Nearest,
             mag_filter: TextureFilter::Linear,
-            generation: 0,
         }
     }
 
@@ -83,10 +77,17 @@ impl Texture {
     pub fn format(&self) -> TextureFormat {
         self.format
     }
+}
 
-    /// The texture's generation. This is incremented every time the texture has
-    /// potentially been modified.
-    pub fn generation(&self) -> u8 {
-        self.generation
-    }
+/// Describes a change that happened to a texture since the last update.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TextureChange {
+    /// The texture was added since the last update.
+    Added,
+
+    /// The texture was removed since the last update.
+    Removed,
+
+    /// The texture was modified since the last update.
+    Modified,
 }

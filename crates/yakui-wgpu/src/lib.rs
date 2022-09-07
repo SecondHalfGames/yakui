@@ -12,7 +12,7 @@ use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use yakui_core::geometry::{Vec2, Vec4};
-use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureFormat};
+use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
 use yakui_core::ManagedTextureId;
 
 use self::samplers::Samplers;
@@ -25,6 +25,7 @@ pub struct State {
     default_texture: GpuTexture,
     samplers: Samplers,
     textures: HashMap<ManagedTextureId, GpuTexture>,
+    initial_textures_synced: bool,
 
     vertices: Buffer,
     indices: Buffer,
@@ -170,6 +171,7 @@ impl State {
             default_texture,
             samplers,
             textures: HashMap::new(),
+            initial_textures_synced: false,
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
@@ -303,12 +305,39 @@ impl State {
     fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
         profiling::scope!("update_textures");
 
-        for (id, texture) in paint.textures() {
-            match self.textures.get_mut(&id) {
-                Some(existing) => existing.update_if_newer(device, queue, texture),
-                None => {
+        // If this is the first time we're running update_textures, create
+        // resources for all yakui textures instead of processing texture edits.
+        //
+        // This makes sure we're caught up in case textures were created before
+        // the first frame.
+        if !self.initial_textures_synced {
+            self.initial_textures_synced = true;
+
+            for (id, texture) in paint.textures() {
+                self.textures
+                    .insert(id, GpuTexture::new(device, queue, texture));
+            }
+
+            return;
+        }
+
+        for (id, change) in paint.texture_edits() {
+            match change {
+                TextureChange::Added => {
+                    let texture = paint.texture(id).unwrap();
                     self.textures
                         .insert(id, GpuTexture::new(device, queue, texture));
+                }
+
+                TextureChange::Removed => {
+                    self.textures.remove(&id);
+                }
+
+                TextureChange::Modified => {
+                    if let Some(existing) = self.textures.get_mut(&id) {
+                        let texture = paint.texture(id).unwrap();
+                        existing.update(device, queue, texture);
+                    }
                 }
             }
         }

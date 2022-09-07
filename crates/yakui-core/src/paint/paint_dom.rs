@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use glam::Vec2;
 use thunderdome::Arena;
 
@@ -7,7 +9,7 @@ use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
 
 use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
-use super::texture::Texture;
+use super::texture::{Texture, TextureChange};
 
 #[rustfmt::skip]
 const RECT_POS: [[f32; 2]; 4] = [
@@ -27,6 +29,7 @@ const RECT_INDEX: [u16; 6] = [
 #[derive(Debug)]
 pub struct PaintDom {
     textures: Arena<Texture>,
+    texture_edits: HashMap<ManagedTextureId, TextureChange>,
     calls: Vec<PaintCall>,
     viewport: Rect,
 }
@@ -36,9 +39,15 @@ impl PaintDom {
     pub fn new() -> Self {
         Self {
             textures: Arena::new(),
+            texture_edits: HashMap::new(),
             calls: Vec::new(),
             viewport: Rect::ONE,
         }
+    }
+
+    /// Prepares the PaintDom to be updated for the frame.
+    pub fn start(&mut self) {
+        self.texture_edits.clear();
     }
 
     pub(crate) fn set_viewport(&mut self, viewport: Rect) {
@@ -72,27 +81,30 @@ impl PaintDom {
     /// Add a texture to the Paint DOM, returning an ID that can be used to
     /// reference it later.
     pub fn add_texture(&mut self, texture: Texture) -> ManagedTextureId {
-        ManagedTextureId::new(self.textures.insert(texture))
+        let id = ManagedTextureId::new(self.textures.insert(texture));
+        self.texture_edits.insert(id, TextureChange::Added);
+        id
     }
 
     /// Remove a texture from the Paint DOM.
     pub fn remove_texture(&mut self, id: ManagedTextureId) {
         self.textures.remove(id.index());
+        self.texture_edits.insert(id, TextureChange::Removed);
     }
 
     /// Retrieve a texture by its ID, if it exists.
-    pub fn get_texture(&self, id: ManagedTextureId) -> Option<&Texture> {
+    pub fn texture(&self, id: ManagedTextureId) -> Option<&Texture> {
         self.textures.get(id.index())
     }
 
-    /// Returns a mutable handle to a texture given its ID.
-    ///
-    /// The texture will be marked as dirty, which may cause it to be reuploaded
-    /// to the GPU by the renderer.
-    pub fn modify_texture(&mut self, id: ManagedTextureId) -> Option<&mut Texture> {
-        let texture = self.textures.get_mut(id.index())?;
-        texture.generation = texture.generation.wrapping_add(1);
-        Some(texture)
+    /// Retrieves a mutable reference to a texture by its ID.
+    pub fn texture_mut(&mut self, id: ManagedTextureId) -> Option<&mut Texture> {
+        self.textures.get_mut(id.index())
+    }
+
+    /// Mark a texture as modified so that changes can be detected.
+    pub fn mark_texture_modified(&mut self, id: ManagedTextureId) {
+        self.texture_edits.insert(id, TextureChange::Modified);
     }
 
     /// Returns an iterator over all textures known to the Paint DOM.
@@ -100,6 +112,15 @@ impl PaintDom {
         self.textures
             .iter()
             .map(|(index, texture)| (ManagedTextureId::new(index), texture))
+    }
+
+    /// Iterates over the list of changes that happened to yakui-managed
+    /// textures this frame.
+    ///
+    /// This is useful for renderers that need to upload or remove GPU resources
+    /// related to textures.
+    pub fn texture_edits(&self) -> impl Iterator<Item = (ManagedTextureId, TextureChange)> + '_ {
+        self.texture_edits.iter().map(|(&id, &edit)| (id, edit))
     }
 
     /// Returns a list of paint calls that could be used to draw the UI.

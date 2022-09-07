@@ -81,7 +81,7 @@ impl Widget for NineSliceWidget {
 
         let rect = layout.get(dom.current()).unwrap().rect;
 
-        let texture = paint.get_texture(texture).unwrap();
+        let texture = paint.texture(texture).unwrap();
         let texture_size = texture.size().as_vec2();
 
         let top_left = rect.pos();

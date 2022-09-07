@@ -10,7 +10,6 @@ pub(crate) struct GpuTexture {
     pub view: wgpu::TextureView,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
-    generation: u8,
 }
 
 impl GpuTexture {
@@ -55,21 +54,11 @@ impl GpuTexture {
             view: gpu_view,
             min_filter,
             mag_filter,
-            generation: texture.generation(),
         }
     }
 
-    // Update the GpuTexture if the given Texture has newer data.
-    pub fn update_if_newer(
-        &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        texture: &Texture,
-    ) {
-        if self.generation == texture.generation() {
-            return;
-        }
-
+    // Update the GpuTexture from a yakui Texture.
+    pub fn update(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) {
         if self.size != texture.size() || self.format != texture.format() {
             *self = Self::new(device, queue, texture);
             return;

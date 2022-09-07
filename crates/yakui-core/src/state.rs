@@ -79,6 +79,8 @@ impl State {
     /// When finished, call [`Dom::finish`].
     pub fn start(&mut self) {
         self.dom.start();
+        self.paint.start();
+
         context::bind_dom(&self.dom);
         context::bind_input(&self.input);
     }
