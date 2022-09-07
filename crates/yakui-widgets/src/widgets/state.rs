@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::fmt;
 use std::rc::Rc;
 
@@ -32,13 +32,45 @@ impl<T> fmt::Debug for State<T> {
     }
 }
 
+pub struct StateResponse<T> {
+    value: Rc<RefCell<T>>,
+}
+
+impl<T> StateResponse<T> {
+    pub fn borrow(&self) -> Ref<'_, T> {
+        self.value.borrow()
+    }
+
+    pub fn borrow_mut(&self) -> RefMut<'_, T> {
+        self.value.borrow_mut()
+    }
+
+    pub fn set(&self, value: T) {
+        self.value.replace(value);
+    }
+}
+
+impl<T: Copy> StateResponse<T> {
+    pub fn get(&self) -> T {
+        *self.value.borrow()
+    }
+
+    pub fn modify<F>(&self, update: F)
+    where
+        F: FnOnce(T) -> T,
+    {
+        let mut handle = self.value.borrow_mut();
+        *handle = update(*handle);
+    }
+}
+
 pub struct StateWidget<T> {
     value: Option<Rc<RefCell<T>>>,
 }
 
 impl<T: 'static> Widget for StateWidget<T> {
     type Props = State<T>;
-    type Response = Rc<RefCell<T>>;
+    type Response = StateResponse<T>;
 
     fn new() -> Self {
         Self { value: None }
@@ -50,7 +82,7 @@ impl<T: 'static> Widget for StateWidget<T> {
             .get_or_insert_with(|| Rc::new(RefCell::new((props.default)())))
             .clone();
 
-        value
+        StateResponse { value }
     }
 }
 
