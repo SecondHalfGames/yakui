@@ -9,6 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 
@@ -17,6 +18,13 @@ use crate::paint::PaintDom;
 /// This trait is used by yakui to enforce that props implement `Debug`.
 pub trait Props: fmt::Debug {}
 impl<T> Props for T where T: fmt::Debug {}
+
+#[non_exhaustive]
+pub struct LayoutContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom mut LayoutDom,
+    pub input: &'dom InputState,
+}
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
 /// existing widgets does not solve your use case.
@@ -52,11 +60,11 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will lay out all of this widget's children on
     /// top of each other, and fit the widget tightly around them.
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
+            let child_size = ctx.layout.calculate(ctx.dom, child, constraints);
             size = size.max(child_size);
         }
 
@@ -92,7 +100,7 @@ pub trait Widget: 'static + fmt::Debug {
 /// A type-erased version of [`Widget`].
 pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::layout`].
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2;
 
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
@@ -114,8 +122,8 @@ impl<T> ErasedWidget for T
 where
     T: Widget,
 {
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        <T as Widget>::layout(self, dom, layout, constraints)
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        <T as Widget>::layout(self, ctx, constraints)
     }
 
     fn flex(&self) -> (u32, FlexFit) {

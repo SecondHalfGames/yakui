@@ -9,6 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
 use crate::id::WidgetId;
+use crate::widget::LayoutContext;
 
 /// Contains information on how each widget in the DOM is laid out and what
 /// events they're interested in.
@@ -108,7 +109,14 @@ impl LayoutDom {
     pub fn calculate(&mut self, dom: &Dom, id: WidgetId, constraints: Constraints) -> Vec2 {
         dom.enter(id);
         let dom_node = dom.get(id).unwrap();
-        let size = dom_node.widget.layout(dom, self, constraints);
+
+        let context = LayoutContext {
+            dom,
+            layout: self,
+            input: (|| todo!())(),
+        };
+
+        let size = dom_node.widget.layout(context, constraints);
         let event_interest = dom_node.widget.event_interest();
 
         if event_interest.intersects(EventInterest::MOUSE_ALL) {

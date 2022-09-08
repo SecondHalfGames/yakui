@@ -1,5 +1,5 @@
 #![allow(clippy::new_without_default, clippy::collapsible_else_if)]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 
 //! TODO: Crate docs
 
