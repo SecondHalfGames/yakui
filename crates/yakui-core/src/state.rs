@@ -77,6 +77,7 @@ impl Yakui {
     /// When finished, call [`Dom::finish`].
     pub fn start(&mut self) {
         self.dom.start();
+        self.input.start(&self.dom, &self.layout);
         self.paint.start();
 
         context::bind_dom(&self.dom);

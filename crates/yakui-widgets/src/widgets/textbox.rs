@@ -64,7 +64,6 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-        self.selected = false; // TODO: Restore this functionality
 
         let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
 
@@ -104,6 +103,11 @@ impl Widget for TextBoxWidget {
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
+            WidgetEvent::FocusChanged(focused) => {
+                self.selected = *focused;
+                EventResponse::Sink
+            }
+
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,
                 down: true,

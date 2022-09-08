@@ -27,7 +27,10 @@ pub struct InputState {
     intersections: RefCell<Intersections>,
 
     /// The widget that is currently selected.
-    selection: RefCell<Option<WidgetId>>,
+    selection: Cell<Option<WidgetId>>,
+
+    /// The widget that was selected last frame.
+    last_selection: Cell<Option<WidgetId>>,
 }
 
 #[derive(Debug)]
@@ -106,8 +109,14 @@ impl InputState {
                 mouse_entered_and_sunk: Vec::new(),
                 mouse_down_in: HashMap::new(),
             }),
-            selection: RefCell::new(None),
+            last_selection: Cell::new(None),
+            selection: Cell::new(None),
         }
+    }
+
+    /// Begin a new frame for input handling.
+    pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
+        self.notify_selection(dom, layout);
     }
 
     /// Finish applying input events for this frame.
@@ -117,13 +126,12 @@ impl InputState {
 
     /// Return the currently selected widget, if there is one.
     pub fn selection(&self) -> Option<WidgetId> {
-        *self.selection.borrow()
+        self.selection.get()
     }
 
     /// Set the currently selected widget.
     pub fn set_selection(&self, id: Option<WidgetId>) {
-        let mut selection = self.selection.borrow_mut();
-        *selection = id;
+        self.selection.set(id);
     }
 
     pub(crate) fn handle_event(
@@ -145,6 +153,39 @@ impl InputState {
             Event::TextInput(c) => self.text_input(dom, layout, *c),
             _ => EventResponse::Bubble,
         }
+    }
+
+    fn notify_selection(&self, dom: &Dom, layout: &LayoutDom) {
+        let current = self.selection.get();
+        let last = self.last_selection.get();
+
+        if current == last {
+            return;
+        }
+
+        if let Some(entered) = current {
+            let mut node = dom.get_mut(entered).unwrap();
+            self.fire_event(
+                dom,
+                layout,
+                entered,
+                &mut node,
+                &WidgetEvent::FocusChanged(true),
+            );
+        }
+
+        if let Some(left) = last {
+            let mut node = dom.get_mut(left).unwrap();
+            self.fire_event(
+                dom,
+                layout,
+                left,
+                &mut node,
+                &WidgetEvent::FocusChanged(false),
+            );
+        }
+
+        self.last_selection.set(current);
     }
 
     /// Signal that the mouse has moved.
@@ -199,7 +240,7 @@ impl InputState {
         key: KeyCode,
         down: bool,
     ) -> EventResponse {
-        let selected = *self.selection.borrow();
+        let selected = self.selection.get();
         if let Some(id) = selected {
             let layout_node = layout.get(id).unwrap();
 
@@ -226,7 +267,7 @@ impl InputState {
     }
 
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
-        let selected = *self.selection.borrow();
+        let selected = self.selection.get();
         if let Some(id) = selected {
             let layout_node = layout.get(id).unwrap();
 
