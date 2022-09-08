@@ -11,6 +11,9 @@ pub struct Color {
 }
 
 impl Color {
+    /// All black with no alpha
+    pub const CLEAR: Self = Self::rgba(0, 0, 0, 0);
+
     /// Create a new `Color`.
     pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
@@ -71,14 +74,14 @@ impl Color {
 }
 
 macro_rules! builtin_colors {
-    ($($name:ident ($($color:literal),*),)*) => {
+    ($($name:ident ($r:literal, $g:literal, $b:literal),)*) => {
         #[allow(missing_docs)]
         impl Color {
             $(
-                pub const $name: Self = Self::rgb($($color),*);
+                pub const $name: Self = Self::rgb($r, $g, $b);
             )*
         }
-    }
+    };
 }
 
 builtin_colors! {
