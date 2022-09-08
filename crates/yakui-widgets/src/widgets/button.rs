@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Color;
 use yakui_core::input::MouseButton;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
 use crate::colors;
@@ -138,7 +138,7 @@ impl Widget for ButtonWidget {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseEnter => {
                 self.hovering = true;

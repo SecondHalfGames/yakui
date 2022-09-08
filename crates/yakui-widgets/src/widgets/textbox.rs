@@ -1,7 +1,7 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::paint::PaintRect;
-use yakui_core::widget::{PaintContext, Widget};
+use yakui_core::widget::{EventContext, PaintContext, Widget};
 use yakui_core::{context, Response};
 
 use crate::style::TextStyle;
@@ -102,7 +102,7 @@ impl Widget for TextBoxWidget {
         EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,

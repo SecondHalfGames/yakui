@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::paint::PaintRect;
-use yakui_core::widget::{LayoutContext, PaintContext, Widget};
+use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::colors;
@@ -119,7 +119,7 @@ impl Widget for PanelWidget {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseMoved(Some(_pos)) => {
                 // TODO: How do we know where the mouse is relative to our

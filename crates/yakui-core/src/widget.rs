@@ -38,6 +38,12 @@ impl<'dom> PaintContext<'dom> {
     }
 }
 
+#[non_exhaustive]
+pub struct EventContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+}
+
 /// A yakui widget. Implement this trait to create a custom widget if composing
 /// existing widgets does not solve your use case.
 pub trait Widget: 'static + fmt::Debug {
@@ -104,7 +110,7 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will bubble all events.
     #[allow(unused)]
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         EventResponse::Bubble
     }
 }
@@ -124,7 +130,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
     fn event_interest(&self) -> EventInterest;
 
     /// See [`Widget::event`].
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse;
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse;
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
@@ -150,10 +156,10 @@ where
         <T as Widget>::event_interest(self)
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         log::debug!("Event on {}: {event:?}", type_name::<T>());
 
-        <T as Widget>::event(self, event)
+        <T as Widget>::event(self, ctx, event)
     }
 
     fn type_name(&self) -> &'static str {

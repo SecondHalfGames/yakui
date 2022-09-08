@@ -9,6 +9,7 @@ use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
+use crate::widget::EventContext;
 
 use super::mouse::MouseButton;
 use super::{KeyCode, Modifiers};
@@ -178,8 +179,8 @@ impl InputStateInner {
 
         self.send_mouse_move(dom, layout);
         self.mouse_hit_test(dom, layout);
-        self.send_mouse_enter(dom);
-        self.send_mouse_leave(dom);
+        self.send_mouse_enter(dom, layout);
+        self.send_mouse_leave(dom, layout);
     }
 
     /// Signal that a mouse button's state has changed.
@@ -233,7 +234,7 @@ impl InputStateInner {
                     down,
                     modifiers: self.modifiers.get(),
                 };
-                return fire_event(dom, id, &mut node, &event);
+                return fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
@@ -256,7 +257,7 @@ impl InputStateInner {
             {
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::TextInput(c);
-                return fire_event(dom, id, &mut node, &event);
+                return fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
@@ -288,7 +289,7 @@ impl InputStateInner {
                     position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                     modifiers: self.modifiers.get(),
                 };
-                let response = fire_event(dom, id, &mut node, &event);
+                let response = fire_event(dom, layout, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
                     overall_response = response;
@@ -313,7 +314,7 @@ impl InputStateInner {
                         position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                         modifiers: self.modifiers.get(),
                     };
-                    fire_event(dom, id, &mut node, &event);
+                    fire_event(dom, layout, id, &mut node, &event);
                 }
             }
         }
@@ -330,13 +331,15 @@ impl InputStateInner {
 
         for (id, interest) in interest_mouse {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
+                let context = EventContext { dom, layout };
+
                 let mut node = dom.get_mut(id).unwrap();
-                node.widget.event(&event);
+                node.widget.event(context, &event);
             }
         }
     }
 
-    fn send_mouse_enter(&self, dom: &Dom) {
+    fn send_mouse_enter(&self, dom: &Dom, layout: &LayoutDom) {
         let mut intersections = self.intersections.borrow_mut();
         let intersections = &mut *intersections;
 
@@ -345,7 +348,8 @@ impl InputStateInner {
                 if !intersections.mouse_entered.contains(&hit) {
                     intersections.mouse_entered.push(hit);
 
-                    let response = fire_event(dom, hit, &mut node, &WidgetEvent::MouseEnter);
+                    let response =
+                        fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseEnter);
 
                     if response == EventResponse::Sink {
                         intersections.mouse_entered_and_sunk.push(hit);
@@ -362,7 +366,7 @@ impl InputStateInner {
         }
     }
 
-    fn send_mouse_leave(&self, dom: &Dom) {
+    fn send_mouse_leave(&self, dom: &Dom, layout: &LayoutDom) {
         let mut intersections = self.intersections.borrow_mut();
 
         let mut to_remove = SmallVec::<[WidgetId; 4]>::new();
@@ -370,7 +374,7 @@ impl InputStateInner {
         for &hit in &intersections.mouse_entered {
             if !intersections.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
-                    fire_event(dom, hit, &mut node, &WidgetEvent::MouseLeave);
+                    fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseLeave);
                 }
 
                 to_remove.push(hit);
@@ -409,9 +413,17 @@ impl InputStateInner {
 /// Notify the widget of an event, pushing it onto the stack first to ensure
 /// that the DOM will have the correct widget at the top of the stack if
 /// queried.
-fn fire_event(dom: &Dom, id: WidgetId, node: &mut DomNode, event: &WidgetEvent) -> EventResponse {
+fn fire_event(
+    dom: &Dom,
+    layout: &LayoutDom,
+    id: WidgetId,
+    node: &mut DomNode,
+    event: &WidgetEvent,
+) -> EventResponse {
+    let context = EventContext { dom, layout };
+
     dom.enter(id);
-    let response = node.widget.event(event);
+    let response = node.widget.event(context, event);
     dom.exit(id);
 
     response
