@@ -20,7 +20,9 @@ use crate::WidgetId;
 pub trait Props: fmt::Debug {}
 impl<T> Props for T where T: fmt::Debug {}
 
+/// Information available to a widget during the layout phase.
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub struct LayoutContext<'dom> {
     pub dom: &'dom Dom,
     pub input: &'dom InputState,
@@ -28,13 +30,19 @@ pub struct LayoutContext<'dom> {
 }
 
 impl<'dom> LayoutContext<'dom> {
+    /// Calculate the layout for the given widget with the given constraints.
+    ///
+    /// This method currently must only be called once per widget per layout
+    /// phase.
     pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
         self.layout
             .calculate(self.dom, self.input, widget, constraints)
     }
 }
 
+/// Information available to a widget during the paint phase.
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub struct PaintContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
@@ -42,12 +50,15 @@ pub struct PaintContext<'dom> {
 }
 
 impl<'dom> PaintContext<'dom> {
+    /// Paint the given widget.
     pub fn paint(&mut self, widget: WidgetId) {
         self.paint.paint(self.dom, self.layout, widget);
     }
 }
 
+/// Information available to a widget when it has received an event.
 #[non_exhaustive]
+#[allow(missing_docs)]
 pub struct EventContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
