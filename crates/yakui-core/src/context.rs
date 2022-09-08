@@ -11,21 +11,6 @@ thread_local! {
     static CURRENT_DOM: Storage<Dom> = RefCell::new(None);
 }
 
-/// Select the currently active widget.
-pub fn capture_selection() {
-    todo!()
-}
-
-/// Deselect the currently active widget.
-pub fn remove_selection() {
-    todo!()
-}
-
-/// Tells whether the current widget is selected.
-pub fn is_selected() -> bool {
-    todo!()
-}
-
 /// If there is a DOM currently being updated on this thread, returns a
 /// reference to it.
 ///
