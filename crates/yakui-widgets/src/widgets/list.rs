@@ -1,7 +1,5 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize, Response};
 
 use crate::util::widget_children;
@@ -83,8 +81,8 @@ impl Widget for ListWidget {
     // This approach to layout is based on Flutter's Flex layout algorithm.
     //
     // https://api.flutter.dev/flutter/widgets/Flex-class.html#layout-algorithm
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let direction = self.props.direction;
 
         let total_item_spacing = self.props.item_spacing * (node.children.len() - 1) as f32;
@@ -111,7 +109,7 @@ impl Widget for ListWidget {
         // so that we can divide the remaining space up later.
         let mut total_flex = 0;
         for &child_index in &node.children {
-            let child = dom.get(child_index).unwrap();
+            let child = ctx.dom.get(child_index).unwrap();
             let (flex, _fit) = child.widget.flex();
             total_flex += flex;
 
@@ -124,7 +122,7 @@ impl Widget for ListWidget {
                 max: direction.vec2(f32::INFINITY, cross_axis_max),
             };
 
-            let size = layout.calculate(dom, child_index, constraints);
+            let size = ctx.layout.calculate(ctx.dom, child_index, constraints);
             total_main_axis_size += direction.get_main_axis(size);
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
@@ -133,7 +131,7 @@ impl Widget for ListWidget {
         // the remaining space based on their flex factor.
         let remaining_main_axis = (main_axis_max - total_main_axis_size).max(0.0);
         for &child_index in &node.children {
-            let child = dom.get(child_index).unwrap();
+            let child = ctx.dom.get(child_index).unwrap();
             let (flex, fit) = child.widget.flex();
 
             if flex == 0 {
@@ -158,7 +156,7 @@ impl Widget for ListWidget {
                 },
             };
 
-            let size = layout.calculate(dom, child_index, constraints);
+            let size = ctx.layout.calculate(ctx.dom, child_index, constraints);
             total_main_axis_size += direction.get_main_axis(size);
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
@@ -168,7 +166,7 @@ impl Widget for ListWidget {
         // Finally, position all children based on the sizes calculated above.
         let mut next_main = 0.0;
         for &child_index in &node.children {
-            let child_layout = layout.get_mut(child_index).unwrap();
+            let child_layout = ctx.layout.get_mut(child_index).unwrap();
             let child_size = child_layout.rect.size();
             let child_main = direction.get_main_axis(child_size);
             let child_cross = direction.get_cross_axis(child_size);

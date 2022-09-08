@@ -7,7 +7,7 @@ use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::font::{FontName, Fonts};
@@ -70,8 +70,8 @@ impl Widget for RenderTextWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let fonts = dom.get_global_or_init(Fonts::default);
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
         let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
@@ -83,8 +83,8 @@ impl Widget for RenderTextWidget {
 
         let (max_width, max_height) = if input.is_bounded() {
             (
-                Some(input.max.x * layout.scale_factor()),
-                Some(input.max.y * layout.scale_factor()),
+                Some(input.max.x * ctx.layout.scale_factor()),
+                Some(input.max.y * ctx.layout.scale_factor()),
             )
         } else {
             (None, None)
@@ -101,12 +101,12 @@ impl Widget for RenderTextWidget {
             &[&*font],
             &FontdueTextStyle::new(
                 &self.props.text,
-                (self.props.style.font_size * layout.scale_factor()).ceil(),
+                (self.props.style.font_size * ctx.layout.scale_factor()).ceil(),
                 0,
             ),
         );
 
-        let size = get_text_layout_size(&text_layout, layout.scale_factor());
+        let size = get_text_layout_size(&text_layout, ctx.layout.scale_factor());
 
         input.constrain_min(size)
     }

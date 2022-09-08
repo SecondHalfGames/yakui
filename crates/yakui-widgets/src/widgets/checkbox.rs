@@ -4,7 +4,7 @@ use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::input::MouseButton;
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::colors;
@@ -97,7 +97,7 @@ impl Widget for CheckboxWidget {
         }
     }
 
-    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
+    fn layout(&self, _ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
         constraints.constrain_min(Vec2::splat(OUTER_SIZE))
     }
 

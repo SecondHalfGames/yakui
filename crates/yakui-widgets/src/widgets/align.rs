@@ -2,7 +2,7 @@ use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::PaintDom;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{Alignment, Response};
 
 use crate::util::widget_children;
@@ -78,8 +78,8 @@ impl Widget for AlignWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
 
         // Align allows its children to be smaller than the minimum size
         // enforced by the incoming constraints.
@@ -95,9 +95,10 @@ impl Widget for AlignWidget {
         let align = self.props.alignment.as_vec2();
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
+            let child_size = ctx.layout.calculate(ctx.dom, child, constraints);
             self_size = self_size.max(child_size);
-            layout.set_pos(child, align * self_size - align * child_size);
+            ctx.layout
+                .set_pos(child, align * self_size - align * child_size);
         }
 
         self_size

@@ -110,11 +110,7 @@ impl LayoutDom {
         dom.enter(id);
         let dom_node = dom.get(id).unwrap();
 
-        let context = LayoutContext {
-            dom,
-            layout: self,
-            input: (|| todo!())(),
-        };
+        let context = LayoutContext { dom, layout: self };
 
         let size = dom_node.widget.layout(context, constraints);
         let event_interest = dom_node.widget.event_interest();

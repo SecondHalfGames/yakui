@@ -6,7 +6,7 @@ use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::font::Fonts;
@@ -70,8 +70,8 @@ impl Widget for RenderTextBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let fonts = dom.get_global_or_init(Fonts::default);
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let fonts = ctx.dom.get_global_or_init(Fonts::default);
         let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
             None => {
@@ -84,14 +84,14 @@ impl Widget for RenderTextBoxWidget {
 
         let (max_width, max_height) = if input.is_bounded() {
             (
-                Some(input.max.x * layout.scale_factor()),
-                Some(input.max.y * layout.scale_factor()),
+                Some(input.max.x * ctx.layout.scale_factor()),
+                Some(input.max.y * ctx.layout.scale_factor()),
             )
         } else {
             (None, None)
         };
 
-        let font_size = (self.props.style.font_size * layout.scale_factor()).ceil();
+        let font_size = (self.props.style.font_size * ctx.layout.scale_factor()).ceil();
 
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
@@ -116,7 +116,7 @@ impl Widget for RenderTextBoxWidget {
             .last()
             .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
             .unwrap_or_default();
-        let cursor_pos = Vec2::new(cursor_x, cursor_y) / layout.scale_factor();
+        let cursor_pos = Vec2::new(cursor_x, cursor_y) / ctx.layout.scale_factor();
         *self.cursor_pos_size.borrow_mut() = (cursor_pos, cursor_size);
 
         let after_cursor = &text[self.props.cursor..];
@@ -125,7 +125,7 @@ impl Widget for RenderTextBoxWidget {
             &FontdueTextStyle::new(after_cursor, font_size, 0),
         );
 
-        let mut size = get_text_layout_size(&text_layout, layout.scale_factor());
+        let mut size = get_text_layout_size(&text_layout, ctx.layout.scale_factor());
         size = size.max(Vec2::new(0.0, ascent));
 
         input.constrain(size)

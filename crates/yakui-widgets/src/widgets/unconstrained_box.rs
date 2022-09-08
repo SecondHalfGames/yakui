@@ -1,9 +1,7 @@
 use std::f32::INFINITY;
 
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
@@ -54,8 +52,8 @@ impl Widget for UnconstrainedBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
 
         let (min_x, max_x) = if self.props.constrain_x {
             (0.0, input.max.x)
@@ -76,7 +74,7 @@ impl Widget for UnconstrainedBoxWidget {
 
         let mut size = Vec2::ZERO;
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
+            let child_size = ctx.layout.calculate(ctx.dom, child, constraints);
             size = size.max(child_size);
         }
 

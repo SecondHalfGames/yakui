@@ -2,7 +2,7 @@ use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::util::{widget, widget_children};
@@ -71,12 +71,12 @@ impl Widget for ColoredBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = self.props.min_size;
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, input);
+            let child_size = ctx.layout.calculate(ctx.dom, child, input);
             size = size.max(child_size);
         }
 

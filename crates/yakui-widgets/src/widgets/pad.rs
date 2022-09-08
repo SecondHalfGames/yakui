@@ -1,7 +1,5 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
@@ -83,8 +81,8 @@ impl Widget for PadWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
 
         let total_padding = Vec2::new(
             self.props.left + self.props.right,
@@ -100,8 +98,8 @@ impl Widget for PadWidget {
         let mut self_size = Vec2::ZERO;
 
         for &child in &node.children {
-            self_size = layout.calculate(dom, child, child_constraints) + total_padding;
-            layout.set_pos(child, offset);
+            self_size = ctx.layout.calculate(ctx.dom, child, child_constraints) + total_padding;
+            ctx.layout.set_pos(child, offset);
         }
 
         self_size = self_size.max(total_padding);

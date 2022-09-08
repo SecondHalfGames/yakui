@@ -5,7 +5,7 @@ use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::layout::LayoutDom;
 use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::colors;
@@ -71,8 +71,8 @@ impl Widget for PanelWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = input.constrain(*self.size.borrow());
 
         match self.props.kind {
@@ -92,7 +92,7 @@ impl Widget for PanelWidget {
         let child_constraints = Constraints::tight(size);
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, child_constraints);
+            let child_size = ctx.layout.calculate(ctx.dom, child, child_constraints);
             size = size.max(child_size);
         }
 
