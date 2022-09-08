@@ -75,7 +75,7 @@ impl Widget for AlignWidget {
         self.props = props;
     }
 
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
 
         // Align allows its children to be smaller than the minimum size
@@ -92,7 +92,7 @@ impl Widget for AlignWidget {
         let align = self.props.alignment.as_vec2();
 
         for &child in &node.children {
-            let child_size = ctx.layout.calculate(ctx.dom, child, constraints);
+            let child_size = ctx.calculate_layout(child, constraints);
             self_size = self_size.max(child_size);
             ctx.layout
                 .set_pos(child, align * self_size - align * child_size);

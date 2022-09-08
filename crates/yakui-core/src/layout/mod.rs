@@ -9,6 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
 use crate::id::WidgetId;
+use crate::input::InputState;
 use crate::widget::LayoutContext;
 
 /// Contains information on how each widget in the DOM is laid out and what
@@ -89,7 +90,7 @@ impl LayoutDom {
     }
 
     /// Calculate the layout of all elements in the given DOM.
-    pub fn calculate_all(&mut self, dom: &Dom) {
+    pub fn calculate_all(&mut self, dom: &Dom, input: &InputState) {
         profiling::scope!("LayoutDom::calculate_all");
         log::debug!("LayoutDom::calculate_all()");
 
@@ -97,7 +98,7 @@ impl LayoutDom {
 
         let constraints = Constraints::tight(self.viewport.size() / self.scale_factor);
 
-        self.calculate(dom, dom.root(), constraints);
+        self.calculate(dom, input, dom.root(), constraints);
         self.resolve_positions(dom);
     }
 
@@ -106,11 +107,21 @@ impl LayoutDom {
     /// This function must only be called from
     /// [`Widget::layout`][crate::widget::Widget::layout] and should only be
     /// called once per widget per layout pass.
-    pub fn calculate(&mut self, dom: &Dom, id: WidgetId, constraints: Constraints) -> Vec2 {
+    pub fn calculate(
+        &mut self,
+        dom: &Dom,
+        input: &InputState,
+        id: WidgetId,
+        constraints: Constraints,
+    ) -> Vec2 {
         dom.enter(id);
         let dom_node = dom.get(id).unwrap();
 
-        let context = LayoutContext { dom, layout: self };
+        let context = LayoutContext {
+            dom,
+            input,
+            layout: self,
+        };
 
         let size = dom_node.widget.layout(context, constraints);
         let event_interest = dom_node.widget.event_interest();

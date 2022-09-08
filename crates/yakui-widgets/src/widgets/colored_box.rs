@@ -69,12 +69,12 @@ impl Widget for ColoredBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = self.props.min_size;
 
         for &child in &node.children {
-            let child_size = ctx.layout.calculate(ctx.dom, child, input);
+            let child_size = ctx.calculate_layout(child, input);
             size = size.max(child_size);
         }
 

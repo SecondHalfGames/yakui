@@ -81,7 +81,7 @@ impl Widget for ListWidget {
     // This approach to layout is based on Flutter's Flex layout algorithm.
     //
     // https://api.flutter.dev/flutter/widgets/Flex-class.html#layout-algorithm
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let direction = self.props.direction;
 
@@ -122,7 +122,7 @@ impl Widget for ListWidget {
                 max: direction.vec2(f32::INFINITY, cross_axis_max),
             };
 
-            let size = ctx.layout.calculate(ctx.dom, child_index, constraints);
+            let size = ctx.calculate_layout(child_index, constraints);
             total_main_axis_size += direction.get_main_axis(size);
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }
@@ -156,7 +156,7 @@ impl Widget for ListWidget {
                 },
             };
 
-            let size = ctx.layout.calculate(ctx.dom, child_index, constraints);
+            let size = ctx.calculate_layout(child_index, constraints);
             total_main_axis_size += direction.get_main_axis(size);
             max_cross_axis_size = f32::max(max_cross_axis_size, direction.get_cross_axis(size));
         }

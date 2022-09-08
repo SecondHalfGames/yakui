@@ -23,7 +23,15 @@ impl<T> Props for T where T: fmt::Debug {}
 #[non_exhaustive]
 pub struct LayoutContext<'dom> {
     pub dom: &'dom Dom,
+    pub input: &'dom InputState,
     pub layout: &'dom mut LayoutDom,
+}
+
+impl<'dom> LayoutContext<'dom> {
+    pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
+        self.layout
+            .calculate(self.dom, self.input, widget, constraints)
+    }
 }
 
 #[non_exhaustive]
@@ -80,11 +88,11 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will lay out all of this widget's children on
     /// top of each other, and fit the widget tightly around them.
-    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {
-            let child_size = ctx.layout.calculate(ctx.dom, child, constraints);
+            let child_size = ctx.calculate_layout(child, constraints);
             size = size.max(child_size);
         }
 

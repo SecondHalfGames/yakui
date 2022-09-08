@@ -14,11 +14,11 @@ impl Widget for RootWidget {
 
     fn update(&mut self, _props: Self::Props) -> Self::Response {}
 
-    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
         let node = ctx.dom.get_current();
 
         for &child in &node.children {
-            ctx.layout.calculate(ctx.dom, child, constraints);
+            ctx.calculate_layout(child, constraints);
         }
 
         constraints.max

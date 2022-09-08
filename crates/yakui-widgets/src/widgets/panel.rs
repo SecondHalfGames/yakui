@@ -69,7 +69,7 @@ impl Widget for PanelWidget {
         self.props = props;
     }
 
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = input.constrain(*self.size.borrow());
 
@@ -90,7 +90,7 @@ impl Widget for PanelWidget {
         let child_constraints = Constraints::tight(size);
 
         for &child in &node.children {
-            let child_size = ctx.layout.calculate(ctx.dom, child, child_constraints);
+            let child_size = ctx.calculate_layout(child, child_constraints);
             size = size.max(child_size);
         }
 
