@@ -9,6 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 use crate::WidgetId;
@@ -42,6 +43,7 @@ impl<'dom> PaintContext<'dom> {
 pub struct EventContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
+    pub input: &'dom InputState,
 }
 
 /// A yakui widget. Implement this trait to create a custom widget if composing

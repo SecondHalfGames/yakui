@@ -234,7 +234,7 @@ impl InputStateInner {
                     down,
                     modifiers: self.modifiers.get(),
                 };
-                return fire_event(dom, layout, id, &mut node, &event);
+                return self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
@@ -257,7 +257,7 @@ impl InputStateInner {
             {
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::TextInput(c);
-                return fire_event(dom, layout, id, &mut node, &event);
+                return self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
@@ -289,7 +289,7 @@ impl InputStateInner {
                     position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                     modifiers: self.modifiers.get(),
                 };
-                let response = fire_event(dom, layout, id, &mut node, &event);
+                let response = self.fire_event(dom, layout, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
                     overall_response = response;
@@ -314,7 +314,7 @@ impl InputStateInner {
                         position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                         modifiers: self.modifiers.get(),
                     };
-                    fire_event(dom, layout, id, &mut node, &event);
+                    self.fire_event(dom, layout, id, &mut node, &event);
                 }
             }
         }
@@ -331,10 +331,8 @@ impl InputStateInner {
 
         for (id, interest) in interest_mouse {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
-                let context = EventContext { dom, layout };
-
                 let mut node = dom.get_mut(id).unwrap();
-                node.widget.event(context, &event);
+                self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
     }
@@ -349,7 +347,7 @@ impl InputStateInner {
                     intersections.mouse_entered.push(hit);
 
                     let response =
-                        fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseEnter);
+                        self.fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseEnter);
 
                     if response == EventResponse::Sink {
                         intersections.mouse_entered_and_sunk.push(hit);
@@ -374,7 +372,7 @@ impl InputStateInner {
         for &hit in &intersections.mouse_entered {
             if !intersections.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
-                    fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseLeave);
+                    self.fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseLeave);
                 }
 
                 to_remove.push(hit);
@@ -408,25 +406,30 @@ impl InputStateInner {
             state.settle();
         }
     }
-}
 
-/// Notify the widget of an event, pushing it onto the stack first to ensure
-/// that the DOM will have the correct widget at the top of the stack if
-/// queried.
-fn fire_event(
-    dom: &Dom,
-    layout: &LayoutDom,
-    id: WidgetId,
-    node: &mut DomNode,
-    event: &WidgetEvent,
-) -> EventResponse {
-    let context = EventContext { dom, layout };
+    /// Notify the widget of an event, pushing it onto the stack first to ensure
+    /// that the DOM will have the correct widget at the top of the stack if
+    /// queried.
+    fn fire_event(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        id: WidgetId,
+        node: &mut DomNode,
+        event: &WidgetEvent,
+    ) -> EventResponse {
+        let context = EventContext {
+            dom,
+            layout,
+            input: (|| todo!())(),
+        };
 
-    dom.enter(id);
-    let response = node.widget.event(context, event);
-    dom.exit(id);
+        dom.enter(id);
+        let response = node.widget.event(context, event);
+        dom.exit(id);
 
-    response
+        response
+    }
 }
 
 #[profiling::function]
