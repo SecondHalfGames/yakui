@@ -1,10 +1,8 @@
-use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::input::MouseButton;
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::{LayoutContext, Widget};
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::colors;
@@ -80,8 +78,8 @@ impl Widget for CheckboxWidget {
         CheckboxResponse { checked }
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, ctx: PaintContext<'_>) {
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let padding = Vec2::splat(OUTER_SIZE - INNER_SIZE);
         let mut check_rect = layout_node.rect;
@@ -90,10 +88,10 @@ impl Widget for CheckboxWidget {
 
         let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
-        paint.add_rect(bg);
+        ctx.paint.add_rect(bg);
 
         if self.props.checked {
-            crate::icons::cross(paint, check_rect, colors::TEXT);
+            crate::icons::cross(ctx.paint, check_rect, colors::TEXT);
         }
     }
 

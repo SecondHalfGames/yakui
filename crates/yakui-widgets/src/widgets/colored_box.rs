@@ -1,8 +1,6 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::{LayoutContext, Widget};
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::util::{widget, widget_children};
@@ -83,16 +81,16 @@ impl Widget for ColoredBoxWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = self.props.color;
-        paint.add_rect(rect);
+        ctx.paint.add_rect(rect);
 
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 }

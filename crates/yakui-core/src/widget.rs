@@ -11,6 +11,7 @@ use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
+use crate::WidgetId;
 
 /// Trait that's automatically implemented for all widget props.
 ///
@@ -22,6 +23,19 @@ impl<T> Props for T where T: fmt::Debug {}
 pub struct LayoutContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom mut LayoutDom,
+}
+
+#[non_exhaustive]
+pub struct PaintContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+    pub paint: &'dom mut PaintDom,
+}
+
+impl<'dom> PaintContext<'dom> {
+    pub fn paint(&mut self, widget: WidgetId) {
+        self.paint.paint(self.dom, self.layout, widget);
+    }
 }
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
@@ -72,10 +86,10 @@ pub trait Widget: 'static + fmt::Debug {
     /// Paint the widget based on its current state.
     ///
     /// The default implementation will paint all of the widget's children.
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 
@@ -104,7 +118,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
     fn flex(&self) -> (u32, FlexFit);
 
     /// See [`Widget::paint`].
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
+    fn paint(&self, ctx: PaintContext<'_>);
 
     /// See [`Widget::event_interest`].
     fn event_interest(&self) -> EventInterest;
@@ -128,8 +142,8 @@ where
         <T as Widget>::flex(self)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        <T as Widget>::paint(self, dom, layout, paint)
+    fn paint(&self, ctx: PaintContext<'_>) {
+        <T as Widget>::paint(self, ctx)
     }
 
     fn event_interest(&self) -> EventInterest {

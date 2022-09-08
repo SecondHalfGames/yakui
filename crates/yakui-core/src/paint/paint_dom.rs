@@ -7,6 +7,7 @@ use crate::dom::Dom;
 use crate::geometry::Rect;
 use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
+use crate::widget::PaintContext;
 
 use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
 use super::texture::{Texture, TextureChange};
@@ -61,9 +62,15 @@ impl PaintDom {
     pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, id: WidgetId) {
         profiling::scope!("PaintDom::paint");
 
+        let context = PaintContext {
+            dom,
+            layout,
+            paint: self,
+        };
+
         let node = dom.get(id).unwrap();
         dom.enter(id);
-        node.widget.paint(dom, layout, self);
+        node.widget.paint(context);
         dom.exit(id);
     }
 
@@ -74,8 +81,14 @@ impl PaintDom {
 
         self.calls.clear();
 
+        let context = PaintContext {
+            dom,
+            layout,
+            paint: self,
+        };
+
         let node = dom.get(dom.root()).unwrap();
-        node.widget.paint(dom, layout, self);
+        node.widget.paint(context);
     }
 
     /// Add a texture to the Paint DOM, returning an ID that can be used to

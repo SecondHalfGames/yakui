@@ -2,11 +2,9 @@ use std::cell::RefCell;
 use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::{LayoutContext, Widget};
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::font::Fonts;
@@ -131,13 +129,11 @@ impl Widget for RenderTextBoxWidget {
         input.constrain(size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+    fn paint(&self, mut ctx: PaintContext<'_>) {
         let text_layout = self.layout.borrow_mut();
-        let layout_node = layout.get(dom.current()).unwrap();
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         paint_text(
-            dom,
-            layout,
-            paint,
+            &mut ctx,
             &self.props.style.font,
             layout_node.rect.pos(),
             &text_layout,
@@ -152,7 +148,7 @@ impl Widget for RenderTextBoxWidget {
 
             let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
             rect.color = Color::RED;
-            paint.add_rect(rect);
+            ctx.paint.add_rect(rect);
         }
     }
 }

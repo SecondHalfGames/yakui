@@ -1,8 +1,5 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::PaintDom;
-use yakui_core::widget::{LayoutContext, Widget};
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Alignment, Response};
 
 use crate::util::widget_children;
@@ -104,10 +101,10 @@ impl Widget for AlignWidget {
         self_size
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 }

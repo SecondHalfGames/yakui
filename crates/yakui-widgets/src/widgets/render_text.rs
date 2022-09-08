@@ -3,11 +3,9 @@ use std::cell::RefCell;
 use std::fmt;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
-use yakui_core::widget::{LayoutContext, Widget};
+use yakui_core::paint::{PaintRect, Pipeline};
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::font::{FontName, Fonts};
@@ -111,13 +109,11 @@ impl Widget for RenderTextWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+    fn paint(&self, mut ctx: PaintContext<'_>) {
         let text_layout = self.layout.borrow_mut();
-        let layout_node = layout.get(dom.current()).unwrap();
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         paint_text(
-            dom,
-            layout,
-            paint,
+            &mut ctx,
             &self.props.style.font,
             layout_node.rect.pos(),
             &text_layout,
@@ -155,38 +151,36 @@ pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> V
 }
 
 pub fn paint_text(
-    dom: &Dom,
-    layout: &LayoutDom,
-    paint: &mut PaintDom,
+    ctx: &mut PaintContext<'_>,
     font: &FontName,
     pos: Vec2,
     text_layout: &Layout,
     color: Color,
 ) {
     let pos = pos.round();
-    let fonts = dom.get_global_or_init(Fonts::default);
+    let fonts = ctx.dom.get_global_or_init(Fonts::default);
     let font = match fonts.get(font) {
         Some(font) => font,
         None => return,
     };
 
-    let text_global = dom.get_global_or_init(TextGlobalState::new);
+    let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
     let mut glyph_cache = text_global.glyph_cache.borrow_mut();
-    glyph_cache.ensure_texture(paint);
+    glyph_cache.ensure_texture(ctx.paint);
 
     for glyph in text_layout.glyphs() {
         let tex_rect = glyph_cache
-            .get_or_insert(paint, &font, glyph.key)
+            .get_or_insert(ctx.paint, &font, glyph.key)
             .as_rect()
             .div_vec2(glyph_cache.texture_size.as_vec2());
 
-        let size = Vec2::new(glyph.width as f32, glyph.height as f32) / layout.scale_factor();
-        let pos = pos + Vec2::new(glyph.x, glyph.y) / layout.scale_factor();
+        let size = Vec2::new(glyph.width as f32, glyph.height as f32) / ctx.layout.scale_factor();
+        let pos = pos + Vec2::new(glyph.x, glyph.y) / ctx.layout.scale_factor();
 
         let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
         rect.color = color;
         rect.texture = Some((glyph_cache.texture.unwrap(), tex_rect));
         rect.pipeline = Pipeline::Text;
-        paint.add_rect(rect);
+        ctx.paint.add_rect(rect);
     }
 }

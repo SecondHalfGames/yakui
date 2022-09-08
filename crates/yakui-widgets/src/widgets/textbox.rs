@@ -1,9 +1,7 @@
-use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::input::{KeyCode, MouseButton};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{PaintContext, Widget};
 use yakui_core::{context, Response};
 
 use crate::style::TextStyle;
@@ -84,19 +82,19 @@ impl Widget for TextBoxWidget {
         }
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
-        paint.add_rect(bg);
+        ctx.paint.add_rect(bg);
 
-        let node = dom.get_current();
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
 
         if self.selected {
-            icons::selection_halo(paint, layout_node.rect);
+            icons::selection_halo(ctx.paint, layout_node.rect);
         }
     }
 
