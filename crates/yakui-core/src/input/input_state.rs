@@ -1,6 +1,5 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use glam::Vec2;
 use smallvec::SmallVec;
@@ -18,64 +17,6 @@ use super::{KeyCode, Modifiers};
 /// widgets.
 #[derive(Debug)]
 pub struct InputState {
-    inner: Rc<InputStateInner>,
-}
-
-impl InputState {
-    /// Create a new, empty `InputState`.
-    pub fn new() -> Self {
-        Self {
-            inner: Rc::new(InputStateInner::new()),
-        }
-    }
-
-    pub(crate) fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
-
-    /// Return the currently selected widget, if there is one.
-    pub fn selection(&self) -> Option<WidgetId> {
-        *self.inner.selection.borrow()
-    }
-
-    /// Set the currently selected widget.
-    pub fn set_selection(&self, id: Option<WidgetId>) {
-        let mut selection = self.inner.selection.borrow_mut();
-        *selection = id;
-    }
-
-    pub(crate) fn handle_event(
-        &self,
-        dom: &Dom,
-        layout: &LayoutDom,
-        event: &Event,
-    ) -> EventResponse {
-        match event {
-            Event::CursorMoved(pos) => {
-                self.inner.mouse_moved(dom, layout, *pos);
-                EventResponse::Bubble
-            }
-            Event::MouseButtonChanged { button, down } => {
-                self.inner.mouse_button_changed(dom, layout, *button, *down)
-            }
-            Event::KeyChanged { key, down } => {
-                self.inner.keyboard_key_changed(dom, layout, *key, *down)
-            }
-            Event::ModifiersChanged(modifiers) => self.inner.modifiers_changed(modifiers),
-            Event::TextInput(c) => self.inner.text_input(dom, layout, *c),
-            _ => EventResponse::Bubble,
-        }
-    }
-
-    pub(crate) fn finish(&self) {
-        self.inner.finish()
-    }
-}
-
-#[derive(Debug)]
-struct InputStateInner {
     /// State for the mouse, like buttons and position.
     mouse: RefCell<Mouse>,
 
@@ -150,8 +91,9 @@ impl ButtonState {
     }
 }
 
-impl InputStateInner {
-    fn new() -> Self {
+impl InputState {
+    /// Create a new, empty `InputState`.
+    pub fn new() -> Self {
         Self {
             mouse: RefCell::new(Mouse {
                 position: None,
@@ -165,6 +107,43 @@ impl InputStateInner {
                 mouse_down_in: HashMap::new(),
             }),
             selection: RefCell::new(None),
+        }
+    }
+
+    /// Finish applying input events for this frame.
+    pub fn finish(&self) {
+        self.settle_buttons();
+    }
+
+    /// Return the currently selected widget, if there is one.
+    pub fn selection(&self) -> Option<WidgetId> {
+        *self.selection.borrow()
+    }
+
+    /// Set the currently selected widget.
+    pub fn set_selection(&self, id: Option<WidgetId>) {
+        let mut selection = self.selection.borrow_mut();
+        *selection = id;
+    }
+
+    pub(crate) fn handle_event(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        event: &Event,
+    ) -> EventResponse {
+        match event {
+            Event::CursorMoved(pos) => {
+                self.mouse_moved(dom, layout, *pos);
+                EventResponse::Bubble
+            }
+            Event::MouseButtonChanged { button, down } => {
+                self.mouse_button_changed(dom, layout, *button, *down)
+            }
+            Event::KeyChanged { key, down } => self.keyboard_key_changed(dom, layout, *key, *down),
+            Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
+            Event::TextInput(c) => self.text_input(dom, layout, *c),
+            _ => EventResponse::Bubble,
         }
     }
 
@@ -262,11 +241,6 @@ impl InputStateInner {
         }
 
         EventResponse::Bubble
-    }
-
-    /// Finish applying input events for this frame.
-    fn finish(&self) {
-        self.settle_buttons();
     }
 
     fn send_button_change(
@@ -421,7 +395,7 @@ impl InputStateInner {
         let context = EventContext {
             dom,
             layout,
-            input: (|| todo!())(),
+            input: self,
         };
 
         dom.enter(id);
