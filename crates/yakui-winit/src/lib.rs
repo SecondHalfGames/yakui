@@ -14,6 +14,7 @@ pub use self::keys::{from_winit_key, from_winit_modifiers};
 #[non_exhaustive]
 pub struct YakuiWinit {
     auto_scale: bool,
+    auto_viewport: bool,
     init: Option<InitState>,
 }
 
@@ -30,6 +31,7 @@ impl YakuiWinit {
 
         Self {
             auto_scale: true,
+            auto_viewport: true,
             init: Some(InitState { size, scale }),
         }
     }
@@ -42,17 +44,26 @@ impl YakuiWinit {
         self.auto_scale = enabled;
     }
 
+    /// Configure whether the viewport should be automatically updated to match
+    /// the window size.
+    ///
+    /// Defaults to `true`.
+    pub fn set_automatic_viewport(&mut self, enabled: bool) {
+        self.auto_viewport = enabled;
+    }
+
     pub fn handle_event<T>(
         &mut self,
         state: &mut yakui_core::Yakui,
         event: &WinitEvent<T>,
     ) -> bool {
         if let Some(init) = self.init.take() {
-            let rect = Rect::from_pos_size(
-                Vec2::ZERO,
-                Vec2::new(init.size.width as f32, init.size.height as f32),
-            );
-            state.set_unscaled_viewport(rect);
+            let size = Vec2::new(init.size.width as f32, init.size.height as f32);
+            state.set_surface_size(size);
+
+            if self.auto_viewport {
+                state.set_unscaled_viewport(Rect::from_pos_size(Vec2::ZERO, size));
+            }
 
             if self.auto_scale {
                 state.set_scale_factor(init.scale);
@@ -64,12 +75,14 @@ impl YakuiWinit {
                 event: WindowEvent::Resized(size),
                 ..
             } => {
-                let rect = Rect::from_pos_size(
-                    Vec2::ZERO,
-                    Vec2::new(size.width as f32, size.height as f32),
-                );
+                let size = Vec2::new(size.width as f32, size.height as f32);
+                state.set_surface_size(size);
 
-                state.handle_event(Event::ViewportChanged(rect))
+                if self.auto_viewport {
+                    state.set_unscaled_viewport(Rect::from_pos_size(Vec2::ZERO, size));
+                }
+
+                false
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::ScaleFactorChanged { scale_factor, .. },

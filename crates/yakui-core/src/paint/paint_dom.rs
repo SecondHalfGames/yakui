@@ -32,6 +32,7 @@ pub struct PaintDom {
     textures: Arena<Texture>,
     texture_edits: HashMap<ManagedTextureId, TextureChange>,
     calls: Vec<PaintCall>,
+    surface_size: Vec2,
     viewport: Rect,
 }
 
@@ -42,6 +43,7 @@ impl PaintDom {
             textures: Arena::new(),
             texture_edits: HashMap::new(),
             calls: Vec::new(),
+            surface_size: Vec2::ONE,
             viewport: Rect::ONE,
         }
     }
@@ -49,6 +51,16 @@ impl PaintDom {
     /// Prepares the PaintDom to be updated for the frame.
     pub fn start(&mut self) {
         self.texture_edits.clear();
+    }
+
+    /// Returns the size of the surface that is being painted onto.
+    pub fn surface_size(&self) -> Vec2 {
+        self.surface_size
+    }
+
+    /// Set the size of the surface that yakui is being rendered on.
+    pub(crate) fn set_surface_size(&mut self, size: Vec2) {
+        self.surface_size = size;
     }
 
     pub(crate) fn set_viewport(&mut self, viewport: Rect) {
@@ -169,8 +181,11 @@ impl PaintDom {
             .map(|index| index + call.vertices.len() as u16);
         call.indices.extend(indices);
 
+        let viewport_ratio = self.surface_size / self.viewport.size();
+
         let vertices = mesh.vertices.into_iter().map(|mut vertex| {
-            vertex.position = (vertex.position + self.viewport.pos()) / self.viewport.size();
+            vertex.position =
+                (vertex.position + self.viewport.pos()) / self.surface_size * viewport_ratio;
             vertex
         });
         call.vertices.extend(vertices);

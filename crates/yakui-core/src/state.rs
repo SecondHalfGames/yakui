@@ -1,7 +1,7 @@
 use crate::context;
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
-use crate::geometry::Rect;
+use crate::geometry::{Rect, Vec2};
 use crate::id::ManagedTextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
@@ -55,7 +55,12 @@ impl Yakui {
         self.paint.textures()
     }
 
-    /// Set the size of the viewport in physical units.
+    /// Set the size of the surface the yakui is being rendered onto.
+    pub fn set_surface_size(&mut self, size: Vec2) {
+        self.paint.set_surface_size(size);
+    }
+
+    /// Set the size and position of the viewport in physical units.
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
         self.layout.set_unscaled_viewport(view);
     }
