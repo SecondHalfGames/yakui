@@ -1,6 +1,5 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use glam::Vec2;
 use smallvec::SmallVec;
@@ -9,6 +8,7 @@ use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
+use crate::widget::EventContext;
 
 use super::mouse::MouseButton;
 use super::{KeyCode, Modifiers};
@@ -17,64 +17,6 @@ use super::{KeyCode, Modifiers};
 /// widgets.
 #[derive(Debug)]
 pub struct InputState {
-    inner: Rc<InputStateInner>,
-}
-
-impl InputState {
-    /// Create a new, empty `InputState`.
-    pub fn new() -> Self {
-        Self {
-            inner: Rc::new(InputStateInner::new()),
-        }
-    }
-
-    pub(crate) fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
-
-    /// Return the currently selected widget, if there is one.
-    pub fn selection(&self) -> Option<WidgetId> {
-        *self.inner.selection.borrow()
-    }
-
-    /// Set the currently selected widget.
-    pub fn set_selection(&self, id: Option<WidgetId>) {
-        let mut selection = self.inner.selection.borrow_mut();
-        *selection = id;
-    }
-
-    pub(crate) fn handle_event(
-        &self,
-        dom: &Dom,
-        layout: &LayoutDom,
-        event: &Event,
-    ) -> EventResponse {
-        match event {
-            Event::CursorMoved(pos) => {
-                self.inner.mouse_moved(dom, layout, *pos);
-                EventResponse::Bubble
-            }
-            Event::MouseButtonChanged { button, down } => {
-                self.inner.mouse_button_changed(dom, layout, *button, *down)
-            }
-            Event::KeyChanged { key, down } => {
-                self.inner.keyboard_key_changed(dom, layout, *key, *down)
-            }
-            Event::ModifiersChanged(modifiers) => self.inner.modifiers_changed(modifiers),
-            Event::TextInput(c) => self.inner.text_input(dom, layout, *c),
-            _ => EventResponse::Bubble,
-        }
-    }
-
-    pub(crate) fn finish(&self) {
-        self.inner.finish()
-    }
-}
-
-#[derive(Debug)]
-struct InputStateInner {
     /// State for the mouse, like buttons and position.
     mouse: RefCell<Mouse>,
 
@@ -85,7 +27,10 @@ struct InputStateInner {
     intersections: RefCell<Intersections>,
 
     /// The widget that is currently selected.
-    selection: RefCell<Option<WidgetId>>,
+    selection: Cell<Option<WidgetId>>,
+
+    /// The widget that was selected last frame.
+    last_selection: Cell<Option<WidgetId>>,
 }
 
 #[derive(Debug)]
@@ -149,8 +94,9 @@ impl ButtonState {
     }
 }
 
-impl InputStateInner {
-    fn new() -> Self {
+impl InputState {
+    /// Create a new, empty `InputState`.
+    pub fn new() -> Self {
         Self {
             mouse: RefCell::new(Mouse {
                 position: None,
@@ -163,8 +109,83 @@ impl InputStateInner {
                 mouse_entered_and_sunk: Vec::new(),
                 mouse_down_in: HashMap::new(),
             }),
-            selection: RefCell::new(None),
+            last_selection: Cell::new(None),
+            selection: Cell::new(None),
         }
+    }
+
+    /// Begin a new frame for input handling.
+    pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
+        self.notify_selection(dom, layout);
+    }
+
+    /// Finish applying input events for this frame.
+    pub fn finish(&self) {
+        self.settle_buttons();
+    }
+
+    /// Return the currently selected widget, if there is one.
+    pub fn selection(&self) -> Option<WidgetId> {
+        self.selection.get()
+    }
+
+    /// Set the currently selected widget.
+    pub fn set_selection(&self, id: Option<WidgetId>) {
+        self.selection.set(id);
+    }
+
+    pub(crate) fn handle_event(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        event: &Event,
+    ) -> EventResponse {
+        match event {
+            Event::CursorMoved(pos) => {
+                self.mouse_moved(dom, layout, *pos);
+                EventResponse::Bubble
+            }
+            Event::MouseButtonChanged { button, down } => {
+                self.mouse_button_changed(dom, layout, *button, *down)
+            }
+            Event::KeyChanged { key, down } => self.keyboard_key_changed(dom, layout, *key, *down),
+            Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
+            Event::TextInput(c) => self.text_input(dom, layout, *c),
+            _ => EventResponse::Bubble,
+        }
+    }
+
+    fn notify_selection(&self, dom: &Dom, layout: &LayoutDom) {
+        let current = self.selection.get();
+        let last = self.last_selection.get();
+
+        if current == last {
+            return;
+        }
+
+        if let Some(entered) = current {
+            let mut node = dom.get_mut(entered).unwrap();
+            self.fire_event(
+                dom,
+                layout,
+                entered,
+                &mut node,
+                &WidgetEvent::FocusChanged(true),
+            );
+        }
+
+        if let Some(left) = last {
+            let mut node = dom.get_mut(left).unwrap();
+            self.fire_event(
+                dom,
+                layout,
+                left,
+                &mut node,
+                &WidgetEvent::FocusChanged(false),
+            );
+        }
+
+        self.last_selection.set(current);
     }
 
     /// Signal that the mouse has moved.
@@ -178,8 +199,8 @@ impl InputStateInner {
 
         self.send_mouse_move(dom, layout);
         self.mouse_hit_test(dom, layout);
-        self.send_mouse_enter(dom);
-        self.send_mouse_leave(dom);
+        self.send_mouse_enter(dom, layout);
+        self.send_mouse_leave(dom, layout);
     }
 
     /// Signal that a mouse button's state has changed.
@@ -219,7 +240,7 @@ impl InputStateInner {
         key: KeyCode,
         down: bool,
     ) -> EventResponse {
-        let selected = *self.selection.borrow();
+        let selected = self.selection.get();
         if let Some(id) = selected {
             let layout_node = layout.get(id).unwrap();
 
@@ -233,7 +254,7 @@ impl InputStateInner {
                     down,
                     modifiers: self.modifiers.get(),
                 };
-                return fire_event(dom, id, &mut node, &event);
+                return self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
@@ -246,7 +267,7 @@ impl InputStateInner {
     }
 
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
-        let selected = *self.selection.borrow();
+        let selected = self.selection.get();
         if let Some(id) = selected {
             let layout_node = layout.get(id).unwrap();
 
@@ -256,16 +277,11 @@ impl InputStateInner {
             {
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::TextInput(c);
-                return fire_event(dom, id, &mut node, &event);
+                return self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
 
         EventResponse::Bubble
-    }
-
-    /// Finish applying input events for this frame.
-    fn finish(&self) {
-        self.settle_buttons();
     }
 
     fn send_button_change(
@@ -288,7 +304,7 @@ impl InputStateInner {
                     position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                     modifiers: self.modifiers.get(),
                 };
-                let response = fire_event(dom, id, &mut node, &event);
+                let response = self.fire_event(dom, layout, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
                     overall_response = response;
@@ -313,7 +329,7 @@ impl InputStateInner {
                         position: mouse.position.unwrap_or(Vec2::ZERO) / layout.scale_factor(),
                         modifiers: self.modifiers.get(),
                     };
-                    fire_event(dom, id, &mut node, &event);
+                    self.fire_event(dom, layout, id, &mut node, &event);
                 }
             }
         }
@@ -331,12 +347,12 @@ impl InputStateInner {
         for (id, interest) in interest_mouse {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
                 let mut node = dom.get_mut(id).unwrap();
-                node.widget.event(&event);
+                self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
     }
 
-    fn send_mouse_enter(&self, dom: &Dom) {
+    fn send_mouse_enter(&self, dom: &Dom, layout: &LayoutDom) {
         let mut intersections = self.intersections.borrow_mut();
         let intersections = &mut *intersections;
 
@@ -345,7 +361,8 @@ impl InputStateInner {
                 if !intersections.mouse_entered.contains(&hit) {
                     intersections.mouse_entered.push(hit);
 
-                    let response = fire_event(dom, hit, &mut node, &WidgetEvent::MouseEnter);
+                    let response =
+                        self.fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseEnter);
 
                     if response == EventResponse::Sink {
                         intersections.mouse_entered_and_sunk.push(hit);
@@ -362,7 +379,7 @@ impl InputStateInner {
         }
     }
 
-    fn send_mouse_leave(&self, dom: &Dom) {
+    fn send_mouse_leave(&self, dom: &Dom, layout: &LayoutDom) {
         let mut intersections = self.intersections.borrow_mut();
 
         let mut to_remove = SmallVec::<[WidgetId; 4]>::new();
@@ -370,7 +387,7 @@ impl InputStateInner {
         for &hit in &intersections.mouse_entered {
             if !intersections.mouse_hit.contains(&hit) {
                 if let Some(mut node) = dom.get_mut(hit) {
-                    fire_event(dom, hit, &mut node, &WidgetEvent::MouseLeave);
+                    self.fire_event(dom, layout, hit, &mut node, &WidgetEvent::MouseLeave);
                 }
 
                 to_remove.push(hit);
@@ -404,17 +421,30 @@ impl InputStateInner {
             state.settle();
         }
     }
-}
 
-/// Notify the widget of an event, pushing it onto the stack first to ensure
-/// that the DOM will have the correct widget at the top of the stack if
-/// queried.
-fn fire_event(dom: &Dom, id: WidgetId, node: &mut DomNode, event: &WidgetEvent) -> EventResponse {
-    dom.enter(id);
-    let response = node.widget.event(event);
-    dom.exit(id);
+    /// Notify the widget of an event, pushing it onto the stack first to ensure
+    /// that the DOM will have the correct widget at the top of the stack if
+    /// queried.
+    fn fire_event(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        id: WidgetId,
+        node: &mut DomNode,
+        event: &WidgetEvent,
+    ) -> EventResponse {
+        let context = EventContext {
+            dom,
+            layout,
+            input: self,
+        };
 
-    response
+        dom.enter(id);
+        let response = node.widget.event(context, event);
+        dom.exit(id);
+
+        response
+    }
 }
 
 #[profiling::function]

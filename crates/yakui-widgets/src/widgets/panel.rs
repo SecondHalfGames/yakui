@@ -1,11 +1,9 @@
 use std::cell::RefCell;
 
-use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::colors;
@@ -71,8 +69,8 @@ impl Widget for PanelWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = input.constrain(*self.size.borrow());
 
         match self.props.kind {
@@ -92,7 +90,7 @@ impl Widget for PanelWidget {
         let child_constraints = Constraints::tight(size);
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, child_constraints);
+            let child_size = ctx.calculate_layout(child, child_constraints);
             size = size.max(child_size);
         }
 
@@ -105,15 +103,15 @@ impl Widget for PanelWidget {
         input.constrain(size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = colors::BACKGROUND_2;
-        paint.add_rect(rect);
+        ctx.paint.add_rect(rect);
 
-        let node = dom.get_current();
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 
@@ -121,7 +119,7 @@ impl Widget for PanelWidget {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
             WidgetEvent::MouseMoved(Some(_pos)) => {
                 // TODO: How do we know where the mouse is relative to our

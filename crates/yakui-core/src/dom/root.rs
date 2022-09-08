@@ -1,8 +1,5 @@
 use crate::geometry::Constraints;
-use crate::layout::LayoutDom;
-use crate::widget::Widget;
-
-use super::Dom;
+use crate::widget::{LayoutContext, Widget};
 
 #[derive(Debug)]
 pub struct RootWidget;
@@ -17,11 +14,11 @@ impl Widget for RootWidget {
 
     fn update(&mut self, _props: Self::Props) -> Self::Response {}
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> glam::Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
+        let node = ctx.dom.get_current();
 
         for &child in &node.children {
-            layout.calculate(dom, child, constraints);
+            ctx.calculate_layout(child, constraints);
         }
 
         constraints.max

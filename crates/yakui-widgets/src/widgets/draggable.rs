@@ -1,7 +1,7 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Vec2;
 use yakui_core::input::MouseButton;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{EventContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
@@ -68,7 +68,7 @@ impl Widget for DraggableWidget {
         EventInterest::MOUSE_ALL
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match *event {
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,

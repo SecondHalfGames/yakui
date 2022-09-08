@@ -1,7 +1,5 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::widget::Widget;
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
@@ -51,8 +49,8 @@ impl Widget for ConstrainedBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         let constraints = Constraints {
             min: Vec2::max(input.min, self.props.constraints.min),
@@ -60,7 +58,7 @@ impl Widget for ConstrainedBoxWidget {
         };
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
+            let child_size = ctx.calculate_layout(child, constraints);
             size = size.max(child_size);
         }
 

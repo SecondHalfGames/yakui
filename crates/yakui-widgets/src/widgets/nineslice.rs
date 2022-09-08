@@ -1,10 +1,8 @@
 use yakui_core::{
-    dom::Dom,
     geometry::Rect,
     glam::{vec2, Vec2, Vec4},
-    layout::LayoutDom,
-    paint::{PaintDom, PaintMesh, Vertex},
-    widget::Widget,
+    paint::{PaintMesh, Vertex},
+    widget::{PaintContext, Widget},
     ManagedTextureId, Response,
 };
 
@@ -64,7 +62,7 @@ impl Widget for NineSliceWidget {
         self.props = Some(props);
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
+    fn paint(&self, mut ctx: PaintContext<'_>) {
         let props = self.props.as_ref().unwrap();
         let NineSlice {
             texture,
@@ -79,9 +77,9 @@ impl Widget for NineSliceWidget {
             scale,
         } = *props;
 
-        let rect = layout.get(dom.current()).unwrap().rect;
+        let rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
 
-        let texture = paint.texture(texture).unwrap();
+        let texture = ctx.paint.texture(texture).unwrap();
         let texture_size = texture.size().as_vec2();
 
         let top_left = rect.pos();
@@ -120,11 +118,11 @@ impl Widget for NineSliceWidget {
 
         let mut mesh = PaintMesh::new(vertices, indices);
         mesh.texture = Some((props.texture, Rect::from_pos_size(Vec2::ZERO, texture_size)));
-        paint.add_mesh(mesh);
+        ctx.paint.add_mesh(mesh);
 
-        let node = dom.get_current();
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 }

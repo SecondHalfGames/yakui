@@ -1,10 +1,8 @@
-use yakui_core::dom::Dom;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::input::{KeyCode, MouseButton};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
-use yakui_core::{context, Response};
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{EventContext, PaintContext, Widget};
+use yakui_core::Response;
 
 use crate::style::TextStyle;
 use crate::util::widget;
@@ -66,7 +64,6 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
-        self.selected = context::is_selected();
 
         let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
 
@@ -84,19 +81,19 @@ impl Widget for TextBoxWidget {
         }
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
-        paint.add_rect(bg);
+        ctx.paint.add_rect(bg);
 
-        let node = dom.get_current();
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
 
         if self.selected {
-            icons::selection_halo(paint, layout_node.rect);
+            icons::selection_halo(ctx.paint, layout_node.rect);
         }
     }
 
@@ -104,15 +101,20 @@ impl Widget for TextBoxWidget {
         EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
+            WidgetEvent::FocusChanged(focused) => {
+                self.selected = *focused;
+                EventResponse::Sink
+            }
+
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,
                 down: true,
                 inside: true,
                 ..
             } => {
-                context::capture_selection();
+                ctx.input.set_selection(Some(ctx.dom.current()));
                 EventResponse::Sink
             }
 
@@ -150,12 +152,12 @@ impl Widget for TextBoxWidget {
                 }
 
                 KeyCode::Enter | KeyCode::NumpadEnter => {
-                    context::remove_selection();
+                    ctx.input.set_selection(None);
                     EventResponse::Sink
                 }
 
                 KeyCode::Escape => {
-                    context::remove_selection();
+                    ctx.input.set_selection(None);
                     EventResponse::Sink
                 }
                 _ => EventResponse::Bubble,

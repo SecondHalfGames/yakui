@@ -9,14 +9,61 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
+use crate::WidgetId;
 
 /// Trait that's automatically implemented for all widget props.
 ///
 /// This trait is used by yakui to enforce that props implement `Debug`.
 pub trait Props: fmt::Debug {}
 impl<T> Props for T where T: fmt::Debug {}
+
+/// Information available to a widget during the layout phase.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub struct LayoutContext<'dom> {
+    pub dom: &'dom Dom,
+    pub input: &'dom InputState,
+    pub layout: &'dom mut LayoutDom,
+}
+
+impl<'dom> LayoutContext<'dom> {
+    /// Calculate the layout for the given widget with the given constraints.
+    ///
+    /// This method currently must only be called once per widget per layout
+    /// phase.
+    pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
+        self.layout
+            .calculate(self.dom, self.input, widget, constraints)
+    }
+}
+
+/// Information available to a widget during the paint phase.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub struct PaintContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+    pub paint: &'dom mut PaintDom,
+}
+
+impl<'dom> PaintContext<'dom> {
+    /// Paint the given widget.
+    pub fn paint(&mut self, widget: WidgetId) {
+        self.paint.paint(self.dom, self.layout, widget);
+    }
+}
+
+/// Information available to a widget when it has received an event.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub struct EventContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+    pub input: &'dom InputState,
+}
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
 /// existing widgets does not solve your use case.
@@ -52,11 +99,11 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will lay out all of this widget's children on
     /// top of each other, and fit the widget tightly around them.
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, constraints);
+            let child_size = ctx.calculate_layout(child, constraints);
             size = size.max(child_size);
         }
 
@@ -66,10 +113,10 @@ pub trait Widget: 'static + fmt::Debug {
     /// Paint the widget based on its current state.
     ///
     /// The default implementation will paint all of the widget's children.
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 
@@ -84,7 +131,7 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will bubble all events.
     #[allow(unused)]
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         EventResponse::Bubble
     }
 }
@@ -92,19 +139,19 @@ pub trait Widget: 'static + fmt::Debug {
 /// A type-erased version of [`Widget`].
 pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::layout`].
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2;
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2;
 
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
 
     /// See [`Widget::paint`].
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom);
+    fn paint(&self, ctx: PaintContext<'_>);
 
     /// See [`Widget::event_interest`].
     fn event_interest(&self) -> EventInterest;
 
     /// See [`Widget::event`].
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse;
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse;
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
@@ -114,26 +161,26 @@ impl<T> ErasedWidget for T
 where
     T: Widget,
 {
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, constraints: Constraints) -> Vec2 {
-        <T as Widget>::layout(self, dom, layout, constraints)
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        <T as Widget>::layout(self, ctx, constraints)
     }
 
     fn flex(&self) -> (u32, FlexFit) {
         <T as Widget>::flex(self)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        <T as Widget>::paint(self, dom, layout, paint)
+    fn paint(&self, ctx: PaintContext<'_>) {
+        <T as Widget>::paint(self, ctx)
     }
 
     fn event_interest(&self) -> EventInterest {
         <T as Widget>::event_interest(self)
     }
 
-    fn event(&mut self, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         log::debug!("Event on {}: {event:?}", type_name::<T>());
 
-        <T as Widget>::event(self, event)
+        <T as Widget>::event(self, ctx, event)
     }
 
     fn type_name(&self) -> &'static str {

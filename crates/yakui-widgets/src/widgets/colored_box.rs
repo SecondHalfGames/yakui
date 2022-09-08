@@ -1,8 +1,6 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::util::{widget, widget_children};
@@ -71,28 +69,28 @@ impl Widget for ColoredBoxWidget {
         self.props = props;
     }
 
-    fn layout(&self, dom: &Dom, layout: &mut LayoutDom, input: Constraints) -> Vec2 {
-        let node = dom.get_current();
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
         let mut size = self.props.min_size;
 
         for &child in &node.children {
-            let child_size = layout.calculate(dom, child, input);
+            let child_size = ctx.calculate_layout(child, input);
             size = size.max(child_size);
         }
 
         input.constrain_min(size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, paint: &mut PaintDom) {
-        let node = dom.get_current();
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = self.props.color;
-        paint.add_rect(rect);
+        ctx.paint.add_rect(rect);
 
         for &child in &node.children {
-            paint.paint(dom, layout, child);
+            ctx.paint(child);
         }
     }
 }

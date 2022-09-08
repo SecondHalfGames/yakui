@@ -1,33 +1,14 @@
-//! Provides access to the currently active DOM or input context.
+//! Provides access to the currently active DOM.
 
 use std::cell::{Ref, RefCell};
 use std::thread::LocalKey;
 
 use crate::dom::Dom;
-use crate::input::InputState;
 
 type Storage<T> = RefCell<Option<T>>;
 
 thread_local! {
     static CURRENT_DOM: Storage<Dom> = RefCell::new(None);
-    static CURRENT_INPUT: Storage<InputState> = RefCell::new(None);
-}
-
-/// Select the currently active widget.
-pub fn capture_selection() {
-    let id = dom().current();
-    input().set_selection(Some(id));
-}
-
-/// Deselect the currently active widget.
-pub fn remove_selection() {
-    input().set_selection(None);
-}
-
-/// Tells whether the current widget is selected.
-pub fn is_selected() -> bool {
-    let id = dom().current();
-    input().selection() == Some(id)
 }
 
 /// If there is a DOM currently being updated on this thread, returns a
@@ -45,23 +26,6 @@ pub(crate) fn bind_dom(dom: &Dom) {
 
 pub(crate) fn unbind_dom() {
     unbind(&CURRENT_DOM);
-}
-
-/// If there is an input context available on this thread, returns a reference
-/// to it.
-///
-/// # Panics
-/// Panics if there is no DOM currently being updated on this thread.
-pub fn input() -> Ref<'static, InputState> {
-    borrow(&CURRENT_INPUT)
-}
-
-pub(crate) fn bind_input(input: &InputState) {
-    bind(&CURRENT_INPUT, input.clone());
-}
-
-pub(crate) fn unbind_input() {
-    unbind(&CURRENT_INPUT);
 }
 
 /// Borrow a thread local storage and allow it to be held for 'static.

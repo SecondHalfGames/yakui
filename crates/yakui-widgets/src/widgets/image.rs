@@ -1,8 +1,6 @@
-use yakui_core::dom::Dom;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::layout::LayoutDom;
-use yakui_core::paint::{PaintDom, PaintRect};
-use yakui_core::widget::Widget;
+use yakui_core::paint::PaintRect;
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{ManagedTextureId, Response};
 
 use crate::util::widget;
@@ -56,18 +54,18 @@ impl Widget for ImageWidget {
         self.props = props;
     }
 
-    fn layout(&self, _dom: &Dom, _layout: &mut LayoutDom, input: Constraints) -> Vec2 {
+    fn layout(&self, _ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         input.constrain_min(self.props.size)
     }
 
-    fn paint(&self, dom: &Dom, layout: &LayoutDom, output: &mut PaintDom) {
-        let layout_node = layout.get(dom.current()).unwrap();
+    fn paint(&self, ctx: PaintContext<'_>) {
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         if let Some(image) = self.props.image {
             let mut rect = PaintRect::new(layout_node.rect);
             rect.color = Color::WHITE;
             rect.texture = Some((image, Rect::ONE));
-            output.add_rect(rect);
+            ctx.paint.add_rect(rect);
         }
     }
 }
