@@ -166,7 +166,6 @@ impl Graphics {
                 ..
             } => {
                 *control_flow = ControlFlow::Exit;
-                true
             }
 
             Event::NewEvents(cause) => {
@@ -175,7 +174,6 @@ impl Graphics {
                 } else {
                     self.is_init = false;
                 }
-                true
             }
 
             Event::WindowEvent {
@@ -188,11 +186,10 @@ impl Graphics {
                 //
                 // https://github.com/rust-windowing/winit/issues/2094
                 if self.is_init {
-                    return true;
+                    return false;
                 }
 
                 self.resize(*size);
-                true
             }
 
             Event::WindowEvent {
@@ -200,10 +197,11 @@ impl Graphics {
                 ..
             } => {
                 self.resize(**new_inner_size);
-                true
             }
 
-            _ => false,
+            _ => (),
         }
+
+        false
     }
 }
