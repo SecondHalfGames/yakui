@@ -12,7 +12,7 @@ use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, UVec2, Vec2};
 
-use crate::examples::{Args, Example};
+use crate::examples::Args;
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
@@ -68,8 +68,12 @@ async fn run() {
         yak.set_scale_factor(scale);
     }
 
+    // In these examples, set YAKUI_INSET to force the UI to be contained within
+    // a sub-viewport with the given edge inset on all sides.
+    let inset = get_inset_override();
+
     // The viewport example requires a bit of setup; so let's do that here.
-    if args.example == Example::viewport {
+    if inset.is_some() {
         app.window_mut().set_automatic_viewport(false);
     }
 
@@ -157,11 +161,11 @@ async fn run() {
             } => {
                 // The viewport example is inset by 50 physical pixels on all
                 // sides.
-                if args.example == Example::viewport {
+                if let Some(inset) = inset {
                     let size = Vec2::new(size.width as f32, size.height as f32);
                     yak.set_unscaled_viewport(Rect::from_pos_size(
-                        Vec2::splat(50.0),
-                        size - Vec2::splat(100.0),
+                        Vec2::splat(inset),
+                        size - Vec2::splat(inset * 2.0),
                     ));
                 }
             }
@@ -197,6 +201,13 @@ fn init_logging() {
 /// environment variable.
 fn get_scale_override() -> Option<f32> {
     std::env::var("YAKUI_FORCE_SCALE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+}
+
+/// Enables the user to set a sub-viewport that the example should render into.
+fn get_inset_override() -> Option<f32> {
+    std::env::var("YAKUI_INSET")
         .ok()
         .and_then(|s| s.parse().ok())
 }
