@@ -63,6 +63,7 @@ impl Yakui {
     /// Set the size and position of the viewport in physical units.
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
         self.layout.set_unscaled_viewport(view);
+        self.paint.set_unscaled_viewport(view);
     }
 
     /// Manually sets the scale factor used for laying out widgets.
@@ -72,6 +73,7 @@ impl Yakui {
     /// scale, this is the method to use.
     pub fn set_scale_factor(&mut self, factor: f32) {
         self.layout.set_scale_factor(factor);
+        self.paint.set_scale_factor(factor);
     }
 
     /// Starts building the DOM on this thread.
@@ -104,7 +106,6 @@ impl Yakui {
     /// access to the [`PaintDom`], which holds information about how to paint
     /// widgets.
     pub fn paint(&mut self) -> &PaintDom {
-        self.paint.set_viewport(self.layout.viewport());
         self.paint.paint_all(&self.dom, &self.layout);
         &self.paint
     }

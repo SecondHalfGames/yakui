@@ -33,7 +33,8 @@ pub struct PaintDom {
     texture_edits: HashMap<ManagedTextureId, TextureChange>,
     calls: Vec<PaintCall>,
     surface_size: Vec2,
-    viewport: Rect,
+    unscaled_viewport: Rect,
+    scale_factor: f32,
 }
 
 impl PaintDom {
@@ -44,7 +45,8 @@ impl PaintDom {
             texture_edits: HashMap::new(),
             calls: Vec::new(),
             surface_size: Vec2::ONE,
-            viewport: Rect::ONE,
+            unscaled_viewport: Rect::ONE,
+            scale_factor: 1.0,
         }
     }
 
@@ -63,8 +65,12 @@ impl PaintDom {
         self.surface_size = size;
     }
 
-    pub(crate) fn set_viewport(&mut self, viewport: Rect) {
-        self.viewport = viewport;
+    pub(crate) fn set_unscaled_viewport(&mut self, viewport: Rect) {
+        self.unscaled_viewport = viewport;
+    }
+
+    pub(crate) fn set_scale_factor(&mut self, scale_factor: f32) {
+        self.scale_factor = scale_factor;
     }
 
     /// Paint a specific widget. This function is usually called as part of an
@@ -181,11 +187,11 @@ impl PaintDom {
             .map(|index| index + call.vertices.len() as u16);
         call.indices.extend(indices);
 
-        let viewport_ratio = self.surface_size / self.viewport.size();
-
         let vertices = mesh.vertices.into_iter().map(|mut vertex| {
-            vertex.position =
-                (vertex.position + self.viewport.pos()) / self.surface_size * viewport_ratio;
+            let mut pos = vertex.position * self.scale_factor;
+            pos += self.unscaled_viewport.pos();
+            pos /= self.surface_size;
+            vertex.position = pos;
             vertex
         });
         call.vertices.extend(vertices);

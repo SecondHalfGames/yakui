@@ -23,6 +23,7 @@ macro_rules! examples {
             sandbox,
             state,
             text,
+            viewport,
             window,
         );
     };
@@ -39,7 +40,7 @@ macro_rules! define_example {
     ($($mod:ident),* $(,)?) => {
         $(pub mod $mod;)*
 
-        #[derive(Debug, Parser)]
+        #[derive(Debug, PartialEq, Parser)]
         #[allow(non_camel_case_types)]
         pub enum Example {
             $(

@@ -18,8 +18,7 @@ use crate::widget::LayoutContext;
 pub struct LayoutDom {
     nodes: Arena<LayoutDomNode>,
 
-    viewport: Rect,
-    scaled_viewport: Rect,
+    unscaled_viewport: Rect,
     scale_factor: f32,
 
     pub(crate) interest_mouse: Vec<(WidgetId, EventInterest)>,
@@ -42,8 +41,7 @@ impl LayoutDom {
         Self {
             nodes: Arena::new(),
 
-            viewport: Rect::ONE,
-            scaled_viewport: Rect::ONE,
+            unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
 
             interest_mouse: Vec::new(),
@@ -62,16 +60,12 @@ impl LayoutDom {
 
     /// Set the viewport of the DOM in unscaled units.
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
-        self.viewport = view;
-        self.scaled_viewport = Rect::from_pos_size(view.pos(), view.size() / self.scale_factor);
+        self.unscaled_viewport = view;
     }
 
     /// Set the scale factor to use for layout.
     pub fn set_scale_factor(&mut self, scale: f32) {
         self.scale_factor = scale;
-
-        let view = self.viewport;
-        self.scaled_viewport = Rect::from_pos_size(view.pos(), view.size() / self.scale_factor);
     }
 
     /// Get the currently active scale factor.
@@ -81,12 +75,15 @@ impl LayoutDom {
 
     /// Get the viewport in scaled units.
     pub fn viewport(&self) -> Rect {
-        self.scaled_viewport
+        Rect::from_pos_size(
+            self.unscaled_viewport.pos() / self.scale_factor,
+            self.unscaled_viewport.size() / self.scale_factor,
+        )
     }
 
     /// Get the viewport in unscaled units.
     pub fn unscaled_viewport(&self) -> Rect {
-        self.viewport
+        self.unscaled_viewport
     }
 
     /// Calculate the layout of all elements in the given DOM.
@@ -96,7 +93,7 @@ impl LayoutDom {
 
         self.interest_mouse.clear();
 
-        let constraints = Constraints::tight(self.viewport.size() / self.scale_factor);
+        let constraints = Constraints::tight(self.viewport().size());
 
         self.calculate(dom, input, dom.root(), constraints);
         self.resolve_positions(dom);

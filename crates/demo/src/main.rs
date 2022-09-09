@@ -10,12 +10,11 @@ use winit::window::WindowBuilder;
 
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
-use yakui::{ManagedTextureId, UVec2};
+use yakui::{ManagedTextureId, Rect, UVec2, Vec2};
 
-use crate::examples::Args;
+use crate::examples::{Args, Example};
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
-
 const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
 
 /// This is the state that we provide to each demo.
@@ -49,7 +48,7 @@ async fn run() {
         .unwrap();
 
     // yakui_app has a helper for setting up winit and wgpu.
-    let mut graphics = yakui_app::Graphics::new(&window).await;
+    let mut app = yakui_app::Graphics::new(&window).await;
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
@@ -65,8 +64,13 @@ async fn run() {
     // In these examples, setting the YAKUI_FORCE_SCALE environment variable to
     // a number will override the automatic scaling.
     if let Some(scale) = get_scale_override() {
-        graphics.window_mut().set_automatic_scale_factor(false);
+        app.window_mut().set_automatic_scale_factor(false);
         yak.set_scale_factor(scale);
+    }
+
+    // The viewport example requires a bit of setup; so let's do that here.
+    if args.example == Example::viewport {
+        app.window_mut().set_automatic_viewport(false);
     }
 
     // Preload some textures for the examples to use.
@@ -94,7 +98,7 @@ async fn run() {
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
-        if graphics.handle_event(&mut yak, &event, control_flow) {
+        if app.handle_event(&mut yak, &event, control_flow) {
             return;
         }
 
@@ -122,7 +126,7 @@ async fn run() {
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
                 // about how to paint widgets.
-                graphics.paint(&mut yak, {
+                app.paint(&mut yak, {
                     let bg = yakui::colors::BACKGROUND_1.to_linear();
                     wgpu::Color {
                         r: bg.x.into(),
@@ -144,6 +148,21 @@ async fn run() {
                 // underlying application.
                 if button == winit::event::MouseButton::Left {
                     println!("Left mouse button {state:?}");
+                }
+            }
+
+            Event::WindowEvent {
+                event: WindowEvent::Resized(size),
+                ..
+            } => {
+                // The viewport example is inset by 50 physical pixels on all
+                // sides.
+                if args.example == Example::viewport {
+                    let size = Vec2::new(size.width as f32, size.height as f32);
+                    yak.set_unscaled_viewport(Rect::from_pos_size(
+                        Vec2::splat(50.0),
+                        size - Vec2::splat(100.0),
+                    ));
                 }
             }
 
