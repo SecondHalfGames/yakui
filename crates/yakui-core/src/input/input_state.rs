@@ -148,6 +148,7 @@ impl InputState {
             Event::MouseButtonChanged { button, down } => {
                 self.mouse_button_changed(dom, layout, *button, *down)
             }
+            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
             Event::KeyChanged { key, down } => self.keyboard_key_changed(dom, layout, *key, *down),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
@@ -330,6 +331,26 @@ impl InputState {
                         modifiers: self.modifiers.get(),
                     };
                     self.fire_event(dom, layout, id, &mut node, &event);
+                }
+            }
+        }
+
+        overall_response
+    }
+
+    fn send_mouse_scroll(&self, dom: &Dom, layout: &LayoutDom, delta: Vec2) -> EventResponse {
+        let intersections = self.intersections.borrow();
+
+        let mut overall_response = EventResponse::Bubble;
+
+        for &id in &intersections.mouse_hit {
+            if let Some(mut node) = dom.get_mut(id) {
+                let event = WidgetEvent::MouseScroll { delta };
+                let response = self.fire_event(dom, layout, id, &mut node, &event);
+
+                if response == EventResponse::Sink {
+                    overall_response = response;
+                    break;
                 }
             }
         }

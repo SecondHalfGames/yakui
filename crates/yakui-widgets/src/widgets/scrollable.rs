@@ -81,7 +81,11 @@ impl Widget for ScrollableWidget {
         let size = constraints.constrain(canvas_size);
 
         let max_scroll_position = (canvas_size - size).max(Vec2::ZERO);
-        let mut scroll_position = self.scroll_position.get().min(max_scroll_position);
+        let mut scroll_position = self
+            .scroll_position
+            .get()
+            .min(max_scroll_position)
+            .max(Vec2::ZERO);
 
         match self.props.direction {
             None => scroll_position = Vec2::ZERO,
