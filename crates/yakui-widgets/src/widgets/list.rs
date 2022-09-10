@@ -163,8 +163,28 @@ impl Widget for ListWidget {
 
         let cross_size = max_cross_axis_size.max(direction.get_cross_axis(input.min));
 
+        let main_axis_size = match self.props.main_axis_size {
+            MainAxisSize::Min => total_main_axis_size,
+            MainAxisSize::Max => {
+                let main_max = direction.get_main_axis(input.max);
+
+                if main_max.is_finite() {
+                    f32::max(total_main_axis_size, main_max)
+                } else {
+                    total_main_axis_size
+                }
+            }
+            other => unimplemented!("MainAxisSize::{other:?}"),
+        };
+
         // Finally, position all children based on the sizes calculated above.
-        let mut next_main = 0.0;
+        let mut next_main = match self.props.main_axis_alignment {
+            MainAxisAlignment::Start => 0.0,
+            MainAxisAlignment::Center => (main_axis_size - total_main_axis_size) / 2.0,
+            MainAxisAlignment::End => main_axis_size - total_main_axis_size,
+            other => unimplemented!("MainAxisAlignment::{other:?}"),
+        };
+
         for &child_index in &node.children {
             let child_layout = ctx.layout.get_mut(child_index).unwrap();
             let child_size = child_layout.rect.size();
@@ -182,20 +202,6 @@ impl Widget for ListWidget {
             next_main += child_main;
             next_main += self.props.item_spacing;
         }
-
-        let main_axis_size = match self.props.main_axis_size {
-            MainAxisSize::Min => total_main_axis_size,
-            MainAxisSize::Max => {
-                let main_max = direction.get_main_axis(input.max);
-
-                if main_max.is_finite() {
-                    f32::max(total_main_axis_size, main_max)
-                } else {
-                    total_main_axis_size
-                }
-            }
-            other => unimplemented!("MainAxisSize::{other:?}"),
-        };
 
         direction.vec2(main_axis_size, cross_size)
     }

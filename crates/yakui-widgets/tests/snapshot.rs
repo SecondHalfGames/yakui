@@ -1,4 +1,4 @@
-use yakui::{Constraints, CrossAxisAlignment, MainAxisSize, Vec2};
+use yakui::{Constraints, CrossAxisAlignment, MainAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
@@ -30,6 +30,32 @@ fn column_basic() {
 fn row_basic() {
     run!({
         row(|| {
+            rect_50x50();
+            rect_50x50();
+            rect_50x50();
+        });
+    });
+}
+
+#[test]
+fn column_main_align_end() {
+    run!({
+        let mut container = List::column();
+        container.main_axis_alignment = MainAxisAlignment::End;
+        container.show(|| {
+            rect_50x50();
+            rect_50x50();
+            rect_50x50();
+        });
+    });
+}
+
+#[test]
+fn column_main_align_center() {
+    run!({
+        let mut container = List::column();
+        container.main_axis_alignment = MainAxisAlignment::Center;
+        container.show(|| {
             rect_50x50();
             rect_50x50();
             rect_50x50();

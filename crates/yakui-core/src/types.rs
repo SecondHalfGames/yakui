@@ -29,8 +29,16 @@ pub enum MainAxisAlignment {
     ///
     /// For a top-down list, this is the top of the container.
     Start,
-    // Center,
-    // End,
+
+    /// Align items to the center of the container's main axis.
+    Center,
+
+    /// Align items to the end of the container's main axis.
+    ///
+    /// For a left-to-right list, this is the right side of the container.
+    ///
+    /// For a top-down list, this is the bottom of the container.
+    End,
     // SpaceAround,
     // SpaceBetween,
     // SpaceEvenly,

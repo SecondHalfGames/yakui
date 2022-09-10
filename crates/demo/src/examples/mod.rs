@@ -18,6 +18,7 @@ macro_rules! examples {
             flex,
             images,
             inputs,
+            main_alignment,
             panels,
             row_column,
             sandbox,
