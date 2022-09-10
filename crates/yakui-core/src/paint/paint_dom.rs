@@ -31,10 +31,12 @@ const RECT_INDEX: [u16; 6] = [
 pub struct PaintDom {
     textures: Arena<Texture>,
     texture_edits: HashMap<ManagedTextureId, TextureChange>,
-    calls: Vec<PaintCall>,
     surface_size: Vec2,
     unscaled_viewport: Rect,
     scale_factor: f32,
+
+    calls: Vec<PaintCall>,
+    clip_stack: Vec<Rect>,
 }
 
 impl PaintDom {
@@ -43,16 +45,18 @@ impl PaintDom {
         Self {
             textures: Arena::new(),
             texture_edits: HashMap::new(),
-            calls: Vec::new(),
             surface_size: Vec2::ONE,
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
+            calls: Vec::new(),
+            clip_stack: Vec::new(),
         }
     }
 
     /// Prepares the PaintDom to be updated for the frame.
     pub fn start(&mut self) {
         self.texture_edits.clear();
+        self.clip_stack.clear();
     }
 
     /// Returns the size of the surface that is being painted onto.
@@ -159,6 +163,24 @@ impl PaintDom {
         self.calls.as_slice()
     }
 
+    /// Use the given region as the clipping rect for all following paint calls.
+    pub fn push_clip(&mut self, region: Rect) {
+        let unscaled = Rect::from_pos_size(
+            region.pos() * self.scale_factor,
+            region.size() * self.scale_factor,
+        );
+        self.clip_stack.push(unscaled);
+    }
+
+    /// Pop the most recent clip region, restoring the previous clipping rect.
+    pub fn pop_clip(&mut self) {
+        let top = self.clip_stack.pop();
+        debug_assert!(
+            top.is_some(),
+            "cannot call pop_clip without a corresponding push_clip call"
+        );
+    }
+
     /// Add a mesh to be painted.
     pub fn add_mesh<V, I>(&mut self, mesh: PaintMesh<V, I>)
     where
@@ -169,14 +191,22 @@ impl PaintDom {
 
         let texture_id = mesh.texture.map(|(index, _rect)| index);
 
+        let current_clip = self.clip_stack.last().copied();
         let call = match self.calls.last_mut() {
-            Some(call) if call.texture == texture_id && call.pipeline == mesh.pipeline => call,
+            Some(call)
+                if call.texture == texture_id
+                    && call.pipeline == mesh.pipeline
+                    && call.clip == current_clip =>
+            {
+                call
+            }
             _ => {
-                let mut new_mesh = PaintCall::new();
-                new_mesh.texture = texture_id;
-                new_mesh.pipeline = mesh.pipeline;
+                let mut call = PaintCall::new();
+                call.texture = texture_id;
+                call.pipeline = mesh.pipeline;
+                call.clip = current_clip;
 
-                self.calls.push(new_mesh);
+                self.calls.push(call);
                 self.calls.last_mut().unwrap()
             }
         };

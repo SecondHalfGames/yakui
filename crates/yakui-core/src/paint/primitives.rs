@@ -63,6 +63,7 @@ pub struct PaintCall {
     pub indices: Vec<u16>,
     pub texture: Option<ManagedTextureId>,
     pub pipeline: Pipeline,
+    pub clip: Option<Rect>,
 }
 
 impl PaintCall {
@@ -73,6 +74,7 @@ impl PaintCall {
             indices: Vec::new(),
             texture: None,
             pipeline: Pipeline::Main,
+            clip: None,
         }
     }
 }

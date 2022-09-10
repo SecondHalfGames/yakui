@@ -132,6 +132,14 @@ impl Widget for RenderTextBoxWidget {
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let text_layout = self.layout.borrow_mut();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
+
+        // FIXME: For some reason, these values are negative sometimes!
+        let should_clip = layout_node.rect.size().x > 0.0 && layout_node.rect.size().y > 0.0;
+
+        if should_clip {
+            ctx.paint.push_clip(layout_node.rect);
+        }
+
         paint_text(
             &mut ctx,
             &self.props.style.font,
@@ -149,6 +157,10 @@ impl Widget for RenderTextBoxWidget {
             let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
             rect.color = Color::RED;
             ctx.paint.add_rect(rect);
+        }
+
+        if should_clip {
+            ctx.paint.pop_clip();
         }
     }
 }

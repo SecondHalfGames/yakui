@@ -11,7 +11,7 @@ use std::ops::Range;
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
-use yakui_core::geometry::{Vec2, Vec4};
+use yakui_core::geometry::{Rect, Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
 use yakui_core::ManagedTextureId;
 
@@ -234,11 +234,29 @@ impl YakuiWgpu {
             render_pass.set_vertex_buffer(0, vertices.slice(..));
             render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
 
+            let mut last_clip = None;
+
             for command in commands {
                 match command.pipeline {
                     Pipeline::Main => render_pass.set_pipeline(&self.main_pipeline),
                     Pipeline::Text => render_pass.set_pipeline(&self.text_pipeline),
                     _ => continue,
+                }
+
+                if command.clip != last_clip {
+                    last_clip = command.clip;
+
+                    match command.clip {
+                        Some(rect) => {
+                            let pos = rect.pos().as_uvec2();
+                            let size = rect.size().as_uvec2();
+                            render_pass.set_scissor_rect(pos.x, pos.y, size.x, size.y);
+                        }
+                        None => {
+                            let size = paint.surface_size().as_uvec2();
+                            render_pass.set_scissor_rect(0, 0, size.x, size.y);
+                        }
+                    }
                 }
 
                 render_pass.set_bind_group(0, &command.bind_group, &[]);
@@ -296,6 +314,7 @@ impl YakuiWgpu {
                 index_range: start..end,
                 bind_group,
                 pipeline: mesh.pipeline,
+                clip: mesh.clip,
             }
         });
 
@@ -348,4 +367,5 @@ struct DrawCommand {
     index_range: Range<u32>,
     bind_group: wgpu::BindGroup,
     pipeline: Pipeline,
+    clip: Option<Rect>,
 }
