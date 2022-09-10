@@ -25,6 +25,12 @@ pub enum Event {
         down: bool,
     },
 
+    /// The user scrolled with the mouse.
+    MouseScroll {
+        /// How far the mouse scrolled in physical pixels.
+        delta: Vec2,
+    },
+
     /// A key changed, telling whether it is now pressed.
     KeyChanged {
         /// Which key's state was changed.
@@ -53,6 +59,12 @@ pub enum WidgetEvent {
 
     /// The mouse moved.
     MouseMoved(Option<Vec2>),
+
+    /// The user scrolled with the mouse.
+    MouseScroll {
+        /// How much the wheel scrolled in logical pixels.
+        delta: Vec2,
+    },
 
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.

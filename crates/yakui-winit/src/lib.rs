@@ -2,7 +2,8 @@ mod keys;
 
 use winit::dpi::PhysicalSize;
 use winit::event::{
-    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
+    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton,
+    MouseScrollDelta, WindowEvent,
 };
 use winit::window::Window;
 use yakui_core::event::Event;
@@ -127,6 +128,24 @@ impl YakuiWinit {
                 };
 
                 state.handle_event(Event::MouseButtonChanged { button, down })
+            }
+            WinitEvent::WindowEvent {
+                event: WindowEvent::MouseWheel { delta, .. },
+                ..
+            } => {
+                const LINE_HEIGHT: f32 = 90.0;
+
+                let delta = match *delta {
+                    MouseScrollDelta::LineDelta(x, y) => Vec2::new(x, y) * LINE_HEIGHT,
+                    MouseScrollDelta::PixelDelta(offset) => {
+                        Vec2::new(offset.x as f32, offset.y as f32)
+                    }
+                };
+
+                // Flip delta axis from winit's expectations.
+                let delta = -delta;
+
+                state.handle_event(Event::MouseScroll { delta })
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::ReceivedCharacter(c),
