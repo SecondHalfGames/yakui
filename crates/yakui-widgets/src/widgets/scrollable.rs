@@ -81,7 +81,13 @@ impl Widget for ScrollableWidget {
         let size = constraints.constrain(canvas_size);
 
         let max_scroll_position = (canvas_size - size).max(Vec2::ZERO);
-        let scroll_position = self.scroll_position.get().min(max_scroll_position);
+        let mut scroll_position = self.scroll_position.get().min(max_scroll_position);
+
+        match self.props.direction {
+            None => scroll_position = Vec2::ZERO,
+            Some(ScrollDirection::Y) => scroll_position.x = 0.0,
+        }
+
         self.scroll_position.set(scroll_position);
 
         for &child in &node.children {
@@ -97,9 +103,9 @@ impl Widget for ScrollableWidget {
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match *event {
-            WidgetEvent::MouseWheelMoved(value) => {
+            WidgetEvent::MouseScroll { delta } => {
                 let pos = self.scroll_position.get();
-                self.scroll_position.set(pos + Vec2::new(0.0, value));
+                self.scroll_position.set(pos + delta);
                 EventResponse::Sink
             }
             _ => EventResponse::Bubble,

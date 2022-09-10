@@ -2,7 +2,8 @@ mod keys;
 
 use winit::dpi::PhysicalSize;
 use winit::event::{
-    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, WindowEvent,
+    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton,
+    MouseScrollDelta, WindowEvent,
 };
 use winit::window::Window;
 use yakui_core::event::Event;
@@ -127,6 +128,21 @@ impl YakuiWinit {
                 };
 
                 state.handle_event(Event::MouseButtonChanged { button, down })
+            }
+            WinitEvent::WindowEvent {
+                event: WindowEvent::MouseWheel { delta, .. },
+                ..
+            } => {
+                let delta = match *delta {
+                    // Estimate how big a line is.
+                    // TODO: Is there a better way to do this?
+                    MouseScrollDelta::LineDelta(x, y) => Vec2::new(x, y) * 16.0,
+                    MouseScrollDelta::PixelDelta(offset) => {
+                        Vec2::new(offset.x as f32, offset.y as f32)
+                    }
+                };
+
+                state.handle_event(Event::MouseScroll { delta })
             }
             WinitEvent::WindowEvent {
                 event: WindowEvent::ReceivedCharacter(c),
