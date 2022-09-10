@@ -25,6 +25,9 @@ pub enum Event {
         down: bool,
     },
 
+    /// The mouse wheel was moved.
+    MouseWheelMoved(f32),
+
     /// A key changed, telling whether it is now pressed.
     KeyChanged {
         /// Which key's state was changed.
@@ -53,6 +56,9 @@ pub enum WidgetEvent {
 
     /// The mouse moved.
     MouseMoved(Option<Vec2>),
+
+    /// The mouse wheel moved.
+    MouseWheelMoved(f32),
 
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.
