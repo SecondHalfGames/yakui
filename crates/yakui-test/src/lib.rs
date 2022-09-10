@@ -25,6 +25,7 @@ macro_rules! run {
 
         let test = $test;
         let mut state = ::yakui_test::yakui_core::Yakui::new();
+        state.set_surface_size(test.surface_size);
         state.set_unscaled_viewport(test.viewport);
         state.start();
         $body
@@ -62,6 +63,7 @@ macro_rules! literally_snapshot {
 }
 
 pub struct Test {
+    pub surface_size: Vec2,
     pub viewport: Rect,
 }
 
@@ -69,6 +71,7 @@ impl Test {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
+            surface_size: Vec2::new(1000.0, 1000.0),
             viewport: Rect::from_pos_size(Vec2::ZERO, Vec2::new(1000.0, 1000.0)),
         }
     }
