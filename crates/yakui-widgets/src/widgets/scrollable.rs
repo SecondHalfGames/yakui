@@ -2,7 +2,7 @@ use std::cell::Cell;
 
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::widget::{EventContext, LayoutContext, Widget};
+use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
@@ -99,6 +99,25 @@ impl Widget for ScrollableWidget {
         }
 
         size
+    }
+
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
+        let layout = ctx.layout.get(ctx.dom.current()).unwrap();
+
+        let should_clip = layout.rect.size().x >= 0.0 && layout.rect.size().y >= 0.0;
+
+        if should_clip {
+            ctx.paint.push_clip(layout.rect);
+        }
+
+        for &child in &node.children {
+            ctx.paint(child);
+        }
+
+        if should_clip {
+            ctx.paint.pop_clip();
+        }
     }
 
     fn event_interest(&self) -> EventInterest {

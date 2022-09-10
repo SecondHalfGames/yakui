@@ -1,14 +1,17 @@
-use yakui::{button, colored_box_container, column, scroll_vertical, Color};
+use yakui::widgets::Pad;
+use yakui::{button, center, column, pad, scroll_vertical};
 
 use crate::ExampleState;
 
 pub fn run(_state: &mut ExampleState) {
-    scroll_vertical(|| {
-        colored_box_container(Color::hex(0x888888), || {
-            column(|| {
-                for i in 0..100 {
-                    button(format!("List item {i}"));
-                }
+    center(|| {
+        pad(Pad::all(50.0), || {
+            scroll_vertical(|| {
+                column(|| {
+                    for i in 0..100 {
+                        button(format!("List item {i}"));
+                    }
+                });
             });
         });
     });
