@@ -2,8 +2,8 @@ mod keys;
 
 use winit::dpi::PhysicalSize;
 use winit::event::{
-    DeviceEvent, ElementState, Event as WinitEvent, MouseButton as WinitMouseButton,
-    MouseScrollDelta, WindowEvent,
+    ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, MouseScrollDelta,
+    WindowEvent,
 };
 use winit::window::Window;
 use yakui_core::event::Event;
@@ -155,8 +155,8 @@ impl YakuiWinit {
                 event: WindowEvent::ModifiersChanged(mods),
                 ..
             } => state.handle_event(Event::ModifiersChanged(from_winit_modifiers(*mods))),
-            WinitEvent::DeviceEvent {
-                event: DeviceEvent::Key(input),
+            WinitEvent::WindowEvent {
+                event: WindowEvent::KeyboardInput { input, .. },
                 ..
             } => {
                 if let Some(key) = input.virtual_keycode.and_then(from_winit_key) {
