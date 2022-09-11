@@ -21,10 +21,14 @@ impl Draggable {
 }
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct DraggableWidget {
-    held: bool,
-    down_position: Vec2,
+    current_drag: Option<DragState>,
+}
+
+#[derive(Debug)]
+struct DragState {
+    start_position: Vec2,
+    offset_from_mouse: Vec2,
     mouse_position: Vec2,
 }
 
@@ -33,7 +37,7 @@ pub struct DraggableResponse {
     pub dragging: Option<Dragging>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Dragging {
     pub start: Vec2,
     pub current: Vec2,
@@ -44,22 +48,14 @@ impl Widget for DraggableWidget {
     type Response = DraggableResponse;
 
     fn new() -> Self {
-        Self {
-            held: false,
-            down_position: Vec2::ZERO,
-            mouse_position: Vec2::ZERO,
-        }
+        Self { current_drag: None }
     }
 
     fn update(&mut self, _props: Self::Props) -> Self::Response {
-        let dragging = if self.held {
-            Some(Dragging {
-                start: self.down_position,
-                current: self.mouse_position,
-            })
-        } else {
-            None
-        };
+        let dragging = self.current_drag.as_ref().map(|drag| Dragging {
+            start: drag.start_position,
+            current: drag.mouse_position + drag.offset_from_mouse,
+        });
 
         DraggableResponse { dragging }
     }
@@ -68,7 +64,7 @@ impl Widget for DraggableWidget {
         EventInterest::MOUSE_ALL
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match *event {
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,
@@ -78,20 +74,25 @@ impl Widget for DraggableWidget {
                 ..
             } => {
                 if down && inside {
-                    self.held = true;
-                    self.down_position = position;
-                    self.mouse_position = position;
+                    let node = ctx.layout.get(ctx.dom.current()).unwrap();
+
+                    self.current_drag = Some(DragState {
+                        start_position: node.rect.pos(),
+                        offset_from_mouse: node.rect.pos() - position,
+                        mouse_position: position,
+                    });
+
                     EventResponse::Sink
-                } else if !down && self.held {
-                    self.held = false;
+                } else if !down && self.current_drag.is_some() {
+                    self.current_drag = None;
                     EventResponse::Sink
                 } else {
                     EventResponse::Bubble
                 }
             }
-            WidgetEvent::MouseMoved(Some(pos)) => {
-                if self.held {
-                    self.mouse_position = pos;
+            WidgetEvent::MouseMoved(Some(position)) => {
+                if let Some(drag) = &mut self.current_drag {
+                    drag.mouse_position = position;
                 }
 
                 EventResponse::Bubble

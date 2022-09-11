@@ -41,7 +41,7 @@ macro_rules! define_example {
     ($($mod:ident),* $(,)?) => {
         $(pub mod $mod;)*
 
-        #[derive(Debug, PartialEq, Parser)]
+        #[derive(Debug, Parser)]
         #[allow(non_camel_case_types)]
         pub enum Example {
             $(
