@@ -12,8 +12,8 @@ use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
     ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget, Flexible,
     FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget, Offset,
-    OffsetWidget, Pad, PadWidget, Scrollable, ScrollableWidget, State, StateWidget, Text, TextBox,
-    TextBoxWidget, TextWidget,
+    OffsetWidget, Pad, PadWidget, Scrollable, ScrollableWidget, Slider, SliderWidget, State,
+    StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -122,6 +122,11 @@ pub fn nineslice(
 /// See [Scrollable].
 pub fn scroll_vertical(children: impl FnOnce()) -> Response<ScrollableWidget> {
     Scrollable::vertical().show(children)
+}
+
+/// See [Slider].
+pub fn slider(value: f64, min: f64, max: f64) -> Response<SliderWidget> {
+    Slider::new(value, min, max).show()
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>

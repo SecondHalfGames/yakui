@@ -32,6 +32,7 @@ struct DragState {
     mouse_position: Vec2,
 }
 
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct DraggableResponse {
     pub dragging: Option<Dragging>,
