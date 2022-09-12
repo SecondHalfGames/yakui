@@ -9,7 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
-use crate::input::InputState;
+use crate::input::{InputState, NavDirection};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
 use crate::WidgetId;
@@ -60,6 +60,15 @@ impl<'dom> PaintContext<'dom> {
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub struct EventContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+    pub input: &'dom InputState,
+}
+
+/// Information available to a widget when it is being queried for navigation.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub struct NavigateContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
     pub input: &'dom InputState,
@@ -133,6 +142,13 @@ pub trait Widget: 'static + fmt::Debug {
     #[allow(unused)]
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         EventResponse::Bubble
+    }
+
+    /// Tell which widget should be navigated to if the user navigates in a
+    /// given direction.
+    #[allow(unused)]
+    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
+        None
     }
 }
 
