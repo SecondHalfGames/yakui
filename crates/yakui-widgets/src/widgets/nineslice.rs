@@ -1,6 +1,5 @@
 use yakui_core::{
-    geometry::Rect,
-    glam::{vec2, Vec2, Vec4},
+    geometry::{Rect, Vec2, Vec4},
     paint::{PaintMesh, Vertex},
     widget::{PaintContext, Widget},
     ManagedTextureId, Response,
@@ -100,8 +99,8 @@ impl Widget for NineSliceWidget {
         // Vertices are laid out from left to right, then top to bottom.
         let vertices = rel_ys.into_iter().zip(vs).flat_map(|(y, v)| {
             rel_xs.into_iter().zip(us).map(move |(x, u)| {
-                let rel_pos = vec2(x, y);
-                let tex_coords = vec2(u, v);
+                let rel_pos = Vec2::new(x, y);
+                let tex_coords = Vec2::new(u, v);
 
                 let pos = top_left + rel_pos;
                 Vertex::new(pos, tex_coords, Vec4::splat(1.0))
