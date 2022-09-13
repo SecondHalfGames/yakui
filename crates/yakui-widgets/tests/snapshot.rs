@@ -4,8 +4,8 @@ use yakui_core::Alignment;
 use yakui_test::{run, Test};
 use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
-    align, center, checkbox, colored_box, colored_box_container, column, constrained, expanded,
-    pad, row, text,
+    align, button, center, checkbox, colored_box, colored_box_container, column, constrained,
+    expanded, pad, row, text,
 };
 
 #[test]
@@ -328,6 +328,15 @@ fn constrain_checkbox() {
             constrained(constraints, || {
                 checkbox(true);
             });
+        });
+    });
+}
+
+#[test]
+fn column_intrinsic() {
+    run!({
+        column(|| {
+            button("X X X");
         });
     });
 }
