@@ -119,7 +119,7 @@ impl Widget for ListWidget {
 
             let constraints = Constraints {
                 min: direction.vec2(0.0, cross_axis_min),
-                max: direction.vec2(f32::INFINITY, cross_axis_max),
+                max: direction.vec2(main_axis_max, cross_axis_max),
             };
 
             let size = ctx.calculate_layout(child_index, constraints);
