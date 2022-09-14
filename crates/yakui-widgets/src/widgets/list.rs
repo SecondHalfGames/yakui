@@ -1,3 +1,5 @@
+use std::f32::INFINITY;
+
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize, Response};
@@ -78,6 +80,16 @@ impl Widget for ListWidget {
         self.props = props;
     }
 
+    fn flex(&self) -> (u32, FlexFit) {
+        let flex = if self.props.cross_axis_alignment == CrossAxisAlignment::Stretch {
+            1
+        } else {
+            0
+        };
+
+        (flex, FlexFit::Tight)
+    }
+
     // This approach to layout is based on Flutter's Flex layout algorithm.
     //
     // https://api.flutter.dev/flutter/widgets/Flex-class.html#layout-algorithm
@@ -119,7 +131,7 @@ impl Widget for ListWidget {
 
             let constraints = Constraints {
                 min: direction.vec2(0.0, cross_axis_min),
-                max: direction.vec2(f32::INFINITY, cross_axis_max),
+                max: direction.vec2(INFINITY, cross_axis_max),
             };
 
             let size = ctx.calculate_layout(child_index, constraints);

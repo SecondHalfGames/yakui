@@ -179,6 +179,7 @@ impl YakuiWgpu {
         }
     }
 
+    #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
     pub fn paint(
         &mut self,
         state: &mut yakui_core::Yakui,
@@ -207,12 +208,14 @@ impl YakuiWgpu {
 
         let paint = state.paint();
 
+        self.update_textures(device, paint, queue);
+
         if paint.calls().is_empty() {
             return;
         }
 
-        self.update_textures(device, paint, queue);
         self.update_buffers(device, paint);
+
         let vertices = self.vertices.upload(device, queue);
         let indices = self.indices.upload(device, queue);
         let commands = &self.commands;
