@@ -249,15 +249,30 @@ impl YakuiWgpu {
                 if command.clip != last_clip {
                     last_clip = command.clip;
 
+                    let surface = paint.surface_size().as_uvec2();
+
                     match command.clip {
                         Some(rect) => {
                             let pos = rect.pos().as_uvec2();
                             let size = rect.size().as_uvec2();
+
+                            let max = (pos + size).min(surface);
+                            let size = UVec2::new(
+                                max.x.saturating_sub(pos.x),
+                                max.y.saturating_sub(pos.y),
+                            );
+
+                            // If the scissor rect isn't valid, we can skip this
+                            // entire draw call.
+                            if pos.x > surface.x || pos.y > surface.y || size.x == 0 || size.y == 0
+                            {
+                                continue;
+                            }
+
                             render_pass.set_scissor_rect(pos.x, pos.y, size.x, size.y);
                         }
                         None => {
-                            let size = paint.surface_size().as_uvec2();
-                            render_pass.set_scissor_rect(0, 0, size.x, size.y);
+                            render_pass.set_scissor_rect(0, 0, surface.x, surface.y);
                         }
                     }
                 }

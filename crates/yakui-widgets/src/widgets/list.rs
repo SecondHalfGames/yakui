@@ -97,7 +97,8 @@ impl Widget for ListWidget {
         let node = ctx.dom.get_current();
         let direction = self.props.direction;
 
-        let total_item_spacing = self.props.item_spacing * (node.children.len() - 1) as f32;
+        let total_item_spacing =
+            self.props.item_spacing * node.children.len().saturating_sub(1) as f32;
 
         let mut total_main_axis_size = total_item_spacing;
         let mut max_cross_axis_size = 0.0;
