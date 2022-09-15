@@ -216,6 +216,6 @@ impl Widget for ListWidget {
             next_main += self.props.item_spacing;
         }
 
-        direction.vec2(main_axis_size, cross_size)
+        input.constrain(direction.vec2(main_axis_size, cross_size))
     }
 }
