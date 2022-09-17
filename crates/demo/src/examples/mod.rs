@@ -13,6 +13,7 @@ macro_rules! examples {
             bench,
             buttons,
             cross_alignment,
+            leaderboard,
             custom_font,
             draggable,
             flex,
