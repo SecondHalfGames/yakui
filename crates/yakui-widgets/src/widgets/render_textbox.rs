@@ -108,7 +108,14 @@ impl Widget for RenderTextBoxWidget {
         let ascent = metrics.map(|m| m.ascent).unwrap_or(font_size);
         let cursor_size = ascent;
 
-        let cursor_y = 0.0;
+        let line_height = text_layout
+            .lines()
+            .map(|lines| text_layout.height() / lines.len() as f32)
+            .unwrap_or(0.0);
+        let cursor_y = text_layout
+            .lines()
+            .map(|lines| (lines.len() - 1) as f32 * line_height)
+            .unwrap_or(0.0);
         let cursor_x = text_layout
             .glyphs()
             .last()
