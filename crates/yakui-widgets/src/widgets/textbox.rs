@@ -117,46 +117,60 @@ impl Widget for TextBoxWidget {
                 EventResponse::Sink
             }
 
-            WidgetEvent::KeyChanged {
-                key, down: true, ..
-            } => match key {
+            WidgetEvent::KeyChanged { key, down, .. } => match key {
                 KeyCode::ArrowLeft => {
-                    self.move_cursor(-1);
+                    if *down {
+                        self.move_cursor(-1);
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::ArrowRight => {
-                    self.move_cursor(1);
+                    if *down {
+                        self.move_cursor(1);
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::Backspace => {
-                    self.delete(-1);
+                    if *down {
+                        self.delete(-1);
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::Delete => {
-                    self.delete(1);
+                    if *down {
+                        self.delete(1);
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::Home => {
-                    self.home();
+                    if *down {
+                        self.home();
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::End => {
-                    self.end();
+                    if *down {
+                        self.end();
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::Enter | KeyCode::NumpadEnter => {
-                    ctx.input.set_selection(None);
+                    if *down {
+                        ctx.input.set_selection(None);
+                    }
                     EventResponse::Sink
                 }
 
                 KeyCode::Escape => {
-                    ctx.input.set_selection(None);
+                    if *down {
+                        ctx.input.set_selection(None);
+                    }
                     EventResponse::Sink
                 }
                 _ => EventResponse::Bubble,
