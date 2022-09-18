@@ -57,6 +57,12 @@ impl Rect {
         self.size = size;
     }
 
+    /// Set the rectangle's maximum extent.
+    #[inline]
+    pub fn set_max(&mut self, max: Vec2) {
+        self.size = max - self.pos;
+    }
+
     /// Tells whether the given point is contained within the rectangle.
     ///
     /// If the point lies on the rectangle's boundary, it is considered

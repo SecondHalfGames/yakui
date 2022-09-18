@@ -165,10 +165,19 @@ impl PaintDom {
 
     /// Use the given region as the clipping rect for all following paint calls.
     pub fn push_clip(&mut self, region: Rect) {
-        let unscaled = Rect::from_pos_size(
+        let mut unscaled = Rect::from_pos_size(
             region.pos() * self.scale_factor,
             region.size() * self.scale_factor,
         );
+
+        if let Some(previous) = self.clip_stack.last() {
+            let min = unscaled.pos().max(previous.pos());
+            let max = unscaled.max().min(previous.max());
+
+            unscaled.set_pos(min);
+            unscaled.set_max(max);
+        }
+
         self.clip_stack.push(unscaled);
     }
 
