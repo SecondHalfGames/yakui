@@ -110,7 +110,6 @@ impl Widget for TextBoxWidget {
 
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,
-                down: true,
                 inside: true,
                 ..
             } => {
