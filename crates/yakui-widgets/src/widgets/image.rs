@@ -1,7 +1,7 @@
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::{ManagedTextureId, Response};
+use yakui_core::{Response, TextureId};
 
 use crate::util::widget;
 
@@ -13,14 +13,17 @@ Responds with [ImageResponse].
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct Image {
-    pub image: Option<ManagedTextureId>,
+    pub image: Option<TextureId>,
     pub size: Vec2,
 }
 
 impl Image {
-    pub fn new(image: ManagedTextureId, size: Vec2) -> Self {
+    pub fn new<I>(image: I, size: Vec2) -> Self
+    where
+        I: Into<TextureId>,
+    {
         Self {
-            image: Some(image),
+            image: Some(image.into()),
             size,
         }
     }

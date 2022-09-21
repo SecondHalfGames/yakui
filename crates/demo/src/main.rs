@@ -1,3 +1,4 @@
+mod custom_texture;
 mod examples;
 
 use std::time::Instant;
@@ -10,7 +11,7 @@ use winit::window::WindowBuilder;
 
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
-use yakui::{ManagedTextureId, Rect, UVec2, Vec2};
+use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2};
 
 use crate::examples::Args;
 
@@ -26,11 +27,15 @@ pub struct ExampleState {
     /// current time as an input.
     pub time: f32,
 
-    /// `TextureId` is a handle to a texture we previously gave to yakui. This
-    /// is an image that's usable from any of the examples.
+    /// `ManagedTextureId` is a texture owned by yakui. You can create one by
+    /// giving yakui some image data; it'll be uploaded by the renderer.
     pub monkey: ManagedTextureId,
-
     pub brown_inlay: ManagedTextureId,
+
+    /// `TextureId` represents either a managed texture or a texture owned by
+    /// the renderer. This image is generated in `custom_texture.rs` and
+    /// uploaded with wgpu directly.
+    pub custom: TextureId,
 }
 
 async fn run() {
@@ -71,8 +76,6 @@ async fn run() {
     // In these examples, set YAKUI_INSET to force the UI to be contained within
     // a sub-viewport with the given edge inset on all sides.
     let inset = get_inset_override();
-
-    // The viewport example requires a bit of setup; so let's do that here.
     if inset.is_some() {
         app.window_mut().set_automatic_viewport(false);
     }
@@ -80,6 +83,11 @@ async fn run() {
     // Preload some textures for the examples to use.
     let monkey = yak.add_texture(load_texture(MONKEY_PNG, TextureFilter::Linear));
     let brown_inlay = yak.add_texture(load_texture(BROWN_INLAY_PNG, TextureFilter::Nearest));
+    let custom = app.renderer.add_texture(
+        custom_texture::generate(&app.device, &app.queue),
+        wgpu::FilterMode::Nearest,
+        wgpu::FilterMode::Nearest,
+    );
 
     // Add a custom font for some of the examples.
     let fonts = yak.dom().get_global_or_init(Fonts::default);
@@ -95,6 +103,7 @@ async fn run() {
         time: 0.0,
         monkey,
         brown_inlay,
+        custom,
     };
 
     let start = Instant::now();
@@ -159,8 +168,6 @@ async fn run() {
                 event: WindowEvent::Resized(size),
                 ..
             } => {
-                // The viewport example is inset by 50 physical pixels on all
-                // sides.
                 if let Some(inset) = inset {
                     let size = Vec2::new(size.width as f32, size.height as f32);
                     yak.set_unscaled_viewport(Rect::from_pos_size(

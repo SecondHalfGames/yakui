@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use glam::UVec2;
 use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
 
-pub(crate) struct GpuTexture {
+pub(crate) struct GpuManagedTexture {
     size: UVec2,
     format: TextureFormat,
     gpu_texture: wgpu::Texture,
@@ -12,7 +12,13 @@ pub(crate) struct GpuTexture {
     pub mag_filter: wgpu::FilterMode,
 }
 
-impl GpuTexture {
+pub(crate) struct GpuTexture {
+    pub view: wgpu::TextureView,
+    pub min_filter: wgpu::FilterMode,
+    pub mag_filter: wgpu::FilterMode,
+}
+
+impl GpuManagedTexture {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) -> Self {
         let size = wgpu::Extent3d {
             width: texture.size().x,

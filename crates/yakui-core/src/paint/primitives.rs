@@ -1,14 +1,14 @@
 use glam::{Vec2, Vec4};
 
 use crate::geometry::{Color, Rect};
-use crate::id::ManagedTextureId;
+use crate::id::TextureId;
 
 #[non_exhaustive]
 #[allow(missing_docs)]
 pub struct PaintRect {
     pub rect: Rect,
     pub color: Color,
-    pub texture: Option<(ManagedTextureId, Rect)>,
+    pub texture: Option<(TextureId, Rect)>,
     pub pipeline: Pipeline,
 }
 
@@ -34,7 +34,7 @@ impl PaintRect {
 pub struct PaintMesh<V, I> {
     pub vertices: V,
     pub indices: I,
-    pub texture: Option<(ManagedTextureId, Rect)>,
+    pub texture: Option<(TextureId, Rect)>,
     pub pipeline: Pipeline,
 }
 
@@ -61,7 +61,7 @@ where
 pub struct PaintCall {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
-    pub texture: Option<ManagedTextureId>,
+    pub texture: Option<TextureId>,
     pub pipeline: Pipeline,
     pub clip: Option<Rect>,
 }

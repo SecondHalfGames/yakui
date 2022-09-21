@@ -11,20 +11,22 @@ use std::ops::Range;
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
+use thunderdome::{Arena, Index};
 use yakui_core::geometry::{Rect, Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
-use yakui_core::ManagedTextureId;
+use yakui_core::{ManagedTextureId, TextureId};
 
 use self::samplers::Samplers;
-use self::texture::GpuTexture;
+use self::texture::{GpuManagedTexture, GpuTexture};
 
 pub struct YakuiWgpu {
     main_pipeline: wgpu::RenderPipeline,
     text_pipeline: wgpu::RenderPipeline,
     layout: wgpu::BindGroupLayout,
-    default_texture: GpuTexture,
+    default_texture: GpuManagedTexture,
     samplers: Samplers,
-    textures: HashMap<ManagedTextureId, GpuTexture>,
+    textures: Arena<GpuTexture>,
+    managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
     initial_textures_synced: bool,
 
     vertices: Buffer,
@@ -162,7 +164,7 @@ impl YakuiWgpu {
 
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
-        let default_texture = GpuTexture::new(device, queue, &default_texture_data);
+        let default_texture = GpuManagedTexture::new(device, queue, &default_texture_data);
 
         Self {
             main_pipeline,
@@ -170,13 +172,28 @@ impl YakuiWgpu {
             layout,
             default_texture,
             samplers,
-            textures: HashMap::new(),
+            textures: Arena::new(),
+            managed_textures: HashMap::new(),
             initial_textures_synced: false,
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
             commands: Vec::new(),
         }
+    }
+
+    pub fn add_texture(
+        &mut self,
+        view: wgpu::TextureView,
+        min_filter: wgpu::FilterMode,
+        mag_filter: wgpu::FilterMode,
+    ) -> TextureId {
+        let index = self.textures.insert(GpuTexture {
+            view,
+            min_filter,
+            mag_filter,
+        });
+        TextureId::User(index.to_bits())
     }
 
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
@@ -306,12 +323,26 @@ impl YakuiWgpu {
             self.vertices.extend(vertices);
             self.indices.extend(indices);
 
-            let texture = mesh
+            let (view, min_filter, mag_filter) = mesh
                 .texture
-                .and_then(|index| self.textures.get(&index))
-                .unwrap_or(&self.default_texture);
+                .and_then(|id| match id {
+                    TextureId::Managed(managed) => {
+                        let texture = self.managed_textures.get(&managed)?;
+                        Some((&texture.view, texture.min_filter, texture.mag_filter))
+                    }
+                    TextureId::User(bits) => {
+                        let index = Index::from_bits(bits)?;
+                        let texture = self.textures.get(index)?;
+                        Some((&texture.view, texture.min_filter, texture.mag_filter))
+                    }
+                })
+                .unwrap_or((
+                    &self.default_texture.view,
+                    self.default_texture.min_filter,
+                    self.default_texture.mag_filter,
+                ));
 
-            let sampler = self.samplers.get(texture.min_filter, texture.mag_filter);
+            let sampler = self.samplers.get(min_filter, mag_filter);
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("yakui Bind Group"),
@@ -319,7 +350,7 @@ impl YakuiWgpu {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&texture.view),
+                        resource: wgpu::BindingResource::TextureView(view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
@@ -351,8 +382,8 @@ impl YakuiWgpu {
             self.initial_textures_synced = true;
 
             for (id, texture) in paint.textures() {
-                self.textures
-                    .insert(id, GpuTexture::new(device, queue, texture));
+                self.managed_textures
+                    .insert(id, GpuManagedTexture::new(device, queue, texture));
             }
 
             return;
@@ -362,16 +393,16 @@ impl YakuiWgpu {
             match change {
                 TextureChange::Added => {
                     let texture = paint.texture(id).unwrap();
-                    self.textures
-                        .insert(id, GpuTexture::new(device, queue, texture));
+                    self.managed_textures
+                        .insert(id, GpuManagedTexture::new(device, queue, texture));
                 }
 
                 TextureChange::Removed => {
-                    self.textures.remove(&id);
+                    self.managed_textures.remove(&id);
                 }
 
                 TextureChange::Modified => {
-                    if let Some(existing) = self.textures.get_mut(&id) {
+                    if let Some(existing) = self.managed_textures.get_mut(&id) {
                         let texture = paint.texture(id).unwrap();
                         existing.update(device, queue, texture);
                     }

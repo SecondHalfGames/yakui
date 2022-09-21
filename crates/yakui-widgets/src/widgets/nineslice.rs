@@ -116,7 +116,10 @@ impl Widget for NineSliceWidget {
         });
 
         let mut mesh = PaintMesh::new(vertices, indices);
-        mesh.texture = Some((props.texture, Rect::from_pos_size(Vec2::ZERO, texture_size)));
+        mesh.texture = Some((
+            props.texture.into(),
+            Rect::from_pos_size(Vec2::ZERO, texture_size),
+        ));
         ctx.paint.add_mesh(mesh);
 
         let node = ctx.dom.get_current();

@@ -15,7 +15,7 @@ pub struct Graphics {
     size: PhysicalSize<u32>,
 
     window: yakui_winit::YakuiWinit,
-    renderer: yakui_wgpu::YakuiWgpu,
+    pub renderer: yakui_wgpu::YakuiWgpu,
 
     /// Tracks whether winit is still initializing
     is_init: bool,
