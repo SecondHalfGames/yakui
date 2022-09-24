@@ -1,6 +1,7 @@
 #![allow(clippy::new_without_default)]
 
 mod buffer;
+mod pipeline_cache;
 mod samplers;
 mod texture;
 
@@ -16,12 +17,13 @@ use yakui_core::geometry::{Rect, Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
 use yakui_core::{ManagedTextureId, TextureId};
 
+use self::pipeline_cache::PipelineCache;
 use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
 
 pub struct YakuiWgpu {
-    main_pipeline: wgpu::RenderPipeline,
-    text_pipeline: wgpu::RenderPipeline,
+    main_pipeline: PipelineCache,
+    text_pipeline: PipelineCache,
     layout: wgpu::BindGroupLayout,
     default_texture: GpuManagedTexture,
     samplers: Samplers,
@@ -32,6 +34,14 @@ pub struct YakuiWgpu {
     vertices: Buffer,
     indices: Buffer,
     commands: Vec<DrawCommand>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SurfaceInfo<'a> {
+    pub format: wgpu::TextureFormat,
+    pub sample_count: u32,
+    pub color_attachment: &'a wgpu::TextureView,
+    pub resolve_target: Option<&'a wgpu::TextureView>,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
@@ -55,21 +65,7 @@ impl Vertex {
 }
 
 impl YakuiWgpu {
-    pub fn new(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        surface_format: wgpu::TextureFormat,
-    ) -> Self {
-        let main_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Main Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/main.wgsl").into()),
-        });
-
-        let text_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Text Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/text.wgsl").into()),
-        });
-
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("yakui Bind Group Layout"),
             entries: &[
@@ -93,72 +89,20 @@ impl YakuiWgpu {
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("yakui Render Pipeline Layout"),
+            label: Some("yakui Main Pipeline Layout"),
             bind_group_layouts: &[&layout],
             push_constant_ranges: &[],
         });
 
-        let main_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("yakui Main Pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &main_shader,
-                entry_point: "vs_main",
-                buffers: &[Vertex::DESCRIPTOR],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &main_shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_format,
-                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
+        let main_pipeline = PipelineCache::new(pipeline_layout);
+
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("yakui Text Pipeline Layout"),
+            bind_group_layouts: &[&layout],
+            push_constant_ranges: &[],
         });
 
-        let text_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("yakui Text Pipeline"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &text_shader,
-                entry_point: "vs_main",
-                buffers: &[Vertex::DESCRIPTOR],
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &text_shader,
-                entry_point: "fs_main",
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: surface_format,
-                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,
-                polygon_mode: wgpu::PolygonMode::Fill,
-                unclipped_depth: false,
-                conservative: false,
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            multiview: None,
-        });
+        let text_pipeline = PipelineCache::new(pipeline_layout);
 
         let samplers = Samplers::new(device);
 
@@ -202,13 +146,13 @@ impl YakuiWgpu {
         state: &mut yakui_core::Yakui,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        color_attachment: &wgpu::TextureView,
+        surface: SurfaceInfo<'_>,
     ) -> wgpu::CommandBuffer {
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("yakui Encoder"),
         });
 
-        self.paint_with_encoder(state, device, queue, &mut encoder, color_attachment);
+        self.paint_with_encoder(state, device, queue, &mut encoder, surface);
 
         encoder.finish()
     }
@@ -219,7 +163,7 @@ impl YakuiWgpu {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
-        color_attachment: &wgpu::TextureView,
+        surface: SurfaceInfo<'_>,
     ) {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
@@ -241,11 +185,11 @@ impl YakuiWgpu {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("yakui Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: color_attachment,
-                    resolve_target: None,
+                    view: surface.color_attachment,
+                    resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,
-                        store: true,
+                        store: surface.sample_count == 1,
                     },
                 })],
                 depth_stencil_attachment: None,
@@ -256,10 +200,24 @@ impl YakuiWgpu {
 
             let mut last_clip = None;
 
+            let main_pipeline = self.main_pipeline.get(
+                device,
+                surface.format,
+                surface.sample_count,
+                make_main_pipeline,
+            );
+
+            let text_pipeline = self.text_pipeline.get(
+                device,
+                surface.format,
+                surface.sample_count,
+                make_text_pipeline,
+            );
+
             for command in commands {
                 match command.pipeline {
-                    Pipeline::Main => render_pass.set_pipeline(&self.main_pipeline),
-                    Pipeline::Text => render_pass.set_pipeline(&self.text_pipeline),
+                    Pipeline::Main => render_pass.set_pipeline(main_pipeline),
+                    Pipeline::Text => render_pass.set_pipeline(text_pipeline),
                     _ => continue,
                 }
 
@@ -417,4 +375,96 @@ struct DrawCommand {
     bind_group: wgpu::BindGroup,
     pipeline: Pipeline,
     clip: Option<Rect>,
+}
+
+fn make_main_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    format: wgpu::TextureFormat,
+    samples: u32,
+) -> wgpu::RenderPipeline {
+    let main_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("Main Shader"),
+        source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/main.wgsl").into()),
+    });
+
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("yakui Main Pipeline"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: &main_shader,
+            entry_point: "vs_main",
+            buffers: &[Vertex::DESCRIPTOR],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &main_shader,
+            entry_point: "fs_main",
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: None,
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: false,
+            conservative: false,
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState {
+            count: samples,
+            ..Default::default()
+        },
+        multiview: None,
+    })
+}
+
+fn make_text_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    format: wgpu::TextureFormat,
+    samples: u32,
+) -> wgpu::RenderPipeline {
+    let text_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("Text Shader"),
+        source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/text.wgsl").into()),
+    });
+
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("yakui Text Pipeline"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: &text_shader,
+            entry_point: "vs_main",
+            buffers: &[Vertex::DESCRIPTOR],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &text_shader,
+            entry_point: "fs_main",
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: None,
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: false,
+            conservative: false,
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState {
+            count: samples,
+            ..Default::default()
+        },
+        multiview: None,
+    })
 }

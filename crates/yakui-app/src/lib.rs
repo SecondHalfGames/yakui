@@ -4,12 +4,14 @@ use winit::{
     event_loop::ControlFlow,
     window::Window,
 };
+use yakui_wgpu::SurfaceInfo;
 
 /// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
 
+    format: wgpu::TextureFormat,
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
@@ -55,9 +57,10 @@ impl Graphics {
             .await
             .unwrap();
 
+        let format = surface.get_supported_formats(&adapter)[0];
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface.get_supported_formats(&adapter)[0],
+            format,
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
@@ -66,7 +69,7 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue, surface_config.format);
+        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue);
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.
@@ -76,6 +79,7 @@ impl Graphics {
             device,
             queue,
 
+            format,
             surface,
             surface_config,
             size,
@@ -141,7 +145,14 @@ impl Graphics {
         }
 
         let clear = encoder.finish();
-        let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, &view);
+
+        let surface = SurfaceInfo {
+            format: self.format,
+            sample_count: 1,
+            color_attachment: &view,
+            resolve_target: None,
+        };
+        let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, surface);
 
         self.queue.submit([clear, paint_yak]);
         output.present();

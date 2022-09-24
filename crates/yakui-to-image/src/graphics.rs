@@ -2,6 +2,7 @@ use std::mem::size_of;
 use std::num::NonZeroU32;
 
 use image::RgbaImage;
+use yakui_wgpu::SurfaceInfo;
 
 pub struct Graphics {
     pub device: wgpu::Device,
@@ -96,7 +97,14 @@ impl Graphics {
         }
 
         let clear = encoder.finish();
-        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, &view);
+
+        let surface = SurfaceInfo {
+            format: self.format,
+            sample_count: 1,
+            color_attachment: &view,
+            resolve_target: None,
+        };
+        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, surface);
 
         let mut encoder = self
             .device
