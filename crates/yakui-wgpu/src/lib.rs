@@ -189,7 +189,7 @@ impl YakuiWgpu {
                     resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,
-                        store: surface.sample_count == 1,
+                        store: true,
                     },
                 })],
                 depth_stencil_attachment: None,
