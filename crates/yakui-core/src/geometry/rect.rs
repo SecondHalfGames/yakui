@@ -95,4 +95,15 @@ impl Rect {
     pub fn div_vec2(&self, size: Vec2) -> Self {
         Self::from_pos_size(self.pos / size, self.size / size)
     }
+
+    /// Returns a rectangle that fits this rectangle and the given rectangle.
+    #[inline]
+    pub fn constrain(mut self, other: Rect) -> Self {
+        let min = self.pos().max(other.pos());
+        let max = self.max().min(other.max());
+
+        self.set_pos(min);
+        self.set_max(max);
+        self
+    }
 }

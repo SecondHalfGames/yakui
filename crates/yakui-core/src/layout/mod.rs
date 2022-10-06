@@ -139,12 +139,20 @@ impl LayoutDom {
         // should be on top of the clip stack at this point.
         let clipping_enabled = self.clip_stack.last() == Some(&id);
 
+        // If this node enabled clipping, the next node under that is the node
+        // that clips this one.
+        let clipped_by = if clipping_enabled {
+            self.clip_stack.iter().nth_back(2).copied()
+        } else {
+            self.clip_stack.last().copied()
+        };
+
         self.nodes.insert_at(
             id.index(),
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
                 clipping_enabled,
-                clipped_by: self.clip_stack.last().copied(),
+                clipped_by,
                 event_interest,
             },
         );

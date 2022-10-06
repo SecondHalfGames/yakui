@@ -253,11 +253,7 @@ impl PaintDom {
         );
 
         if let Some(previous) = self.clip_stack.last() {
-            let min = unscaled.pos().max(previous.pos());
-            let max = unscaled.max().min(previous.max());
-
-            unscaled.set_pos(min);
-            unscaled.set_max(max);
+            unscaled = unscaled.constrain(*previous);
         }
 
         self.clip_stack.push(unscaled);
