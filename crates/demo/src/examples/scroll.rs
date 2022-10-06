@@ -10,7 +10,9 @@ pub fn run(_state: &mut ExampleState) {
                 column(|| {
                     for i in 0..100 {
                         expanded(|| {
-                            button(format!("List item {i}"));
+                            if button(format!("List item {i}")).clicked {
+                                println!("Clicked button {i}");
+                            }
                         });
                     }
                 });
