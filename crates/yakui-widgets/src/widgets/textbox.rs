@@ -173,7 +173,7 @@ impl Widget for TextBoxWidget {
                     }
                     EventResponse::Sink
                 }
-                _ => EventResponse::Bubble,
+                _ => EventResponse::Sink,
             },
             WidgetEvent::TextInput(c) => {
                 if c.is_control() {
