@@ -61,6 +61,8 @@ impl Widget for ScrollableWidget {
     }
 
     fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        ctx.layout.enable_clipping(ctx.dom);
+
         let node = ctx.dom.get_current();
         let mut canvas_size = Vec2::ZERO;
 
@@ -103,20 +105,9 @@ impl Widget for ScrollableWidget {
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
-        let layout = ctx.layout.get(ctx.dom.current()).unwrap();
-
-        let should_clip = layout.rect.size().x >= 0.0 && layout.rect.size().y >= 0.0;
-
-        if should_clip {
-            ctx.paint.push_clip(layout.rect);
-        }
 
         for &child in &node.children {
             ctx.paint(child);
-        }
-
-        if should_clip {
-            ctx.paint.pop_clip();
         }
     }
 
