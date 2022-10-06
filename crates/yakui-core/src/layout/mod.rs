@@ -17,6 +17,7 @@ use crate::widget::LayoutContext;
 #[derive(Debug)]
 pub struct LayoutDom {
     nodes: Arena<LayoutDomNode>,
+    clip_stack: Vec<WidgetId>,
 
     unscaled_viewport: Rect,
     scale_factor: f32,
@@ -31,6 +32,12 @@ pub struct LayoutDomNode {
     /// The bounding rectangle of the node.
     pub rect: Rect,
 
+    /// This node will clip its descendants to its bounding rectangle.
+    pub clipping_enabled: bool,
+
+    /// This node is clipped to the region defined by the given node.
+    pub clipped_by: Option<WidgetId>,
+
     /// What events the widget reported interest in.
     pub event_interest: EventInterest,
 }
@@ -40,6 +47,7 @@ impl LayoutDom {
     pub fn new() -> Self {
         Self {
             nodes: Arena::new(),
+            clip_stack: Vec::new(),
 
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
@@ -91,6 +99,7 @@ impl LayoutDom {
         profiling::scope!("LayoutDom::calculate_all");
         log::debug!("LayoutDom::calculate_all()");
 
+        self.clip_stack.clear();
         self.interest_mouse.clear();
 
         let constraints = Constraints::tight(self.viewport().size());
@@ -122,20 +131,35 @@ impl LayoutDom {
 
         let size = dom_node.widget.layout(context, constraints);
         let event_interest = dom_node.widget.event_interest();
-
         if event_interest.intersects(EventInterest::MOUSE_ALL) {
             self.interest_mouse.push((id, event_interest));
         }
+
+        // If the widget called enable_clipping() during its layout pass, it
+        // should be on top of the clip stack at this point.
+        let clipping_enabled = self.clip_stack.last() == Some(&id);
 
         self.nodes.insert_at(
             id.index(),
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
+                clipping_enabled,
+                clipped_by: self.clip_stack.last().copied(),
                 event_interest,
             },
         );
+
+        if clipping_enabled {
+            self.clip_stack.pop();
+        }
+
         dom.exit(id);
         size
+    }
+
+    /// Enables clipping for the currently active widget.
+    pub fn enable_clipping(&mut self, dom: &Dom) {
+        self.clip_stack.push(dom.current());
     }
 
     /// Set the position of a widget.

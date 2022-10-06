@@ -84,16 +84,26 @@ impl PaintDom {
     pub fn paint(&mut self, dom: &Dom, layout: &LayoutDom, id: WidgetId) {
         profiling::scope!("PaintDom::paint");
 
+        let layout_node = layout.get(id).unwrap();
+        if layout_node.clipping_enabled {
+            self.push_clip(layout_node.rect);
+        }
+
+        dom.enter(id);
+
         let context = PaintContext {
             dom,
             layout,
             paint: self,
         };
-
         let node = dom.get(id).unwrap();
-        dom.enter(id);
         node.widget.paint(context);
+
         dom.exit(id);
+
+        if layout_node.clipping_enabled {
+            self.pop_clip();
+        }
     }
 
     /// Paint all of the widgets in the given DOM.
@@ -161,33 +171,6 @@ impl PaintDom {
     /// Returns a list of paint calls that could be used to draw the UI.
     pub fn calls(&self) -> &[PaintCall] {
         self.calls.as_slice()
-    }
-
-    /// Use the given region as the clipping rect for all following paint calls.
-    pub fn push_clip(&mut self, region: Rect) {
-        let mut unscaled = Rect::from_pos_size(
-            region.pos() * self.scale_factor,
-            region.size() * self.scale_factor,
-        );
-
-        if let Some(previous) = self.clip_stack.last() {
-            let min = unscaled.pos().max(previous.pos());
-            let max = unscaled.max().min(previous.max());
-
-            unscaled.set_pos(min);
-            unscaled.set_max(max);
-        }
-
-        self.clip_stack.push(unscaled);
-    }
-
-    /// Pop the most recent clip region, restoring the previous clipping rect.
-    pub fn pop_clip(&mut self) {
-        let top = self.clip_stack.pop();
-        debug_assert!(
-            top.is_some(),
-            "cannot call pop_clip without a corresponding push_clip call"
-        );
     }
 
     /// Add a mesh to be painted.
@@ -260,5 +243,32 @@ impl PaintDom {
         mesh.pipeline = rect.pipeline;
 
         self.add_mesh(mesh);
+    }
+
+    /// Use the given region as the clipping rect for all following paint calls.
+    fn push_clip(&mut self, region: Rect) {
+        let mut unscaled = Rect::from_pos_size(
+            region.pos() * self.scale_factor,
+            region.size() * self.scale_factor,
+        );
+
+        if let Some(previous) = self.clip_stack.last() {
+            let min = unscaled.pos().max(previous.pos());
+            let max = unscaled.max().min(previous.max());
+
+            unscaled.set_pos(min);
+            unscaled.set_max(max);
+        }
+
+        self.clip_stack.push(unscaled);
+    }
+
+    /// Pop the most recent clip region, restoring the previous clipping rect.
+    fn pop_clip(&mut self) {
+        let top = self.clip_stack.pop();
+        debug_assert!(
+            top.is_some(),
+            "cannot call pop_clip without a corresponding push_clip call"
+        );
     }
 }
