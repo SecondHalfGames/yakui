@@ -13,7 +13,7 @@ pub fn generate(device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::TextureView
 
             let start = x * 4 + y * BYTES_PER_ROW;
             let end = start + 4;
-            (&mut data[start..end]).copy_from_slice(&[value, value, value, 255]);
+            data[start..end].copy_from_slice(&[value, value, value, 255]);
         }
     }
 
