@@ -102,16 +102,15 @@ pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color) {
     output.add_mesh(mesh);
 }
 
-#[allow(unused)]
-pub struct PaintCircle {
+#[non_exhaustive]
+pub struct Circle {
     pub center: Vec2,
     pub radius: f32,
     pub segments: u16,
     pub color: Color,
 }
 
-#[allow(unused)]
-impl PaintCircle {
+impl Circle {
     pub fn new(center: Vec2, radius: f32) -> Self {
         Self {
             center,
@@ -145,6 +144,124 @@ impl PaintCircle {
             indices.push((i - 1).rem_euclid(segments) as u16);
             indices.push(middle_vertex);
         }
+
+        let mesh = PaintMesh::new(vertices, indices);
+        output.add_mesh(mesh);
+    }
+}
+
+#[rustfmt::skip]
+const RECT_POS: [[f32; 2]; 4] = [
+    [0.0, 0.0],
+    [0.0, 1.0],
+    [1.0, 1.0],
+    [1.0, 0.0]
+];
+
+#[rustfmt::skip]
+const RECT_INDEX: [u16; 6] = [
+    0, 1, 2,
+    3, 0, 2,
+];
+
+#[non_exhaustive]
+pub struct RoundedRectangle {
+    pub rect: Rect,
+    pub radius: f32,
+    pub color: Color,
+}
+
+impl RoundedRectangle {
+    pub fn new(rect: Rect, radius: f32) -> Self {
+        Self {
+            rect,
+            radius,
+            color: Color::WHITE,
+        }
+    }
+
+    pub fn add(&self, output: &mut PaintDom) {
+        let rect = self.rect;
+        let color = self.color.to_linear();
+
+        // We are not prepared to let a corner's radius be bigger than a side's
+        // half-length.
+        let radius = self
+            .radius
+            .min(rect.size().x / 2.0)
+            .min(rect.size().y / 2.0);
+
+        let slices = if radius >= 1.0 {
+            f32::ceil(TAU / 8.0 / f32::acos(1.0 - 0.2 / radius)) as u32
+        } else {
+            1
+        };
+
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+
+        let mut rectangle = |min: Vec2, max: Vec2| {
+            let base_vertex = vertices.len();
+
+            let size = max - min;
+            let rect_vertices = RECT_POS
+                .map(Vec2::from)
+                .map(|vert| Vertex::new(vert * size + min, Vec2::ZERO, color));
+
+            let rect_indices = RECT_INDEX.map(|index| index + base_vertex as u16);
+
+            vertices.extend(rect_vertices);
+            indices.extend(rect_indices);
+        };
+
+        rectangle(
+            Vec2::new(rect.pos().x + radius, rect.pos().y),
+            Vec2::new(rect.max().x - radius, rect.pos().y + radius),
+        );
+        rectangle(
+            Vec2::new(rect.pos().x, rect.pos().y + radius),
+            Vec2::new(rect.max().x, rect.max().y - radius),
+        );
+        rectangle(
+            Vec2::new(rect.pos().x + radius, rect.max().y - radius),
+            Vec2::new(rect.max().x - radius, rect.max().y),
+        );
+
+        let mut corner = |center: Vec2, start_angle: f32| {
+            let center_vertex = vertices.len();
+            vertices.push(Vertex::new(center, Vec2::ZERO, color));
+
+            let first_offset = radius * Vec2::new(start_angle.cos(), -start_angle.sin());
+            vertices.push(Vertex::new(center + first_offset, Vec2::ZERO, color));
+
+            for i in 1..=slices {
+                let percent = i as f32 / slices as f32;
+                let angle = start_angle + percent * TAU / 4.0;
+                let offset = radius * Vec2::new(angle.cos(), -angle.sin());
+                let index = vertices.len();
+                vertices.push(Vertex::new(center + offset, Vec2::ZERO, color));
+
+                indices.extend_from_slice(&[
+                    center_vertex as u16,
+                    (index - 1) as u16,
+                    index as u16,
+                ]);
+            }
+        };
+
+        corner(Vec2::new(rect.max().x - radius, rect.pos().y + radius), 0.0);
+        corner(
+            Vec2::new(rect.pos().x + radius, rect.pos().y + radius),
+            TAU / 4.0,
+        );
+        corner(
+            Vec2::new(rect.pos().x + radius, rect.max().y - radius),
+            TAU / 2.0,
+        );
+        corner(
+            Vec2::new(rect.max().x - radius, rect.max().y - radius),
+            3.0 * TAU / 4.0,
+        );
 
         let mesh = PaintMesh::new(vertices, indices);
         output.add_mesh(mesh);

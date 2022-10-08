@@ -1,0 +1,84 @@
+use yakui_core::geometry::{Color, Constraints, Vec2};
+use yakui_core::widget::{LayoutContext, PaintContext, Widget};
+use yakui_core::Response;
+
+use crate::shapes;
+use crate::util::{widget, widget_children};
+
+/**
+A colored box that can contain children.
+
+Responds with [RoundRectResponse].
+*/
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct RoundRect {
+    pub radius: f32,
+    pub color: Color,
+    pub min_size: Vec2,
+}
+
+impl RoundRect {
+    pub fn new(radius: f32) -> Self {
+        Self {
+            radius,
+            color: Color::WHITE,
+            min_size: Vec2::ZERO,
+        }
+    }
+
+    pub fn show(self) -> Response<RoundRectWidget> {
+        widget::<RoundRectWidget>(self)
+    }
+
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<RoundRectWidget> {
+        widget_children::<RoundRectWidget, F>(children, self)
+    }
+}
+
+#[derive(Debug)]
+pub struct RoundRectWidget {
+    props: RoundRect,
+}
+
+pub type RoundRectResponse = ();
+
+impl Widget for RoundRectWidget {
+    type Props = RoundRect;
+    type Response = RoundRectResponse;
+
+    fn new() -> Self {
+        Self {
+            props: RoundRect::new(0.0),
+        }
+    }
+
+    fn update(&mut self, props: Self::Props) -> Self::Response {
+        self.props = props;
+    }
+
+    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
+        let mut size = self.props.min_size;
+
+        for &child in &node.children {
+            let child_size = ctx.calculate_layout(child, input);
+            size = size.max(child_size);
+        }
+
+        input.constrain_min(size)
+    }
+
+    fn paint(&self, mut ctx: PaintContext<'_>) {
+        let node = ctx.dom.get_current();
+        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
+
+        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
+        rect.color = self.props.color;
+        rect.add(ctx.paint);
+
+        for &child in &node.children {
+            ctx.paint(child);
+        }
+    }
+}
