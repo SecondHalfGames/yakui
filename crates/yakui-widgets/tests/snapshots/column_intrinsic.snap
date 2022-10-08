@@ -5,7 +5,7 @@ expression: view
 ---
 - ListWidget pos(0, 0) size(1000, 1000)
   - ButtonWidget pos(0, 0) size(75, 36)
-    - ColoredBoxWidget pos(0, 0) size(75, 36)
+    - RoundRectWidget pos(0, 0) size(75, 36)
       - PadWidget pos(0, 0) size(75, 36)
         - AlignWidget pos(20, 10) size(35, 16)
           - RenderTextWidget pos(20, 10) size(35, 16)
