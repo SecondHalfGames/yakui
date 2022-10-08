@@ -5,7 +5,7 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::colors;
+use crate::{colors, shapes};
 
 const OUTER_SIZE: f32 = 24.0;
 const INNER_SIZE: f32 = 16.0;
@@ -91,7 +91,7 @@ impl Widget for CheckboxWidget {
         bg.add(ctx.paint);
 
         if self.props.checked {
-            crate::icons::cross(ctx.paint, check_rect, colors::TEXT);
+            shapes::cross(ctx.paint, check_rect, colors::TEXT);
         }
     }
 

@@ -6,7 +6,7 @@ use yakui_core::Response;
 
 use crate::style::TextStyle;
 use crate::util::widget;
-use crate::{colors, icons, pad};
+use crate::{colors, pad, shapes};
 
 use super::{Pad, RenderTextBox};
 
@@ -93,7 +93,7 @@ impl Widget for TextBoxWidget {
         }
 
         if self.selected {
-            icons::selection_halo(ctx.paint, layout_node.rect);
+            shapes::selection_halo(ctx.paint, layout_node.rect);
         }
     }
 
