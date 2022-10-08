@@ -106,7 +106,6 @@ pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color) {
 pub struct Circle {
     pub center: Vec2,
     pub radius: f32,
-    pub segments: u16,
     pub color: Color,
 }
 
@@ -115,7 +114,6 @@ impl Circle {
         Self {
             center,
             radius,
-            segments: 24,
             color: Color::WHITE,
         }
     }
@@ -123,9 +121,9 @@ impl Circle {
     pub fn add(&self, output: &mut PaintDom) {
         let color = self.color.to_linear();
         let mut vertices = Vec::new();
-        let segments = self.segments as f32;
+        let segments = f32::ceil(TAU / 2.0 / f32::acos(1.0 - 0.2 / self.radius));
 
-        for i in 0..self.segments {
+        for i in 0..segments as u32 {
             let angle = TAU * (i as f32) / segments;
             let (y, x) = angle.sin_cos();
             let pos = self.center + Vec2::new(x, y) * self.radius;
@@ -137,7 +135,7 @@ impl Circle {
         let middle_vertex = (vertices.len() - 1) as u16;
 
         let mut indices = Vec::new();
-        let segments = self.segments as i16;
+        let segments = segments as i16;
 
         for i in 0i16..segments {
             indices.push(i as u16);

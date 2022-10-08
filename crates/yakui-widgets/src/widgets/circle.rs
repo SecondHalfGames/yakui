@@ -6,50 +6,48 @@ use crate::shapes;
 use crate::util::{widget, widget_children};
 
 /**
-A colored box with rounded corners that can contain children.
+A colored circle that can contain children.
 
-Responds with [RoundRectResponse].
+Responds with [CircleResponse].
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
-pub struct RoundRect {
-    pub radius: f32,
+pub struct Circle {
     pub color: Color,
-    pub min_size: Vec2,
+    pub min_radius: f32,
 }
 
-impl RoundRect {
-    pub fn new(radius: f32) -> Self {
+impl Circle {
+    pub fn new() -> Self {
         Self {
-            radius,
             color: Color::WHITE,
-            min_size: Vec2::ZERO,
+            min_radius: 0.0,
         }
     }
 
-    pub fn show(self) -> Response<RoundRectWidget> {
-        widget::<RoundRectWidget>(self)
+    pub fn show(self) -> Response<CircleWidget> {
+        widget::<CircleWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<RoundRectWidget> {
-        widget_children::<RoundRectWidget, F>(children, self)
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleWidget> {
+        widget_children::<CircleWidget, F>(children, self)
     }
 }
 
 #[derive(Debug)]
-pub struct RoundRectWidget {
-    props: RoundRect,
+pub struct CircleWidget {
+    props: Circle,
 }
 
-pub type RoundRectResponse = ();
+pub type CircleResponse = ();
 
-impl Widget for RoundRectWidget {
-    type Props = RoundRect;
-    type Response = RoundRectResponse;
+impl Widget for CircleWidget {
+    type Props = Circle;
+    type Response = CircleResponse;
 
     fn new() -> Self {
         Self {
-            props: RoundRect::new(0.0),
+            props: Circle::new(),
         }
     }
 
@@ -59,7 +57,7 @@ impl Widget for RoundRectWidget {
 
     fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let mut size = self.props.min_size;
+        let mut size = Vec2::splat(self.props.min_radius);
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, input);
@@ -73,9 +71,11 @@ impl Widget for RoundRectWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
-        rect.color = self.props.color;
-        rect.add(ctx.paint);
+        let center = layout_node.rect.pos() + layout_node.rect.size() / 2.0;
+        let radius = layout_node.rect.size().x.min(layout_node.rect.size().y) / 2.0;
+        let mut circle = shapes::Circle::new(center, radius);
+        circle.color = self.props.color;
+        circle.add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

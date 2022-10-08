@@ -1,9 +1,9 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::input::{KeyCode, MouseButton};
-use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::shapes::RoundedRectangle;
 use crate::style::TextStyle;
 use crate::util::widget;
 use crate::{colors, pad, shapes};
@@ -83,7 +83,7 @@ impl Widget for TextBoxWidget {
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
-        let mut bg = PaintRect::new(layout_node.rect);
+        let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
         bg.color = colors::BACKGROUND_3;
         bg.add(ctx.paint);
 

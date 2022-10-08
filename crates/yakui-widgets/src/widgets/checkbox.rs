@@ -1,10 +1,10 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::input::MouseButton;
-use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::shapes::RoundedRectangle;
 use crate::{colors, shapes};
 
 const OUTER_SIZE: f32 = 24.0;
@@ -86,7 +86,7 @@ impl Widget for CheckboxWidget {
         check_rect.set_pos(check_rect.pos() + padding / 2.0);
         check_rect.set_size(check_rect.size() - padding);
 
-        let mut bg = PaintRect::new(layout_node.rect);
+        let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
         bg.color = colors::BACKGROUND_3;
         bg.add(ctx.paint);
 

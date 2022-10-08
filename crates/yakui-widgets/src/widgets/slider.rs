@@ -4,7 +4,7 @@ use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::{colors, draggable, util};
+use crate::{colored_circle, colors, draggable, util};
 
 use crate::colored_box;
 
@@ -68,7 +68,7 @@ impl Widget for SliderWidget {
 
         colored_box(TRACK_COLOR, [0.0, TRACK_HEIGHT]);
         let res = draggable(|| {
-            colored_box(KNOB_COLOR, [KNOB_SIZE, KNOB_SIZE]);
+            colored_circle(KNOB_COLOR, KNOB_SIZE);
         });
 
         let mut value = self.props.value;

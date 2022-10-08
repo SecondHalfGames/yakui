@@ -1,6 +1,7 @@
 mod align;
 mod button;
 mod checkbox;
+mod circle;
 mod colored_box;
 mod constrained_box;
 mod draggable;
@@ -25,6 +26,7 @@ mod window;
 pub use self::align::*;
 pub use self::button::*;
 pub use self::checkbox::*;
+pub use self::circle::*;
 pub use self::colored_box::*;
 pub use self::constrained_box::*;
 pub use self::draggable::*;

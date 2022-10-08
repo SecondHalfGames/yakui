@@ -11,7 +11,7 @@ use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
 
-use super::RenderText;
+use super::{RenderText, RoundRect};
 
 /**
 A button containing some text.
@@ -115,7 +115,9 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        crate::colored_box_container(color, || {
+        let mut container = RoundRect::new(6.0);
+        container.color = color;
+        container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(alignment, || {
                     let mut text = RenderText::label(self.props.text.clone());

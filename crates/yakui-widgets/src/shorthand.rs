@@ -9,11 +9,11 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
 
 use crate::widgets::{
-    Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, ColoredBox,
-    ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget, Flexible,
-    FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget, Offset,
-    OffsetWidget, Pad, PadWidget, Scrollable, ScrollableWidget, Slider, SliderWidget, State,
-    StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
+    Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, Circle, CircleWidget,
+    ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget,
+    Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget,
+    Offset, OffsetWidget, Pad, PadWidget, Scrollable, ScrollableWidget, Slider, SliderWidget,
+    State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -39,6 +39,14 @@ pub fn align<F: FnOnce()>(alignment: Alignment, children: F) -> Response<AlignWi
 /// See [Button].
 pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonWidget> {
     Button::styled(text.into()).show()
+}
+
+/// See [ColoredCircle].
+pub fn colored_circle<S: Into<f32>>(color: Color, size: S) -> Response<CircleWidget> {
+    let mut circle = Circle::new();
+    circle.min_radius = size.into();
+    circle.color = color;
+    circle.show()
 }
 
 /// See [ColoredBox].
