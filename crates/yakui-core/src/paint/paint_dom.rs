@@ -9,22 +9,8 @@ use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
 use crate::widget::PaintContext;
 
-use super::primitives::{PaintCall, PaintMesh, PaintRect, Vertex};
+use super::primitives::{PaintCall, PaintMesh, Vertex};
 use super::texture::{Texture, TextureChange};
-
-#[rustfmt::skip]
-const RECT_POS: [[f32; 2]; 4] = [
-    [0.0, 0.0],
-    [0.0, 1.0],
-    [1.0, 1.0],
-    [1.0, 0.0]
-];
-
-#[rustfmt::skip]
-const RECT_INDEX: [u16; 6] = [
-    0, 1, 2,
-    3, 0, 2,
-];
 
 /// Contains all information about how to paint the current set of widgets.
 #[derive(Debug)]
@@ -217,32 +203,6 @@ impl PaintDom {
             vertex
         });
         call.vertices.extend(vertices);
-    }
-
-    /// Add a rectangle to be painted. This is a convenience function over
-    /// [`PaintDom::add_mesh`].
-    pub fn add_rect(&mut self, rect: PaintRect) {
-        let size = rect.rect.size();
-        let pos = rect.rect.pos();
-        let color = rect.color.to_linear();
-        let texture_rect = match rect.texture {
-            Some((_index, rect)) => rect,
-            None => Rect::from_pos_size(Vec2::ZERO, Vec2::ONE),
-        };
-
-        let vertices = RECT_POS.map(Vec2::from).map(|vert| {
-            Vertex::new(
-                vert * size + pos,
-                vert * texture_rect.size() + texture_rect.pos(),
-                color,
-            )
-        });
-
-        let mut mesh = PaintMesh::new(vertices, RECT_INDEX);
-        mesh.texture = rect.texture;
-        mesh.pipeline = rect.pipeline;
-
-        self.add_mesh(mesh);
     }
 
     /// Use the given region as the clipping rect for all following paint calls.

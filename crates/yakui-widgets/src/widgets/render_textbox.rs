@@ -158,7 +158,7 @@ impl Widget for RenderTextBoxWidget {
 
             let mut rect = PaintRect::new(Rect::from_pos_size(cursor_pos, cursor_size));
             rect.color = Color::RED;
-            ctx.paint.add_rect(rect);
+            rect.add(ctx.paint);
         }
     }
 }

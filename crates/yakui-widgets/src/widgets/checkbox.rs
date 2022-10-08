@@ -88,7 +88,7 @@ impl Widget for CheckboxWidget {
 
         let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
-        ctx.paint.add_rect(bg);
+        bg.add(ctx.paint);
 
         if self.props.checked {
             crate::icons::cross(ctx.paint, check_rect, colors::TEXT);

@@ -87,7 +87,7 @@ impl Widget for ColoredBoxWidget {
 
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = self.props.color;
-        ctx.paint.add_rect(rect);
+        rect.add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

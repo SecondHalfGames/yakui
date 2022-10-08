@@ -1,33 +1,7 @@
 use glam::{Vec2, Vec4};
 
-use crate::geometry::{Color, Rect};
+use crate::geometry::Rect;
 use crate::id::TextureId;
-
-#[non_exhaustive]
-#[allow(missing_docs)]
-pub struct PaintRect {
-    pub rect: Rect,
-    pub color: Color,
-    pub texture: Option<(TextureId, Rect)>,
-    pub pipeline: Pipeline,
-}
-
-impl PaintRect {
-    /// Create a new `PaintRect` with the default pipeline, no texture, and the
-    /// given rectangle.
-    ///
-    /// (0, 0) is the top-left corner of the screen, while (1, 1) is the
-    /// bottom-right corner of the screen. Widgets must take the viewport into
-    /// account.
-    pub fn new(rect: Rect) -> Self {
-        Self {
-            rect,
-            color: Color::WHITE,
-            texture: None,
-            pipeline: Pipeline::Main,
-        }
-    }
-}
 
 #[non_exhaustive]
 #[allow(missing_docs)]

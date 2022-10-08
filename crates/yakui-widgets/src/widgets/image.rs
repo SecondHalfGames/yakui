@@ -68,7 +68,7 @@ impl Widget for ImageWidget {
             let mut rect = PaintRect::new(layout_node.rect);
             rect.color = Color::WHITE;
             rect.texture = Some((image, Rect::ONE));
-            ctx.paint.add_rect(rect);
+            rect.add(ctx.paint);
         }
     }
 }

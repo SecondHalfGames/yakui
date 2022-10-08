@@ -181,6 +181,6 @@ pub fn paint_text(
         rect.color = color;
         rect.texture = Some((glyph_cache.texture.unwrap().into(), tex_rect));
         rect.pipeline = Pipeline::Text;
-        ctx.paint.add_rect(rect);
+        rect.add(ctx.paint);
     }
 }

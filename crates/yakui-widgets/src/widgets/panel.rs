@@ -107,7 +107,7 @@ impl Widget for PanelWidget {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = colors::BACKGROUND_2;
-        ctx.paint.add_rect(rect);
+        rect.add(ctx.paint);
 
         let node = ctx.dom.get_current();
         for &child in &node.children {

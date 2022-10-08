@@ -85,7 +85,7 @@ impl Widget for TextBoxWidget {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut bg = PaintRect::new(layout_node.rect);
         bg.color = colors::BACKGROUND_3;
-        ctx.paint.add_rect(bg);
+        bg.add(ctx.paint);
 
         let node = ctx.dom.get_current();
         for &child in &node.children {
