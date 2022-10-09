@@ -26,6 +26,7 @@ macro_rules! examples {
             row_column,
             sandbox,
             scroll,
+            show_hide,
             state,
             text,
             window,
