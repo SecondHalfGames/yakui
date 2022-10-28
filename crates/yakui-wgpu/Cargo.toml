@@ -11,8 +11,8 @@ edition = "2021"
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.2.0" }
 
-wgpu = "0.13.1"
-glam = { version = "0.21.2", features = ["bytemuck"] }
-bytemuck = { version = "1.10.0", features = ["derive"] }
+wgpu = "0.14.0"
+glam = { version = "0.22.0", features = ["bytemuck"] }
+bytemuck = { version = "1.12.1", features = ["derive"] }
 thunderdome = "0.5.1"
 profiling = "1.0.6"
