@@ -59,6 +59,7 @@ impl Graphics {
 
         let format = surface.get_supported_formats(&adapter)[0];
         let surface_config = wgpu::SurfaceConfiguration {
+            alpha_mode: wgpu::CompositeAlphaMode::Auto,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
             width: size.width,
