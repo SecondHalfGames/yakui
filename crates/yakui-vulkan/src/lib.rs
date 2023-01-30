@@ -1,17 +1,25 @@
-use std::{ffi::CStr, io::Cursor, mem::align_of};
+use std::{ffi::CStr, io::Cursor, marker::PhantomData, mem::align_of};
 
 use ash::{
     util::{read_spv, Align},
     vk,
 };
 
-pub struct YakuiVulkan {}
+pub struct YakuiVulkan {
+    render_pass: vk::RenderPass,
+    framebuffers: Vec<vk::Framebuffer>,
+    render_surface: RenderSurface,
+    pipeline_layout: vk::PipelineLayout,
+    graphics_pipeline: vk::Pipeline,
+    index_buffer: Buffer<u32>,
+    vertex_buffer: Buffer<Vertex>,
+}
 
-pub struct RenderSurface<'a> {
-    pub width: u32,
-    pub height: u32,
+#[derive(Clone)]
+pub struct RenderSurface {
+    pub resolution: vk::Extent2D,
     pub format: vk::Format,
-    pub image_views: &'a [vk::ImageView],
+    pub image_views: Vec<vk::ImageView>,
 }
 
 #[derive(Clone, Debug, Copy, Default)]
@@ -35,15 +43,70 @@ pub fn find_memorytype_index(
         .map(|(index, _memory_type)| index as _)
 }
 
+pub struct Buffer<T> {
+    pub handle: vk::Buffer,
+    pub memory: vk::DeviceMemory,
+    pub usage: vk::BufferUsageFlags,
+    _phantom: PhantomData<T>,
+}
+
+impl<T: Copy> Buffer<T> {
+    pub fn new(
+        device: &ash::Device,
+        device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
+        usage: vk::BufferUsageFlags,
+        initial_data: &[T],
+    ) -> Self {
+        let index_buffer_info = vk::BufferCreateInfo::builder()
+            .size(std::mem::size_of_val(initial_data) as u64)
+            .usage(usage)
+            .sharing_mode(vk::SharingMode::EXCLUSIVE);
+
+        let handle = unsafe { device.create_buffer(&index_buffer_info, None).unwrap() };
+        let memory_req = unsafe { device.get_buffer_memory_requirements(handle) };
+        let memory_index = find_memorytype_index(
+            &memory_req,
+            device_memory_properties,
+            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
+        )
+        .expect("Unable to find suitable memorytype for the index buffer.");
+
+        let allocate_info = vk::MemoryAllocateInfo {
+            allocation_size: memory_req.size,
+            memory_type_index: memory_index,
+            ..Default::default()
+        };
+        let memory = unsafe { device.allocate_memory(&allocate_info, None).unwrap() };
+        let ptr = unsafe {
+            device
+                .map_memory(memory, 0, memory_req.size, vk::MemoryMapFlags::empty())
+                .unwrap()
+        };
+        let mut slice = unsafe { Align::new(ptr, align_of::<T>() as u64, memory_req.size) };
+        slice.copy_from_slice(initial_data);
+        unsafe {
+            device.unmap_memory(memory);
+            device.bind_buffer_memory(handle, memory, 0).unwrap();
+        }
+
+        Buffer {
+            handle,
+            memory,
+            usage,
+            _phantom: PhantomData,
+        }
+    }
+}
+
 impl YakuiVulkan {
     pub fn new(
         device: &ash::Device,
         device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
-        surface: RenderSurface,
+        render_surface: RenderSurface,
     ) -> Self {
         // TODO: Don't write directly to the present surface..
         let renderpass_attachments = [vk::AttachmentDescription {
-            format: surface.format,
+            format: render_surface.format,
             samples: vk::SampleCountFlags::TYPE_1,
             load_op: vk::AttachmentLoadOp::CLEAR,
             store_op: vk::AttachmentStoreOp::STORE,
@@ -62,26 +125,9 @@ impl YakuiVulkan {
             dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
             ..Default::default()
         }];
-        let color_attachment_refs = [vk::AttachmentReference {
-            attachment: 0,
-            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-        }];
-        let depth_attachment_ref = vk::AttachmentReference {
-            attachment: 1,
-            layout: vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        };
-        let dependencies = [vk::SubpassDependency {
-            src_subpass: vk::SUBPASS_EXTERNAL,
-            src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
-                | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
-            dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            ..Default::default()
-        }];
 
         let subpass = vk::SubpassDescription::builder()
             .color_attachments(&color_attachment_refs)
-            .depth_stencil_attachment(&depth_attachment_ref)
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS);
 
         let renderpass_create_info = vk::RenderPassCreateInfo::builder()
@@ -89,22 +135,22 @@ impl YakuiVulkan {
             .subpasses(std::slice::from_ref(&subpass))
             .dependencies(&dependencies);
 
-        let renderpass = unsafe {
+        let render_pass = unsafe {
             device
                 .create_render_pass(&renderpass_create_info, None)
                 .unwrap()
         };
 
-        let framebuffers: Vec<vk::Framebuffer> = surface
+        let framebuffers: Vec<vk::Framebuffer> = render_surface
             .image_views
             .iter()
             .map(|&present_image_view| {
                 let framebuffer_attachments = [present_image_view];
                 let frame_buffer_create_info = vk::FramebufferCreateInfo::builder()
-                    .render_pass(renderpass)
+                    .render_pass(render_pass)
                     .attachments(&framebuffer_attachments)
-                    .width(surface.width)
-                    .height(surface.height)
+                    .width(render_surface.resolution.width)
+                    .height(render_surface.resolution.height)
                     .layers(1);
 
                 unsafe {
@@ -116,87 +162,12 @@ impl YakuiVulkan {
             .collect();
 
         let index_buffer_data = [0u32, 1, 2];
-        let index_buffer_info = vk::BufferCreateInfo::builder()
-            .size(std::mem::size_of_val(&index_buffer_data) as u64)
-            .usage(vk::BufferUsageFlags::INDEX_BUFFER)
-            .sharing_mode(vk::SharingMode::EXCLUSIVE);
-
-        let index_buffer = unsafe { device.create_buffer(&index_buffer_info, None).unwrap() };
-        let index_buffer_memory_req =
-            unsafe { device.get_buffer_memory_requirements(index_buffer) };
-        let index_buffer_memory_index = find_memorytype_index(
-            &index_buffer_memory_req,
+        let index_buffer = Buffer::new(
+            device,
             device_memory_properties,
-            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-        )
-        .expect("Unable to find suitable memorytype for the index buffer.");
-
-        let index_allocate_info = vk::MemoryAllocateInfo {
-            allocation_size: index_buffer_memory_req.size,
-            memory_type_index: index_buffer_memory_index,
-            ..Default::default()
-        };
-        let index_buffer_memory =
-            unsafe { device.allocate_memory(&index_allocate_info, None).unwrap() };
-        let index_ptr = unsafe {
-            device
-                .map_memory(
-                    index_buffer_memory,
-                    0,
-                    index_buffer_memory_req.size,
-                    vk::MemoryMapFlags::empty(),
-                )
-                .unwrap()
-        };
-        let mut index_slice = unsafe {
-            Align::new(
-                index_ptr,
-                align_of::<u32>() as u64,
-                index_buffer_memory_req.size,
-            )
-        };
-        index_slice.copy_from_slice(&index_buffer_data);
-        unsafe {
-            device.unmap_memory(index_buffer_memory);
-            device
-                .bind_buffer_memory(index_buffer, index_buffer_memory, 0)
-                .unwrap();
-        }
-
-        let vertex_input_buffer_info = vk::BufferCreateInfo {
-            size: 3 * std::mem::size_of::<Vertex>() as u64,
-            usage: vk::BufferUsageFlags::VERTEX_BUFFER,
-            sharing_mode: vk::SharingMode::EXCLUSIVE,
-            ..Default::default()
-        };
-
-        let vertex_input_buffer = unsafe {
-            device
-                .create_buffer(&vertex_input_buffer_info, None)
-                .unwrap()
-        };
-
-        let vertex_input_buffer_memory_req =
-            unsafe { device.get_buffer_memory_requirements(vertex_input_buffer) };
-
-        let vertex_input_buffer_memory_index = find_memorytype_index(
-            &vertex_input_buffer_memory_req,
-            device_memory_properties,
-            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-        )
-        .expect("Unable to find suitable memorytype for the vertex buffer.");
-
-        let vertex_buffer_allocate_info = vk::MemoryAllocateInfo {
-            allocation_size: vertex_input_buffer_memory_req.size,
-            memory_type_index: vertex_input_buffer_memory_index,
-            ..Default::default()
-        };
-
-        let vertex_input_buffer_memory = unsafe {
-            device
-                .allocate_memory(&vertex_buffer_allocate_info, None)
-                .unwrap()
-        };
+            vk::BufferUsageFlags::INDEX_BUFFER,
+            &index_buffer_data,
+        );
 
         let vertices = [
             Vertex {
@@ -212,29 +183,12 @@ impl YakuiVulkan {
                 color: [1.0, 0.0, 0.0, 1.0],
             },
         ];
-
-        unsafe {
-            let vert_ptr = device
-                .map_memory(
-                    vertex_input_buffer_memory,
-                    0,
-                    vertex_input_buffer_memory_req.size,
-                    vk::MemoryMapFlags::empty(),
-                )
-                .unwrap();
-
-            let mut vert_align = Align::new(
-                vert_ptr,
-                align_of::<Vertex>() as u64,
-                vertex_input_buffer_memory_req.size,
-            );
-            vert_align.copy_from_slice(&vertices);
-
-            device.unmap_memory(vertex_input_buffer_memory);
-            device
-                .bind_buffer_memory(vertex_input_buffer, vertex_input_buffer_memory, 0)
-                .unwrap();
-        }
+        let vertex_buffer = Buffer::new(
+            device,
+            device_memory_properties,
+            vk::BufferUsageFlags::VERTEX_BUFFER,
+            &vertices,
+        );
 
         let mut vertex_spv_file = Cursor::new(&include_bytes!("../shaders/main.vert.spv")[..]);
         let mut frag_spv_file = Cursor::new(&include_bytes!("../shaders/main.frag.spv")[..]);
@@ -313,16 +267,12 @@ impl YakuiVulkan {
         let viewports = [vk::Viewport {
             x: 0.0,
             y: 0.0,
-            width: surface.width as f32,
-            height: surface.height as f32,
+            width: render_surface.resolution.width as f32,
+            height: render_surface.resolution.height as f32,
             min_depth: 0.0,
             max_depth: 1.0,
         }];
-        let scissors = [vk::Extent2D {
-            width: surface.width,
-            height: surface.height,
-        }
-        .into()];
+        let scissors = [render_surface.resolution.into()];
         let viewport_state_info = vk::PipelineViewportStateCreateInfo::builder()
             .scissors(&scissors)
             .viewports(&viewports);
@@ -382,7 +332,7 @@ impl YakuiVulkan {
             .color_blend_state(&color_blend_state)
             .dynamic_state(&dynamic_state_info)
             .layout(pipeline_layout)
-            .render_pass(renderpass);
+            .render_pass(render_pass);
 
         let graphics_pipelines = unsafe {
             device
@@ -394,9 +344,101 @@ impl YakuiVulkan {
                 .expect("Unable to create graphics pipeline")
         };
 
-        let graphic_pipeline = graphics_pipelines[0];
+        let graphics_pipeline = graphics_pipelines[0];
 
-        Self {}
+        unsafe {
+            device.destroy_shader_module(vertex_shader_module, None);
+            device.destroy_shader_module(fragment_shader_module, None);
+        }
+
+        Self {
+            render_pass,
+            framebuffers,
+            render_surface,
+            pipeline_layout,
+            graphics_pipeline,
+            index_buffer,
+            vertex_buffer,
+        }
+    }
+
+    pub fn draw(
+        &mut self,
+        device: &ash::Device,
+        command_buffer: vk::CommandBuffer,
+        present_index: u32,
+    ) {
+        let clear_values = [
+            vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: [0.0, 0.0, 0.0, 0.0],
+                },
+            },
+            vk::ClearValue {
+                depth_stencil: vk::ClearDepthStencilValue {
+                    depth: 1.0,
+                    stencil: 0,
+                },
+            },
+        ];
+
+        let surface = &self.render_surface;
+
+        let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
+            .render_pass(self.render_pass)
+            .framebuffer(self.framebuffers[present_index as usize])
+            .render_area(surface.resolution.into())
+            .clear_values(&clear_values);
+
+        let viewports = [vk::Viewport {
+            x: 0.0,
+            y: 0.0,
+            width: surface.resolution.width as f32,
+            height: surface.resolution.height as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        }];
+        let scissors = [surface.resolution.into()];
+
+        unsafe {
+            device.cmd_begin_render_pass(
+                command_buffer,
+                &render_pass_begin_info,
+                vk::SubpassContents::INLINE,
+            );
+            device.cmd_bind_pipeline(
+                command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                self.graphics_pipeline,
+            );
+            device.cmd_set_viewport(command_buffer, 0, &viewports);
+            device.cmd_set_scissor(command_buffer, 0, &scissors);
+            device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
+            device.cmd_bind_index_buffer(
+                command_buffer,
+                self.index_buffer.handle,
+                0,
+                vk::IndexType::UINT32,
+            );
+            device.cmd_draw_indexed(command_buffer, 3, 1, 0, 0, 1); // TODO: make dynamical
+            device.cmd_end_render_pass(command_buffer);
+        }
+    }
+
+    pub fn cleanup(&self, device: &ash::Device) {
+        unsafe {
+            device.device_wait_idle().unwrap();
+            device.destroy_pipeline_layout(self.pipeline_layout, None);
+            device.destroy_pipeline(self.graphics_pipeline, None);
+            device.free_memory(self.vertex_buffer.memory, None);
+            device.destroy_buffer(self.vertex_buffer.handle, None);
+            device.free_memory(self.index_buffer.memory, None);
+            device.destroy_buffer(self.index_buffer.handle, None);
+            for framebuffer in &self.framebuffers {
+                device.destroy_framebuffer(*framebuffer, None);
+            }
+            device.destroy_render_pass(self.render_pass, None);
+        }
     }
 }
 
@@ -425,43 +467,43 @@ mod tests {
         let (width, height) = (500, 500);
         let vulkan_test = VulkanTest::new(width, height);
         let render_surface = RenderSurface {
-            width,
-            height,
+            resolution: vk::Extent2D { width, height },
             format: vulkan_test.surface_format.format,
-            image_views: &vulkan_test.present_image_views,
+            image_views: vulkan_test.present_image_views.clone(),
         };
-        let yakui_vulkan = YakuiVulkan::new(
+        let mut yakui_vulkan = YakuiVulkan::new(
             &vulkan_test.device,
             &vulkan_test.device_memory_properties,
             render_surface,
         );
+
+        vulkan_test.render_loop(|device, command_buffer, buffer_index| {
+            yakui_vulkan.draw(device, command_buffer, buffer_index)
+        });
+
+        yakui_vulkan.cleanup(&vulkan_test.device);
     }
 
     struct VulkanTest {
-        pub window: winit::window::Window,
+        pub _window: winit::window::Window,
+        pub _entry: ash::Entry,
         pub device: ash::Device,
-        pub entry: ash::Entry,
         pub instance: ash::Instance,
         pub surface_loader: Surface,
         pub swapchain_loader: Swapchain,
         pub event_loop: RefCell<winit::event_loop::EventLoop<()>>,
         pub device_memory_properties: vk::PhysicalDeviceMemoryProperties,
 
-        pub pdevice: vk::PhysicalDevice,
-        pub queue_family_index: u32,
         pub present_queue: vk::Queue,
 
         pub surface: vk::SurfaceKHR,
         pub surface_format: vk::SurfaceFormatKHR,
-        pub surface_resolution: vk::Extent2D,
 
         pub swapchain: vk::SwapchainKHR,
-        pub present_images: Vec<vk::Image>,
         pub present_image_views: Vec<vk::ImageView>,
 
         pub pool: vk::CommandPool,
         pub draw_command_buffer: vk::CommandBuffer,
-        pub setup_command_buffer: vk::CommandBuffer,
 
         pub present_complete_semaphore: vk::Semaphore,
         pub rendering_complete_semaphore: vk::Semaphore,
@@ -471,7 +513,7 @@ mod tests {
     }
 
     impl VulkanTest {
-        pub fn render_loop<F: Fn()>(&self, f: F) {
+        pub fn render_loop<F: FnMut(&ash::Device, vk::CommandBuffer, u32)>(&self, mut f: F) {
             self.event_loop
                 .borrow_mut()
                 .run_return(|event, _, control_flow| {
@@ -491,7 +533,11 @@ mod tests {
                                 },
                             ..
                         } => *control_flow = ControlFlow::Exit,
-                        Event::MainEventsCleared => f(),
+                        Event::MainEventsCleared => {
+                            let framebuffer_index = self.render_begin();
+                            f(&self.device, self.draw_command_buffer, framebuffer_index);
+                            self.render_end(framebuffer_index);
+                        }
                         _ => (),
                     }
                 });
@@ -678,7 +724,7 @@ mod tests {
             let pool = unsafe { device.create_command_pool(&pool_create_info, None).unwrap() };
 
             let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::builder()
-                .command_buffer_count(2)
+                .command_buffer_count(1)
                 .command_pool(pool)
                 .level(vk::CommandBufferLevel::PRIMARY);
 
@@ -687,8 +733,7 @@ mod tests {
                     .allocate_command_buffers(&command_buffer_allocate_info)
                     .unwrap()
             };
-            let setup_command_buffer = command_buffers[0];
-            let draw_command_buffer = command_buffers[1];
+            let draw_command_buffer = command_buffers[0];
 
             let present_images =
                 unsafe { swapchain_loader.get_swapchain_images(swapchain).unwrap() };
@@ -747,31 +792,101 @@ mod tests {
                 unsafe { instance.get_physical_device_memory_properties(pdevice) };
 
             Self {
-                window,
+                _window: window,
                 device,
                 present_queue,
-                entry,
+                _entry: entry,
                 instance,
                 surface_loader,
                 swapchain_loader,
                 device_memory_properties,
                 event_loop: RefCell::new(event_loop),
-                pdevice,
-                queue_family_index,
                 surface,
                 surface_format,
-                surface_resolution,
                 swapchain,
-                present_images,
                 present_image_views,
                 pool,
                 draw_command_buffer,
-                setup_command_buffer,
                 present_complete_semaphore,
                 rendering_complete_semaphore,
                 draw_commands_reuse_fence,
                 setup_commands_reuse_fence,
             }
+        }
+
+        fn render_begin(&self) -> u32 {
+            let (present_index, _) = unsafe {
+                self.swapchain_loader
+                    .acquire_next_image(
+                        self.swapchain,
+                        std::u64::MAX,
+                        self.present_complete_semaphore,
+                        vk::Fence::null(),
+                    )
+                    .unwrap()
+            };
+
+            let device = &self.device;
+            unsafe {
+                device
+                    .wait_for_fences(
+                        std::slice::from_ref(&self.draw_commands_reuse_fence),
+                        true,
+                        std::u64::MAX,
+                    )
+                    .unwrap();
+                device
+                    .reset_fences(std::slice::from_ref(&self.draw_commands_reuse_fence))
+                    .unwrap();
+                device
+                    .reset_command_buffer(
+                        self.draw_command_buffer,
+                        vk::CommandBufferResetFlags::RELEASE_RESOURCES,
+                    )
+                    .unwrap();
+                device
+                    .begin_command_buffer(
+                        self.draw_command_buffer,
+                        &vk::CommandBufferBeginInfo::builder()
+                            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT),
+                    )
+                    .unwrap();
+            }
+            present_index
+        }
+
+        fn render_end(&self, present_index: u32) {
+            let device = &self.device;
+            unsafe {
+                device.end_command_buffer(self.draw_command_buffer).unwrap();
+                let swapchains = [self.swapchain];
+                let image_indices = [present_index];
+                let submit_info = vk::SubmitInfo::builder()
+                    .wait_semaphores(std::slice::from_ref(&self.present_complete_semaphore))
+                    .wait_dst_stage_mask(&[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT])
+                    .command_buffers(std::slice::from_ref(&self.draw_command_buffer))
+                    .signal_semaphores(std::slice::from_ref(&self.rendering_complete_semaphore));
+
+                device
+                    .queue_submit(
+                        self.present_queue,
+                        std::slice::from_ref(&submit_info),
+                        self.draw_commands_reuse_fence,
+                    )
+                    .unwrap();
+
+                self.swapchain_loader
+                    .queue_present(
+                        self.present_queue,
+                        &vk::PresentInfoKHR::builder()
+                            .image_indices(&image_indices)
+                            .wait_semaphores(std::slice::from_ref(
+                                &self.rendering_complete_semaphore,
+                            ))
+                            .swapchains(&swapchains),
+                    )
+                    .unwrap()
+            };
         }
     }
 
