@@ -4,6 +4,7 @@ mod vulkan_context;
 mod vulkan_texture;
 
 use buffer::Buffer;
+use glam::UVec2;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 use vulkan_context::VulkanContext;
 use vulkan_texture::VulkanTexture;
@@ -28,6 +29,14 @@ pub struct RenderSurface {
     pub resolution: vk::Extent2D,
     pub format: vk::Format,
     pub image_views: Vec<vk::ImageView>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DrawCall {
+    index_offset: u32,
+    index_count: u32,
+    clip: Option<yakui::geometry::Rect>,
+    pipeline: yakui_core::paint::Pipeline,
 }
 
 #[repr(C)]
@@ -348,12 +357,18 @@ impl YakuiVulkan {
             return;
         }
 
-        // self.update_buffers(vulkan_context, paint);
+        let draw_calls = self.update_buffers(vulkan_context, paint);
 
-        self.render(vulkan_context, present_index);
+        self.render(vulkan_context, present_index, paint, &draw_calls);
     }
 
-    fn render(&self, vulkan_context: &VulkanContext, present_index: u32) {
+    fn render(
+        &self,
+        vulkan_context: &VulkanContext,
+        present_index: u32,
+        paint: &yakui::paint::PaintDom,
+        draw_calls: &[DrawCall],
+    ) {
         let device = vulkan_context.device;
         let command_buffer = vulkan_context.draw_command_buffer;
 
@@ -387,7 +402,8 @@ impl YakuiVulkan {
             min_depth: 0.0,
             max_depth: 1.0,
         }];
-        let scissors = [surface.resolution.into()];
+
+        let surface_size = UVec2::new(surface.resolution.width, surface.resolution.height);
 
         unsafe {
             device.cmd_begin_render_pass(
@@ -401,6 +417,7 @@ impl YakuiVulkan {
                 self.graphics_pipeline,
             );
             device.cmd_set_viewport(command_buffer, 0, &viewports);
+            let scissors = [surface.resolution.into()];
             device.cmd_set_scissor(command_buffer, 0, &scissors);
             device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
             device.cmd_bind_index_buffer(
@@ -409,7 +426,58 @@ impl YakuiVulkan {
                 0,
                 vk::IndexType::UINT32,
             );
-            device.cmd_draw_indexed(command_buffer, self.index_buffer.len() as _, 1, 0, 0, 1);
+            let mut last_clip = None;
+            for draw_call in draw_calls {
+                println!("Draw Call! {draw_call:?}");
+                if draw_call.clip != last_clip {
+                    last_clip = draw_call.clip;
+
+                    match draw_call.clip {
+                        Some(rect) => {
+                            let pos = rect.pos().as_uvec2();
+                            let size = rect.size().as_uvec2();
+
+                            let max = (pos + size).min(surface_size);
+                            let size = UVec2::new(
+                                max.x.saturating_sub(pos.x),
+                                max.y.saturating_sub(pos.y),
+                            );
+
+                            // If the scissor rect isn't valid, we can skip this
+                            // entire draw call.
+                            if pos.x > surface_size.x
+                                || pos.y > surface_size.y
+                                || size.x == 0
+                                || size.y == 0
+                            {
+                                continue;
+                            }
+
+                            let scissors = [vk::Rect2D {
+                                offset: vk::Offset2D {
+                                    x: pos.x as _,
+                                    y: pos.y as _,
+                                },
+                                extent: surface.resolution,
+                            }];
+                            device.cmd_set_scissor(command_buffer, 0, &scissors);
+                        }
+                        None => {
+                            let scissors = [surface.resolution.into()];
+                            device.cmd_set_scissor(command_buffer, 0, &scissors);
+                        }
+                    }
+                }
+
+                device.cmd_draw_indexed(
+                    command_buffer,
+                    draw_call.index_count,
+                    1,
+                    draw_call.index_offset,
+                    0,
+                    1,
+                );
+            }
             device.cmd_end_render_pass(command_buffer);
         }
     }
@@ -438,24 +506,41 @@ impl YakuiVulkan {
         }
     }
 
-    fn update_buffers(&mut self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
+    fn update_buffers(
+        &mut self,
+        vulkan_context: &VulkanContext,
+        paint: &yakui::paint::PaintDom,
+    ) -> Vec<DrawCall> {
         let mut vertices: Vec<Vertex> = Default::default();
         let mut indices: Vec<u32> = Default::default();
+        let mut draw_calls: Vec<DrawCall> = Default::default();
 
         for mesh in paint.calls() {
             let base = vertices.len() as u32;
+            let index_offset = indices.len() as u32;
+            let index_count = mesh.indices.len() as u32;
+
             for index in &mesh.indices {
                 indices.push(*index as u32 + base);
             }
             for vertex in &mesh.vertices {
                 vertices.push(vertex.into())
             }
+
+            draw_calls.push(DrawCall {
+                index_offset,
+                index_count,
+                clip: mesh.clip,
+                pipeline: mesh.pipeline,
+            });
         }
 
         unsafe {
             self.index_buffer.overwrite(vulkan_context, &indices);
             self.vertex_buffer.overwrite(vulkan_context, &vertices);
         }
+
+        draw_calls
     }
 }
 
@@ -489,6 +574,7 @@ mod tests {
             image_views: vulkan_test.present_image_views.clone(),
         };
         let mut yak = yakui::Yakui::new();
+        yak.set_surface_size([500., 500.].into());
         let vulkan_context = VulkanContext::new(
             &vulkan_test.device,
             vulkan_test.present_queue,
@@ -498,12 +584,12 @@ mod tests {
         );
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
 
-        vulkan_test.render_loop(|buffer_index| {
+        vulkan_test.render_loop(yak, |buffer_index, yak| {
             yak.start();
             gui();
             yak.finish();
 
-            yakui_vulkan.paint(&mut yak, &vulkan_context, buffer_index);
+            yakui_vulkan.paint(yak, &vulkan_context, buffer_index);
         });
 
         yakui_vulkan.cleanup(&vulkan_test.device);
@@ -553,7 +639,11 @@ mod tests {
     }
 
     impl VulkanTest {
-        pub fn render_loop<F: FnMut(u32)>(&self, mut f: F) {
+        pub fn render_loop<F: FnMut(u32, &mut yakui::Yakui)>(
+            &self,
+            mut yak: yakui::Yakui,
+            mut f: F,
+        ) {
             self.event_loop
                 .borrow_mut()
                 .run_return(|event, _, control_flow| {
@@ -575,7 +665,7 @@ mod tests {
                         } => *control_flow = ControlFlow::Exit,
                         Event::MainEventsCleared => {
                             let framebuffer_index = self.render_begin();
-                            f(framebuffer_index);
+                            f(framebuffer_index, &mut yak);
                             self.render_end(framebuffer_index);
                         }
                         _ => (),

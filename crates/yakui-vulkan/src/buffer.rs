@@ -31,7 +31,7 @@ impl<T: Copy> Buffer<T> {
         let device_memory_properties = &vulkan_context.memory_properties;
 
         let buffer_info = vk::BufferCreateInfo::builder()
-            .size(std::mem::size_of_val(initial_data) as u64)
+            .size(std::mem::size_of_val(initial_data).max(MIN_BUFFER_SIZE as _) as u64)
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
 
