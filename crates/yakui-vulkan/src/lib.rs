@@ -1,9 +1,15 @@
-use std::{ffi::CStr, io::Cursor, marker::PhantomData, mem::align_of};
+mod buffer;
+mod util;
+mod vulkan_context;
+mod vulkan_texture;
 
-use ash::{
-    util::{read_spv, Align},
-    vk,
-};
+use buffer::Buffer;
+use std::{collections::HashMap, ffi::CStr, io::Cursor};
+use vulkan_context::VulkanContext;
+use vulkan_texture::VulkanTexture;
+use yakui::ManagedTextureId;
+
+use ash::{util::read_spv, vk};
 
 pub struct YakuiVulkan {
     render_pass: vk::RenderPass,
@@ -13,6 +19,8 @@ pub struct YakuiVulkan {
     graphics_pipeline: vk::Pipeline,
     index_buffer: Buffer<u32>,
     vertex_buffer: Buffer<Vertex>,
+    initial_textures_synced: bool,
+    managed_textures: HashMap<ManagedTextureId, VulkanTexture>,
 }
 
 #[derive(Clone)]
@@ -28,82 +36,10 @@ struct Vertex {
     color: [f32; 4],
 }
 
-pub fn find_memorytype_index(
-    memory_req: &vk::MemoryRequirements,
-    memory_prop: &vk::PhysicalDeviceMemoryProperties,
-    flags: vk::MemoryPropertyFlags,
-) -> Option<u32> {
-    memory_prop.memory_types[..memory_prop.memory_type_count as _]
-        .iter()
-        .enumerate()
-        .find(|(index, memory_type)| {
-            (1 << index) & memory_req.memory_type_bits != 0
-                && memory_type.property_flags & flags == flags
-        })
-        .map(|(index, _memory_type)| index as _)
-}
-
-pub struct Buffer<T> {
-    pub handle: vk::Buffer,
-    pub memory: vk::DeviceMemory,
-    pub usage: vk::BufferUsageFlags,
-    _phantom: PhantomData<T>,
-}
-
-impl<T: Copy> Buffer<T> {
-    pub fn new(
-        device: &ash::Device,
-        device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
-        usage: vk::BufferUsageFlags,
-        initial_data: &[T],
-    ) -> Self {
-        let index_buffer_info = vk::BufferCreateInfo::builder()
-            .size(std::mem::size_of_val(initial_data) as u64)
-            .usage(usage)
-            .sharing_mode(vk::SharingMode::EXCLUSIVE);
-
-        let handle = unsafe { device.create_buffer(&index_buffer_info, None).unwrap() };
-        let memory_req = unsafe { device.get_buffer_memory_requirements(handle) };
-        let memory_index = find_memorytype_index(
-            &memory_req,
-            device_memory_properties,
-            vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-        )
-        .expect("Unable to find suitable memorytype for the index buffer.");
-
-        let allocate_info = vk::MemoryAllocateInfo {
-            allocation_size: memory_req.size,
-            memory_type_index: memory_index,
-            ..Default::default()
-        };
-        let memory = unsafe { device.allocate_memory(&allocate_info, None).unwrap() };
-        let ptr = unsafe {
-            device
-                .map_memory(memory, 0, memory_req.size, vk::MemoryMapFlags::empty())
-                .unwrap()
-        };
-        let mut slice = unsafe { Align::new(ptr, align_of::<T>() as u64, memory_req.size) };
-        slice.copy_from_slice(initial_data);
-        unsafe {
-            device.unmap_memory(memory);
-            device.bind_buffer_memory(handle, memory, 0).unwrap();
-        }
-
-        Buffer {
-            handle,
-            memory,
-            usage,
-            _phantom: PhantomData,
-        }
-    }
-}
-
 impl YakuiVulkan {
-    pub fn new(
-        device: &ash::Device,
-        device_memory_properties: &vk::PhysicalDeviceMemoryProperties,
-        render_surface: RenderSurface,
-    ) -> Self {
+    pub fn new(vulkan_context: &VulkanContext, render_surface: RenderSurface) -> Self {
+        let device = vulkan_context.device;
+
         // TODO: Don't write directly to the present surface..
         let renderpass_attachments = [vk::AttachmentDescription {
             format: render_surface.format,
@@ -163,8 +99,7 @@ impl YakuiVulkan {
 
         let index_buffer_data = [0u32, 1, 2];
         let index_buffer = Buffer::new(
-            device,
-            device_memory_properties,
+            vulkan_context,
             vk::BufferUsageFlags::INDEX_BUFFER,
             &index_buffer_data,
         );
@@ -184,8 +119,7 @@ impl YakuiVulkan {
             },
         ];
         let vertex_buffer = Buffer::new(
-            device,
-            device_memory_properties,
+            vulkan_context,
             vk::BufferUsageFlags::VERTEX_BUFFER,
             &vertices,
         );
@@ -359,15 +293,35 @@ impl YakuiVulkan {
             graphics_pipeline,
             index_buffer,
             vertex_buffer,
+            managed_textures: Default::default(),
+            initial_textures_synced: false,
         }
     }
 
-    pub fn draw(
+    pub fn paint(
         &mut self,
-        device: &ash::Device,
-        command_buffer: vk::CommandBuffer,
+        state: &mut yakui_core::Yakui,
+        vulkan_context: &VulkanContext,
         present_index: u32,
     ) {
+        let paint = state.paint();
+
+        self.update_textures(vulkan_context, paint);
+
+        // If there's nothing to paint, well.. don't paint!
+        if paint.calls().is_empty() {
+            return;
+        }
+
+        self.update_buffers(vulkan_context, paint);
+
+        self.render(vulkan_context, present_index);
+    }
+
+    fn render(&self, vulkan_context: &VulkanContext, present_index: u32) {
+        let device = vulkan_context.device;
+        let command_buffer = vulkan_context.draw_command_buffer;
+
         let clear_values = [
             vk::ClearValue {
                 color: vk::ClearColorValue {
@@ -420,7 +374,7 @@ impl YakuiVulkan {
                 0,
                 vk::IndexType::UINT32,
             );
-            device.cmd_draw_indexed(command_buffer, 3, 1, 0, 0, 1); // TODO: make dynamical
+            device.cmd_draw_indexed(command_buffer, self.index_buffer.len() as _, 1, 0, 0, 1);
             device.cmd_end_render_pass(command_buffer);
         }
     }
@@ -439,6 +393,20 @@ impl YakuiVulkan {
             }
             device.destroy_render_pass(self.render_pass, None);
         }
+    }
+
+    fn update_textures(&mut self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
+        if !self.initial_textures_synced {
+            self.initial_textures_synced = true;
+            for (id, texture) in paint.textures() {
+                self.managed_textures
+                    .insert(id, VulkanTexture::new(vulkan_context, texture));
+            }
+        }
+    }
+
+    fn update_buffers(&self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
+        todo!()
     }
 }
 
@@ -471,14 +439,18 @@ mod tests {
             format: vulkan_test.surface_format.format,
             image_views: vulkan_test.present_image_views.clone(),
         };
-        let mut yakui_vulkan = YakuiVulkan::new(
+        let mut yak = yakui::Yakui::new();
+        let vulkan_context = VulkanContext::new(
             &vulkan_test.device,
-            &vulkan_test.device_memory_properties,
-            render_surface,
+            vulkan_test.present_queue,
+            vulkan_test.draw_command_buffer,
+            vulkan_test.command_pool,
+            vulkan_test.device_memory_properties,
         );
+        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
 
-        vulkan_test.render_loop(|device, command_buffer, buffer_index| {
-            yakui_vulkan.draw(device, command_buffer, buffer_index)
+        vulkan_test.render_loop(|buffer_index| {
+            yakui_vulkan.paint(&mut yak, &vulkan_context, buffer_index)
         });
 
         yakui_vulkan.cleanup(&vulkan_test.device);
@@ -502,7 +474,7 @@ mod tests {
         pub swapchain: vk::SwapchainKHR,
         pub present_image_views: Vec<vk::ImageView>,
 
-        pub pool: vk::CommandPool,
+        pub command_pool: vk::CommandPool,
         pub draw_command_buffer: vk::CommandBuffer,
 
         pub present_complete_semaphore: vk::Semaphore,
@@ -513,7 +485,7 @@ mod tests {
     }
 
     impl VulkanTest {
-        pub fn render_loop<F: FnMut(&ash::Device, vk::CommandBuffer, u32)>(&self, mut f: F) {
+        pub fn render_loop<F: FnMut(u32)>(&self, mut f: F) {
             self.event_loop
                 .borrow_mut()
                 .run_return(|event, _, control_flow| {
@@ -535,7 +507,7 @@ mod tests {
                         } => *control_flow = ControlFlow::Exit,
                         Event::MainEventsCleared => {
                             let framebuffer_index = self.render_begin();
-                            f(&self.device, self.draw_command_buffer, framebuffer_index);
+                            f(framebuffer_index);
                             self.render_end(framebuffer_index);
                         }
                         _ => (),
@@ -805,7 +777,7 @@ mod tests {
                 surface_format,
                 swapchain,
                 present_image_views,
-                pool,
+                command_pool: pool,
                 draw_command_buffer,
                 present_complete_semaphore,
                 rendering_complete_semaphore,
@@ -905,7 +877,7 @@ mod tests {
                 for &image_view in self.present_image_views.iter() {
                     self.device.destroy_image_view(image_view, None);
                 }
-                self.device.destroy_command_pool(self.pool, None);
+                self.device.destroy_command_pool(self.command_pool, None);
                 self.swapchain_loader
                     .destroy_swapchain(self.swapchain, None);
                 self.device.destroy_device(None);
