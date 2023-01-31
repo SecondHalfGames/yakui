@@ -9,6 +9,7 @@ version = "0.2.0"
 [dependencies]
 ash = {version = "0.37.2", features = ["linked"]}
 bytemuck = "1.13.0"
+glam = "0.22.0"
 raw-window-handle = "0.5.0"
 yakui = {path = "../yakui"}
 yakui-core = {path = "../yakui-core", version = "0.2.0"}

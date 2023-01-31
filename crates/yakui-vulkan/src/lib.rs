@@ -7,7 +7,7 @@ use buffer::Buffer;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 use vulkan_context::VulkanContext;
 use vulkan_texture::VulkanTexture;
-use yakui::ManagedTextureId;
+use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 use ash::{util::read_spv, vk};
 
@@ -30,10 +30,32 @@ pub struct RenderSurface {
     pub image_views: Vec<vk::ImageView>,
 }
 
-#[derive(Clone, Debug, Copy, Default)]
-struct Vertex {
-    pos: [f32; 4],
-    color: [f32; 4],
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Vertex {
+    position: glam::Vec2,
+    texcoord: glam::Vec2,
+    color: glam::Vec4,
+}
+
+impl Vertex {
+    pub fn new(position: glam::Vec2, texcoord: glam::Vec2, color: glam::Vec4) -> Self {
+        Self {
+            position,
+            texcoord,
+            color,
+        }
+    }
+}
+
+impl From<&YakuiVertex> for Vertex {
+    fn from(y: &YakuiVertex) -> Self {
+        Self {
+            position: y.position,
+            texcoord: y.texcoord,
+            color: y.color,
+        }
+    }
 }
 
 impl YakuiVulkan {
@@ -105,18 +127,21 @@ impl YakuiVulkan {
         );
 
         let vertices = [
-            Vertex {
-                pos: [-1.0, 1.0, 0.0, 1.0],
-                color: [0.0, 1.0, 0.0, 1.0],
-            },
-            Vertex {
-                pos: [1.0, 1.0, 0.0, 1.0],
-                color: [0.0, 0.0, 1.0, 1.0],
-            },
-            Vertex {
-                pos: [0.0, -1.0, 0.0, 1.0],
-                color: [1.0, 0.0, 0.0, 1.0],
-            },
+            Vertex::new(
+                [-1.0, 1.0].into(),
+                [0., 0.].into(),
+                [1.0, 0.0, 0.0, 1.0].into(),
+            ),
+            Vertex::new(
+                [1.0, 1.0].into(),
+                [0., 0.].into(),
+                [0.0, 1.0, 0.0, 1.0].into(),
+            ),
+            Vertex::new(
+                [0.0, -1.0].into(),
+                [0., 0.].into(),
+                [0.0, 0.0, 1.0, 1.0].into(),
+            ),
         ];
         let vertex_buffer = Buffer::new(
             vulkan_context,
@@ -173,21 +198,31 @@ impl YakuiVulkan {
         ];
         let vertex_input_binding_descriptions = [vk::VertexInputBindingDescription {
             binding: 0,
-            stride: std::mem::size_of::<Vertex>() as u32,
+            stride: std::mem::size_of::<YakuiVertex>() as u32,
             input_rate: vk::VertexInputRate::VERTEX,
         }];
+
         let vertex_input_attribute_descriptions = [
+            // position
             vk::VertexInputAttributeDescription {
                 location: 0,
                 binding: 0,
-                format: vk::Format::R32G32B32A32_SFLOAT,
-                offset: bytemuck::offset_of!(Vertex, pos) as u32,
+                format: vk::Format::R32G32_SFLOAT,
+                offset: 0,
             },
+            // UV / texcoords
             vk::VertexInputAttributeDescription {
                 location: 1,
                 binding: 0,
+                format: vk::Format::R32G32_SFLOAT,
+                offset: 8,
+            },
+            // color
+            vk::VertexInputAttributeDescription {
+                location: 2,
+                binding: 0,
                 format: vk::Format::R32G32B32A32_SFLOAT,
-                offset: bytemuck::offset_of!(Vertex, color) as u32,
+                offset: 16,
             },
         ];
 
@@ -313,7 +348,7 @@ impl YakuiVulkan {
             return;
         }
 
-        self.update_buffers(vulkan_context, paint);
+        // self.update_buffers(vulkan_context, paint);
 
         self.render(vulkan_context, present_index);
     }
@@ -384,10 +419,8 @@ impl YakuiVulkan {
             device.device_wait_idle().unwrap();
             device.destroy_pipeline_layout(self.pipeline_layout, None);
             device.destroy_pipeline(self.graphics_pipeline, None);
-            device.free_memory(self.vertex_buffer.memory, None);
-            device.destroy_buffer(self.vertex_buffer.handle, None);
-            device.free_memory(self.index_buffer.memory, None);
-            device.destroy_buffer(self.index_buffer.handle, None);
+            self.index_buffer.cleanup(device);
+            self.vertex_buffer.cleanup(device);
             for framebuffer in &self.framebuffers {
                 device.destroy_framebuffer(*framebuffer, None);
             }
@@ -405,8 +438,24 @@ impl YakuiVulkan {
         }
     }
 
-    fn update_buffers(&self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
-        todo!()
+    fn update_buffers(&mut self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
+        let mut vertices: Vec<Vertex> = Default::default();
+        let mut indices: Vec<u32> = Default::default();
+
+        for mesh in paint.calls() {
+            let base = vertices.len() as u32;
+            for index in &mesh.indices {
+                indices.push(*index as u32 + base);
+            }
+            for vertex in &mesh.vertices {
+                vertices.push(vertex.into())
+            }
+        }
+
+        unsafe {
+            self.index_buffer.overwrite(vulkan_context, &indices);
+            self.vertex_buffer.overwrite(vulkan_context, &vertices);
+        }
     }
 }
 
@@ -450,10 +499,29 @@ mod tests {
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
 
         vulkan_test.render_loop(|buffer_index| {
-            yakui_vulkan.paint(&mut yak, &vulkan_context, buffer_index)
+            yak.start();
+            gui();
+            yak.finish();
+
+            yakui_vulkan.paint(&mut yak, &vulkan_context, buffer_index);
         });
 
         yakui_vulkan.cleanup(&vulkan_test.device);
+    }
+
+    fn gui() {
+        use yakui::{column, label, row, text, widgets::Text, Color};
+        column(|| {
+            row(|| {
+                label("Hello, world!");
+
+                let mut text = Text::new(48.0, "colored text!");
+                text.style.color = Color::RED;
+                text.show();
+            });
+
+            text(96.0, "yakui text demo!");
+        });
     }
 
     struct VulkanTest {

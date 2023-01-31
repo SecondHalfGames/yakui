@@ -130,6 +130,8 @@ impl<'a> VulkanContext<'a> {
             )
         });
 
+        scratch_buffer.cleanup(device);
+
         image
     }
 
@@ -166,7 +168,7 @@ impl<'a> VulkanContext<'a> {
             .queue_submit(self.queue, std::slice::from_ref(&submit_info), fence)
             .unwrap();
         device
-            .wait_for_fences(std::slice::from_ref(&fence), true, 1_000_000)
+            .wait_for_fences(std::slice::from_ref(&fence), true, u64::MAX)
             .unwrap();
 
         device.destroy_fence(fence, None);
@@ -183,6 +185,30 @@ impl<'a> VulkanContext<'a> {
                 &vk::MemoryAllocateInfo {
                     allocation_size,
                     memory_type_index,
+                    ..Default::default()
+                },
+                None,
+            )
+            .unwrap()
+    }
+
+    pub(crate) unsafe fn create_image_view(
+        &self,
+        image: vk::Image,
+        format: vk::Format,
+    ) -> vk::ImageView {
+        self.device
+            .create_image_view(
+                &vk::ImageViewCreateInfo {
+                    image,
+                    format,
+                    subresource_range: vk::ImageSubresourceRange {
+                        aspect_mask: vk::ImageAspectFlags::COLOR,
+                        level_count: 1,
+                        layer_count: 1,
+                        ..Default::default()
+                    },
+                    view_type: vk::ImageViewType::TYPE_2D,
                     ..Default::default()
                 },
                 None,

@@ -1,10 +1,6 @@
 use ash::vk;
 
-use crate::{
-    buffer::Buffer,
-    util::find_memorytype_index,
-    vulkan_context::{self, VulkanContext},
-};
+use crate::vulkan_context::VulkanContext;
 
 pub struct VulkanTexture {
     resolution: vk::Extent2D,
@@ -25,13 +21,14 @@ impl VulkanTexture {
         let image_data = texture.data();
 
         let image = unsafe { vulkan_context.create_image(image_data, resolution, format) };
+        let view = unsafe { vulkan_context.create_image_view(image, format) };
 
         VulkanTexture {
             resolution,
             yakui_format: texture.format(),
             format,
             image,
-            view: todo!(),
+            view,
         }
     }
 }
