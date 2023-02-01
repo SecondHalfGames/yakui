@@ -1,9 +1,11 @@
 mod buffer;
+mod descriptors;
 mod util;
 mod vulkan_context;
 mod vulkan_texture;
 
 use buffer::Buffer;
+use descriptors::Descriptors;
 use glam::UVec2;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 use vulkan_context::VulkanContext;
@@ -22,6 +24,7 @@ pub struct YakuiVulkan {
     vertex_buffer: Buffer<Vertex>,
     initial_textures_synced: bool,
     managed_textures: HashMap<ManagedTextureId, VulkanTexture>,
+    descriptors: Descriptors,
 }
 
 #[derive(Clone)]
@@ -70,6 +73,7 @@ impl From<&YakuiVertex> for Vertex {
 impl YakuiVulkan {
     pub fn new(vulkan_context: &VulkanContext, render_surface: RenderSurface) -> Self {
         let device = vulkan_context.device;
+        let descriptors = Descriptors::new(vulkan_context);
 
         // TODO: Don't write directly to the present surface..
         let renderpass_attachments = [vk::AttachmentDescription {
@@ -181,11 +185,13 @@ impl YakuiVulkan {
                 .expect("Fragment shader module error")
         };
 
-        let layout_create_info = vk::PipelineLayoutCreateInfo::default();
-
         let pipeline_layout = unsafe {
             device
-                .create_pipeline_layout(&layout_create_info, None)
+                .create_pipeline_layout(
+                    &vk::PipelineLayoutCreateInfo::builder()
+                        .set_layouts(std::slice::from_ref(&descriptors.layout)),
+                    None,
+                )
                 .unwrap()
         };
 
@@ -331,6 +337,7 @@ impl YakuiVulkan {
 
         Self {
             render_pass,
+            descriptors,
             framebuffers,
             render_surface,
             pipeline_layout,
@@ -417,14 +424,22 @@ impl YakuiVulkan {
                 self.graphics_pipeline,
             );
             device.cmd_set_viewport(command_buffer, 0, &viewports);
-            let scissors = [surface.resolution.into()];
-            device.cmd_set_scissor(command_buffer, 0, &scissors);
+            let default_scissor = [surface.resolution.into()];
+            device.cmd_set_scissor(command_buffer, 0, &default_scissor);
             device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
             device.cmd_bind_index_buffer(
                 command_buffer,
                 self.index_buffer.handle,
                 0,
                 vk::IndexType::UINT32,
+            );
+            device.cmd_bind_descriptor_sets(
+                command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                self.pipeline_layout,
+                0,
+                std::slice::from_ref(&self.descriptors.set),
+                &[],
             );
             let mut last_clip = None;
             for draw_call in draw_calls {
@@ -463,8 +478,7 @@ impl YakuiVulkan {
                             device.cmd_set_scissor(command_buffer, 0, &scissors);
                         }
                         None => {
-                            let scissors = [surface.resolution.into()];
-                            device.cmd_set_scissor(command_buffer, 0, &scissors);
+                            device.cmd_set_scissor(command_buffer, 0, &default_scissor);
                         }
                     }
                 }
@@ -485,6 +499,7 @@ impl YakuiVulkan {
     pub fn cleanup(&self, device: &ash::Device) {
         unsafe {
             device.device_wait_idle().unwrap();
+            self.descriptors.cleanup(device);
             device.destroy_pipeline_layout(self.pipeline_layout, None);
             device.destroy_pipeline(self.graphics_pipeline, None);
             self.index_buffer.cleanup(device);
@@ -500,8 +515,9 @@ impl YakuiVulkan {
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
             for (id, texture) in paint.textures() {
+                let texture = VulkanTexture::new(vulkan_context, &mut self.descriptors, texture);
                 self.managed_textures
-                    .insert(id, VulkanTexture::new(vulkan_context, texture));
+                    .insert(id, texture); 
             }
         }
     }
@@ -697,7 +713,7 @@ mod tests {
                 .application_version(0)
                 .engine_name(app_name)
                 .engine_version(0)
-                .api_version(vk::make_api_version(0, 1, 0, 0));
+                .api_version(vk::make_api_version(0, 1, 3, 0));
 
             let extension_names =
                 ash_window::enumerate_required_extensions(window.raw_display_handle())
@@ -760,20 +776,22 @@ mod tests {
             };
             let queue_family_index = queue_family_index as u32;
             let device_extension_names_raw = [Swapchain::name().as_ptr()];
-            let features = vk::PhysicalDeviceFeatures {
-                shader_clip_distance: 1,
-                ..Default::default()
-            };
             let priorities = [1.0];
 
             let queue_info = vk::DeviceQueueCreateInfo::builder()
                 .queue_family_index(queue_family_index)
                 .queue_priorities(&priorities);
 
+            let mut descriptor_indexing_features =
+                vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
+                    .shader_sampled_image_array_non_uniform_indexing(true)
+                    .descriptor_binding_partially_bound(true)
+                    .descriptor_binding_variable_descriptor_count(true);
+
             let device_create_info = vk::DeviceCreateInfo::builder()
                 .queue_create_infos(std::slice::from_ref(&queue_info))
                 .enabled_extension_names(&device_extension_names_raw)
-                .enabled_features(&features);
+                .push_next(&mut descriptor_indexing_features);
 
             let device = unsafe {
                 instance
