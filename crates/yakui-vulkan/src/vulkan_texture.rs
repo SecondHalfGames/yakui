@@ -12,27 +12,50 @@ pub(crate) struct VulkanTexture {
     pub id: u32,
 }
 
-impl VulkanTexture {
+pub struct VulkanTextureCreateInfo<T: AsRef<[u8]>> {
+    image_data: T,
+    format: vk::Format,
+    resolution: vk::Extent2D,
+    min_filter: vk::Filter,
+    mag_filter: vk::Filter,
+}
+
+impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
     pub fn new(
+        image_data: T,
+        format: vk::Format,
+        resolution: vk::Extent2D,
+        min_filter: vk::Filter,
+        mag_filter: vk::Filter,
+    ) -> Self {
+        Self {
+            image_data,
+            format,
+            resolution,
+            min_filter,
+            mag_filter,
+        }
+    }
+}
+
+impl VulkanTexture {
+    pub fn new<T: AsRef<[u8]>>(
         vulkan_context: &VulkanContext,
         descriptors: &mut Descriptors,
-        texture: &yakui::paint::Texture,
+        create_info: VulkanTextureCreateInfo<T>,
     ) -> Self {
-        let resolution = vk::Extent2D {
-            width: texture.size().x,
-            height: texture.size().y,
-        };
-
-        let format = get_format(texture.format());
-        let image_data = texture.data();
-
-        let (image, memory) =
-            unsafe { vulkan_context.create_image(image_data, resolution, format) };
-        let view = unsafe { vulkan_context.create_image_view(image, format) };
+        let VulkanTextureCreateInfo {
+            image_data,
+            format,
+            resolution,
+            min_filter,
+            mag_filter,
+        } = create_info;
 
         let address_mode = vk::SamplerAddressMode::REPEAT;
-        let mag_filter = get_filter(texture.mag_filter);
-        let min_filter = get_filter(texture.min_filter);
+        let (image, memory) =
+            unsafe { vulkan_context.create_image(image_data.as_ref(), resolution, format) };
+        let view = unsafe { vulkan_context.create_image_view(image, format) };
 
         let sampler = unsafe {
             vulkan_context
@@ -59,6 +82,28 @@ impl VulkanTexture {
             sampler,
             id,
         }
+    }
+
+    pub fn from_yakui_texture(
+        vulkan_context: &VulkanContext,
+        descriptors: &mut Descriptors,
+        texture: &yakui::paint::Texture,
+    ) -> Self {
+        let resolution = vk::Extent2D {
+            width: texture.size().x,
+            height: texture.size().y,
+        };
+
+        let format = get_format(texture.format());
+        let image_data = texture.data();
+
+        let mag_filter = get_filter(texture.mag_filter);
+        let min_filter = get_filter(texture.min_filter);
+        VulkanTexture::new(
+            vulkan_context,
+            descriptors,
+            VulkanTextureCreateInfo::new(image_data, format, resolution, min_filter, mag_filter)
+        )
     }
 
     pub unsafe fn cleanup(&self, device: &ash::Device) {

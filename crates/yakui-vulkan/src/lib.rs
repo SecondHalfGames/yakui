@@ -10,7 +10,7 @@ use descriptors::Descriptors;
 use glam::UVec2;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 use vulkan_context::VulkanContext;
-use vulkan_texture::{VulkanTexture, NO_TEXTURE_ID};
+use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo, NO_TEXTURE_ID};
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 use ash::{util::read_spv, vk};
@@ -517,11 +517,24 @@ impl YakuiVulkan {
         }
     }
 
+    pub fn add_user_texture(
+        &mut self,
+        vulkan_context: &VulkanContext,
+        texture_create_info: VulkanTextureCreateInfo<Vec<u8>>,
+    ) -> yakui::TextureId {
+        let texture =
+            VulkanTexture::new(vulkan_context, &mut self.descriptors, texture_create_info);
+        yakui::TextureId::User(self.user_textures.insert(texture).to_bits())
+    }
+
     pub fn cleanup(&mut self, device: &ash::Device) {
         unsafe {
             device.device_wait_idle().unwrap();
             self.descriptors.cleanup(device);
             for (_, texture) in self.managed_textures.drain() {
+                texture.cleanup(device);
+            }
+            for (_, texture) in self.user_textures.drain() {
                 texture.cleanup(device);
             }
             device.destroy_pipeline_layout(self.pipeline_layout, None);
@@ -540,7 +553,11 @@ impl YakuiVulkan {
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
             for (id, texture) in paint.textures() {
-                let texture = VulkanTexture::new(vulkan_context, &mut self.descriptors, texture);
+                let texture = VulkanTexture::from_yakui_texture(
+                    vulkan_context,
+                    &mut self.descriptors,
+                    texture,
+                );
                 self.managed_textures.insert(id, texture);
             }
 
@@ -551,8 +568,11 @@ impl YakuiVulkan {
             match change {
                 TextureChange::Added => {
                     let texture = paint.texture(id).unwrap();
-                    let texture =
-                        VulkanTexture::new(vulkan_context, &mut self.descriptors, texture);
+                    let texture = VulkanTexture::from_yakui_texture(
+                        vulkan_context,
+                        &mut self.descriptors,
+                        texture,
+                    );
                     self.managed_textures.insert(id, texture);
                 }
 
@@ -567,7 +587,11 @@ impl YakuiVulkan {
                         unsafe { old.cleanup(vulkan_context.device) };
                     }
                     let new = paint.texture(id).unwrap();
-                    let texture = VulkanTexture::new(vulkan_context, &mut self.descriptors, new);
+                    let texture = VulkanTexture::from_yakui_texture(
+                        vulkan_context,
+                        &mut self.descriptors,
+                        new,
+                    );
                     self.managed_textures.insert(id, texture);
                 }
             }
@@ -595,16 +619,21 @@ impl YakuiVulkan {
                 vertices.push(vertex.into())
             }
 
-            let texture_id = match mesh.texture {
-                Some(yakui::TextureId::Managed(managed)) => {
-                    self.managed_textures
-                        .get(&managed)
-                        .unwrap_or_else(|| panic!("Unable to find managed texture {managed:?}"))
-                        .id
-                }
-                Some(yakui::TextureId::User(_bits)) => todo!(),
-                None => NO_TEXTURE_ID,
-            };
+            let texture_id = mesh
+                .texture
+                .and_then(|id| match id {
+                    yakui::TextureId::Managed(managed) => {
+                        let texture = self.managed_textures.get(&managed)?;
+                        Some(texture.id)
+                    }
+                    yakui::TextureId::User(bits) => {
+                        let texture = self
+                            .user_textures
+                            .get(thunderdome::Index::from_bits(bits)?)?;
+                        Some(texture.id)
+                    }
+                })
+                .unwrap_or(NO_TEXTURE_ID);
 
             draw_calls.push(DrawCall {
                 index_offset,
@@ -643,12 +672,12 @@ mod tests {
     use yakui::image;
 
     const MONKEY_PNG: &[u8] = include_bytes!("../../demo/assets/monkey.png");
-    const DOG_PNG: &[u8] = include_bytes!("../../demo/assets/dog.png");
+    const DOG_PNG: &[u8] = include_bytes!("../assets/dog.png");
 
     #[derive(Debug, Clone)]
     struct GuiState {
         monkey: yakui::ManagedTextureId,
-        dog: yakui::ManagedTextureId,
+        dog: yakui::TextureId,
         which_image: WhichImage,
     }
 
@@ -672,7 +701,7 @@ mod tests {
             image_views: vulkan_test.present_image_views.clone(),
         };
         let mut yak = yakui::Yakui::new();
-        yak.set_surface_size([500., 500.].into());
+        yak.set_surface_size([width as f32, height as f32].into());
         let vulkan_context = VulkanContext::new(
             &vulkan_test.device,
             vulkan_test.present_queue,
@@ -686,10 +715,10 @@ mod tests {
                 MONKEY_PNG,
                 yakui::paint::TextureFilter::Linear,
             )),
-            dog: yak.add_texture(create_yakui_texture(
-                DOG_PNG,
-                yakui::paint::TextureFilter::Linear,
-            )),
+            dog: yakui_vulkan.add_user_texture(
+                &vulkan_context,
+                create_vulkan_texture_info(DOG_PNG, vk::Filter::LINEAR),
+            ),
             which_image: WhichImage::Monkey,
         };
 
@@ -704,11 +733,34 @@ mod tests {
         yakui_vulkan.cleanup(&vulkan_test.device);
     }
 
+    fn create_vulkan_texture_info(
+        compressed_image_bytes: &[u8],
+        filter: vk::Filter,
+    ) -> VulkanTextureCreateInfo<Vec<u8>> {
+        let image = image::load_from_memory(compressed_image_bytes)
+            .unwrap()
+            .into_rgba8();
+        let resolution = vk::Extent2D {
+            width: image.width(),
+            height: image.height(),
+        };
+
+        VulkanTextureCreateInfo::new(
+            image.into_raw(),
+            vk::Format::R8G8B8A8_UNORM,
+            resolution,
+            filter,
+            filter,
+        )
+    }
+
     fn create_yakui_texture(
-        bytes: &[u8],
+        compressed_image_bytes: &[u8],
         filter: yakui::paint::TextureFilter,
     ) -> yakui::paint::Texture {
-        let image = image::load_from_memory(bytes).unwrap().into_rgba8();
+        let image = image::load_from_memory(compressed_image_bytes)
+            .unwrap()
+            .into_rgba8();
         let size = UVec2::new(image.width(), image.height());
 
         let mut texture = yakui::paint::Texture::new(
@@ -722,9 +774,9 @@ mod tests {
 
     fn gui(gui_state: &GuiState) {
         use yakui::{column, label, row, text, widgets::Text, Color};
-        let (animal, texture) = match gui_state.which_image {
-            WhichImage::Monkey => ("monkye", gui_state.monkey),
-            WhichImage::Dog => ("dog haha good boy", gui_state.dog),
+        let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
+            WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
+            WhichImage::Dog => ("dog haha good boy", gui_state.dog.into()),
         };
         column(|| {
             row(|| {
