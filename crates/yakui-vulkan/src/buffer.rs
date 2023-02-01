@@ -73,11 +73,6 @@ impl<T: Copy> Buffer<T> {
         }
     }
 
-    /// The current size of the buffer, in bytes
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
     pub unsafe fn overwrite(&mut self, _vulkan_context: &VulkanContext, new_data: &[T]) {
         let new_data_size = std::mem::size_of_val(new_data);
         if new_data_size > self.size as usize {
@@ -88,11 +83,6 @@ impl<T: Copy> Buffer<T> {
         slice.copy_from_slice(new_data);
 
         self.len = new_data.len()
-    }
-
-    // TODO: clippy will whinge about this
-    pub fn _is_empty(&self) -> bool {
-        self.len == 0
     }
 
     /// ## Safety

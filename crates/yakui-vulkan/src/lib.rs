@@ -5,11 +5,12 @@ mod vulkan_context;
 mod vulkan_texture;
 
 use buffer::Buffer;
+use bytemuck::{bytes_of, Pod, Zeroable};
 use descriptors::Descriptors;
 use glam::UVec2;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 use vulkan_context::VulkanContext;
-use vulkan_texture::VulkanTexture;
+use vulkan_texture::{VulkanTexture, NO_TEXTURE_ID};
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 use ash::{util::read_spv, vk};
@@ -24,6 +25,7 @@ pub struct YakuiVulkan {
     vertex_buffer: Buffer<Vertex>,
     initial_textures_synced: bool,
     managed_textures: HashMap<ManagedTextureId, VulkanTexture>,
+    user_textures: thunderdome::Arena<VulkanTexture>,
     descriptors: Descriptors,
 }
 
@@ -39,7 +41,47 @@ pub struct DrawCall {
     index_offset: u32,
     index_count: u32,
     clip: Option<yakui::geometry::Rect>,
-    pipeline: yakui_core::paint::Pipeline,
+    texture_id: u32,
+    workflow: Workflow,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct PushConstant {
+    texture_id: u32,
+    workflow: Workflow,
+}
+
+unsafe impl Zeroable for PushConstant {}
+unsafe impl Pod for PushConstant {}
+
+impl PushConstant {
+    pub fn new(texture_id: u32, workflow: Workflow) -> Self {
+        Self {
+            texture_id,
+            workflow,
+        }
+    }
+}
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug)]
+pub enum Workflow {
+    Main,
+    Text,
+}
+
+unsafe impl bytemuck::Zeroable for Workflow {}
+unsafe impl bytemuck::Pod for Workflow {}
+
+impl From<yakui::paint::Pipeline> for Workflow {
+    fn from(p: yakui::paint::Pipeline) -> Self {
+        match p {
+            yakui::paint::Pipeline::Main => Workflow::Main,
+            yakui::paint::Pipeline::Text => Workflow::Text,
+            _ => panic!("Unknown pipeline {p:?}"),
+        }
+    }
 }
 
 #[repr(C)]
@@ -132,35 +174,8 @@ impl YakuiVulkan {
             })
             .collect();
 
-        let index_buffer_data = [0u32, 1, 2];
-        let index_buffer = Buffer::new(
-            vulkan_context,
-            vk::BufferUsageFlags::INDEX_BUFFER,
-            &index_buffer_data,
-        );
-
-        let vertices = [
-            Vertex::new(
-                [-1.0, 1.0].into(),
-                [0., 0.].into(),
-                [1.0, 0.0, 0.0, 1.0].into(),
-            ),
-            Vertex::new(
-                [1.0, 1.0].into(),
-                [0., 0.].into(),
-                [0.0, 1.0, 0.0, 1.0].into(),
-            ),
-            Vertex::new(
-                [0.0, -1.0].into(),
-                [0., 0.].into(),
-                [0.0, 0.0, 1.0, 1.0].into(),
-            ),
-        ];
-        let vertex_buffer = Buffer::new(
-            vulkan_context,
-            vk::BufferUsageFlags::VERTEX_BUFFER,
-            &vertices,
-        );
+        let index_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::INDEX_BUFFER, &[]);
+        let vertex_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::VERTEX_BUFFER, &[]);
 
         let mut vertex_spv_file = Cursor::new(&include_bytes!("../shaders/main.vert.spv")[..]);
         let mut frag_spv_file = Cursor::new(&include_bytes!("../shaders/main.frag.spv")[..]);
@@ -189,6 +204,11 @@ impl YakuiVulkan {
             device
                 .create_pipeline_layout(
                     &vk::PipelineLayoutCreateInfo::builder()
+                        .push_constant_ranges(std::slice::from_ref(
+                            &vk::PushConstantRange::builder()
+                                .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+                                .size(std::mem::size_of::<PushConstant>() as _),
+                        ))
                         .set_layouts(std::slice::from_ref(&descriptors.layout)),
                     None,
                 )
@@ -213,7 +233,7 @@ impl YakuiVulkan {
         ];
         let vertex_input_binding_descriptions = [vk::VertexInputBindingDescription {
             binding: 0,
-            stride: std::mem::size_of::<YakuiVertex>() as u32,
+            stride: std::mem::size_of::<Vertex>() as u32,
             input_rate: vk::VertexInputRate::VERTEX,
         }];
 
@@ -344,6 +364,7 @@ impl YakuiVulkan {
             graphics_pipeline,
             index_buffer,
             vertex_buffer,
+            user_textures: Default::default(),
             managed_textures: Default::default(),
             initial_textures_synced: false,
         }
@@ -364,18 +385,12 @@ impl YakuiVulkan {
             return;
         }
 
-        let draw_calls = self.update_buffers(vulkan_context, paint);
+        let draw_calls = self.build_draw_calls(vulkan_context, paint);
 
-        self.render(vulkan_context, present_index, paint, &draw_calls);
+        self.render(vulkan_context, present_index, &draw_calls);
     }
 
-    fn render(
-        &self,
-        vulkan_context: &VulkanContext,
-        present_index: u32,
-        paint: &yakui::paint::PaintDom,
-        draw_calls: &[DrawCall],
-    ) {
+    fn render(&self, vulkan_context: &VulkanContext, present_index: u32, draw_calls: &[DrawCall]) {
         let device = vulkan_context.device;
         let command_buffer = vulkan_context.draw_command_buffer;
 
@@ -443,10 +458,10 @@ impl YakuiVulkan {
             );
             let mut last_clip = None;
             for draw_call in draw_calls {
-                println!("Draw Call! {draw_call:?}");
                 if draw_call.clip != last_clip {
                     last_clip = draw_call.clip;
 
+                    // TODO - do this when processing draw calls
                     match draw_call.clip {
                         Some(rect) => {
                             let pos = rect.pos().as_uvec2();
@@ -482,7 +497,13 @@ impl YakuiVulkan {
                         }
                     }
                 }
-
+                device.cmd_push_constants(
+                    command_buffer,
+                    self.pipeline_layout,
+                    vk::ShaderStageFlags::FRAGMENT,
+                    0,
+                    bytes_of(&PushConstant::new(draw_call.texture_id, draw_call.workflow)),
+                );
                 device.cmd_draw_indexed(
                     command_buffer,
                     draw_call.index_count,
@@ -496,10 +517,13 @@ impl YakuiVulkan {
         }
     }
 
-    pub fn cleanup(&self, device: &ash::Device) {
+    pub fn cleanup(&mut self, device: &ash::Device) {
         unsafe {
             device.device_wait_idle().unwrap();
             self.descriptors.cleanup(device);
+            for (_, texture) in self.managed_textures.drain() {
+                texture.cleanup(device);
+            }
             device.destroy_pipeline_layout(self.pipeline_layout, None);
             device.destroy_pipeline(self.graphics_pipeline, None);
             self.index_buffer.cleanup(device);
@@ -512,17 +536,45 @@ impl YakuiVulkan {
     }
 
     fn update_textures(&mut self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
+        use yakui::paint::TextureChange;
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
             for (id, texture) in paint.textures() {
                 let texture = VulkanTexture::new(vulkan_context, &mut self.descriptors, texture);
-                self.managed_textures
-                    .insert(id, texture); 
+                self.managed_textures.insert(id, texture);
+            }
+
+            return;
+        }
+
+        for (id, change) in paint.texture_edits() {
+            match change {
+                TextureChange::Added => {
+                    let texture = paint.texture(id).unwrap();
+                    let texture =
+                        VulkanTexture::new(vulkan_context, &mut self.descriptors, texture);
+                    self.managed_textures.insert(id, texture);
+                }
+
+                TextureChange::Removed => {
+                    if let Some(removed) = self.managed_textures.remove(&id) {
+                        unsafe { removed.cleanup(vulkan_context.device) };
+                    }
+                }
+
+                TextureChange::Modified => {
+                    if let Some(old) = self.managed_textures.remove(&id) {
+                        unsafe { old.cleanup(vulkan_context.device) };
+                    }
+                    let new = paint.texture(id).unwrap();
+                    let texture = VulkanTexture::new(vulkan_context, &mut self.descriptors, new);
+                    self.managed_textures.insert(id, texture);
+                }
             }
         }
     }
 
-    fn update_buffers(
+    fn build_draw_calls(
         &mut self,
         vulkan_context: &VulkanContext,
         paint: &yakui::paint::PaintDom,
@@ -543,11 +595,23 @@ impl YakuiVulkan {
                 vertices.push(vertex.into())
             }
 
+            let texture_id = match mesh.texture {
+                Some(yakui::TextureId::Managed(managed)) => {
+                    self.managed_textures
+                        .get(&managed)
+                        .unwrap_or_else(|| panic!("Unable to find managed texture {managed:?}"))
+                        .id
+                }
+                Some(yakui::TextureId::User(_bits)) => todo!(),
+                None => NO_TEXTURE_ID,
+            };
+
             draw_calls.push(DrawCall {
                 index_offset,
                 index_count,
                 clip: mesh.clip,
-                pipeline: mesh.pipeline,
+                texture_id,
+                workflow: mesh.pipeline.into(),
             });
         }
 
@@ -567,6 +631,7 @@ mod tests {
         extensions::khr::{Surface, Swapchain},
         vk,
     };
+    use glam::Vec2;
     use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
     use std::{cell::RefCell, ffi::CStr};
     use winit::{
@@ -575,6 +640,23 @@ mod tests {
         platform::run_return::EventLoopExtRunReturn,
         window::WindowBuilder,
     };
+    use yakui::image;
+
+    const MONKEY_PNG: &[u8] = include_bytes!("../../demo/assets/monkey.png");
+    const DOG_PNG: &[u8] = include_bytes!("../../demo/assets/dog.png");
+
+    #[derive(Debug, Clone)]
+    struct GuiState {
+        monkey: yakui::ManagedTextureId,
+        dog: yakui::ManagedTextureId,
+        which_image: WhichImage,
+    }
+
+    #[derive(Debug, Clone)]
+    enum WhichImage {
+        Monkey,
+        Dog,
+    }
 
     #[test]
     /// Simple smoke test to make sure render screen properly pixel Vulkan.
@@ -599,10 +681,21 @@ mod tests {
             vulkan_test.device_memory_properties,
         );
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
+        let gui_state = GuiState {
+            monkey: yak.add_texture(create_yakui_texture(
+                MONKEY_PNG,
+                yakui::paint::TextureFilter::Linear,
+            )),
+            dog: yak.add_texture(create_yakui_texture(
+                DOG_PNG,
+                yakui::paint::TextureFilter::Linear,
+            )),
+            which_image: WhichImage::Monkey,
+        };
 
-        vulkan_test.render_loop(yak, |buffer_index, yak| {
+        vulkan_test.render_loop(yak, gui_state, |buffer_index, yak, gui_state| {
             yak.start();
-            gui();
+            gui(&gui_state);
             yak.finish();
 
             yakui_vulkan.paint(yak, &vulkan_context, buffer_index);
@@ -611,8 +704,28 @@ mod tests {
         yakui_vulkan.cleanup(&vulkan_test.device);
     }
 
-    fn gui() {
+    fn create_yakui_texture(
+        bytes: &[u8],
+        filter: yakui::paint::TextureFilter,
+    ) -> yakui::paint::Texture {
+        let image = image::load_from_memory(bytes).unwrap().into_rgba8();
+        let size = UVec2::new(image.width(), image.height());
+
+        let mut texture = yakui::paint::Texture::new(
+            yakui::paint::TextureFormat::Rgba8Srgb,
+            size,
+            image.into_raw(),
+        );
+        texture.mag_filter = filter;
+        texture
+    }
+
+    fn gui(gui_state: &GuiState) {
         use yakui::{column, label, row, text, widgets::Text, Color};
+        let (animal, texture) = match gui_state.which_image {
+            WhichImage::Monkey => ("monkye", gui_state.monkey),
+            WhichImage::Dog => ("dog haha good boy", gui_state.dog),
+        };
         column(|| {
             row(|| {
                 label("Hello, world!");
@@ -622,7 +735,9 @@ mod tests {
                 text.show();
             });
 
-            text(96.0, "yakui text demo!");
+            text(96.0, format!("look it is a {animal}"));
+
+            image(texture, Vec2::new(400.0, 400.0));
         });
     }
 
@@ -655,9 +770,10 @@ mod tests {
     }
 
     impl VulkanTest {
-        pub fn render_loop<F: FnMut(u32, &mut yakui::Yakui)>(
+        pub fn render_loop<F: FnMut(u32, &mut yakui::Yakui, &GuiState)>(
             &self,
             mut yak: yakui::Yakui,
+            mut gui_state: GuiState,
             mut f: F,
         ) {
             self.event_loop
@@ -681,9 +797,30 @@ mod tests {
                         } => *control_flow = ControlFlow::Exit,
                         Event::MainEventsCleared => {
                             let framebuffer_index = self.render_begin();
-                            f(framebuffer_index, &mut yak);
+                            f(framebuffer_index, &mut yak, &gui_state);
                             self.render_end(framebuffer_index);
                         }
+                        Event::WindowEvent {
+                            event:
+                                WindowEvent::KeyboardInput {
+                                    input:
+                                        KeyboardInput {
+                                            state: ElementState::Released,
+                                            virtual_keycode,
+                                            ..
+                                        },
+                                    ..
+                                },
+                            ..
+                        } => match virtual_keycode {
+                            Some(VirtualKeyCode::A) => {
+                                gui_state.which_image = match &gui_state.which_image {
+                                    WhichImage::Monkey => WhichImage::Dog,
+                                    WhichImage::Dog => WhichImage::Monkey,
+                                }
+                            }
+                            _ => {}
+                        },
                         _ => (),
                     }
                 });

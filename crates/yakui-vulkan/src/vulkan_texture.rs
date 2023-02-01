@@ -2,14 +2,14 @@ use ash::vk;
 
 use crate::{descriptors::Descriptors, vulkan_context::VulkanContext};
 
+pub(crate) const NO_TEXTURE_ID: u32 = u32::MAX;
+
 pub(crate) struct VulkanTexture {
-    resolution: vk::Extent2D,
-    yakui_format: yakui_core::paint::TextureFormat,
-    format: vk::Format,
     image: vk::Image,
+    memory: vk::DeviceMemory,
     pub sampler: vk::Sampler,
     pub view: vk::ImageView,
-    pub id: usize,
+    pub id: u32,
 }
 
 impl VulkanTexture {
@@ -26,7 +26,8 @@ impl VulkanTexture {
         let format = get_format(texture.format());
         let image_data = texture.data();
 
-        let image = unsafe { vulkan_context.create_image(image_data, resolution, format) };
+        let (image, memory) =
+            unsafe { vulkan_context.create_image(image_data, resolution, format) };
         let view = unsafe { vulkan_context.create_image_view(image, format) };
 
         let address_mode = vk::SamplerAddressMode::REPEAT;
@@ -52,20 +53,25 @@ impl VulkanTexture {
             unsafe { descriptors.update_texture_descriptor_set(view, sampler, vulkan_context) };
 
         VulkanTexture {
-            resolution,
-            yakui_format: texture.format(),
-            format,
             image,
+            memory,
             view,
             sampler,
             id,
         }
     }
+
+    pub unsafe fn cleanup(&self, device: &ash::Device) {
+        device.destroy_sampler(self.sampler, None);
+        device.destroy_image_view(self.view, None);
+        device.destroy_image(self.image, None);
+        device.free_memory(self.memory, None);
+    }
 }
 
 fn get_format(yakui_format: yakui::paint::TextureFormat) -> vk::Format {
     match yakui_format {
-        yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_SRGB,
+        yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_UNORM,
         yakui::paint::TextureFormat::R8 => vk::Format::R8_UNORM,
         _ => panic!("Unsupported texture format: {yakui_format:?}"),
     }

@@ -1,12 +1,12 @@
 use ash::vk;
 
-use crate::{vulkan_context::VulkanContext, vulkan_texture::VulkanTexture};
+use crate::vulkan_context::VulkanContext;
 
 pub(crate) struct Descriptors {
     pub pool: vk::DescriptorPool,
     pub set: vk::DescriptorSet,
     pub layout: vk::DescriptorSetLayout,
-    texture_count: usize,
+    texture_count: u32,
 }
 
 impl Descriptors {
@@ -68,7 +68,7 @@ impl Descriptors {
         image_view: vk::ImageView,
         sampler: vk::Sampler,
         vulkan_context: &VulkanContext,
-    ) -> usize {
+    ) -> u32 {
         let texture_id = self.texture_count;
         vulkan_context.device.update_descriptor_sets(
             std::slice::from_ref(

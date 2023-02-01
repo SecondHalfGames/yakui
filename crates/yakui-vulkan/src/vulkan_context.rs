@@ -33,7 +33,7 @@ impl<'a> VulkanContext<'a> {
         image_data: &[u8],
         extent: vk::Extent2D,
         format: vk::Format,
-    ) -> vk::Image {
+    ) -> (vk::Image, vk::DeviceMemory) {
         let scratch_buffer = Buffer::new(&self, vk::BufferUsageFlags::TRANSFER_SRC, image_data);
         let device = self.device;
 
@@ -132,7 +132,7 @@ impl<'a> VulkanContext<'a> {
 
         scratch_buffer.cleanup(device);
 
-        image
+        (image, image_memory)
     }
 
     unsafe fn one_time_command<F: FnOnce(vk::CommandBuffer)>(&self, f: F) {
