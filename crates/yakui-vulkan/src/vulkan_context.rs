@@ -3,15 +3,28 @@ use ash::vk;
 use crate::{buffer::Buffer, util::find_memorytype_index};
 
 #[derive(Clone)]
+/// A wrapper around handles into your Vulkan renderer to call various methods on [`crate::YakuiVulkan`]
+///
+/// ## Safety
+/// It is **very** important that you pass the correct handles to this struct, or you will have a terrible time.
+/// Once you create a [`crate::YakuiVulkan`] instance, you **must** use the same handles each time you call a
+/// method on that instance.
+///
+/// See the documentation on each member for specific safety requirements.
 pub struct VulkanContext<'a> {
+    /// A valid Vulkan device that has the `VkPhysicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound` feature enabled
     pub device: &'a ash::Device,
+    /// A queue that can call render and transfer commands
     pub queue: vk::Queue,
+    /// The command buffer that you'll ultimately submit to be presented/rendered
     pub draw_command_buffer: vk::CommandBuffer,
     command_pool: vk::CommandPool,
+    /// Memory properties used for [`crate::YakuiVulkan`]'s allocation commands
     pub memory_properties: vk::PhysicalDeviceMemoryProperties,
 }
 
 impl<'a> VulkanContext<'a> {
+    /// Construct a new [`VulkanContext`] wrapper.
     pub fn new(
         device: &'a ash::Device,
         queue: vk::Queue,
@@ -28,7 +41,7 @@ impl<'a> VulkanContext<'a> {
         }
     }
 
-    pub unsafe fn create_image(
+    pub(crate) unsafe fn create_image(
         &self,
         image_data: &[u8],
         extent: vk::Extent2D,

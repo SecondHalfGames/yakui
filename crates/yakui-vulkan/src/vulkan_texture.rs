@@ -12,6 +12,9 @@ pub(crate) struct VulkanTexture {
     pub id: u32,
 }
 
+/// A container for information about a texture.
+/// Populate this struct and pass it to [`crate::YakuiVulkan::add_user_texture()`] to create user managed
+/// textures that you can then use in [`yakui`] code.
 pub struct VulkanTextureCreateInfo<T: AsRef<[u8]>> {
     image_data: T,
     format: vk::Format,
@@ -21,6 +24,8 @@ pub struct VulkanTextureCreateInfo<T: AsRef<[u8]>> {
 }
 
 impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
+    /// Construct a new [`VulkanTextureCreateInfo`] wrapper. Ensure `image_data` refers to an image that matches
+    /// the rest of the parameters.
     pub fn new(
         image_data: T,
         format: vk::Format,
@@ -102,7 +107,7 @@ impl VulkanTexture {
         VulkanTexture::new(
             vulkan_context,
             descriptors,
-            VulkanTextureCreateInfo::new(image_data, format, resolution, min_filter, mag_filter)
+            VulkanTextureCreateInfo::new(image_data, format, resolution, min_filter, mag_filter),
         )
     }
 
