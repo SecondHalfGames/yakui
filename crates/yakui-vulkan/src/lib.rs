@@ -769,7 +769,7 @@ mod tests {
     use yakui::image;
 
     const MONKEY_PNG: &[u8] = include_bytes!("../../demo/assets/monkey.png");
-    const DOG_PNG: &[u8] = include_bytes!("../assets/dog.png");
+    const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
 
     #[derive(Debug, Clone)]
     struct GuiState {
@@ -820,7 +820,7 @@ mod tests {
                 )),
                 dog: yakui_vulkan.add_user_texture(
                     &vulkan_context,
-                    create_vulkan_texture_info(DOG_PNG, vk::Filter::LINEAR),
+                    create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
                 ),
                 which_image: WhichImage::Monkey,
             };
