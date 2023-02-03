@@ -1,6 +1,4 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
-#extension GL_ARB_shading_language_420pack : enable
 #define NO_TEXTURE 4294967295
 #define WORKFLOW_MAIN 0
 #define WORKFLOW_TEXT 1
