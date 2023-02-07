@@ -12,7 +12,7 @@ use crate::{buffer::Buffer, util::find_memorytype_index};
 ///
 /// See the documentation on each member for specific safety requirements.
 pub struct VulkanContext<'a> {
-    /// A valid Vulkan device that has the `VkPhysicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound` feature enabled
+    /// A valid Vulkan device (see the [crate level documentation](`crate`) for specifics)
     pub device: &'a ash::Device,
     /// A queue that can call render and transfer commands
     pub queue: vk::Queue,

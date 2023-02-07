@@ -37,11 +37,11 @@ use ash::{util::read_spv, vk};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
-/// Uses a simple descriptor system that requires at least Vulkan 1.2 and [VkPhysicalDeviceDescriptorIndexingFeatures](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceDescriptorIndexingFeatures.html)
-/// `descriptorBindingPartiallyBound` to be enabled.
+/// Uses a simple descriptor system that requires Vulkan 1.2 and some extensions to be enabled. See the [crate level documentation](`crate`)
+/// for details.
 ///
 /// Note that this implementation is currently only able to render to a present surface (ie. the swapchain).
-/// Future versions will support drawing to any `vk::ImageView`
+/// Future versions will support drawing to any [`vk::ImageView`](`ash::vk::ImageView`).
 ///
 /// Construct the struct by populating a [`VulkanContext`] with the relevant handles to your Vulkan renderer and
 /// call [`YakuiVulkan::new()`].
