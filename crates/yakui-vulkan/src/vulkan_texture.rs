@@ -15,7 +15,7 @@ pub(crate) struct VulkanTexture {
 /// A container for information about a texture.
 /// Populate this struct and pass it to [`crate::YakuiVulkan::add_user_texture()`] to create user managed
 /// textures that you can then use in [`yakui`] code.
-pub struct VulkanTextureCreateInfo<T: AsRef<[u8]>> {
+pub struct VulkanTextureCreateInfo<T> {
     image_data: T,
     format: vk::Format,
     resolution: vk::Extent2D,
