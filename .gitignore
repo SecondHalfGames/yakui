@@ -3,3 +3,6 @@
 
 **/snapshot-images
 **/*.snap.new
+
+## IDE specific files
+/vscode
