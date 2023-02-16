@@ -17,6 +17,6 @@ log = "0.4.17"
 palette = "0.6.0"
 profiling = "1.0.6"
 smallvec = "1.9.0"
-thunderdome = "0.5.1"
+thunderdome = "0.6.0"
 
 [features]

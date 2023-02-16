@@ -13,4 +13,4 @@ yakui-wgpu = { path = "../yakui-wgpu" }
 
 wgpu = "0.14.0"
 image = { version = "0.24.4", default-features = false, features = ["png"] }
-pollster = "0.2.5"
+pollster = "0.3.0"
