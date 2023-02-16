@@ -22,4 +22,4 @@ pollster = "0.3.0"
 profiling = "1.0.6"
 tracy-client = { version = "0.15.1", optional = true }
 wgpu = "0.14.0"
-winit = "0.27.5"
+winit = "0.28.1"
