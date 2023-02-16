@@ -12,7 +12,7 @@ pub struct Graphics {
 
 impl Graphics {
     pub async fn new() -> Self {
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
+        let instance = wgpu::Instance::default();
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -63,6 +63,7 @@ impl Graphics {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            view_formats: &[],
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         });
 

@@ -27,8 +27,9 @@ impl Graphics {
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
-        let instance = wgpu::Instance::new(wgpu::Backends::all());
-        let surface = unsafe { instance.create_surface(&window) };
+        let instance = wgpu::Instance::default();
+        let surface =
+            unsafe { instance.create_surface(&window) }.expect("Could not create wgpu surface");
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -57,11 +58,13 @@ impl Graphics {
             .await
             .unwrap();
 
-        let format = surface.get_supported_formats(&adapter)[0];
+        let capabilities = surface.get_capabilities(&adapter);
+        let format = capabilities.formats[0];
         let surface_config = wgpu::SurfaceConfiguration {
             alpha_mode: wgpu::CompositeAlphaMode::Auto,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
+            view_formats: Vec::new(),
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,

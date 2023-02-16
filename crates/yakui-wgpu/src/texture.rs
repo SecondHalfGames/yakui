@@ -33,6 +33,7 @@ impl GpuManagedTexture {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu_format(texture.format()),
+            view_formats: &[],
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
         });
 

@@ -11,6 +11,6 @@ edition = "2021"
 yakui-core = { path = "../yakui-core" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 
-wgpu = "0.14.0"
+wgpu = "0.15.1"
 image = { version = "0.24.4", default-features = false, features = ["png"] }
 pollster = "0.3.0"
