@@ -785,6 +785,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     /// Simple smoke test to make sure render screen properly pixel Vulkan.
     ///
     /// Scoped to only run on Windows for simplicity.

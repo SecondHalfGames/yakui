@@ -49,7 +49,7 @@ impl VulkanTest {
         use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
         use std::ffi::CStr;
 
-        let entry = ash::Entry::linked();
+        let entry = unsafe { ash::Entry::load().expect("failed to load Vulkan") };
         let app_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"Yakui Vulkan Test\0") };
 
         let appinfo = vk::ApplicationInfo::builder()
