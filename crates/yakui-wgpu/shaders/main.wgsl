@@ -19,6 +19,9 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
 
+    // Transform from yakui coordinates to WebGPU:
+    // yakui uses (0, 0) in the top left and (1, 1) in the bottom right
+    // WebGPU uses (-1, 1) in the top left and (1, -1) in the bottom right
     var adjusted: vec2<f32> = in.position;
     adjusted *= vec2(2.0, -2.0);
     adjusted += vec2(-1.0, 1.0);
