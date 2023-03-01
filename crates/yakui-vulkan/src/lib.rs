@@ -25,11 +25,11 @@ mod vulkan_texture;
 
 use buffer::Buffer;
 use bytemuck::{bytes_of, Pod, Zeroable};
-use descriptors::Descriptors;
+pub use descriptors::Descriptors;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 pub use vulkan_context::VulkanContext;
-pub use vulkan_texture::VulkanTextureCreateInfo;
-use vulkan_texture::{VulkanTexture, NO_TEXTURE_ID};
+use vulkan_texture::NO_TEXTURE_ID;
+pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui::geometry::UVec2;
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
@@ -564,18 +564,28 @@ impl YakuiVulkan {
         }
     }
 
-    /// Add a "user managed" texture to this [`YakuiVulkan`] instance. Returns a [`yakui::TextureId`] that can be used
+    /// Create and add a "user managed" texture to this [`YakuiVulkan`] instance. Returns a [`yakui::TextureId`] that can be used
     /// to refer to the texture in your GUI code.
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this instance
-    pub fn add_user_texture(
+    pub fn create_user_texture(
         &mut self,
         vulkan_context: &VulkanContext,
         texture_create_info: VulkanTextureCreateInfo<Vec<u8>>,
     ) -> yakui::TextureId {
         let texture =
             VulkanTexture::new(vulkan_context, &mut self.descriptors, texture_create_info);
+        yakui::TextureId::User(self.user_textures.insert(texture).to_bits())
+    }
+
+    /// Add a "user managed" texture to this [`YakuiVulkan`] instance from an existing [`ash::vk::Image`].
+    /// Returns a [`yakui::TextureId`] that can be used to refer to the texture in your GUI code.
+    ///
+    /// ## Safety
+    /// - `vulkan_context` must be the same as the one used to create this instance
+    /// - `image` must have been created from the same `vulkan_context`
+    pub fn add_user_texture(&mut self, texture: VulkanTexture) -> yakui::TextureId {
         yakui::TextureId::User(self.user_textures.insert(texture).to_bits())
     }
 
@@ -601,6 +611,12 @@ impl YakuiVulkan {
         self.vertex_buffer.cleanup(device);
         self.destroy_framebuffers(device);
         device.destroy_render_pass(self.render_pass, None);
+    }
+
+    /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
+    /// Only useful for creating a [`crate::VulkanTexture`] from a pre-existing [`ash::vk::Image`]
+    pub fn descriptors<'a>(&'a mut self) -> &'a mut Descriptors {
+        &mut self.descriptors
     }
 
     fn update_textures(&mut self, vulkan_context: &VulkanContext, paint: &yakui::paint::PaintDom) {
@@ -819,7 +835,7 @@ mod tests {
                     MONKEY_PNG,
                     yakui::paint::TextureFilter::Linear,
                 )),
-                dog: yakui_vulkan.add_user_texture(
+                dog: yakui_vulkan.create_user_texture(
                     &vulkan_context,
                     create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
                 ),

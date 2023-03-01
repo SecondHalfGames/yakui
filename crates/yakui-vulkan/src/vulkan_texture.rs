@@ -4,12 +4,13 @@ use crate::{descriptors::Descriptors, vulkan_context::VulkanContext};
 
 pub(crate) const NO_TEXTURE_ID: u32 = u32::MAX;
 
-pub(crate) struct VulkanTexture {
+/// A container around a Vulkan created texture
+pub struct VulkanTexture {
     image: vk::Image,
     memory: vk::DeviceMemory,
-    pub sampler: vk::Sampler,
-    pub view: vk::ImageView,
-    pub id: u32,
+    pub(crate) sampler: vk::Sampler,
+    pub(crate) view: vk::ImageView,
+    pub(crate) id: u32,
 }
 
 /// A container for information about a texture.
@@ -44,7 +45,46 @@ impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
 }
 
 impl VulkanTexture {
-    pub fn new<T: AsRef<[u8]>>(
+    /// Create a [`VulkanTexture`] from a pre-existing [`vk::Image`]. Most users will instead want to call
+    /// [`super::YakuiVulkan::create_user_texture()`].
+    ///
+    /// ## Safety
+    /// - All Vulkan handles must have been created on the same `vulkan_context`
+    pub fn from_image(
+        vulkan_context: &VulkanContext,
+        descriptors: &mut Descriptors,
+        image: vk::Image,
+        memory: vk::DeviceMemory,
+        view: vk::ImageView,
+    ) -> Self {
+        let address_mode = vk::SamplerAddressMode::REPEAT;
+        let filter = vk::Filter::LINEAR;
+        let sampler = unsafe {
+            vulkan_context
+                .device
+                .create_sampler(
+                    &vk::SamplerCreateInfo::builder()
+                        .address_mode_u(address_mode)
+                        .address_mode_v(address_mode)
+                        .address_mode_w(address_mode)
+                        .mag_filter(filter)
+                        .min_filter(filter),
+                    None,
+                )
+                .unwrap()
+        };
+        let id =
+            unsafe { descriptors.update_texture_descriptor_set(view, sampler, vulkan_context) };
+        VulkanTexture {
+            image,
+            memory,
+            sampler,
+            view,
+            id,
+        }
+    }
+
+    pub(crate) fn new<T: AsRef<[u8]>>(
         vulkan_context: &VulkanContext,
         descriptors: &mut Descriptors,
         create_info: VulkanTextureCreateInfo<T>,
@@ -89,7 +129,7 @@ impl VulkanTexture {
         }
     }
 
-    pub fn from_yakui_texture(
+    pub(crate) fn from_yakui_texture(
         vulkan_context: &VulkanContext,
         descriptors: &mut Descriptors,
         texture: &yakui::paint::Texture,
@@ -111,7 +151,7 @@ impl VulkanTexture {
         )
     }
 
-    pub unsafe fn cleanup(&self, device: &ash::Device) {
+    pub(crate) unsafe fn cleanup(&self, device: &ash::Device) {
         device.destroy_sampler(self.sampler, None);
         device.destroy_image_view(self.view, None);
         device.destroy_image(self.image, None);
