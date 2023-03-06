@@ -2,15 +2,16 @@ use ash::vk;
 
 use crate::vulkan_context::VulkanContext;
 
-pub(crate) struct Descriptors {
-    pub pool: vk::DescriptorPool,
-    pub set: vk::DescriptorSet,
-    pub layout: vk::DescriptorSetLayout,
+/// A thin wrapper around descriptor related functionality
+pub struct Descriptors {
+    pub(crate) pool: vk::DescriptorPool,
+    pub(crate) set: vk::DescriptorSet,
+    pub(crate) layout: vk::DescriptorSetLayout,
     texture_count: u32,
 }
 
 impl Descriptors {
-    pub fn new(vulkan_context: &VulkanContext) -> Descriptors {
+    pub(crate) fn new(vulkan_context: &VulkanContext) -> Descriptors {
         let device = vulkan_context.device;
 
         let pool = unsafe {
@@ -63,7 +64,7 @@ impl Descriptors {
         }
     }
 
-    pub unsafe fn update_texture_descriptor_set(
+    pub(crate) unsafe fn update_texture_descriptor_set(
         &mut self,
         image_view: vk::ImageView,
         sampler: vk::Sampler,
