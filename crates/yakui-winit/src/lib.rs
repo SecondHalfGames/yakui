@@ -29,7 +29,6 @@ impl YakuiWinit {
     pub fn new(window: &Window) -> Self {
         let size = window.inner_size();
         let scale = window.scale_factor() as f32;
-        println!("window scale in init: {scale}, size: {size:?}");
 
         Self {
             auto_scale: true,
