@@ -615,7 +615,7 @@ impl YakuiVulkan {
 
     /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
     /// Only useful for creating a [`crate::VulkanTexture`] from a pre-existing [`ash::vk::Image`]
-    pub fn descriptors<'a>(&'a mut self) -> &'a mut Descriptors {
+    pub fn descriptors(&mut self) -> &mut Descriptors {
         &mut self.descriptors
     }
 
@@ -771,7 +771,7 @@ fn create_framebuffers(
     framebuffers
 }
 
-#[cfg(test)]
+#[cfg(all(windows, test))]
 mod tests {
     use super::*;
     use ash::vk;
@@ -803,9 +803,6 @@ mod tests {
     #[test]
     #[ignore]
     /// Simple smoke test to make sure render screen properly pixel Vulkan.
-    ///
-    /// Scoped to only run on Windows for simplicity.
-    #[cfg(target_os = "windows")]
     fn it_works() {
         use winit::dpi::PhysicalSize;
 

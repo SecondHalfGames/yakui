@@ -47,7 +47,7 @@ impl<'a> VulkanContext<'a> {
         extent: vk::Extent2D,
         format: vk::Format,
     ) -> (vk::Image, vk::DeviceMemory) {
-        let scratch_buffer = Buffer::new(&self, vk::BufferUsageFlags::TRANSFER_SRC, image_data);
+        let scratch_buffer = Buffer::new(self, vk::BufferUsageFlags::TRANSFER_SRC, image_data);
         let device = self.device;
 
         let image = device

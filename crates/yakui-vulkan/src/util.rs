@@ -365,7 +365,7 @@ impl VulkanTest {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(windows, test))]
 pub(crate) fn init_winit(
     window_width: u32,
     window_height: u32,
