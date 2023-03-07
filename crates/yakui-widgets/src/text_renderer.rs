@@ -8,6 +8,15 @@ use yakui_core::geometry::{URect, UVec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFormat};
 use yakui_core::ManagedTextureId;
 
+#[cfg(not(target_arch = "wasm32"))]
+const TEXTURE_SIZE: u32 = 4096;
+
+// When targeting the web, limit the texture atlas size to 2048x2048 to fit into
+// WebGL 2's limitations. In the future, we should introduce a way to query for
+// these limits.
+#[cfg(target_arch = "wasm32")]
+const TEXTURE_SIZE: u32 = 2048;
+
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {
     pub glyph_cache: Rc<RefCell<GlyphCache>>,
@@ -27,12 +36,12 @@ impl GlyphCache {
         if self.texture.is_none() {
             let texture = paint.add_texture(Texture::new(
                 TextureFormat::R8,
-                UVec2::new(4096, 4096),
-                vec![0; 4096 * 4096],
+                UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE),
+                vec![0; (TEXTURE_SIZE * TEXTURE_SIZE) as usize],
             ));
 
             self.texture = Some(texture);
-            self.texture_size = UVec2::new(4096, 4096);
+            self.texture_size = UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE);
         }
     }
 
