@@ -29,7 +29,6 @@ pub struct YakuiWgpu {
     samplers: Samplers,
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
-    initial_textures_synced: bool,
 
     vertices: Buffer,
     indices: Buffer,
@@ -118,7 +117,6 @@ impl YakuiWgpu {
             samplers,
             textures: Arena::new(),
             managed_textures: HashMap::new(),
-            initial_textures_synced: false,
 
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
@@ -331,20 +329,11 @@ impl YakuiWgpu {
     fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
         profiling::scope!("update_textures");
 
-        // If this is the first time we're running update_textures, create
-        // resources for all yakui textures instead of processing texture edits.
-        //
-        // This makes sure we're caught up in case textures were created before
-        // the first frame.
-        if !self.initial_textures_synced {
-            self.initial_textures_synced = true;
-
-            for (id, texture) in paint.textures() {
+        for (id, texture) in paint.textures() {
+            if !self.managed_textures.contains_key(&id) {
                 self.managed_textures
                     .insert(id, GpuManagedTexture::new(device, queue, texture));
             }
-
-            return;
         }
 
         for (id, change) in paint.texture_edits() {
