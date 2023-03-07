@@ -56,6 +56,12 @@ impl LayoutDom {
         }
     }
 
+    pub(crate) fn sync_removals(&mut self, removals: &[WidgetId]) {
+        for id in removals {
+            self.nodes.remove(id.index());
+        }
+    }
+
     /// Get a widget's layout information.
     pub fn get(&self, id: WidgetId) -> Option<&LayoutDomNode> {
         self.nodes.get(id.index())
@@ -92,6 +98,16 @@ impl LayoutDom {
     /// Get the viewport in unscaled units.
     pub fn unscaled_viewport(&self) -> Rect {
         self.unscaled_viewport
+    }
+
+    /// Tells how many nodes are currently in the `LayoutDom`.
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Tells whether the `LayoutDom` is currently empty.
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 
     /// Calculate the layout of all elements in the given DOM.

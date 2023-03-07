@@ -98,6 +98,7 @@ impl Yakui {
         context::unbind_dom();
 
         self.dom.finish();
+        self.layout.sync_removals(&self.dom.removed_nodes());
         self.layout.calculate_all(&self.dom, &self.input);
         self.input.finish();
     }
