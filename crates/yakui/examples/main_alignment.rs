@@ -1,7 +1,7 @@
 use yakui::widgets::List;
 use yakui::{colored_box, label, Color, CrossAxisAlignment, MainAxisAlignment};
 
-use crate::ExampleState;
+use bootstrap::ExampleState;
 
 pub fn run(state: &mut ExampleState) {
     let alignments = [
@@ -21,4 +21,8 @@ pub fn run(state: &mut ExampleState) {
         label(format!("MainAxisAlignment::{alignment:?}"));
         colored_box(Color::BLUE, [100.0, 100.0]);
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn(&mut ExampleState));
 }

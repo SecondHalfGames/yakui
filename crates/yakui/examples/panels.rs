@@ -1,9 +1,7 @@
 use yakui::widgets::{List, Panel};
 use yakui::{button, center, column, expanded, label, row, textbox, use_state, CrossAxisAlignment};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     column(|| {
         let panel = Panel::top_bottom();
         panel.show(|| {
@@ -52,4 +50,8 @@ pub fn run(_state: &mut ExampleState) {
             });
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

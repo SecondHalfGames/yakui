@@ -1,6 +1,6 @@
 use yakui::{align, colored_box, Alignment, Color};
 
-use crate::ExampleState;
+use bootstrap::ExampleState;
 
 pub fn run(state: &mut ExampleState) {
     const ALIGNMENTS: &[Alignment] = &[
@@ -21,4 +21,8 @@ pub fn run(state: &mut ExampleState) {
     align(alignment, || {
         colored_box(Color::REBECCA_PURPLE, [100.0, 100.0]);
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn(&mut ExampleState));
 }

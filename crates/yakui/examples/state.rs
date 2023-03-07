@@ -1,8 +1,6 @@
 use yakui::{button, center, column, label, use_state};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let value = use_state(|| 0);
 
     center(|| {
@@ -14,4 +12,8 @@ pub fn run(_state: &mut ExampleState) {
             }
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

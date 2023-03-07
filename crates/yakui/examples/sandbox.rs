@@ -1,9 +1,7 @@
 use yakui::widgets::{Button, Pad};
 use yakui::{button, column, pad, row, Color};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     column(|| {
         let res = button("First button");
         if res.clicked {
@@ -26,4 +24,8 @@ pub fn run(_state: &mut ExampleState) {
 
         button("Sincerely, Yakui");
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

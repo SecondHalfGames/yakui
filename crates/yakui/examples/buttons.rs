@@ -1,9 +1,7 @@
 use yakui::widgets::List;
 use yakui::{button, row, CrossAxisAlignment};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     row(|| {
         button("Not stretched");
         let mut col = List::column();
@@ -14,4 +12,8 @@ pub fn run(_state: &mut ExampleState) {
             button("Button 3");
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

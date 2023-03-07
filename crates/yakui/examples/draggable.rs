@@ -1,8 +1,6 @@
 use yakui::{colored_box, draggable, offset, use_state, Color, Vec2};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let pos = use_state(|| Vec2::ZERO);
 
     offset(pos.get(), || {
@@ -14,4 +12,8 @@ pub fn run(_state: &mut ExampleState) {
             pos.set(new.current);
         }
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

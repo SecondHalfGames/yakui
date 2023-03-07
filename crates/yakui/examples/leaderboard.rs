@@ -1,15 +1,13 @@
 use yakui::widgets::{List, Pad};
 use yakui::{align, colored_box_container, label, pad, Alignment, Color, MainAxisSize};
 
-use crate::ExampleState;
-
 struct Entry {
     name: &'static str,
     score: u32,
     currency: u32,
 }
 
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let data = [
         Entry {
             name: "First Person",
@@ -64,4 +62,8 @@ fn stat_column(children: impl FnOnce()) {
     let mut col = List::column();
     col.main_axis_size = MainAxisSize::Min;
     col.show(children);
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

@@ -1,6 +1,6 @@
 use yakui::{image, nineslice, pad, widgets::Pad, Vec2};
 
-use crate::ExampleState;
+use bootstrap::ExampleState;
 
 pub fn run(state: &mut ExampleState) {
     pad(Pad::all(20.0), || {
@@ -8,4 +8,8 @@ pub fn run(state: &mut ExampleState) {
             image(state.monkey, Vec2::new(400.0, 400.0));
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn(&mut ExampleState));
 }

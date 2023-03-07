@@ -1,9 +1,7 @@
 use yakui::widgets::Text;
 use yakui::{column, text, Color};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     column(|| {
         text(32.0, "Default Font");
 
@@ -12,4 +10,8 @@ pub fn run(_state: &mut ExampleState) {
         text.style.color = Color::GREEN;
         text.show();
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

@@ -34,7 +34,7 @@ jobs:
         profile: minimal
 
     - name: Build
-      run: cargo build --verbose ${{ matrix.flags }}
+      run: cargo build --all-targets --verbose ${{ matrix.flags }}
 
     - name: Run tests
       run: cargo test --verbose ${{ matrix.flags }}

@@ -1,9 +1,7 @@
 use yakui::widgets::{List, Pad, Slider};
 use yakui::{button, checkbox, label, pad, row, slider, textbox, use_state};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let checked = use_state(|| false);
     let name = use_state(|| String::from("Hello"));
     let step_size = use_state(|| 0.0);
@@ -46,4 +44,8 @@ pub fn run(_state: &mut ExampleState) {
             });
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }
