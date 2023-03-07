@@ -165,25 +165,27 @@ impl InputState {
         }
 
         if let Some(entered) = current {
-            let mut node = dom.get_mut(entered).unwrap();
-            self.fire_event(
-                dom,
-                layout,
-                entered,
-                &mut node,
-                &WidgetEvent::FocusChanged(true),
-            );
+            if let Some(mut node) = dom.get_mut(entered) {
+                self.fire_event(
+                    dom,
+                    layout,
+                    entered,
+                    &mut node,
+                    &WidgetEvent::FocusChanged(true),
+                );
+            }
         }
 
         if let Some(left) = last {
-            let mut node = dom.get_mut(left).unwrap();
-            self.fire_event(
-                dom,
-                layout,
-                left,
-                &mut node,
-                &WidgetEvent::FocusChanged(false),
-            );
+            if let Some(mut node) = dom.get_mut(left) {
+                self.fire_event(
+                    dom,
+                    layout,
+                    left,
+                    &mut node,
+                    &WidgetEvent::FocusChanged(false),
+                );
+            }
         }
 
         self.last_selection.set(current);
@@ -243,12 +245,15 @@ impl InputState {
     ) -> EventResponse {
         let selected = self.selection.get();
         if let Some(id) = selected {
-            let layout_node = layout.get(id).unwrap();
+            let Some(layout_node) = layout.get(id)
+                else { return EventResponse::Bubble };
 
             if layout_node
                 .event_interest
                 .contains(EventInterest::FOCUSED_KEYBOARD)
             {
+                // Panic safety: if this node is in the layout DOM, it must be
+                // in the DOM.
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::KeyChanged {
                     key,
@@ -270,12 +275,15 @@ impl InputState {
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
         let selected = self.selection.get();
         if let Some(id) = selected {
-            let layout_node = layout.get(id).unwrap();
+            let Some(layout_node) = layout.get(id)
+                else { return EventResponse::Bubble };
 
             if layout_node
                 .event_interest
                 .contains(EventInterest::FOCUSED_KEYBOARD)
             {
+                // Panic safety: if this node is in the layout DOM, it must be
+                // in the DOM.
                 let mut node = dom.get_mut(id).unwrap();
                 let event = WidgetEvent::TextInput(c);
                 return self.fire_event(dom, layout, id, &mut node, &event);
@@ -367,8 +375,9 @@ impl InputState {
 
         for (id, interest) in interest_mouse {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
-                let mut node = dom.get_mut(id).unwrap();
-                self.fire_event(dom, layout, id, &mut node, &event);
+                if let Some(mut node) = dom.get_mut(id) {
+                    self.fire_event(dom, layout, id, &mut node, &event);
+                }
             }
         }
     }
@@ -477,7 +486,8 @@ fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Widge
     let interest_mouse = layout.interest_mouse.iter().copied().rev();
 
     for (id, _interest) in interest_mouse {
-        let layout_node = layout.get(id).unwrap();
+        let Some(layout_node) = layout.get(id)
+            else { continue };
 
         let mut rect = layout_node.rect;
         let mut node = layout_node;
