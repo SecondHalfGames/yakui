@@ -82,6 +82,16 @@ impl Dom {
         trim_children(&mut nodes, root);
     }
 
+    /// Tells how many nodes are currently in the DOM.
+    pub fn len(&self) -> usize {
+        self.inner.nodes.borrow().len()
+    }
+
+    /// Tells whether the DOM is empty.
+    pub fn is_empty(&self) -> bool {
+        self.inner.nodes.borrow().is_empty()
+    }
+
     /// Gives the root widget in the DOM. This widget will always exist.
     pub fn root(&self) -> WidgetId {
         self.inner.root

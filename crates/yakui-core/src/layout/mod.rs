@@ -94,6 +94,16 @@ impl LayoutDom {
         self.unscaled_viewport
     }
 
+    /// Tells how many nodes are currently in the `LayoutDom`.
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Tells whether the `LayoutDom` is currently empty.
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+
     /// Calculate the layout of all elements in the given DOM.
     pub fn calculate_all(&mut self, dom: &Dom, input: &InputState) {
         profiling::scope!("LayoutDom::calculate_all");
