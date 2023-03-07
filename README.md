@@ -38,6 +38,7 @@ yakui has the following priorities:
 * [Rationale](#rationale)
 * [Architecture](#architecture)
 * [Crates](#crates)
+* [Games Using yakui](#games-using-yakui)
 * [Name](#name)
 * [Minimum Supported Rust Version (MSRV)](#minimum-supported-rust-version-msrv)
 * [License](#license)
@@ -185,6 +186,12 @@ The `yakui-app` crate is a wrapper around `yakui-winit` and `yakui-wgpu` intende
 If you are writing your own integration for yakui, this crate is intended to be a good learning resource.
 
 [`yakui-app`]: https://crates.io/crates/yakui-app
+
+## Games Using yakui
+There are a handful of games already using yakui for their UI. Here are a couple:
+
+* [Zombie Demo Game](https://lpghatguy.itch.io/zombie-demo-game)
+* [CyberGate](https://www.youtube.com/watch?v=msHuaPAJZMo)
 
 ## Name
 yakui is all lowercase.
