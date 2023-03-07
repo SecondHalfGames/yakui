@@ -78,9 +78,11 @@ You can use the [`yakui-winit`] and [`yakui-wgpu`] crates to integrate with [win
 [`yakui::Yakui`]: https://github.com/LPGhatguy/yakui/blob/main/crates/yakui-core/src/state.rs
 
 ## Examples
-A complete demo application is contained available in [`crates/demo`](crates/demo).
+Example setup code for yakui is available in [`crates/bootstrap`](crates/bootstrap).
 
-You can run an example with `cargo run <example name>`. Use `cargo run` or look in [`crates/demo/src/examples`](crates/demo/src/examples). to get a list of available examples.
+You can run examples with `cargo run --example <example name>`. Check out [`crates/yakui/examples`](crates/yakui/examples) to get a list of available examples.
+
+Many of the examples look like this:
 
 ```rust
 fn app() {
@@ -93,6 +95,8 @@ fn app() {
     })
 }
 ```
+
+In these examples, the `app` function is run every frame, processing input and updating the UI. This replicates how games tend to work.
 
 ## Rationale
 yakui exists to fill two roles in the Rust game UI ecosystem:
