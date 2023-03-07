@@ -108,7 +108,7 @@ impl Graphics {
     }
 
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
+        if new_size.width > 0 && new_size.height > 0 && new_size != self.size {
             self.size = new_size;
             self.surface_config.width = new_size.width;
             self.surface_config.height = new_size.height;
