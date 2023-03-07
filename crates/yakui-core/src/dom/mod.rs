@@ -29,6 +29,7 @@ pub struct Dom {
 struct DomInner {
     nodes: RefCell<Arena<DomNode>>,
     stack: RefCell<Vec<WidgetId>>,
+    removed_nodes: RefCell<Vec<WidgetId>>,
     root: WidgetId,
     globals: RefCell<AnyMap>,
 }
@@ -78,8 +79,9 @@ impl Dom {
         log::debug!("Dom::finish()");
 
         let mut nodes = self.inner.nodes.borrow_mut();
+        let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
         let root = self.inner.root;
-        trim_children(&mut nodes, root);
+        trim_children(&mut nodes, &mut removed_nodes, root);
     }
 
     /// Tells how many nodes are currently in the DOM.
@@ -95,6 +97,13 @@ impl Dom {
     /// Gives the root widget in the DOM. This widget will always exist.
     pub fn root(&self) -> WidgetId {
         self.inner.root
+    }
+
+    /// Gives a list of all of the nodes that were removed in the last update.
+    /// This is used for synchronizing state with the primary DOM storage.
+    pub(crate) fn removed_nodes(&self) -> Ref<'_, [WidgetId]> {
+        let vec = self.inner.removed_nodes.borrow();
+        Ref::map(vec, AsRef::as_ref)
     }
 
     /// Enter the context of the given widget, pushing it onto the stack so that
@@ -228,7 +237,8 @@ impl Dom {
         );
 
         let mut nodes = self.inner.nodes.borrow_mut();
-        trim_children(&mut nodes, id);
+        let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
+        trim_children(&mut nodes, &mut removed_nodes, id);
     }
 }
 
@@ -245,6 +255,7 @@ impl DomInner {
         Self {
             globals: RefCell::new(AnyMap::new()),
             nodes: RefCell::new(nodes),
+            removed_nodes: RefCell::new(Vec::new()),
             stack: RefCell::new(Vec::new()),
             root: WidgetId::new(root),
         }
@@ -276,17 +287,19 @@ fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
 
 /// Remove children from the given node that weren't present in the latest
 /// traversal through the tree.
-fn trim_children(nodes: &mut Arena<DomNode>, id: WidgetId) {
+fn trim_children(nodes: &mut Arena<DomNode>, removed_nodes: &mut Vec<WidgetId>, id: WidgetId) {
     let node = nodes.get_mut(id.index()).unwrap();
 
     if node.next_child < node.children.len() {
         let mut queue: VecDeque<WidgetId> = VecDeque::new();
         let to_drop = &node.children[node.next_child..];
         queue.extend(to_drop);
+        removed_nodes.extend_from_slice(to_drop);
 
         node.children.truncate(node.next_child);
 
         while let Some(child_id) = queue.pop_front() {
+            removed_nodes.push(child_id);
             let child = nodes.remove(child_id.index()).unwrap();
             queue.extend(child.children);
         }

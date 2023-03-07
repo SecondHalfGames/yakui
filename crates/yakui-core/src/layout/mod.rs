@@ -56,6 +56,12 @@ impl LayoutDom {
         }
     }
 
+    pub(crate) fn sync_removals(&mut self, removals: &[WidgetId]) {
+        for id in removals {
+            self.nodes.remove(id.index());
+        }
+    }
+
     /// Get a widget's layout information.
     pub fn get(&self, id: WidgetId) -> Option<&LayoutDomNode> {
         self.nodes.get(id.index())
