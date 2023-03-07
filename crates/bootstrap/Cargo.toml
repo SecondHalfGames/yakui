@@ -1,7 +1,7 @@
 [package]
-name = "demo"
-version = "0.0.0"
+name = "bootstrap"
 publish = false
+version = "0.1.0"
 edition = "2021"
 
 [features]
@@ -14,7 +14,6 @@ yakui-wgpu = { path = "../yakui-wgpu" }
 yakui-winit = { path = "../yakui-winit" }
 
 anyhow = "1.0.58"
-clap = { version = "4.1.6", features = ["derive"] }
 env_logger = "0.10.0"
 image = { version = "0.24.2", default-features = false, features = ["png"] }
 log = "0.4.17"

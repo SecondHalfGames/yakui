@@ -1,9 +1,7 @@
 use yakui::widgets::Pad;
 use yakui::{button, center, column, expanded, pad, scroll_vertical};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     center(|| {
         pad(Pad::all(50.0), || {
             scroll_vertical(|| {
@@ -19,4 +17,8 @@ pub fn run(_state: &mut ExampleState) {
             });
         });
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

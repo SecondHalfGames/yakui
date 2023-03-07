@@ -1,9 +1,7 @@
 use yakui::widgets::List;
 use yakui::{button, checkbox, use_state};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let shown = use_state(|| false);
 
     let mut col = List::column();
@@ -16,4 +14,8 @@ pub fn run(_state: &mut ExampleState) {
 
         button("World!");
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

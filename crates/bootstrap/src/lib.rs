@@ -1,9 +1,7 @@
 mod custom_texture;
-mod examples;
 
 use std::time::Instant;
 
-use clap::Parser;
 use winit::dpi::LogicalSize;
 use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -12,8 +10,6 @@ use winit::window::WindowBuilder;
 use yakui::font::{Font, FontSettings, Fonts};
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2};
-
-use crate::examples::Args;
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
@@ -38,16 +34,38 @@ pub struct ExampleState {
     pub custom: TextureId,
 }
 
-async fn run() {
-    // The demo app uses clap to parse arguments. We have a little glue here to
-    // also grab which example to run.
-    let args = Args::parse();
-    let example = args.example.function();
+pub trait ExampleBody: 'static {
+    fn run(&self, state: &mut ExampleState);
+}
 
+impl ExampleBody for fn() {
+    fn run(&self, _state: &mut ExampleState) {
+        (self)();
+    }
+}
+
+impl ExampleBody for fn(&mut ExampleState) {
+    fn run(&self, state: &mut ExampleState) {
+        (self)(state);
+    }
+}
+
+/// Boostrap and start a new app, using the given function as the body of the
+/// function, which runs every frame.
+pub fn start(body: impl ExampleBody) {
+    #[cfg(feature = "profile")]
+    let _client = tracy_client::Client::start();
+
+    init_logging();
+
+    pollster::block_on(run(body));
+}
+
+async fn run(body: impl ExampleBody) {
     // Normal winit setup for an EventLoop and Window.
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title(format!("yakui Demo: {:?}", args.example))
+        .with_title("yakui Demo")
         .with_inner_size(LogicalSize::new(800.0, 600.0))
         .build(&event_loop)
         .unwrap();
@@ -128,9 +146,9 @@ async fn run() {
                     // State.
                     yak.start();
 
-                    // Here, we call out to our example code. See `src/examples` for
-                    // the code, which runs each frame.
-                    example(&mut state);
+                    // Call out to the body of the program, passing in a bit of
+                    // shared state that all the examples can use.
+                    body.run(&mut state);
 
                     // Finish building the UI and compute this frame's layout.
                     yak.finish();
@@ -217,13 +235,4 @@ fn get_inset_override() -> Option<f32> {
     std::env::var("YAKUI_INSET")
         .ok()
         .and_then(|s| s.parse().ok())
-}
-
-fn main() {
-    #[cfg(feature = "profile")]
-    let _client = tracy_client::Client::start();
-
-    init_logging();
-
-    pollster::block_on(run());
 }

@@ -1,8 +1,6 @@
 use yakui::{colored_box, column, row, Color};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     let colors = [Color::hex(0x3a2c32), Color::hex(0x222a29)];
 
     row(|| {
@@ -15,4 +13,8 @@ pub fn run(_state: &mut ExampleState) {
             });
         }
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

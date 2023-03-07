@@ -1,9 +1,7 @@
 use yakui::widgets::Text;
 use yakui::{column, label, row, text, Color};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     column(|| {
         row(|| {
             label("Hello, world!");
@@ -15,4 +13,8 @@ pub fn run(_state: &mut ExampleState) {
 
         text(96.0, "yakui text demo!");
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

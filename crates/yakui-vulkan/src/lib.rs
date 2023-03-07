@@ -784,7 +784,7 @@ mod tests {
     };
     use yakui::image;
 
-    const MONKEY_PNG: &[u8] = include_bytes!("../../demo/assets/monkey.png");
+    const MONKEY_PNG: &[u8] = include_bytes!("../../bootstrap/assets/monkey.png");
     const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
 
     #[derive(Debug, Clone)]

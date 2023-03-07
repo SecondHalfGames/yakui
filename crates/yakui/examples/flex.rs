@@ -1,8 +1,6 @@
 use yakui::{colored_box, expanded, row, Color};
 
-use crate::ExampleState;
-
-pub fn run(_state: &mut ExampleState) {
+pub fn run() {
     row(|| {
         colored_box(Color::RED, [100.0, 100.0]);
         expanded(|| {
@@ -10,4 +8,8 @@ pub fn run(_state: &mut ExampleState) {
         });
         colored_box(Color::BLUE, [100.0, 100.0]);
     });
+}
+
+fn main() {
+    bootstrap::start(run as fn());
 }

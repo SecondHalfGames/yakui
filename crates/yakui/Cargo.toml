@@ -14,3 +14,6 @@ default-fonts = ["yakui-widgets/default-fonts"]
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.2.0" }
 yakui-widgets = { path = "../yakui-widgets", version = "0.2.0", default-features = false }
+
+[dev-dependencies]
+bootstrap = { path = "../bootstrap" }
