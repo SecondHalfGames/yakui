@@ -1,4 +1,5 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
+use yakui_core::geometry::Color;
 use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::widget::{EventContext, PaintContext, Widget};
 use yakui_core::Response;
@@ -21,6 +22,7 @@ pub struct TextBox {
     pub text: String,
     pub style: TextStyle,
     pub padding: Pad,
+    pub fill: Option<Color>,
 }
 
 impl TextBox {
@@ -29,6 +31,7 @@ impl TextBox {
             text: text.into(),
             style: TextStyle::label(),
             padding: Pad::all(8.0),
+            fill: Some(colors::BACKGROUND_3),
         }
     }
 
@@ -83,9 +86,12 @@ impl Widget for TextBoxWidget {
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
-        let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
-        bg.color = colors::BACKGROUND_3;
-        bg.add(ctx.paint);
+
+        if let Some(fill_color) = self.props.fill {
+            let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
+            bg.color = fill_color;
+            bg.add(ctx.paint);
+        }
 
         let node = ctx.dom.get_current();
         for &child in &node.children {
