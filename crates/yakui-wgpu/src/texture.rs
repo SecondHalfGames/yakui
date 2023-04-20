@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 use glam::UVec2;
 use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
 
@@ -95,13 +93,13 @@ fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
     match format {
         TextureFormat::Rgba8Srgb => wgpu::ImageDataLayout {
             offset: 0,
-            bytes_per_row: NonZeroU32::new(4 * size.x),
-            rows_per_image: NonZeroU32::new(size.y),
+            bytes_per_row: Some(4 * size.x),
+            rows_per_image: Some(size.y),
         },
         TextureFormat::R8 => wgpu::ImageDataLayout {
             offset: 0,
-            bytes_per_row: NonZeroU32::new(size.x),
-            rows_per_image: NonZeroU32::new(size.y),
+            bytes_per_row: Some(size.x),
+            rows_per_image: Some(size.y),
         },
         _ => panic!("Unsupported texture format {format:?}"),
     }

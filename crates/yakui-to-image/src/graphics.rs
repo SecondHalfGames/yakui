@@ -1,5 +1,4 @@
 use std::mem::size_of;
-use std::num::NonZeroU32;
 
 use image::RgbaImage;
 use yakui_wgpu::SurfaceInfo;
@@ -124,8 +123,8 @@ impl Graphics {
                 buffer: &buffer,
                 layout: wgpu::ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: NonZeroU32::new(buffer_size.padded_bytes_per_row),
-                    rows_per_image: NonZeroU32::new(size.height),
+                    bytes_per_row: Some(buffer_size.padded_bytes_per_row),
+                    rows_per_image: Some(size.height),
                 },
             },
             size,

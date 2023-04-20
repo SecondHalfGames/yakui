@@ -1,5 +1,3 @@
-use std::num::NonZeroU32;
-
 const WIDTH: usize = 64;
 const HEIGHT: usize = 64;
 const BYTES_PER_ROW: usize = WIDTH * 4;
@@ -44,7 +42,7 @@ pub fn generate(device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::TextureView
         &data,
         wgpu::ImageDataLayout {
             offset: 0,
-            bytes_per_row: NonZeroU32::new(BYTES_PER_ROW as u32),
+            bytes_per_row: Some(BYTES_PER_ROW as u32),
             rows_per_image: None,
         },
         size,
