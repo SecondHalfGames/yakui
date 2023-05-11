@@ -2,7 +2,7 @@ use std::f32::INFINITY;
 
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize, Response};
+use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
 
 use crate::util::widget_children;
 
@@ -130,6 +130,10 @@ impl Widget for ListWidget {
                 continue;
             }
 
+            if child.widget.flow() != Flow::Inline {
+                continue;
+            }
+
             let constraints = Constraints {
                 min: direction.vec2(0.0, cross_axis_min),
                 max: direction.vec2(INFINITY, cross_axis_max),
@@ -148,6 +152,10 @@ impl Widget for ListWidget {
             let (flex, fit) = child.widget.flex();
 
             if flex == 0 {
+                continue;
+            }
+
+            if child.widget.flow() != Flow::Inline {
                 continue;
             }
 
@@ -190,6 +198,31 @@ impl Widget for ListWidget {
             other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
+        let container_size = input.constrain(direction.vec2(main_axis_size, cross_size));
+
+        // We can lay out all children that are not part of the layout flow at
+        // this point, now that we know the total size of the container.
+        for &child_id in &node.children {
+            let child = ctx.dom.get(child_id).unwrap();
+            let flow = child.widget.flow();
+
+            match flow {
+                Flow::Inline => (),
+
+                Flow::Relative { anchor, offset } => {
+                    ctx.calculate_layout(child_id, Constraints::none());
+
+                    let anchor = container_size * anchor.as_vec2();
+                    let offset = offset.resolve(container_size);
+
+                    let child_layout = ctx.layout.get_mut(child_id).unwrap();
+                    child_layout.rect.set_pos(anchor + offset);
+                }
+
+                other => unimplemented!("Flow::{other:?}"),
+            }
+        }
+
         // Finally, position all children based on the sizes calculated above.
         let mut next_main = match self.props.main_axis_alignment {
             MainAxisAlignment::Start => 0.0,
@@ -199,6 +232,11 @@ impl Widget for ListWidget {
         };
 
         for &child_index in &node.children {
+            let child = ctx.dom.get(child_index).unwrap();
+            if child.widget.flow() != Flow::Inline {
+                continue;
+            }
+
             let child_layout = ctx.layout.get_mut(child_index).unwrap();
             let child_size = child_layout.rect.size();
             let child_main = direction.get_main_axis(child_size);
@@ -216,6 +254,6 @@ impl Widget for ListWidget {
             next_main += self.props.item_spacing;
         }
 
-        input.constrain(direction.vec2(main_axis_size, cross_size))
+        container_size
     }
 }

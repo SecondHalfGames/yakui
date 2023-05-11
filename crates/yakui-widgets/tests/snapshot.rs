@@ -1,11 +1,11 @@
-use yakui::{Constraints, CrossAxisAlignment, MainAxisAlignment, MainAxisSize, Vec2};
+use yakui::{Constraints, CrossAxisAlignment, Dim, Dim2, MainAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
 use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
     align, button, center, checkbox, colored_box, colored_box_container, column, constrained,
-    expanded, pad, row, text,
+    expanded, pad, reflow, row, text,
 };
 
 #[test]
@@ -341,7 +341,31 @@ fn column_intrinsic() {
     });
 }
 
-fn rect<V: Dim>(w: V, h: V) {
+#[test]
+fn row_reflow() {
+    run!({
+        align(Alignment::TOP_LEFT, || {
+            let mut list = List::row();
+            list.main_axis_size = MainAxisSize::Min;
+            list.show(|| {
+                colored_box(Color::RED, [50.0, 50.0]);
+                colored_box(Color::GREEN, [50.0, 50.0]);
+
+                reflow(Alignment::BOTTOM_RIGHT, Dim2::ZERO, || {
+                    align(Alignment::BOTTOM_RIGHT, || {
+                        colored_box(Color::BLUE, [100.0, 50.0]);
+                    });
+                });
+
+                // reflow(Alignment::BOTTOM_RIGHT, Dim2::pixels(0.0, 50.0), || {
+                //     colored_box(Color::WHITE, [100.0, 100.0]);
+                // });
+            });
+        });
+    });
+}
+
+fn rect<V: IntoF32>(w: V, h: V) {
     colored_box(Color::WHITE, [w.to_f32(), h.to_f32()]);
 }
 
@@ -349,17 +373,17 @@ fn rect_50x50() {
     rect(50.0, 50.0);
 }
 
-trait Dim {
+trait IntoF32 {
     fn to_f32(self) -> f32;
 }
 
-impl Dim for f32 {
+impl IntoF32 for f32 {
     fn to_f32(self) -> f32 {
         self
     }
 }
 
-impl Dim for i32 {
+impl IntoF32 for i32 {
     fn to_f32(self) -> f32 {
         self as f32
     }

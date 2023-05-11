@@ -1,6 +1,26 @@
 //! Types used by various yakui widgets.
 
-use crate::geometry::{Constraints, Vec2};
+use crate::geometry::{Constraints, Dim2, Vec2};
+
+/// Defines how an object participates in layout.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
+pub enum Flow {
+    /// The widget participates in list, grid, and table layouts.
+    ///
+    /// This is the default for most widgets.
+    Inline,
+
+    /// The widget does not participate in layout. Its position is calculated
+    /// using an anchor and an offset.
+    Relative {
+        /// Where in the parent container that this widget should be anchor to.
+        anchor: Alignment,
+
+        /// The offset from the anchor to position this widget at.
+        offset: Dim2,
+    },
+}
 
 /// Defines sizing along a container's main axis.
 ///

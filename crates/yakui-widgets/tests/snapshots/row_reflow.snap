@@ -1,0 +1,13 @@
+---
+source: crates/yakui-widgets/tests/snapshot.rs
+assertion_line: 346
+expression: view
+---
+- AlignWidget pos(0, 0) size(1000, 1000)
+  - ListWidget pos(0, 0) size(100, 50)
+    - ColoredBoxWidget pos(0, 0) size(50, 50)
+    - ColoredBoxWidget pos(50, 0) size(50, 50)
+    - ReflowWidget pos(100, 50) size(100, 50)
+      - AlignWidget pos(100, 50) size(100, 50)
+        - ColoredBoxWidget pos(100, 50) size(100, 50)
+

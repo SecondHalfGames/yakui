@@ -12,7 +12,7 @@ use crate::geometry::{Constraints, FlexFit};
 use crate::input::{InputState, NavDirection};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
-use crate::WidgetId;
+use crate::{Flow, WidgetId};
 
 /// Trait that's automatically implemented for all widget props.
 ///
@@ -102,6 +102,13 @@ pub trait Widget: 'static + fmt::Debug {
         (0, FlexFit::Loose)
     }
 
+    /// Returns the behavior that this widget should have when part of a layout.
+    ///
+    /// By default, widgets participate in layout using [`Flow::Inline`].
+    fn flow(&self) -> Flow {
+        Flow::Inline
+    }
+
     /// Calculate this widget's layout with the given constraints and return its
     /// size. The returned size must fit within the given constraints, which can
     /// be done using `constraints.constrain(size)`.
@@ -160,6 +167,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
 
+    /// See [`Widget::flow`].
+    fn flow(&self) -> Flow;
+
     /// See [`Widget::paint`].
     fn paint(&self, ctx: PaintContext<'_>);
 
@@ -183,6 +193,10 @@ where
 
     fn flex(&self) -> (u32, FlexFit) {
         <T as Widget>::flex(self)
+    }
+
+    fn flow(&self) -> Flow {
+        <T as Widget>::flow(self)
     }
 
     fn paint(&self, ctx: PaintContext<'_>) {

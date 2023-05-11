@@ -5,15 +5,15 @@
 
 use std::borrow::Cow;
 
-use yakui_core::geometry::{Color, Constraints, Vec2};
+use yakui_core::geometry::{Color, Constraints, Dim2, Vec2};
 use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
 
 use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, Circle, CircleWidget,
     ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget,
     Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget,
-    Offset, OffsetWidget, Pad, PadWidget, Scrollable, ScrollableWidget, Slider, SliderWidget,
-    State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
+    Offset, OffsetWidget, Pad, PadWidget, Reflow, ReflowWidget, Scrollable, ScrollableWidget,
+    Slider, SliderWidget, State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -139,6 +139,11 @@ pub fn scroll_vertical(children: impl FnOnce()) -> Response<ScrollableWidget> {
 /// See [Slider].
 pub fn slider(value: f64, min: f64, max: f64) -> Response<SliderWidget> {
     Slider::new(value, min, max).show()
+}
+
+/// See [Reflow].
+pub fn reflow(anchor: Alignment, offset: Dim2, children: impl FnOnce()) -> Response<ReflowWidget> {
+    Reflow::new(anchor, offset).show(children)
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>
