@@ -1,4 +1,4 @@
-use yakui::{Constraints, CrossAxisAlignment, Dim, Dim2, MainAxisAlignment, MainAxisSize, Vec2};
+use yakui::{Constraints, CrossAxisAlignment, Dim2, MainAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
 use yakui_core::Alignment;
 use yakui_test::{run, Test};
@@ -352,14 +352,12 @@ fn row_reflow() {
                 colored_box(Color::GREEN, [50.0, 50.0]);
 
                 reflow(Alignment::BOTTOM_RIGHT, Dim2::ZERO, || {
-                    align(Alignment::BOTTOM_RIGHT, || {
-                        colored_box(Color::BLUE, [100.0, 50.0]);
-                    });
+                    colored_box(Color::BLUE, [100.0, 50.0]);
                 });
 
-                // reflow(Alignment::BOTTOM_RIGHT, Dim2::pixels(0.0, 50.0), || {
-                //     colored_box(Color::WHITE, [100.0, 100.0]);
-                // });
+                reflow(Alignment::BOTTOM_RIGHT, Dim2::pixels(0.0, 50.0), || {
+                    colored_box(Color::WHITE, [100.0, 100.0]);
+                });
             });
         });
     });
