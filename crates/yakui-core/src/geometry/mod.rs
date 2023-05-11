@@ -2,6 +2,7 @@
 
 mod color;
 mod constraints;
+mod dim;
 mod rect;
 mod urect;
 
@@ -10,6 +11,7 @@ pub use glam::{UVec2, Vec2, Vec4};
 
 pub use self::color::*;
 pub use self::constraints::*;
+pub use self::dim::*;
 pub use self::rect::*;
 pub use self::urect::*;
 
