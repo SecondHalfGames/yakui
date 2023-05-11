@@ -1,0 +1,2 @@
+[alias]
+image-test = "insta test --features images"
