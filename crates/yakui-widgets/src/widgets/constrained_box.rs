@@ -62,6 +62,6 @@ impl Widget for ConstrainedBoxWidget {
             size = size.max(child_size);
         }
 
-        input.constrain(size)
+        input.constrain(constraints.constrain(size))
     }
 }
