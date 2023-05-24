@@ -2,14 +2,17 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 
-use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
+use fontdue::layout::{
+    CoordinateSystem, HorizontalAlign as FontdueAlign, Layout, LayoutSettings,
+    TextStyle as FontdueTextStyle,
+};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::{PaintRect, Pipeline};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::font::{FontName, Fonts};
-use crate::style::TextStyle;
+use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::TextGlobalState;
 use crate::util::widget;
 
@@ -88,10 +91,17 @@ impl Widget for RenderTextWidget {
             (None, None)
         };
 
+        let horizontal_align = match self.props.style.align {
+            TextAlignment::Start => FontdueAlign::Left,
+            TextAlignment::Center => FontdueAlign::Center,
+            TextAlignment::End => FontdueAlign::Right,
+        };
+
         let mut text_layout = self.layout.borrow_mut();
         text_layout.reset(&LayoutSettings {
             max_width,
             max_height,
+            horizontal_align,
             ..LayoutSettings::default()
         });
 
@@ -104,18 +114,23 @@ impl Widget for RenderTextWidget {
             ),
         );
 
-        let size = get_text_layout_size(&text_layout, ctx.layout.scale_factor());
+        let offset_x = get_text_layout_offset_x(&text_layout, ctx.layout.scale_factor());
+
+        let size = get_text_layout_size(&text_layout, ctx.layout.scale_factor())
+            - Vec2::new(offset_x, 0.0);
 
         input.constrain_min(size)
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let text_layout = self.layout.borrow_mut();
+        let offset_x = get_text_layout_offset_x(&text_layout, ctx.layout.scale_factor());
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
+
         paint_text(
             &mut ctx,
             &self.props.style.font,
-            layout_node.rect.pos(),
+            layout_node.rect.pos() - Vec2::new(offset_x, 0.0),
             &text_layout,
             self.props.style.color,
         );
@@ -129,6 +144,17 @@ impl fmt::Debug for RenderTextWidget {
             .field("layout", &"(no debug impl)")
             .finish()
     }
+}
+
+pub(crate) fn get_text_layout_offset_x(text_layout: &Layout, scale_factor: f32) -> f32 {
+    let offset_x = text_layout
+        .glyphs()
+        .iter()
+        .map(|glyph| glyph.x)
+        .min_by(|a, b| a.total_cmp(b))
+        .unwrap_or_default();
+
+    offset_x / scale_factor
 }
 
 pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> Vec2 {
