@@ -9,6 +9,7 @@ use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
 use crate::widget::PaintContext;
 
+use super::layers::PaintLayers;
 use super::primitives::{PaintCall, PaintMesh, Vertex};
 use super::texture::{Texture, TextureChange};
 
@@ -21,7 +22,7 @@ pub struct PaintDom {
     unscaled_viewport: Rect,
     scale_factor: f32,
 
-    calls: Vec<PaintCall>,
+    layers: PaintLayers,
     clip_stack: Vec<Rect>,
 }
 
@@ -34,7 +35,7 @@ impl PaintDom {
             surface_size: Vec2::ONE,
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
-            calls: Vec::new(),
+            layers: PaintLayers::new(),
             clip_stack: Vec::new(),
         }
     }
@@ -97,16 +98,19 @@ impl PaintDom {
         profiling::scope!("PaintDom::paint_all");
         log::debug!("PaintDom:paint_all()");
 
-        self.calls.clear();
+        let node = dom.get(dom.root()).unwrap();
+
+        self.layers.clear();
+        self.layers.push();
 
         let context = PaintContext {
             dom,
             layout,
             paint: self,
         };
-
-        let node = dom.get(dom.root()).unwrap();
         node.widget.paint(context);
+
+        self.layers.pop();
     }
 
     /// Add a texture to the Paint DOM, returning an ID that can be used to
@@ -154,9 +158,9 @@ impl PaintDom {
         self.texture_edits.iter().map(|(&id, &edit)| (id, edit))
     }
 
-    /// Returns a list of paint calls that could be used to draw the UI.
-    pub fn calls(&self) -> &[PaintCall] {
-        self.calls.as_slice()
+    /// Returns a list of layers that should be used to draw the UI.
+    pub fn layers(&self) -> &PaintLayers {
+        &self.layers
     }
 
     /// Add a mesh to be painted.
@@ -169,8 +173,13 @@ impl PaintDom {
 
         let texture_id = mesh.texture.map(|(index, _rect)| index);
 
+        let layer = self
+            .layers
+            .current_mut()
+            .expect("an active layer is required to call add_mesh");
+
         let current_clip = self.clip_stack.last().copied();
-        let call = match self.calls.last_mut() {
+        let call = match layer.calls.last_mut() {
             Some(call)
                 if call.texture == texture_id
                     && call.pipeline == mesh.pipeline
@@ -184,8 +193,8 @@ impl PaintDom {
                 call.pipeline = mesh.pipeline;
                 call.clip = current_clip;
 
-                self.calls.push(call);
-                self.calls.last_mut().unwrap()
+                layer.calls.push(call);
+                layer.calls.last_mut().unwrap()
             }
         };
 
@@ -203,6 +212,16 @@ impl PaintDom {
             vertex
         });
         call.vertices.extend(vertices);
+    }
+
+    /// Begin a new paint layer.
+    pub fn push_layer(&mut self) {
+        self.layers.push();
+    }
+
+    /// Finish the current paint layer.
+    pub fn pop_layer(&mut self) {
+        self.layers.pop();
     }
 
     /// Use the given region as the clipping rect for all following paint calls.

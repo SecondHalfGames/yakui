@@ -413,7 +413,8 @@ impl YakuiVulkan {
         self.update_textures(vulkan_context, paint);
 
         // If there's nothing to paint, well.. don't paint!
-        if paint.calls().is_empty() {
+        let layers = paint.layers();
+        if layers.iter().all(|layer| layer.calls.is_empty()) {
             return;
         }
 
@@ -678,19 +679,21 @@ impl YakuiVulkan {
         let mut indices: Vec<u32> = Default::default();
         let mut draw_calls: Vec<DrawCall> = Default::default();
 
-        for mesh in paint.calls() {
+        let calls = paint.layers().iter().flat_map(|layer| &layer.calls);
+
+        for call in calls {
             let base = vertices.len() as u32;
             let index_offset = indices.len() as u32;
-            let index_count = mesh.indices.len() as u32;
+            let index_count = call.indices.len() as u32;
 
-            for index in &mesh.indices {
+            for index in &call.indices {
                 indices.push(*index as u32 + base);
             }
-            for vertex in &mesh.vertices {
+            for vertex in &call.vertices {
                 vertices.push(vertex.into())
             }
 
-            let texture_id = mesh
+            let texture_id = call
                 .texture
                 .and_then(|id| match id {
                     yakui::TextureId::Managed(managed) => {
@@ -709,9 +712,9 @@ impl YakuiVulkan {
             draw_calls.push(DrawCall {
                 index_offset,
                 index_count,
-                clip: mesh.clip,
+                clip: call.clip,
                 texture_id,
-                workflow: mesh.pipeline.into(),
+                workflow: call.pipeline.into(),
             });
         }
 

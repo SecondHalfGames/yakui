@@ -169,7 +169,8 @@ impl YakuiWgpu {
 
         self.update_textures(device, paint, queue);
 
-        if paint.calls().is_empty() {
+        let layers = paint.layers();
+        if layers.iter().all(|layer| layer.calls.is_empty()) {
             return;
         }
 
@@ -263,65 +264,69 @@ impl YakuiWgpu {
         self.indices.clear();
         self.commands.clear();
 
-        let commands = paint.calls().iter().map(|mesh| {
-            let vertices = mesh.vertices.iter().map(|vertex| Vertex {
-                pos: vertex.position,
-                texcoord: vertex.texcoord,
-                color: vertex.color,
+        let commands = paint
+            .layers()
+            .iter()
+            .flat_map(|layer| &layer.calls)
+            .map(|call| {
+                let vertices = call.vertices.iter().map(|vertex| Vertex {
+                    pos: vertex.position,
+                    texcoord: vertex.texcoord,
+                    color: vertex.color,
+                });
+
+                let base = self.vertices.len() as u32;
+                let indices = call.indices.iter().map(|&index| base + index as u32);
+
+                let start = self.indices.len() as u32;
+                let end = start + indices.len() as u32;
+
+                self.vertices.extend(vertices);
+                self.indices.extend(indices);
+
+                let (view, min_filter, mag_filter) = call
+                    .texture
+                    .and_then(|id| match id {
+                        TextureId::Managed(managed) => {
+                            let texture = self.managed_textures.get(&managed)?;
+                            Some((&texture.view, texture.min_filter, texture.mag_filter))
+                        }
+                        TextureId::User(bits) => {
+                            let index = Index::from_bits(bits)?;
+                            let texture = self.textures.get(index)?;
+                            Some((&texture.view, texture.min_filter, texture.mag_filter))
+                        }
+                    })
+                    .unwrap_or((
+                        &self.default_texture.view,
+                        self.default_texture.min_filter,
+                        self.default_texture.mag_filter,
+                    ));
+
+                let sampler = self.samplers.get(min_filter, mag_filter);
+
+                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("yakui Bind Group"),
+                    layout: &self.layout,
+                    entries: &[
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(sampler),
+                        },
+                    ],
+                });
+
+                DrawCommand {
+                    index_range: start..end,
+                    bind_group,
+                    pipeline: call.pipeline,
+                    clip: call.clip,
+                }
             });
-
-            let base = self.vertices.len() as u32;
-            let indices = mesh.indices.iter().map(|&index| base + index as u32);
-
-            let start = self.indices.len() as u32;
-            let end = start + indices.len() as u32;
-
-            self.vertices.extend(vertices);
-            self.indices.extend(indices);
-
-            let (view, min_filter, mag_filter) = mesh
-                .texture
-                .and_then(|id| match id {
-                    TextureId::Managed(managed) => {
-                        let texture = self.managed_textures.get(&managed)?;
-                        Some((&texture.view, texture.min_filter, texture.mag_filter))
-                    }
-                    TextureId::User(bits) => {
-                        let index = Index::from_bits(bits)?;
-                        let texture = self.textures.get(index)?;
-                        Some((&texture.view, texture.min_filter, texture.mag_filter))
-                    }
-                })
-                .unwrap_or((
-                    &self.default_texture.view,
-                    self.default_texture.min_filter,
-                    self.default_texture.mag_filter,
-                ));
-
-            let sampler = self.samplers.get(min_filter, mag_filter);
-
-            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("yakui Bind Group"),
-                layout: &self.layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(sampler),
-                    },
-                ],
-            });
-
-            DrawCommand {
-                index_range: start..end,
-                bind_group,
-                pipeline: mesh.pipeline,
-                clip: mesh.clip,
-            }
-        });
 
         self.commands.extend(commands);
     }

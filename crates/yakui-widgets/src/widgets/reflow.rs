@@ -1,5 +1,5 @@
-use yakui_core::geometry::Dim2;
-use yakui_core::widget::Widget;
+use yakui_core::geometry::{Constraints, Dim2, Vec2};
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{Alignment, Flow, Response};
 
 use crate::util::widget_children;
@@ -54,5 +54,14 @@ impl Widget for ReflowWidget {
             anchor: self.props.anchor,
             offset: self.props.offset,
         }
+    }
+
+    fn layout(&self, mut ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
+        let node = ctx.dom.get_current();
+        for &child in &node.children {
+            ctx.calculate_layout(child, Constraints::none());
+        }
+
+        Vec2::ZERO
     }
 }
