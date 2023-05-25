@@ -4,7 +4,7 @@
 #![allow(clippy::collapsible_if)]
 
 use yakui::widgets::Layer;
-use yakui::{align, button, column, label, reflow, use_state, widgets::Pad, Alignment, Dim2};
+use yakui::{align, button, column, reflow, use_state, widgets::Pad, Alignment, Dim2};
 
 pub fn run() {
     let open = use_state(|| false);
@@ -13,7 +13,9 @@ pub fn run() {
 
     align(Alignment::TOP_LEFT, || {
         column(|| {
-            label("First Widget");
+            if button("Upper Button").clicked {
+                println!("Upper button clicked");
+            }
 
             column(|| {
                 if button(options[selected.get()]).clicked {
@@ -41,7 +43,9 @@ pub fn run() {
                 }
             });
 
-            label("Last Widget");
+            if button("Lower Button").clicked {
+                println!("Lower button clicked");
+            }
         });
     });
 }

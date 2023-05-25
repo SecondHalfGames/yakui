@@ -322,7 +322,7 @@ impl InputState {
             }
         }
 
-        for (id, interest) in layout.interest_mouse.iter().copied() {
+        for (id, interest) in layout.interest_mouse.iter() {
             if interest.contains(EventInterest::MOUSE_OUTSIDE)
                 && !intersections.mouse_hit.contains(&id)
             {
@@ -367,7 +367,7 @@ impl InputState {
         let pos = mouse.position.map(|pos| pos / layout.scale_factor());
         let event = WidgetEvent::MouseMoved(pos);
 
-        for (id, interest) in layout.interest_mouse.iter().copied() {
+        for (id, interest) in layout.interest_mouse.iter() {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
                 if let Some(mut node) = dom.get_mut(id) {
                     self.fire_event(dom, layout, id, &mut node, &event);
@@ -473,7 +473,7 @@ impl InputState {
 
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<WidgetId>) {
-    for (id, _interest) in layout.interest_mouse.iter().copied() {
+    for (id, _interest) in layout.interest_mouse.iter() {
         let Some(layout_node) = layout.get(id)
             else { continue };
 

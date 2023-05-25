@@ -75,6 +75,9 @@ impl PaintDom {
         if layout_node.clipping_enabled {
             self.push_clip(layout_node.rect);
         }
+        if layout_node.new_layer {
+            self.layers.push();
+        }
 
         dom.enter(id);
 
@@ -91,6 +94,9 @@ impl PaintDom {
         if layout_node.clipping_enabled {
             self.pop_clip();
         }
+        if layout_node.new_layer {
+            self.layers.pop();
+        }
     }
 
     /// Paint all of the widgets in the given DOM.
@@ -98,19 +104,8 @@ impl PaintDom {
         profiling::scope!("PaintDom::paint_all");
         log::debug!("PaintDom:paint_all()");
 
-        let node = dom.get(dom.root()).unwrap();
-
         self.layers.clear();
-        self.layers.push();
-
-        let context = PaintContext {
-            dom,
-            layout,
-            paint: self,
-        };
-        node.widget.paint(context);
-
-        self.layers.pop();
+        self.paint(dom, layout, dom.root());
     }
 
     /// Add a texture to the Paint DOM, returning an ID that can be used to
@@ -212,16 +207,6 @@ impl PaintDom {
             vertex
         });
         call.vertices.extend(vertices);
-    }
-
-    /// Begin a new paint layer.
-    pub fn push_layer(&mut self) {
-        self.layers.push();
-    }
-
-    /// Finish the current paint layer.
-    pub fn pop_layer(&mut self) {
-        self.layers.pop();
     }
 
     /// Use the given region as the clipping rect for all following paint calls.

@@ -1,10 +1,15 @@
-use yakui_core::widget::{PaintContext, Widget};
+use yakui_core::geometry::{Constraints, Vec2};
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
 use crate::util::widget_children;
 
 /**
-Creates a new layer that will draw over the top of the current layer.
+Creates a new layer that will take input priority and draw over items in the
+containing layer.
+
+In the future, this widget may be extended to support arbitrary transforms
+applied to layers.
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
@@ -39,14 +44,16 @@ impl Widget for LayerWidget {
         self.props = props;
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
-        ctx.paint.push_layer();
+    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        ctx.layout.new_layer(ctx.dom);
 
         let node = ctx.dom.get_current();
+        let mut size = Vec2::ZERO;
         for &child in &node.children {
-            ctx.paint(child);
+            let child_size = ctx.calculate_layout(child, constraints);
+            size = size.max(child_size);
         }
 
-        ctx.paint.pop_layer();
+        constraints.constrain_min(size)
     }
 }

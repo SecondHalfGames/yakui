@@ -15,6 +15,8 @@ impl Widget for RootWidget {
     fn update(&mut self, _props: Self::Props) -> Self::Response {}
 
     fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
+        ctx.layout.new_layer(ctx.dom);
+
         let node = ctx.dom.get_current();
 
         for &child in &node.children {

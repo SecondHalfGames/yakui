@@ -9,7 +9,7 @@ use crate::dom::Dom;
 use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
 use crate::id::WidgetId;
-use crate::input::InputState;
+use crate::input::{InputState, MouseInterest};
 use crate::widget::LayoutContext;
 
 /// Contains information on how each widget in the DOM is laid out and what
@@ -22,7 +22,7 @@ pub struct LayoutDom {
     unscaled_viewport: Rect,
     scale_factor: f32,
 
-    pub(crate) interest_mouse: Vec<(WidgetId, EventInterest)>,
+    pub(crate) interest_mouse: MouseInterest,
 }
 
 /// A node in a [`LayoutDom`].
@@ -34,6 +34,10 @@ pub struct LayoutDomNode {
 
     /// This node will clip its descendants to its bounding rectangle.
     pub clipping_enabled: bool,
+
+    /// This node is the beginning of a new layer, and all of its descendants
+    /// should be hit tested and painted with higher priority.
+    pub new_layer: bool,
 
     /// This node is clipped to the region defined by the given node.
     pub clipped_by: Option<WidgetId>,
@@ -52,7 +56,7 @@ impl LayoutDom {
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
 
-            interest_mouse: Vec::new(),
+            interest_mouse: MouseInterest::new(),
         }
     }
 
@@ -146,13 +150,26 @@ impl LayoutDom {
         };
 
         let size = dom_node.widget.layout(context, constraints);
+
+        // If the widget called new_layer() during layout, it will be on top of
+        // the mouse interest layer stack.
+        let new_layer = self.interest_mouse.current_layer_root() == Some(id);
+
+        // Mouse interest will be registered into the layout created by the
+        // widget if there is one.
         let event_interest = dom_node.widget.event_interest();
         if event_interest.intersects(EventInterest::MOUSE_ALL) {
-            self.interest_mouse.push((id, event_interest));
+            self.interest_mouse.insert(id, event_interest);
         }
 
-        // If the widget called enable_clipping() during its layout pass, it
-        // should be on top of the clip stack at this point.
+        // If the widget created a new layer, we're done with it now, so it's
+        // time to clean it up.
+        if new_layer {
+            self.interest_mouse.pop_layer();
+        }
+
+        // If the widget called enable_clipping() during layout, it will be on
+        // top of the clip stack at this point.
         let clipping_enabled = self.clip_stack.last() == Some(&id);
 
         // If this node enabled clipping, the next node under that is the node
@@ -168,6 +185,7 @@ impl LayoutDom {
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
                 clipping_enabled,
+                new_layer,
                 clipped_by,
                 event_interest,
             },
@@ -184,6 +202,11 @@ impl LayoutDom {
     /// Enables clipping for the currently active widget.
     pub fn enable_clipping(&mut self, dom: &Dom) {
         self.clip_stack.push(dom.current());
+    }
+
+    /// Put this widget and its children into a new layer.
+    pub fn new_layer(&mut self, dom: &Dom) {
+        self.interest_mouse.push_layer(dom.current());
     }
 
     /// Set the position of a widget.
