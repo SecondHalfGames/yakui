@@ -7,8 +7,8 @@ expression: view
   - ListWidget pos(0, 0) size(100, 50)
     - ColoredBoxWidget pos(0, 0) size(50, 50)
     - ColoredBoxWidget pos(50, 0) size(50, 50)
-    - ReflowWidget pos(100, 50) size(100, 50)
+    - ReflowWidget pos(100, 50) size(0, 0)
       - ColoredBoxWidget pos(100, 50) size(100, 50)
-    - ReflowWidget pos(100, 100) size(100, 100)
+    - ReflowWidget pos(100, 100) size(0, 0)
       - ColoredBoxWidget pos(100, 100) size(100, 100)
 

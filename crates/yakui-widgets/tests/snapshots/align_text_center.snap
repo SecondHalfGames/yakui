@@ -1,10 +1,10 @@
 ---
 source: crates/yakui-widgets/tests/snapshot.rs
-assertion_line: 238
+assertion_line: 264
 expression: view
 ---
 - AlignWidget pos(0, 0) size(1000, 1000)
-  - TextWidget pos(375.5, 465) size(249, 70)
-    - PadWidget pos(375.5, 465) size(249, 70)
-      - RenderTextWidget pos(375.5, 465) size(249, 70)
+  - TextWidget pos(376, 465) size(248, 70)
+    - PadWidget pos(376, 465) size(248, 70)
+      - RenderTextWidget pos(376, 465) size(248, 70)
 
