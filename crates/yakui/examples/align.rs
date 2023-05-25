@@ -1,4 +1,4 @@
-use yakui::{align, colored_box, textbox, Alignment, Color};
+use yakui::{align, colored_box, Alignment, Color};
 
 use bootstrap::ExampleState;
 

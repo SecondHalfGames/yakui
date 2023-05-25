@@ -12,8 +12,9 @@ use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, Circle, CircleWidget,
     ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget,
     Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget,
-    Offset, OffsetWidget, Pad, PadWidget, Reflow, ReflowWidget, Scrollable, ScrollableWidget,
-    Slider, SliderWidget, State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
+    Offset, OffsetWidget, Opaque, OpaqueWidget, Pad, PadWidget, Reflow, ReflowWidget, Scrollable,
+    ScrollableWidget, Slider, SliderWidget, State, StateWidget, Text, TextBox, TextBoxWidget,
+    TextWidget,
 };
 
 /// See [List].
@@ -144,6 +145,11 @@ pub fn slider(value: f64, min: f64, max: f64) -> Response<SliderWidget> {
 /// See [Reflow].
 pub fn reflow(anchor: Alignment, offset: Dim2, children: impl FnOnce()) -> Response<ReflowWidget> {
     Reflow::new(anchor, offset).show(children)
+}
+
+/// See [Opaque].
+pub fn opaque(children: impl FnOnce()) -> Response<OpaqueWidget> {
+    Opaque::new().show(children)
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>
