@@ -48,7 +48,7 @@ struct Intersections {
     /// All of the widgets with mouse interest that the current mouse position
     /// intersects with.
     ///
-    /// All lists like this are stored in reverse depth first order.
+    /// All lists like this are stored with the deepest widgets first.
     mouse_hit: Vec<WidgetId>,
 
     /// All of the widgets that have had a mouse enter event sent to them
@@ -322,11 +322,7 @@ impl InputState {
             }
         }
 
-        // For consistency, reverse the interest_mouse array like we do in
-        // hit_test. This event can't be sunk, so it's not super important.
-        let interest_mouse = layout.interest_mouse.iter().copied().rev();
-
-        for (id, interest) in interest_mouse {
+        for (id, interest) in layout.interest_mouse.iter().copied() {
             if interest.contains(EventInterest::MOUSE_OUTSIDE)
                 && !intersections.mouse_hit.contains(&id)
             {
@@ -368,12 +364,10 @@ impl InputState {
 
     fn send_mouse_move(&self, dom: &Dom, layout: &LayoutDom) {
         let mouse = self.mouse.borrow();
-        let interest_mouse = layout.interest_mouse.iter().copied().rev();
-
         let pos = mouse.position.map(|pos| pos / layout.scale_factor());
         let event = WidgetEvent::MouseMoved(pos);
 
-        for (id, interest) in interest_mouse {
+        for (id, interest) in layout.interest_mouse.iter().copied() {
             if interest.intersects(EventInterest::MOUSE_MOVE) {
                 if let Some(mut node) = dom.get_mut(id) {
                     self.fire_event(dom, layout, id, &mut node, &event);
@@ -479,13 +473,7 @@ impl InputState {
 
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<WidgetId>) {
-    // interest_mouse is stored in layout traversal order, which is depth first.
-    //
-    // We want to test against the deepest widgets in the tree first and bubble
-    // to their ancestors first.
-    let interest_mouse = layout.interest_mouse.iter().copied().rev();
-
-    for (id, _interest) in interest_mouse {
+    for (id, _interest) in layout.interest_mouse.iter().copied() {
         let Some(layout_node) = layout.get(id)
             else { continue };
 
