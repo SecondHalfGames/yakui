@@ -1,9 +1,15 @@
+use std::cell::RefCell;
+use std::f32::INFINITY;
+use std::rc::Rc;
+
+use fontdue::layout::{Layout, LinePosition};
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
-use yakui_core::geometry::Color;
+use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::input::{KeyCode, MouseButton};
-use yakui_core::widget::{EventContext, PaintContext, Widget};
+use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::ignore_debug::IgnoreDebug;
 use crate::shapes::RoundedRectangle;
 use crate::style::TextStyle;
 use crate::util::widget;
@@ -46,6 +52,7 @@ pub struct TextBoxWidget {
     updated_text: Option<String>,
     selected: bool,
     cursor: usize,
+    text_layout: Option<IgnoreDebug<Rc<RefCell<Layout>>>>,
 }
 
 pub struct TextBoxResponse {
@@ -62,6 +69,7 @@ impl Widget for TextBoxWidget {
             updated_text: None,
             selected: false,
             cursor: 0,
+            text_layout: None,
         }
     }
 
@@ -76,12 +84,18 @@ impl Widget for TextBoxWidget {
         render.cursor = self.cursor;
 
         pad(self.props.padding, || {
-            render.show();
+            let res = render.show();
+            self.text_layout = Some(IgnoreDebug(res.into_inner().layout));
         });
 
         Self::Response {
             text: self.updated_text.clone(),
         }
+    }
+
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        ctx.layout.enable_clipping(ctx.dom);
+        self.default_layout(ctx, constraints)
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
@@ -117,9 +131,37 @@ impl Widget for TextBoxWidget {
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,
                 inside: true,
+                down,
+                position,
                 ..
             } => {
+                if !down {
+                    return EventResponse::Sink;
+                }
+
                 ctx.input.set_selection(Some(ctx.dom.current()));
+
+                if let Some(layout) = ctx.layout.get(ctx.dom.current()) {
+                    if let Some(text_layout) = &self.text_layout {
+                        let text_layout = text_layout.borrow();
+
+                        let scale_factor = ctx.layout.scale_factor();
+                        let relative_pos =
+                            *position - layout.rect.pos() - self.props.padding.offset();
+                        let glyph_pos = relative_pos * scale_factor;
+
+                        let Some(line) = pick_text_line(&text_layout, glyph_pos.y)
+                            else { return EventResponse::Sink };
+
+                        self.cursor = pick_character_on_line(
+                            &text_layout,
+                            line.glyph_start,
+                            line.glyph_end,
+                            glyph_pos.x,
+                        );
+                    }
+                }
+
                 EventResponse::Sink
             }
 
@@ -261,4 +303,54 @@ impl TextBoxWidget {
         let max = anchor.max(end) as usize;
         text.replace_range(min..max, "");
     }
+}
+
+fn pick_text_line(layout: &Layout, pos_y: f32) -> Option<&LinePosition> {
+    let lines = layout.lines()?;
+
+    let mut closest_line = 0;
+    let mut closest_line_dist = INFINITY;
+    for (index, line) in lines.iter().enumerate() {
+        let dist = (pos_y - line.baseline_y).abs();
+        if dist < closest_line_dist {
+            closest_line = index;
+            closest_line_dist = dist;
+        }
+    }
+
+    lines.get(closest_line)
+}
+
+fn pick_character_on_line(
+    layout: &Layout,
+    line_glyph_start: usize,
+    line_glyph_end: usize,
+    pos_x: f32,
+) -> usize {
+    let mut closest_byte_offset = 0;
+    let mut closest_dist = INFINITY;
+
+    let possible_positions = layout
+        .glyphs()
+        .iter()
+        .skip(line_glyph_start)
+        .take(line_glyph_end + 1 - line_glyph_start)
+        .flat_map(|glyph| {
+            let before = Vec2::new(glyph.x, glyph.y);
+            let after = Vec2::new(glyph.x + glyph.width as f32, glyph.y);
+            [
+                (glyph.byte_offset, before),
+                (glyph.byte_offset + glyph.parent.len_utf8(), after),
+            ]
+        });
+
+    for (byte_offset, glyph_pos) in possible_positions {
+        let dist = (pos_x - glyph_pos.x).abs();
+        if dist < closest_dist {
+            closest_byte_offset = byte_offset;
+            closest_dist = dist;
+        }
+    }
+
+    closest_byte_offset
 }

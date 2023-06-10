@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::fmt;
+use std::rc::Rc;
 
 use fontdue::layout::{CoordinateSystem, Layout, LayoutSettings, TextStyle as FontdueTextStyle};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
@@ -45,10 +46,14 @@ impl RenderTextBox {
 pub struct RenderTextBoxWidget {
     props: RenderTextBox,
     cursor_pos_size: RefCell<(Vec2, f32)>,
-    layout: RefCell<Layout>,
+    layout: Rc<RefCell<Layout>>,
 }
 
-pub type RenderTextBoxResponse = ();
+pub struct RenderTextBoxResponse {
+    /// The fontdue text layout from this text box. This layout will be reset
+    /// and updated every time the widget updates.
+    pub layout: Rc<RefCell<Layout>>,
+}
 
 impl Widget for RenderTextBoxWidget {
     type Props = RenderTextBox;
@@ -60,17 +65,18 @@ impl Widget for RenderTextBoxWidget {
         Self {
             props: RenderTextBox::new(""),
             cursor_pos_size: RefCell::new((Vec2::ZERO, 0.0)),
-            layout: RefCell::new(layout),
+            layout: Rc::new(RefCell::new(layout)),
         }
     }
 
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
+        RenderTextBoxResponse {
+            layout: self.layout.clone(),
+        }
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
-        ctx.layout.enable_clipping(ctx.dom);
-
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
         let font = match fonts.get(&self.props.style.font) {
             Some(font) => font,
@@ -99,38 +105,51 @@ impl Widget for RenderTextBoxWidget {
             max_height,
             ..LayoutSettings::default()
         });
+        text_layout.append(&[&*font], &FontdueTextStyle::new(text, font_size, 0));
 
-        let before_cursor = &text[..self.props.cursor];
-        text_layout.append(
-            &[&*font],
-            &FontdueTextStyle::new(before_cursor, font_size, 0),
-        );
+        let lines = text_layout.lines().map(|x| x.as_slice()).unwrap_or(&[]);
+        let glyphs = text_layout.glyphs();
+
+        // TODO: This code doesn't account for graphemes with multiple glyphs.
+        // We should accumulate the total bounding box of all glyphs that
+        // contribute to a given grapheme.
+        let cursor_x = if self.props.cursor >= self.props.text.len() {
+            // If the cursor is after the last character, we can position it at
+            // the right edge of the last glyph.
+            text_layout
+                .glyphs()
+                .last()
+                .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
+        } else {
+            // ...otherwise, we'll position the cursor just behind the next
+            // character after the cursor.
+            text_layout.glyphs().iter().find_map(|glyph| {
+                if glyph.byte_offset != self.props.cursor {
+                    return None;
+                }
+
+                Some(glyph.x - 2.0)
+            })
+        };
+
+        let cursor_line = lines
+            .iter()
+            .find(|line| {
+                let start_byte = glyphs[line.glyph_start].byte_offset;
+                let end_byte = glyphs[line.glyph_end].byte_offset;
+                self.props.cursor >= start_byte && self.props.cursor <= end_byte
+            })
+            .or_else(|| lines.last());
+        let cursor_y = cursor_line
+            .map(|line| line.baseline_y - line.max_ascent)
+            .unwrap();
 
         let metrics = font.vertical_line_metrics(font_size);
         let ascent = metrics.map(|m| m.ascent).unwrap_or(font_size);
         let cursor_size = ascent;
 
-        let line_height = text_layout
-            .lines()
-            .map(|lines| text_layout.height() / lines.len() as f32)
-            .unwrap_or(0.0);
-        let cursor_y = text_layout
-            .lines()
-            .map(|lines| (lines.len() - 1) as f32 * line_height)
-            .unwrap_or(0.0);
-        let cursor_x = text_layout
-            .glyphs()
-            .last()
-            .map(|glyph| glyph.x + glyph.width as f32 + 1.0)
-            .unwrap_or_default();
-        let cursor_pos = Vec2::new(cursor_x, cursor_y) / ctx.layout.scale_factor();
+        let cursor_pos = Vec2::new(cursor_x.unwrap_or(0.0), cursor_y) / ctx.layout.scale_factor();
         *self.cursor_pos_size.borrow_mut() = (cursor_pos, cursor_size);
-
-        let after_cursor = &text[self.props.cursor..];
-        text_layout.append(
-            &[&*font],
-            &FontdueTextStyle::new(after_cursor, font_size, 0),
-        );
 
         let mut size = get_text_layout_size(&text_layout, ctx.layout.scale_factor());
         size = size.max(Vec2::new(0.0, ascent));
