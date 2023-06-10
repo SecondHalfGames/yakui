@@ -115,7 +115,15 @@ pub trait Widget: 'static + fmt::Debug {
     ///
     /// The default implementation will lay out all of this widget's children on
     /// top of each other, and fit the widget tightly around them.
-    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        self.default_layout(ctx, constraints)
+    }
+
+    /// A convenience method that always performs the default layout strategy
+    /// for a widget. This method is intended to be called from custom widget's
+    /// `layout` methods.
+    #[inline]
+    fn default_layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {
