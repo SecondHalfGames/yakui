@@ -4,6 +4,7 @@
     clippy::new_without_default,
 )]
 
+mod ignore_debug;
 mod text_renderer;
 
 pub mod colors;
