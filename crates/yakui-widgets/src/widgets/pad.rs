@@ -57,6 +57,10 @@ impl Pad {
         }
     }
 
+    pub const fn offset(&self) -> Vec2 {
+        Vec2::new(self.left, self.top)
+    }
+
     pub fn show<F: FnOnce()>(self, children: F) -> Response<PadWidget> {
         widget_children::<PadWidget, F>(children, self)
     }
