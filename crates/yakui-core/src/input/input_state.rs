@@ -146,7 +146,23 @@ impl InputState {
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
-                self.mouse_button_changed(dom, layout, *button, *down)
+                let response = self.mouse_button_changed(dom, layout, *button, *down);
+
+                // If no widgets elected to handle mouse button one going down,
+                // we can should clear our selection.
+                //
+                // FIXME: Currently, this gets sunk by widgets that sink events
+                // but don't do anything to the selection state with them. We
+                // should figure out how to detect that case, like clicking an
+                // Opaque widget.
+                if response == EventResponse::Bubble {
+                    if *button == MouseButton::One && *down {
+                        self.set_selection(None);
+                        self.notify_selection(dom, layout);
+                    }
+                }
+
+                response
             }
             Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
             Event::KeyChanged { key, down } => self.keyboard_key_changed(dom, layout, *key, *down),
