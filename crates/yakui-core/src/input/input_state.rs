@@ -173,7 +173,7 @@ impl InputState {
     }
 
     fn notify_selection(&self, dom: &Dom, layout: &LayoutDom) {
-        let current = self.selection.get();
+        let mut current = self.selection.get();
         let last = self.last_selection.get();
 
         if current == last {
@@ -189,6 +189,9 @@ impl InputState {
                     &mut node,
                     &WidgetEvent::FocusChanged(true),
                 );
+            } else {
+                self.selection.set(None);
+                current = None;
             }
         }
 
