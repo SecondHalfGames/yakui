@@ -142,7 +142,7 @@ impl Widget for RenderTextBoxWidget {
             .or_else(|| lines.last());
         let cursor_y = cursor_line
             .map(|line| line.baseline_y - line.max_ascent)
-            .unwrap();
+            .unwrap_or(0.0);
 
         let metrics = font.vertical_line_metrics(font_size);
         let ascent = metrics.map(|m| m.ascent).unwrap_or(font_size);
