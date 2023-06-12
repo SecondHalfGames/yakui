@@ -34,7 +34,6 @@ yakui has the following priorities:
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Examples](#examples)
-* [Widgets](#widgets)
 * [Rationale](#rationale)
 * [Architecture](#architecture)
 * [Crates](#crates)
@@ -141,7 +140,6 @@ A frame in yakui is divided up into distinct phases:
     * Paint information is stored in the Paint DOM, which a renderer can use to draw the current set of widgets.
 
 [React]: https://reactjs.org/
-[Flutter]: https://flutter.dev/
 [Moxie]: https://moxie.rs/
 
 ## Crates
@@ -180,16 +178,23 @@ The `yakui-wgpu` crate is a yakui renderer that uses [wgpu].
 [`yakui-wgpu`]: https://crates.io/crates/yakui-wgpu
 [wgpu]: https://wgpu.rs/
 
+### [`yakui-vulkan`]
+The `yakui-vulkan` crate is a yakui renderer that uses Vulkan via [ash]
+
+[`yakui-vulkan`]: https://crates.io/crates/yakui-vulkan
+[ash]: https://crates.io/crates/ash
+
 ### [`yakui-app`]
 The `yakui-app` crate is a wrapper around `yakui-winit` and `yakui-wgpu` intended to make getting started with yakui easier.
 
-If you are writing your own integration for yakui, this crate is intended to be a good learning resource.
+If you are writing your own integration for yakui, this crate is a good learning resource to reference.
 
 [`yakui-app`]: https://crates.io/crates/yakui-app
 
 ## Games Using yakui
 There are a handful of games already using yakui for their UI. Here are a couple:
 
+* [MEANWHILE IN SECTOR 80](https://ms80.space)
 * [Zombie Demo Game](https://lpghatguy.itch.io/zombie-demo-game)
 * [CyberGate](https://www.youtube.com/watch?v=msHuaPAJZMo)
 
