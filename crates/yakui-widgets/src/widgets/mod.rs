@@ -1,5 +1,6 @@
 mod align;
 mod button;
+mod canvas;
 mod checkbox;
 mod circle;
 mod colored_box;
@@ -28,6 +29,7 @@ mod window;
 
 pub use self::align::*;
 pub use self::button::*;
+pub use self::canvas::*;
 pub use self::checkbox::*;
 pub use self::circle::*;
 pub use self::colored_box::*;

@@ -6,15 +6,16 @@
 use std::borrow::Cow;
 
 use yakui_core::geometry::{Color, Constraints, Dim2, Vec2};
+use yakui_core::widget::PaintContext;
 use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
 
 use crate::widgets::{
-    Align, AlignWidget, Button, ButtonWidget, Checkbox, CheckboxWidget, Circle, CircleWidget,
-    ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget, Draggable, DraggableWidget,
-    Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget, NineSlice, NineSliceWidget,
-    Offset, OffsetWidget, Opaque, OpaqueWidget, Pad, PadWidget, Reflow, ReflowWidget, Scrollable,
-    ScrollableWidget, Slider, SliderWidget, State, StateWidget, Text, TextBox, TextBoxWidget,
-    TextWidget,
+    Align, AlignWidget, Button, ButtonWidget, Canvas, CanvasWidget, Checkbox, CheckboxWidget,
+    Circle, CircleWidget, ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget,
+    Draggable, DraggableWidget, Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget,
+    NineSlice, NineSliceWidget, Offset, OffsetWidget, Opaque, OpaqueWidget, Pad, PadWidget, Reflow,
+    ReflowWidget, Scrollable, ScrollableWidget, Slider, SliderWidget, State, StateWidget, Text,
+    TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -150,6 +151,11 @@ pub fn reflow(anchor: Alignment, offset: Dim2, children: impl FnOnce()) -> Respo
 /// See [Opaque].
 pub fn opaque(children: impl FnOnce()) -> Response<OpaqueWidget> {
     Opaque::new().show(children)
+}
+
+/// See [Canvas].
+pub fn canvas(paint: impl Fn(PaintContext<'_>) + 'static) -> Response<CanvasWidget> {
+    Canvas::new(paint).show()
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>
