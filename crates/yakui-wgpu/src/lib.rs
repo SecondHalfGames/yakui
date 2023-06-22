@@ -180,6 +180,10 @@ impl YakuiWgpu {
         let indices = self.indices.upload(device, queue);
         let commands = &self.commands;
 
+        if paint.surface_size() == Vec2::ZERO {
+            return;
+        }
+
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("yakui Render Pass"),
