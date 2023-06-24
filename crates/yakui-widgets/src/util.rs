@@ -2,6 +2,7 @@ use yakui_core::context;
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
+/// Show a widget with the given children and props.
 pub fn widget_children<T, F>(children: F, props: T::Props) -> Response<T>
 where
     T: Widget,
@@ -14,6 +15,7 @@ where
     response
 }
 
+/// Show a widget with the given props.
 pub fn widget<T>(props: T::Props) -> Response<T>
 where
     T: Widget,
