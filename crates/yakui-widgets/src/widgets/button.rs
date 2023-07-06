@@ -33,6 +33,7 @@ pub struct Button {
     pub text_style: TextStyle,
     pub padding: Pad,
     pub fill: Color,
+    pub border_radius: f32,
     pub hover_fill: Option<Color>,
     pub down_fill: Option<Color>,
 }
@@ -47,6 +48,7 @@ impl Button {
             text_style,
             padding: Pad::ZERO,
             fill: Color::GRAY,
+            border_radius: 0.0,
             hover_fill: None,
             down_fill: None,
         }
@@ -61,6 +63,7 @@ impl Button {
             text_style,
             padding: Pad::balanced(20.0, 10.0),
             fill: colors::BACKGROUND_3,
+            border_radius: 6.0,
             hover_fill: Some(colors::BACKGROUND_3.adjust(1.2)),
             down_fill: Some(colors::BACKGROUND_3.adjust(0.8)),
         }
@@ -115,7 +118,7 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let mut container = RoundRect::new(6.0);
+        let mut container = RoundRect::new(self.props.border_radius);
         container.color = color;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
