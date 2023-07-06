@@ -39,12 +39,12 @@ pub struct Button {
 }
 
 impl Button {
-    pub fn unstyled(text: Cow<'static, str>) -> Self {
+    pub fn unstyled(text: impl Into<Cow<'static, str>>) -> Self {
         let mut text_style = TextStyle::label();
         text_style.align = TextAlignment::Center;
 
         Self {
-            text,
+            text: text.into(),
             text_style,
             padding: Pad::ZERO,
             fill: Color::GRAY,
@@ -54,12 +54,12 @@ impl Button {
         }
     }
 
-    pub fn styled(text: Cow<'static, str>) -> Self {
+    pub fn styled(text: impl Into<Cow<'static, str>>) -> Self {
         let mut text_style = TextStyle::label();
         text_style.align = TextAlignment::Center;
 
         Self {
-            text,
+            text: text.into(),
             text_style,
             padding: Pad::balanced(20.0, 10.0),
             fill: colors::BACKGROUND_3,
