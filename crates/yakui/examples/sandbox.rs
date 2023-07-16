@@ -13,9 +13,9 @@ pub fn run() {
             row(|| {
                 button("Hello");
 
-                let mut big_button = Button::styled("World".into());
-                big_button.text_style.color = Color::RED;
-                big_button.text_style.font_size = 30.0;
+                let mut big_button = Button::styled("World");
+                big_button.style.text.color = Color::RED;
+                big_button.style.text.font_size = 30.0;
                 big_button.show();
 
                 button("I'm Yakui!");

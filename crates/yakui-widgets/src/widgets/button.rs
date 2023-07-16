@@ -30,42 +30,71 @@ if yakui::button("Hello").clicked {
 #[non_exhaustive]
 pub struct Button {
     pub text: Cow<'static, str>,
-    pub text_style: TextStyle,
     pub padding: Pad,
-    pub fill: Color,
     pub border_radius: f32,
-    pub hover_fill: Option<Color>,
-    pub down_fill: Option<Color>,
+    pub style: DynamicButtonStyle,
+    pub hover_style: Option<DynamicButtonStyle>,
+    pub down_style: Option<DynamicButtonStyle>,
+}
+
+/// Contains styles that can vary based on the state of the button.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct DynamicButtonStyle {
+    pub text: TextStyle,
+    pub fill: Color,
+}
+
+impl Default for DynamicButtonStyle {
+    fn default() -> Self {
+        let mut text = TextStyle::label();
+        text.align = TextAlignment::Center;
+
+        Self {
+            text,
+            fill: Color::GRAY,
+        }
+    }
 }
 
 impl Button {
     pub fn unstyled(text: impl Into<Cow<'static, str>>) -> Self {
-        let mut text_style = TextStyle::label();
-        text_style.align = TextAlignment::Center;
-
         Self {
             text: text.into(),
-            text_style,
             padding: Pad::ZERO,
-            fill: Color::GRAY,
             border_radius: 0.0,
-            hover_fill: None,
-            down_fill: None,
+            style: DynamicButtonStyle::default(),
+            hover_style: None,
+            down_style: None,
         }
     }
 
     pub fn styled(text: impl Into<Cow<'static, str>>) -> Self {
+        let style = DynamicButtonStyle {
+            fill: colors::BACKGROUND_3,
+            ..Default::default()
+        };
+
+        let hover_style = DynamicButtonStyle {
+            fill: colors::BACKGROUND_3.adjust(1.2),
+            ..Default::default()
+        };
+
+        let down_style = DynamicButtonStyle {
+            fill: colors::BACKGROUND_3.adjust(0.8),
+            ..Default::default()
+        };
+
         let mut text_style = TextStyle::label();
         text_style.align = TextAlignment::Center;
 
         Self {
             text: text.into(),
-            text_style,
             padding: Pad::balanced(20.0, 10.0),
-            fill: colors::BACKGROUND_3,
             border_radius: 6.0,
-            hover_fill: Some(colors::BACKGROUND_3.adjust(1.2)),
-            down_fill: Some(colors::BACKGROUND_3.adjust(0.8)),
+            style,
+            hover_style: Some(hover_style),
+            down_style: Some(down_style),
         }
     }
 
@@ -104,15 +133,18 @@ impl Widget for ButtonWidget {
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
 
-        let mut color = self.props.fill;
+        let mut color = self.props.style.fill;
+        let mut text_style = self.props.style.text.clone();
 
-        if let (Some(fill), true) = (self.props.down_fill, self.mouse_down) {
-            color = fill
-        } else if let (Some(hover), true) = (self.props.hover_fill, self.hovering) {
-            color = hover
+        if let (Some(style), true) = (&self.props.down_style, self.mouse_down) {
+            color = style.fill;
+            text_style = style.text.clone();
+        } else if let (Some(style), true) = (&self.props.hover_style, self.hovering) {
+            color = style.fill;
+            text_style = style.text.clone();
         }
 
-        let alignment = match self.props.text_style.align {
+        let alignment = match text_style.align {
             TextAlignment::Start => Alignment::CENTER_LEFT,
             TextAlignment::Center => Alignment::CENTER,
             TextAlignment::End => Alignment::CENTER_RIGHT,
@@ -124,7 +156,7 @@ impl Widget for ButtonWidget {
             crate::pad(self.props.padding, || {
                 crate::align(alignment, || {
                     let mut text = RenderText::label(self.props.text.clone());
-                    text.style = self.props.text_style.clone();
+                    text.style = text_style;
                     text.show();
                 });
             });

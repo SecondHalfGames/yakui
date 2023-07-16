@@ -311,8 +311,8 @@ fn button_text_alignment() {
         let constraints = Constraints::tight(Vec2::splat(800.0));
         align(Alignment::TOP_LEFT, || {
             constrained(constraints, || {
-                let mut button = Button::styled("X X X X X".into());
-                button.text_style.font_size = 60.0;
+                let mut button = Button::styled("X X X X X");
+                button.style.text.font_size = 60.0;
                 button.show();
             });
         });
