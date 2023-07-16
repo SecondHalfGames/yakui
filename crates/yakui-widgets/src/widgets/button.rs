@@ -33,8 +33,8 @@ pub struct Button {
     pub padding: Pad,
     pub border_radius: f32,
     pub style: DynamicButtonStyle,
-    pub hover_style: Option<DynamicButtonStyle>,
-    pub down_style: Option<DynamicButtonStyle>,
+    pub hover_style: DynamicButtonStyle,
+    pub down_style: DynamicButtonStyle,
 }
 
 /// Contains styles that can vary based on the state of the button.
@@ -64,8 +64,8 @@ impl Button {
             padding: Pad::ZERO,
             border_radius: 0.0,
             style: DynamicButtonStyle::default(),
-            hover_style: None,
-            down_style: None,
+            hover_style: DynamicButtonStyle::default(),
+            down_style: DynamicButtonStyle::default(),
         }
     }
 
@@ -93,8 +93,8 @@ impl Button {
             padding: Pad::balanced(20.0, 10.0),
             border_radius: 6.0,
             style,
-            hover_style: Some(hover_style),
-            down_style: Some(down_style),
+            hover_style,
+            down_style,
         }
     }
 
@@ -136,10 +136,12 @@ impl Widget for ButtonWidget {
         let mut color = self.props.style.fill;
         let mut text_style = self.props.style.text.clone();
 
-        if let (Some(style), true) = (&self.props.down_style, self.mouse_down) {
+        if self.mouse_down {
+            let style = &self.props.down_style;
             color = style.fill;
             text_style = style.text.clone();
-        } else if let (Some(style), true) = (&self.props.hover_style, self.hovering) {
+        } else if self.hovering {
+            let style = &self.props.hover_style;
             color = style.fill;
             text_style = style.text.clone();
         }
