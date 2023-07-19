@@ -154,7 +154,7 @@ pub fn opaque(children: impl FnOnce()) -> Response<OpaqueWidget> {
 }
 
 /// See [Canvas].
-pub fn canvas(paint: impl Fn(PaintContext<'_>) + 'static) -> Response<CanvasWidget> {
+pub fn canvas(paint: impl Fn(&mut PaintContext<'_>) + 'static) -> Response<CanvasWidget> {
     Canvas::new(paint).show()
 }
 

@@ -137,7 +137,15 @@ pub trait Widget: 'static + fmt::Debug {
     /// Paint the widget based on its current state.
     ///
     /// The default implementation will paint all of the widget's children.
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, ctx: PaintContext<'_>) {
+        self.default_paint(ctx);
+    }
+
+    /// A convenience method that always performs the default painting operation
+    /// for a widget. This method is intended to be called from custom widget's
+    /// `paint` methods.
+    #[inline]
+    fn default_paint(&self, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
         for &child in &node.children {
             ctx.paint(child);

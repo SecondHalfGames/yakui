@@ -2,9 +2,9 @@ use yakui_core::widget::{PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::ignore_debug::IgnoreDebug;
-use crate::util::widget;
+use crate::util::{widget, widget_children};
 
-type DrawCallback = Box<dyn Fn(PaintContext<'_>) + 'static>;
+type DrawCallback = Box<dyn Fn(&mut PaintContext<'_>) + 'static>;
 
 /**
 Allows the user to draw arbitrary graphics in a region.
@@ -17,7 +17,7 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn new(draw: impl Fn(PaintContext<'_>) + 'static) -> Self {
+    pub fn new(draw: impl Fn(&mut PaintContext<'_>) + 'static) -> Self {
         Self {
             draw: IgnoreDebug(Some(Box::new(draw))),
         }
@@ -25,6 +25,10 @@ impl Canvas {
 
     pub fn show(self) -> Response<CanvasWidget> {
         widget::<CanvasWidget>(self)
+    }
+
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CanvasWidget> {
+        widget_children::<CanvasWidget, F>(children, self)
     }
 }
 
@@ -51,9 +55,11 @@ impl Widget for CanvasWidget {
         self.props = props;
     }
 
-    fn paint(&self, ctx: PaintContext<'_>) {
+    fn paint(&self, mut ctx: PaintContext<'_>) {
         if let IgnoreDebug(Some(draw)) = &self.props.draw {
-            (draw)(ctx);
+            (draw)(&mut ctx);
         }
+
+        self.default_paint(ctx);
     }
 }
