@@ -259,7 +259,6 @@ impl VulkanTest {
     }
 
     pub fn resized(&mut self, window_width: u32, window_height: u32) {
-        println!("Vulkan Resized: {window_width}, {window_height}");
         unsafe {
             self.device.device_wait_idle().unwrap();
             self.swapchain_info.surface_resolution = vk::Extent2D {
@@ -273,7 +272,6 @@ impl VulkanTest {
             self.present_image_views = new_present_image_views;
             self.swapchain = new_swapchain;
         }
-        println!("OK! Swapchain recreated");
     }
 
     unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) {
@@ -356,7 +354,7 @@ impl VulkanTest {
                     .swapchains(&swapchains),
             ) {
                 Ok(true) | Err(vk::Result::ERROR_OUT_OF_DATE_KHR) => {
-                    println!("Swapchain is suboptimal!")
+                    // this usually indicates the window has been resized
                 }
                 Err(e) => panic!("Error presenting: {e:?}"),
                 _ => {}

@@ -23,6 +23,8 @@ mod util;
 mod vulkan_context;
 mod vulkan_texture;
 
+use ash::util::read_spv;
+pub use ash::vk;
 use buffer::Buffer;
 use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
@@ -32,8 +34,6 @@ use vulkan_texture::NO_TEXTURE_ID;
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui::geometry::UVec2;
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
-
-use ash::{util::read_spv, vk};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
@@ -81,6 +81,8 @@ pub struct RenderSurface {
     pub format: vk::Format,
     /// The image views to render to. One framebuffer will be created per view
     pub image_views: Vec<vk::ImageView>,
+    /// What operation to perform when loading this image
+    pub load_op: vk::AttachmentLoadOp,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -166,7 +168,7 @@ impl YakuiVulkan {
         let renderpass_attachments = [vk::AttachmentDescription {
             format: render_surface.format,
             samples: vk::SampleCountFlags::TYPE_1,
-            load_op: vk::AttachmentLoadOp::CLEAR,
+            load_op: render_surface.load_op,
             store_op: vk::AttachmentStoreOp::STORE,
             final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
             ..Default::default()
@@ -335,11 +337,11 @@ impl YakuiVulkan {
             ..Default::default()
         };
         let color_blend_attachment_states = [vk::PipelineColorBlendAttachmentState {
-            blend_enable: 0,
-            src_color_blend_factor: vk::BlendFactor::SRC_COLOR,
-            dst_color_blend_factor: vk::BlendFactor::ONE_MINUS_DST_COLOR,
+            blend_enable: 1,
+            src_color_blend_factor: vk::BlendFactor::SRC_ALPHA,
+            dst_color_blend_factor: vk::BlendFactor::ONE_MINUS_SRC_ALPHA,
             color_blend_op: vk::BlendOp::ADD,
-            src_alpha_blend_factor: vk::BlendFactor::ZERO,
+            src_alpha_blend_factor: vk::BlendFactor::ONE,
             dst_alpha_blend_factor: vk::BlendFactor::ZERO,
             alpha_blend_op: vk::BlendOp::ADD,
             color_write_mask: vk::ColorComponentFlags::RGBA,
@@ -818,9 +820,15 @@ mod tests {
             resolution: vk::Extent2D { width, height },
             format: vulkan_test.swapchain_info.surface_format.format,
             image_views: vulkan_test.present_image_views.clone(),
+            load_op: vk::AttachmentLoadOp::CLEAR,
         };
         let mut yak = yakui::Yakui::new();
         yak.set_surface_size([width as f32, height as f32].into());
+        yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+            Default::default(),
+            [width as f32, height as f32].into(),
+        ));
+
         let (mut yakui_vulkan, mut gui_state) = {
             let vulkan_context = VulkanContext::new(
                 &vulkan_test.device,
@@ -902,9 +910,14 @@ mod tests {
                             resolution: vk::Extent2D { width, height },
                             format: vulkan_test.swapchain_info.surface_format.format,
                             image_views: vulkan_test.present_image_views.clone(),
+                            load_op: vk::AttachmentLoadOp::CLEAR,
                         };
                         yakui_vulkan.update_surface(render_surface, &vulkan_test.device);
                         yak.set_surface_size([width as f32, height as f32].into());
+                        yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+                            Default::default(),
+                            [width as f32, height as f32].into(),
+                        ));
                     }
                 }
                 Event::WindowEvent {
