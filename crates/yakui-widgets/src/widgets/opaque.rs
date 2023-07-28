@@ -50,7 +50,8 @@ impl Widget for OpaqueWidget {
         match event {
             WidgetEvent::MouseEnter
             | WidgetEvent::MouseLeave
-            | WidgetEvent::MouseButtonChanged { down: true, .. } => EventResponse::Sink,
+            | WidgetEvent::MouseButtonChanged { down: true, .. }
+            | WidgetEvent::MouseScroll { .. } => EventResponse::Sink,
             _ => EventResponse::Bubble,
         }
     }
