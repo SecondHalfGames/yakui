@@ -89,7 +89,7 @@ impl Widget for TextBoxWidget {
         });
 
         Self::Response {
-            text: self.updated_text.clone(),
+            text: self.updated_text.take(),
         }
     }
 
@@ -231,6 +231,13 @@ impl Widget for TextBoxWidget {
                 let text = self
                     .updated_text
                     .get_or_insert_with(|| self.props.text.clone());
+
+                // Before trying to input text, make sure that our cursor fits
+                // in the string and is not in the middle of a codepoint!
+                self.cursor = self.cursor.min(text.len());
+                while !text.is_char_boundary(self.cursor) {
+                    self.cursor = self.cursor.saturating_sub(1);
+                }
 
                 if text.is_empty() {
                     text.push(*c);
