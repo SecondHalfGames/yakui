@@ -124,6 +124,8 @@ impl YakuiWgpu {
         }
     }
 
+    /// Creates a `TextureId` from an existing wgpu texture that then be used by
+    /// any yakui widgets.
     pub fn add_texture(
         &mut self,
         view: wgpu::TextureView,
@@ -136,6 +138,25 @@ impl YakuiWgpu {
             mag_filter,
         });
         TextureId::User(index.to_bits())
+    }
+
+    /// Update an existing texture with a new texture view.
+    ///
+    /// ## Panics
+    ///
+    /// Will panic if `TextureId` was not created from a previous call to
+    /// `add_texture`.
+    pub fn update_texture(&mut self, id: TextureId, view: wgpu::TextureView) {
+        let index = match id {
+            TextureId::User(bits) => Index::from_bits(bits).expect("invalid user texture"),
+            _ => panic!("invalid user texture"),
+        };
+
+        let existing = self
+            .textures
+            .get_mut(index)
+            .expect("user texture does not exist");
+        existing.view = view;
     }
 
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
