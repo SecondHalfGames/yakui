@@ -12,6 +12,7 @@ use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2};
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
+const MONKEY_BLURRED_PNG: &[u8] = include_bytes!("../assets/monkey-blurred.png");
 const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
 
 /// This is the state that we provide to each demo.
@@ -26,6 +27,7 @@ pub struct ExampleState {
     /// `ManagedTextureId` is a texture owned by yakui. You can create one by
     /// giving yakui some image data; it'll be uploaded by the renderer.
     pub monkey: ManagedTextureId,
+    pub monkey_blurred: ManagedTextureId,
     pub brown_inlay: ManagedTextureId,
 
     /// `TextureId` represents either a managed texture or a texture owned by
@@ -100,6 +102,7 @@ async fn run(body: impl ExampleBody) {
 
     // Preload some textures for the examples to use.
     let monkey = yak.add_texture(load_texture(MONKEY_PNG, TextureFilter::Linear));
+    let monkey_blurred = yak.add_texture(load_texture(MONKEY_BLURRED_PNG, TextureFilter::Linear));
     let brown_inlay = yak.add_texture(load_texture(BROWN_INLAY_PNG, TextureFilter::Nearest));
     let custom = app.renderer.add_texture(
         custom_texture::generate(&app.device, &app.queue),
@@ -120,6 +123,7 @@ async fn run(body: impl ExampleBody) {
     let mut state = ExampleState {
         time: 0.0,
         monkey,
+        monkey_blurred,
         brown_inlay,
         custom,
     };
