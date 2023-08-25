@@ -29,7 +29,7 @@ pub struct LayoutDom {
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct LayoutDomNode {
-    /// The bounding rectangle of the node.
+    /// The bounding rectangle of the node in logical pixels.
     pub rect: Rect,
 
     /// This node will clip its descendants to its bounding rectangle.

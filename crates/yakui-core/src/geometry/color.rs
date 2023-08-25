@@ -39,6 +39,13 @@ impl Color {
         Self { r, g, b, a: 255 }
     }
 
+    /// Creates a new color using the existing color and the given linear alpha
+    /// value given as a float.
+    pub fn with_alpha(mut self, alpha: f32) -> Self {
+        self.a = (alpha * 255.0).round() as u8;
+        self
+    }
+
     /// Create a new `Color` from a linear RGB color.
     pub fn from_linear(value: Vec4) -> Self {
         let linear = palette::LinSrgba::new(value.x, value.y, value.z, value.w);
