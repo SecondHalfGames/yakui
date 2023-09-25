@@ -15,6 +15,7 @@ Responds with [CutOutResponse].
 #[non_exhaustive]
 pub struct CutOut {
     pub image: Option<TextureId>,
+    pub image_color: Color,
     pub overlay_color: Color,
     pub min_size: Vec2,
 }
@@ -26,6 +27,7 @@ impl CutOut {
     {
         Self {
             image: Some(image.into()),
+            image_color: Color::WHITE,
             overlay_color,
             min_size: Vec2::ZERO,
         }
@@ -55,6 +57,7 @@ impl Widget for CutOutWidget {
         Self {
             props: CutOut {
                 image: None,
+                image_color: Color::WHITE,
                 overlay_color: Color::CLEAR,
                 min_size: Vec2::ZERO,
             },
@@ -89,7 +92,7 @@ impl Widget for CutOutWidget {
             );
 
             let mut rect = PaintRect::new(layout_node.rect);
-            rect.color = Color::WHITE;
+            rect.color = self.props.image_color;
             rect.texture = Some((image, texture_rect));
             rect.add(ctx.paint);
         }
