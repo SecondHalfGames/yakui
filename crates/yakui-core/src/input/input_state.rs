@@ -264,8 +264,9 @@ impl InputState {
     ) -> EventResponse {
         let selected = self.selection.get();
         if let Some(id) = selected {
-            let Some(layout_node) = layout.get(id)
-                else { return EventResponse::Bubble };
+            let Some(layout_node) = layout.get(id) else {
+                return EventResponse::Bubble;
+            };
 
             if layout_node
                 .event_interest
@@ -294,8 +295,9 @@ impl InputState {
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
         let selected = self.selection.get();
         if let Some(id) = selected {
-            let Some(layout_node) = layout.get(id)
-                else { return EventResponse::Bubble };
+            let Some(layout_node) = layout.get(id) else {
+                return EventResponse::Bubble;
+            };
 
             if layout_node
                 .event_interest
@@ -493,8 +495,9 @@ impl InputState {
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<WidgetId>) {
     for (id, _interest) in layout.interest_mouse.iter() {
-        let Some(layout_node) = layout.get(id)
-            else { continue };
+        let Some(layout_node) = layout.get(id) else {
+            continue;
+        };
 
         let mut rect = layout_node.rect;
         let mut node = layout_node;

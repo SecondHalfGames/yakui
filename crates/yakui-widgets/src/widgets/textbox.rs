@@ -150,8 +150,9 @@ impl Widget for TextBoxWidget {
                             *position - layout.rect.pos() - self.props.padding.offset();
                         let glyph_pos = relative_pos * scale_factor;
 
-                        let Some(line) = pick_text_line(&text_layout, glyph_pos.y)
-                            else { return EventResponse::Sink };
+                        let Some(line) = pick_text_line(&text_layout, glyph_pos.y) else {
+                            return EventResponse::Sink;
+                        };
 
                         self.cursor = pick_character_on_line(
                             &text_layout,
