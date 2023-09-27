@@ -13,9 +13,9 @@ use crate::widgets::{
     Align, AlignWidget, Button, ButtonWidget, Canvas, CanvasWidget, Checkbox, CheckboxWidget,
     Circle, CircleWidget, ColoredBox, ColoredBoxWidget, ConstrainedBox, ConstrainedBoxWidget,
     Draggable, DraggableWidget, Flexible, FlexibleWidget, Image, ImageWidget, List, ListWidget,
-    NineSlice, NineSliceWidget, Offset, OffsetWidget, Opaque, OpaqueWidget, Pad, PadWidget, Reflow,
-    ReflowWidget, Scrollable, ScrollableWidget, Slider, SliderWidget, State, StateWidget, Text,
-    TextBox, TextBoxWidget, TextWidget,
+    MaxWidth, MaxWidthWidget, NineSlice, NineSliceWidget, Offset, OffsetWidget, Opaque,
+    OpaqueWidget, Pad, PadWidget, Reflow, ReflowWidget, Scrollable, ScrollableWidget, Slider,
+    SliderWidget, State, StateWidget, Text, TextBox, TextBoxWidget, TextWidget,
 };
 
 /// See [List].
@@ -156,6 +156,11 @@ pub fn opaque(children: impl FnOnce()) -> Response<OpaqueWidget> {
 /// See [Canvas].
 pub fn canvas(paint: impl Fn(&mut PaintContext<'_>) + 'static) -> Response<CanvasWidget> {
     Canvas::new(paint).show()
+}
+
+/// See [MaxWidth].
+pub fn max_width(max_width: f32, children: impl FnOnce()) -> Response<MaxWidthWidget> {
+    MaxWidth::new(max_width).show(children)
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateWidget<T>>
