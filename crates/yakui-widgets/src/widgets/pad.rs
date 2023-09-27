@@ -95,8 +95,8 @@ impl Widget for PadWidget {
         let offset = Vec2::new(self.props.left, self.props.top);
 
         let child_constraints = Constraints {
-            min: input.min - total_padding,
-            max: input.max - total_padding,
+            min: (input.min - total_padding).max(Vec2::ZERO),
+            max: (input.max - total_padding).max(Vec2::ZERO),
         };
 
         let mut self_size = Vec2::ZERO;
