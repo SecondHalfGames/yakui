@@ -82,14 +82,16 @@ impl Widget for RenderTextWidget {
             }
         };
 
-        let (max_width, max_height) = if input.is_bounded() {
-            (
-                Some(input.max.x * ctx.layout.scale_factor()),
-                Some(input.max.y * ctx.layout.scale_factor()),
-            )
-        } else {
-            (None, None)
-        };
+        let max_width = input
+            .max
+            .x
+            .is_finite()
+            .then_some(input.max.x * ctx.layout.scale_factor());
+        let max_height = input
+            .max
+            .y
+            .is_finite()
+            .then_some(input.max.y * ctx.layout.scale_factor());
 
         let horizontal_align = match self.props.style.align {
             TextAlignment::Start => FontdueAlign::Left,
