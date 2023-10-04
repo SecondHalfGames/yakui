@@ -155,12 +155,16 @@ pub struct Alignment {
 }
 
 impl Alignment {
-    const fn new(x: f32, y: f32) -> Self {
+    /// Create a new `Alignment` given an anchor point.
+    ///
+    /// `0.0, 0.0` is the top left corner of the container, while `1.0, 1.0` is
+    /// the bottom right corner.
+    pub const fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
 
     /// Returns the anchor point for an alignment value.
-    pub fn as_vec2(&self) -> Vec2 {
+    pub const fn as_vec2(&self) -> Vec2 {
         Vec2::new(self.x, self.y)
     }
 }
