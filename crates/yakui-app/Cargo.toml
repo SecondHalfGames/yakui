@@ -17,5 +17,5 @@ yakui-winit = { path = "../yakui-winit" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 
 profiling = { version = "1.0.6", optional = true }
-wgpu = "0.16.0"
+wgpu = "0.17.1"
 winit = "0.28.1"
