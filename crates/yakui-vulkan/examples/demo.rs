@@ -626,6 +626,14 @@ impl VulkanTest {
                     },
                 },
             ];
+            let viewports = [vk::Viewport {
+                x: 0.0,
+                y: 0.0,
+                width: self.swapchain_info.surface_resolution.width as f32,
+                height: self.swapchain_info.surface_resolution.height as f32,
+                min_depth: 0.0,
+                max_depth: 1.0,
+            }];
 
             let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
                 .render_pass(self.render_pass)
@@ -637,6 +645,12 @@ impl VulkanTest {
                 self.draw_command_buffer,
                 &render_pass_begin_info,
                 vk::SubpassContents::INLINE,
+            );
+            device.cmd_set_viewport(self.draw_command_buffer, 0, &viewports);
+            device.cmd_set_scissor(
+                self.draw_command_buffer,
+                0,
+                &[self.swapchain_info.surface_resolution.into()],
             );
         }
         present_index

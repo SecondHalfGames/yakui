@@ -388,6 +388,7 @@ impl YakuiVulkan {
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
+    /// - `cmd` must be in rendering state, with viewport and scissor dynamic states set.
     pub unsafe fn paint(
         &mut self,
         paint: &yakui_core::paint::PaintDom,
@@ -416,15 +417,6 @@ impl YakuiVulkan {
     ) {
         let device = vulkan_context.device;
 
-        let viewports = [vk::Viewport {
-            x: 0.0,
-            y: 0.0,
-            width: resolution.width as f32,
-            height: resolution.height as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        }];
-
         let surface_size = UVec2::new(resolution.width, resolution.height);
 
         unsafe {
@@ -433,11 +425,8 @@ impl YakuiVulkan {
                 vk::PipelineBindPoint::GRAPHICS,
                 self.graphics_pipeline,
             );
-            device.cmd_set_viewport(command_buffer, 0, &viewports);
             let default_scissor = [resolution.into()];
 
-            // We set the scissor first here as it's against the spec not to do so.
-            device.cmd_set_scissor(command_buffer, 0, &default_scissor);
             device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
             device.cmd_bind_index_buffer(
                 command_buffer,
