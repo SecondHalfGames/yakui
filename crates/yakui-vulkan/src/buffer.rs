@@ -20,16 +20,16 @@ pub(crate) struct Buffer<T> {
 }
 
 impl<T: Copy> Buffer<T> {
-    pub fn new(
+    pub fn with_capacity(
         vulkan_context: &VulkanContext,
         usage: vk::BufferUsageFlags,
-        initial_data: &[T],
+        elements: usize,
     ) -> Self {
         let device = vulkan_context.device;
         let device_memory_properties = &vulkan_context.memory_properties;
 
         let buffer_info = vk::BufferCreateInfo::builder()
-            .size(std::mem::size_of_val(initial_data).max(MIN_BUFFER_SIZE as _) as u64)
+            .size(((std::mem::size_of::<T>() * elements) as vk::DeviceSize).max(MIN_BUFFER_SIZE))
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
 
@@ -53,8 +53,6 @@ impl<T: Copy> Buffer<T> {
             let ptr = device
                 .map_memory(memory, 0, size, vk::MemoryMapFlags::empty())
                 .unwrap();
-            let mut slice = Align::new(ptr, align_of::<T>() as u64, size);
-            slice.copy_from_slice(initial_data);
             device.bind_buffer_memory(handle, memory, 0).unwrap();
 
             // Safety: ptr is guaranteed to be a non-null pointer to T
@@ -66,9 +64,21 @@ impl<T: Copy> Buffer<T> {
             memory,
             _usage: usage,
             size,
-            len: initial_data.len(),
+            len: elements,
             ptr,
         }
+    }
+
+    pub fn new(
+        vulkan_context: &VulkanContext,
+        usage: vk::BufferUsageFlags,
+        initial_data: &[T],
+    ) -> Self {
+        let mut result = Self::with_capacity(vulkan_context, usage, initial_data.len());
+        unsafe {
+            result.write(vulkan_context, 0, initial_data);
+        }
+        result
     }
 
     pub unsafe fn write(&mut self, _vulkan_context: &VulkanContext, offset: usize, new_data: &[T]) {
