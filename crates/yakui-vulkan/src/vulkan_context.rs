@@ -21,6 +21,8 @@ pub struct VulkanContext<'a> {
     command_pool: vk::CommandPool,
     /// Memory properties used for [`crate::YakuiVulkan`]'s allocation commands
     pub memory_properties: vk::PhysicalDeviceMemoryProperties,
+    /// Render pass the GUI will be drawn in
+    pub render_pass: vk::RenderPass,
 }
 
 impl<'a> VulkanContext<'a> {
@@ -31,6 +33,7 @@ impl<'a> VulkanContext<'a> {
         draw_command_buffer: vk::CommandBuffer,
         command_pool: vk::CommandPool,
         memory_properties: vk::PhysicalDeviceMemoryProperties,
+        render_pass: vk::RenderPass,
     ) -> Self {
         Self {
             device,
@@ -38,6 +41,7 @@ impl<'a> VulkanContext<'a> {
             draw_command_buffer,
             command_pool,
             memory_properties,
+            render_pass,
         }
     }
 

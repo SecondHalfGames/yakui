@@ -40,19 +40,12 @@ use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 /// Uses a simple descriptor system that requires Vulkan 1.2 and some extensions to be enabled. See the [crate level documentation](`crate`)
 /// for details.
 ///
-/// Note that this implementation is currently only able to render to a present surface (ie. the swapchain).
-/// Future versions will support drawing to any [`vk::ImageView`](`ash::vk::ImageView`).
-///
 /// Construct the struct by populating a [`VulkanContext`] with the relevant handles to your Vulkan renderer and
 /// call [`YakuiVulkan::new()`].
 ///
 /// Make sure to call [`YakuiVulkan::cleanup()`].
 pub struct YakuiVulkan {
-    /// The render pass used to draw
-    render_pass: vk::RenderPass,
-    /// One or more framebuffers to draw on. This will match the number of `vk::ImageView` present in [`RenderSurface`]
-    framebuffers: Vec<vk::Framebuffer>,
-    /// The surface to draw on. Currently only supports present surfaces (ie. the swapchain)
+    /// The surface to draw on
     render_surface: RenderSurface,
     /// The pipeline layout used to draw
     pipeline_layout: vk::PipelineLayout,
@@ -73,16 +66,10 @@ pub struct YakuiVulkan {
 }
 
 #[derive(Clone)]
-/// The surface for yakui to draw on. Currently only supports present surfaces (ie. the swapchain)
+/// The surface for yakui to draw on
 pub struct RenderSurface {
     /// The resolution of the surface
     pub resolution: vk::Extent2D,
-    /// The image format of the surface
-    pub format: vk::Format,
-    /// The image views to render to. One framebuffer will be created per view
-    pub image_views: Vec<vk::ImageView>,
-    /// What operation to perform when loading this image
-    pub load_op: vk::AttachmentLoadOp,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -155,7 +142,7 @@ impl From<&YakuiVertex> for Vertex {
 }
 
 impl YakuiVulkan {
-    /// Create a new [`YakuiVulkan`] instance. Currently only supports rendering directly to the swapchain.
+    /// Create a new [`YakuiVulkan`] instance
     ///
     /// ## Safety
     /// - `vulkan_context` must have valid members
@@ -163,45 +150,6 @@ impl YakuiVulkan {
     pub fn new(vulkan_context: &VulkanContext, render_surface: RenderSurface) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
-
-        // TODO: Don't write directly to the present surface..
-        let renderpass_attachments = [vk::AttachmentDescription {
-            format: render_surface.format,
-            samples: vk::SampleCountFlags::TYPE_1,
-            load_op: render_surface.load_op,
-            store_op: vk::AttachmentStoreOp::STORE,
-            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
-            ..Default::default()
-        }];
-        let color_attachment_refs = [vk::AttachmentReference {
-            attachment: 0,
-            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-        }];
-        let dependencies = [vk::SubpassDependency {
-            src_subpass: vk::SUBPASS_EXTERNAL,
-            src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
-                | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
-            dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            ..Default::default()
-        }];
-
-        let subpass = vk::SubpassDescription::builder()
-            .color_attachments(&color_attachment_refs)
-            .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS);
-
-        let renderpass_create_info = vk::RenderPassCreateInfo::builder()
-            .attachments(&renderpass_attachments)
-            .subpasses(std::slice::from_ref(&subpass))
-            .dependencies(&dependencies);
-
-        let render_pass = unsafe {
-            device
-                .create_render_pass(&renderpass_create_info, None)
-                .unwrap()
-        };
-
-        let framebuffers = create_framebuffers(&render_surface, render_pass, device);
 
         let index_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::INDEX_BUFFER, &[]);
         let vertex_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::VERTEX_BUFFER, &[]);
@@ -365,7 +313,7 @@ impl YakuiVulkan {
             .color_blend_state(&color_blend_state)
             .dynamic_state(&dynamic_state_info)
             .layout(pipeline_layout)
-            .render_pass(render_pass);
+            .render_pass(vulkan_context.render_pass);
 
         let graphics_pipelines = unsafe {
             device
@@ -385,9 +333,7 @@ impl YakuiVulkan {
         }
 
         Self {
-            render_pass,
             descriptors,
-            framebuffers,
             render_surface,
             pipeline_layout,
             graphics_pipeline,
@@ -403,13 +349,7 @@ impl YakuiVulkan {
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
-    /// - `present_index` must be the a valid index into the framebuffer (ie. the result of calling [`vkAcquireNextImageKHR`](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAcquireNextImageKHR.html))
-    pub fn paint(
-        &mut self,
-        yak: &mut yakui_core::Yakui,
-        vulkan_context: &VulkanContext,
-        present_index: u32,
-    ) {
+    pub fn paint(&mut self, yak: &mut yakui_core::Yakui, vulkan_context: &VulkanContext) {
         let paint = yak.paint();
 
         self.update_textures(vulkan_context, paint);
@@ -422,40 +362,15 @@ impl YakuiVulkan {
 
         let draw_calls = self.build_draw_calls(vulkan_context, paint);
 
-        self.render(vulkan_context, present_index, &draw_calls);
+        self.render(vulkan_context, &draw_calls);
     }
 
     /// Render the draw calls we've built up
-    fn render(
-        &self,
-        vulkan_context: &VulkanContext,
-        framebuffer_index: u32,
-        draw_calls: &[DrawCall],
-    ) {
+    fn render(&self, vulkan_context: &VulkanContext, draw_calls: &[DrawCall]) {
         let device = vulkan_context.device;
         let command_buffer = vulkan_context.draw_command_buffer;
 
-        let clear_values = [
-            vk::ClearValue {
-                color: vk::ClearColorValue {
-                    float32: [0.0, 0.0, 0.0, 0.0],
-                },
-            },
-            vk::ClearValue {
-                depth_stencil: vk::ClearDepthStencilValue {
-                    depth: 1.0,
-                    stencil: 0,
-                },
-            },
-        ];
-
         let surface = &self.render_surface;
-
-        let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
-            .render_pass(self.render_pass)
-            .framebuffer(self.framebuffers[framebuffer_index as usize])
-            .render_area(surface.resolution.into())
-            .clear_values(&clear_values);
 
         let viewports = [vk::Viewport {
             x: 0.0,
@@ -469,11 +384,6 @@ impl YakuiVulkan {
         let surface_size = UVec2::new(surface.resolution.width, surface.resolution.height);
 
         unsafe {
-            device.cmd_begin_render_pass(
-                command_buffer,
-                &render_pass_begin_info,
-                vk::SubpassContents::INLINE,
-            );
             device.cmd_bind_pipeline(
                 command_buffer,
                 vk::PipelineBindPoint::GRAPHICS,
@@ -563,7 +473,6 @@ impl YakuiVulkan {
                     1,
                 );
             }
-            device.cmd_end_render_pass(command_buffer);
         }
     }
 
@@ -612,8 +521,6 @@ impl YakuiVulkan {
         device.destroy_pipeline(self.graphics_pipeline, None);
         self.index_buffer.cleanup(device);
         self.vertex_buffer.cleanup(device);
-        self.destroy_framebuffers(device);
-        device.destroy_render_pass(self.render_pass, None);
     }
 
     /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
@@ -729,49 +636,8 @@ impl YakuiVulkan {
     }
 
     /// Update the surface that this [`YakuiVulkan`] instance will render to. You'll probably want to call
-    /// this if the user resizes the window to avoid writing to an out-of-date swapchain.
-    ///
-    /// ## Safety
-    /// - Care must be taken to ensure that the new [`RenderSurface`] points to images from a correct swapchain
-    /// - You must use the same [`ash::Device`] used to create this instance
-    pub fn update_surface(&mut self, render_surface: RenderSurface, device: &ash::Device) {
-        unsafe {
-            self.destroy_framebuffers(device);
-        }
-        self.framebuffers = create_framebuffers(&render_surface, self.render_pass, device);
+    /// this if the user resizes the window.
+    pub fn update_surface(&mut self, render_surface: RenderSurface) {
         self.render_surface = render_surface;
     }
-
-    unsafe fn destroy_framebuffers(&mut self, device: &ash::Device) {
-        for framebuffer in &self.framebuffers {
-            device.destroy_framebuffer(*framebuffer, None);
-        }
-    }
-}
-
-fn create_framebuffers(
-    render_surface: &RenderSurface,
-    render_pass: vk::RenderPass,
-    device: &ash::Device,
-) -> Vec<vk::Framebuffer> {
-    let framebuffers: Vec<vk::Framebuffer> = render_surface
-        .image_views
-        .iter()
-        .map(|&present_image_view| {
-            let framebuffer_attachments = [present_image_view];
-            let frame_buffer_create_info = vk::FramebufferCreateInfo::builder()
-                .render_pass(render_pass)
-                .attachments(&framebuffer_attachments)
-                .width(render_surface.resolution.width)
-                .height(render_surface.resolution.height)
-                .layers(1);
-
-            unsafe {
-                device
-                    .create_framebuffer(&frame_buffer_create_info, None)
-                    .unwrap()
-            }
-        })
-        .collect();
-    framebuffers
 }

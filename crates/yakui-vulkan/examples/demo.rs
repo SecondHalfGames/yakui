@@ -34,10 +34,8 @@ fn main() {
     let mut vulkan_test = VulkanTest::new(width, height, &window);
     let render_surface = RenderSurface {
         resolution: vk::Extent2D { width, height },
-        format: vulkan_test.swapchain_info.surface_format.format,
-        image_views: vulkan_test.present_image_views.clone(),
-        load_op: vk::AttachmentLoadOp::CLEAR,
     };
+
     let mut yak = yakui::Yakui::new();
     yak.set_surface_size([width as f32, height as f32].into());
     yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
@@ -52,6 +50,7 @@ fn main() {
             vulkan_test.draw_command_buffer,
             vulkan_test.command_pool,
             vulkan_test.device_memory_properties,
+            vulkan_test.render_pass,
         );
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
         let gui_state = GuiState {
@@ -97,21 +96,22 @@ fn main() {
             }
 
             Event::MainEventsCleared => {
-                let framebuffer_index = vulkan_test.render_begin();
                 let vulkan_context = VulkanContext::new(
                     &vulkan_test.device,
                     vulkan_test.present_queue,
                     vulkan_test.draw_command_buffer,
                     vulkan_test.command_pool,
                     vulkan_test.device_memory_properties,
+                    vulkan_test.render_pass,
                 );
 
                 yak.start();
                 gui(&gui_state);
                 yak.finish();
 
-                yakui_vulkan.paint(&mut yak, &vulkan_context, framebuffer_index);
-                vulkan_test.render_end(framebuffer_index);
+                let index = vulkan_test.render_begin();
+                yakui_vulkan.paint(&mut yak, &vulkan_context);
+                vulkan_test.render_end(index);
             }
             Event::WindowEvent {
                 event: WindowEvent::Resized(size),
@@ -124,11 +124,8 @@ fn main() {
                     vulkan_test.resized(width, height);
                     let render_surface = RenderSurface {
                         resolution: vk::Extent2D { width, height },
-                        format: vulkan_test.swapchain_info.surface_format.format,
-                        image_views: vulkan_test.present_image_views.clone(),
-                        load_op: vk::AttachmentLoadOp::CLEAR,
                     };
-                    yakui_vulkan.update_surface(render_surface, &vulkan_test.device);
+                    yakui_vulkan.update_surface(render_surface);
                     yak.set_surface_size([width as f32, height as f32].into());
                     yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
                         Default::default(),
@@ -231,28 +228,31 @@ fn gui(gui_state: &GuiState) {
 }
 
 struct VulkanTest {
-    pub _entry: ash::Entry,
-    pub device: ash::Device,
-    pub instance: ash::Instance,
-    pub surface_loader: ash::extensions::khr::Surface,
-    pub device_memory_properties: vk::PhysicalDeviceMemoryProperties,
+    _entry: ash::Entry,
+    device: ash::Device,
+    instance: ash::Instance,
+    surface_loader: ash::extensions::khr::Surface,
+    device_memory_properties: vk::PhysicalDeviceMemoryProperties,
 
-    pub present_queue: vk::Queue,
+    present_queue: vk::Queue,
 
-    pub surface: vk::SurfaceKHR,
-    pub swapchain_info: SwapchainInfo,
+    surface: vk::SurfaceKHR,
+    swapchain_info: SwapchainInfo,
 
-    pub swapchain: vk::SwapchainKHR,
-    pub present_image_views: Vec<vk::ImageView>,
+    swapchain: vk::SwapchainKHR,
+    present_image_views: Vec<vk::ImageView>,
 
-    pub command_pool: vk::CommandPool,
-    pub draw_command_buffer: vk::CommandBuffer,
+    render_pass: vk::RenderPass,
+    framebuffers: Vec<vk::Framebuffer>,
 
-    pub present_complete_semaphore: vk::Semaphore,
-    pub rendering_complete_semaphore: vk::Semaphore,
+    command_pool: vk::CommandPool,
+    draw_command_buffer: vk::CommandBuffer,
 
-    pub draw_commands_reuse_fence: vk::Fence,
-    pub setup_commands_reuse_fence: vk::Fence,
+    present_complete_semaphore: vk::Semaphore,
+    rendering_complete_semaphore: vk::Semaphore,
+
+    draw_commands_reuse_fence: vk::Fence,
+    setup_commands_reuse_fence: vk::Fence,
 }
 
 impl VulkanTest {
@@ -403,6 +403,49 @@ impl VulkanTest {
 
         let (swapchain, present_image_views) = create_swapchain(&device, None, &swapchain_info);
 
+        let renderpass_attachments = [vk::AttachmentDescription {
+            format: swapchain_info.surface_format.format,
+            samples: vk::SampleCountFlags::TYPE_1,
+            load_op: vk::AttachmentLoadOp::CLEAR,
+            store_op: vk::AttachmentStoreOp::STORE,
+            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
+            ..Default::default()
+        }];
+        let color_attachment_refs = [vk::AttachmentReference {
+            attachment: 0,
+            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+        }];
+        let dependencies = [vk::SubpassDependency {
+            src_subpass: vk::SUBPASS_EXTERNAL,
+            src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
+                | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+            dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            ..Default::default()
+        }];
+
+        let subpass = vk::SubpassDescription::builder()
+            .color_attachments(&color_attachment_refs)
+            .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS);
+
+        let renderpass_create_info = vk::RenderPassCreateInfo::builder()
+            .attachments(&renderpass_attachments)
+            .subpasses(std::slice::from_ref(&subpass))
+            .dependencies(&dependencies);
+
+        let render_pass = unsafe {
+            device
+                .create_render_pass(&renderpass_create_info, None)
+                .unwrap()
+        };
+
+        let framebuffers = create_framebuffers(
+            &present_image_views,
+            surface_resolution,
+            render_pass,
+            &device,
+        );
+
         let pool_create_info = vk::CommandPoolCreateInfo::builder()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(queue_family_index);
@@ -462,6 +505,8 @@ impl VulkanTest {
             surface,
             swapchain,
             present_image_views,
+            render_pass,
+            framebuffers,
             command_pool: pool,
             draw_command_buffer,
             present_complete_semaphore,
@@ -480,15 +525,25 @@ impl VulkanTest {
             };
             let (new_swapchain, new_present_image_views) =
                 create_swapchain(&self.device, Some(self.swapchain), &self.swapchain_info);
+            let framebuffers = create_framebuffers(
+                &new_present_image_views,
+                self.swapchain_info.surface_resolution,
+                self.render_pass,
+                &self.device,
+            );
 
             self.destroy_swapchain(self.swapchain);
             self.present_image_views = new_present_image_views;
             self.swapchain = new_swapchain;
+            self.framebuffers = framebuffers;
         }
     }
 
     unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) {
         let device = &self.device;
+        for &fb in &self.framebuffers {
+            device.destroy_framebuffer(fb, None);
+        }
         for image_view in &self.present_image_views {
             device.destroy_image_view(*image_view, None);
         }
@@ -535,6 +590,31 @@ impl VulkanTest {
                         .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT),
                 )
                 .unwrap();
+            let clear_values = [
+                vk::ClearValue {
+                    color: vk::ClearColorValue {
+                        float32: [0.0, 0.0, 0.0, 0.0],
+                    },
+                },
+                vk::ClearValue {
+                    depth_stencil: vk::ClearDepthStencilValue {
+                        depth: 1.0,
+                        stencil: 0,
+                    },
+                },
+            ];
+
+            let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
+                .render_pass(self.render_pass)
+                .framebuffer(self.framebuffers[present_index as usize])
+                .render_area(self.swapchain_info.surface_resolution.into())
+                .clear_values(&clear_values);
+
+            device.cmd_begin_render_pass(
+                self.draw_command_buffer,
+                &render_pass_begin_info,
+                vk::SubpassContents::INLINE,
+            );
         }
         present_index
     }
@@ -542,6 +622,7 @@ impl VulkanTest {
     pub fn render_end(&self, present_index: u32) {
         let device = &self.device;
         unsafe {
+            device.cmd_end_render_pass(self.draw_command_buffer);
             device.end_command_buffer(self.draw_command_buffer).unwrap();
             let swapchains = [self.swapchain];
             let image_indices = [present_index];
@@ -675,6 +756,7 @@ impl Drop for VulkanTest {
                 .destroy_fence(self.setup_commands_reuse_fence, None);
             self.device.destroy_command_pool(self.command_pool, None);
             self.destroy_swapchain(self.swapchain);
+            self.device.destroy_render_pass(self.render_pass, None);
             self.device.destroy_device(None);
             self.surface_loader.destroy_surface(self.surface, None);
             self.instance.destroy_instance(None);
@@ -709,4 +791,31 @@ impl SwapchainInfo {
             desired_image_count,
         }
     }
+}
+
+fn create_framebuffers(
+    views: &[vk::ImageView],
+    extent: vk::Extent2D,
+    render_pass: vk::RenderPass,
+    device: &ash::Device,
+) -> Vec<vk::Framebuffer> {
+    let framebuffers: Vec<vk::Framebuffer> = views
+        .iter()
+        .map(|&present_image_view| {
+            let framebuffer_attachments = [present_image_view];
+            let frame_buffer_create_info = vk::FramebufferCreateInfo::builder()
+                .render_pass(render_pass)
+                .attachments(&framebuffer_attachments)
+                .width(extent.width)
+                .height(extent.height)
+                .layers(1);
+
+            unsafe {
+                device
+                    .create_framebuffer(&frame_buffer_create_info, None)
+                    .unwrap()
+            }
+        })
+        .collect();
+    framebuffers
 }
