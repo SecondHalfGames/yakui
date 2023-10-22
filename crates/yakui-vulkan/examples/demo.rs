@@ -227,6 +227,7 @@ fn gui(gui_state: &GuiState) {
 struct VulkanTest {
     _entry: ash::Entry,
     device: ash::Device,
+    physical_device: vk::PhysicalDevice,
     instance: ash::Instance,
     surface_loader: ash::extensions::khr::Surface,
     device_memory_properties: vk::PhysicalDeviceMemoryProperties,
@@ -493,6 +494,7 @@ impl VulkanTest {
 
         Self {
             device,
+            physical_device,
             present_queue,
             _entry: entry,
             instance,
@@ -516,10 +518,18 @@ impl VulkanTest {
     pub fn resized(&mut self, window_width: u32, window_height: u32) {
         unsafe {
             self.device.device_wait_idle().unwrap();
-            self.swapchain_info.surface_resolution = vk::Extent2D {
-                width: window_width,
-                height: window_height,
+            let surface_capabilities = self
+                .surface_loader
+                .get_physical_device_surface_capabilities(self.physical_device, self.surface)
+                .unwrap();
+            let surface_resolution = match surface_capabilities.current_extent.width {
+                std::u32::MAX => vk::Extent2D {
+                    width: window_width,
+                    height: window_height,
+                },
+                _ => surface_capabilities.current_extent,
             };
+            self.swapchain_info.surface_resolution = surface_resolution;
             let (new_swapchain, new_present_image_views) =
                 create_swapchain(&self.device, Some(self.swapchain), &self.swapchain_info);
             let framebuffers = create_framebuffers(
