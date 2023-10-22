@@ -3,9 +3,9 @@ use yakui::geometry::{UVec2, Vec2};
 use yakui_vulkan::*;
 
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{ElementState, Event, KeyEvent, WindowEvent},
     event_loop::ControlFlow,
-    platform::run_return::EventLoopExtRunReturn,
+    keyboard::{KeyCode, PhysicalKey},
 };
 use yakui::image;
 
@@ -30,7 +30,7 @@ fn main() {
     use winit::dpi::PhysicalSize;
 
     let (width, height) = (500, 500);
-    let (mut event_loop, window) = init_winit(width, height);
+    let (event_loop, window) = init_winit(width, height);
     let mut vulkan_test = VulkanTest::new(width, height, &window);
 
     let mut yak = yakui::Yakui::new();
@@ -67,105 +67,103 @@ fn main() {
 
     let mut winit_initializing = true;
 
-    event_loop.run_return(|event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
-        match event {
-            Event::WindowEvent {
-                event:
-                    WindowEvent::CloseRequested
-                    | WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                state: ElementState::Pressed,
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                ..
-                            },
-                        ..
-                    },
-                ..
-            } => *control_flow = ControlFlow::Exit,
+    event_loop.set_control_flow(ControlFlow::Poll);
+    _ = event_loop.run(|event, elwt| match event {
+        Event::WindowEvent {
+            event:
+                WindowEvent::CloseRequested
+                | WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            state: ElementState::Pressed,
+                            physical_key: PhysicalKey::Code(KeyCode::Escape),
+                            ..
+                        },
+                    ..
+                },
+            ..
+        } => elwt.exit(),
 
-            Event::NewEvents(cause) => {
-                if cause == winit::event::StartCause::Init {
-                    winit_initializing = true;
-                } else {
-                    winit_initializing = false;
-                }
+        Event::NewEvents(cause) => {
+            if cause == winit::event::StartCause::Init {
+                winit_initializing = true;
+            } else {
+                winit_initializing = false;
             }
-
-            Event::MainEventsCleared => {
-                let vulkan_context = VulkanContext::new(
-                    &vulkan_test.device,
-                    vulkan_test.present_queue,
-                    vulkan_test.device_memory_properties,
-                );
-
-                yak.start();
-                gui(&gui_state);
-                yak.finish();
-
-                let paint = yak.paint();
-
-                let index = vulkan_test.cmd_begin();
-                unsafe {
-                    yakui_vulkan.transfers_finished(&vulkan_context);
-                    yakui_vulkan.transfer(paint, &vulkan_context, vulkan_test.draw_command_buffer);
-                }
-                vulkan_test.render_begin(index);
-                unsafe {
-                    yakui_vulkan.paint(
-                        paint,
-                        &vulkan_context,
-                        vulkan_test.draw_command_buffer,
-                        vulkan_test.swapchain_info.surface_resolution,
-                    );
-                }
-                vulkan_test.render_end(index);
-                yakui_vulkan.transfers_submitted();
-            }
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
-                if winit_initializing {
-                    println!("Ignoring resize during init!");
-                } else {
-                    let PhysicalSize { width, height } = size;
-                    vulkan_test.resized(width, height);
-                    yak.set_surface_size([width as f32, height as f32].into());
-                    yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
-                        Default::default(),
-                        [width as f32, height as f32].into(),
-                    ));
-                }
-            }
-            Event::WindowEvent {
-                event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
-                ..
-            } => yak.set_scale_factor(scale_factor as _),
-            Event::WindowEvent {
-                event:
-                    WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                state: ElementState::Released,
-                                virtual_keycode,
-                                ..
-                            },
-                        ..
-                    },
-                ..
-            } => match virtual_keycode {
-                Some(VirtualKeyCode::A) => {
-                    gui_state.which_image = match &gui_state.which_image {
-                        WhichImage::Monkey => WhichImage::Dog,
-                        WhichImage::Dog => WhichImage::Monkey,
-                    }
-                }
-                _ => {}
-            },
-            _ => (),
         }
+
+        Event::AboutToWait => {
+            let vulkan_context = VulkanContext::new(
+                &vulkan_test.device,
+                vulkan_test.present_queue,
+                vulkan_test.device_memory_properties,
+            );
+
+            yak.start();
+            gui(&gui_state);
+            yak.finish();
+
+            let paint = yak.paint();
+
+            let index = vulkan_test.cmd_begin();
+            unsafe {
+                yakui_vulkan.transfers_finished(&vulkan_context);
+                yakui_vulkan.transfer(paint, &vulkan_context, vulkan_test.draw_command_buffer);
+            }
+            vulkan_test.render_begin(index);
+            unsafe {
+                yakui_vulkan.paint(
+                    paint,
+                    &vulkan_context,
+                    vulkan_test.draw_command_buffer,
+                    vulkan_test.swapchain_info.surface_resolution,
+                );
+            }
+            vulkan_test.render_end(index);
+            yakui_vulkan.transfers_submitted();
+        }
+        Event::WindowEvent {
+            event: WindowEvent::Resized(size),
+            ..
+        } => {
+            if winit_initializing {
+                println!("Ignoring resize during init!");
+            } else {
+                let PhysicalSize { width, height } = size;
+                vulkan_test.resized(width, height);
+                yak.set_surface_size([width as f32, height as f32].into());
+                yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+                    Default::default(),
+                    [width as f32, height as f32].into(),
+                ));
+            }
+        }
+        Event::WindowEvent {
+            event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
+            ..
+        } => yak.set_scale_factor(scale_factor as _),
+        Event::WindowEvent {
+            event:
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            state: ElementState::Released,
+                            physical_key,
+                            ..
+                        },
+                    ..
+                },
+            ..
+        } => match physical_key {
+            PhysicalKey::Code(KeyCode::KeyA) => {
+                gui_state.which_image = match &gui_state.which_image {
+                    WhichImage::Monkey => WhichImage::Dog,
+                    WhichImage::Dog => WhichImage::Monkey,
+                }
+            }
+            _ => {}
+        },
+        _ => (),
     });
 
     unsafe {
@@ -700,7 +698,7 @@ fn init_winit(
 ) -> (winit::event_loop::EventLoop<()>, winit::window::Window) {
     use winit::{event_loop::EventLoopBuilder, window::WindowBuilder};
 
-    let event_loop = EventLoopBuilder::new().build();
+    let event_loop = EventLoopBuilder::new().build().unwrap();
 
     let window = WindowBuilder::new()
         .with_title("Yakui Vulkan - Test")
