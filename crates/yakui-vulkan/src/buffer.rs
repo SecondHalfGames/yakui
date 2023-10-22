@@ -1,6 +1,4 @@
-use std::mem::align_of;
-
-use ash::{util::Align, vk};
+use ash::vk;
 
 use crate::{util::find_memorytype_index, vulkan_context::VulkanContext};
 
@@ -79,8 +77,9 @@ impl<T: Copy> Buffer<T> {
             todo!("Support resizing buffers");
         }
 
-        let mut slice = Align::new(self.ptr.as_ptr().cast(), align_of::<T>() as u64, self.size);
-        slice.copy_from_slice(new_data);
+        self.ptr
+            .as_ptr()
+            .copy_from_nonoverlapping(new_data.as_ptr(), new_data.len());
 
         self.len = new_data.len()
     }
