@@ -107,11 +107,13 @@ fn main() {
                 yak.finish();
 
                 let index = vulkan_test.render_begin();
-                yakui_vulkan.paint(
-                    &mut yak,
-                    &vulkan_context,
-                    vulkan_test.swapchain_info.surface_resolution,
-                );
+                unsafe {
+                    yakui_vulkan.paint(
+                        &mut yak,
+                        &vulkan_context,
+                        vulkan_test.swapchain_info.surface_resolution,
+                    );
+                }
                 vulkan_test.render_end(index);
             }
             Event::WindowEvent {

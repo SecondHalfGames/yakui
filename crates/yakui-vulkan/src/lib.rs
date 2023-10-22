@@ -347,7 +347,7 @@ impl YakuiVulkan {
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
-    pub fn paint(
+    pub unsafe fn paint(
         &mut self,
         yak: &mut yakui_core::Yakui,
         vulkan_context: &VulkanContext,
