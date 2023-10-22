@@ -1,7 +1,7 @@
 use winit::{
     dpi::PhysicalSize,
     event::{Event, StartCause, WindowEvent},
-    event_loop::ControlFlow,
+    event_loop::EventLoopWindowTarget,
     window::Window,
 };
 use yakui_wgpu::SurfaceInfo;
@@ -166,7 +166,7 @@ impl Graphics {
         &mut self,
         yak: &mut yakui::Yakui,
         event: &Event<T>,
-        control_flow: &mut ControlFlow,
+        elwt: &EventLoopWindowTarget<T>,
     ) -> bool {
         // yakui_winit will return whether it handled an event. This means that
         // yakui believes it should handle that event exclusively, like if a
@@ -180,7 +180,7 @@ impl Graphics {
                 event: WindowEvent::CloseRequested,
                 ..
             } => {
-                *control_flow = ControlFlow::Exit;
+                elwt.exit();
             }
 
             Event::NewEvents(cause) => {
@@ -205,13 +205,6 @@ impl Graphics {
                 }
 
                 self.resize(*size);
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::ScaleFactorChanged { new_inner_size, .. },
-                ..
-            } => {
-                self.resize(**new_inner_size);
             }
 
             _ => (),

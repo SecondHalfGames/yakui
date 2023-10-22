@@ -1,5 +1,5 @@
 use winit::{
-    event::Event,
+    event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -23,52 +23,55 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let mut yak = Yakui::new();
     let mut graphics = Graphics::new(&window).await;
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
+    event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop
+        .run(move |event, elwt| {
+            if graphics.handle_event(&mut yak, &event, elwt) {
+                return;
+            }
 
-        if graphics.handle_event(&mut yak, &event, control_flow) {
-            return;
-        }
+            match event {
+                Event::AboutToWait => {
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        use winit::dpi::LogicalSize;
+                        use winit::event::WindowEvent;
+                        use winit::window::WindowId;
 
-        match event {
-            Event::MainEventsCleared => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    use winit::dpi::LogicalSize;
-                    use winit::event::WindowEvent;
-                    use winit::window::WindowId;
+                        let web_window = web_sys::window().unwrap();
 
-                    let web_window = web_sys::window().unwrap();
+                        let event: Event<'_, ()> = Event::WindowEvent {
+                            window_id: unsafe { WindowId::dummy() },
+                            event: WindowEvent::Resized(window.inner_size()),
+                        };
 
-                    let event: Event<'_, ()> = Event::WindowEvent {
-                        window_id: unsafe { WindowId::dummy() },
-                        event: WindowEvent::Resized(window.inner_size()),
-                    };
+                        let width = web_window.inner_width().unwrap().as_f64().unwrap();
+                        let height = web_window.inner_height().unwrap().as_f64().unwrap();
+                        window.set_inner_size(LogicalSize::new(width, height));
+                        graphics.handle_event(&mut yak, &event, control_flow);
+                    }
 
-                    let width = web_window.inner_width().unwrap().as_f64().unwrap();
-                    let height = web_window.inner_height().unwrap().as_f64().unwrap();
-                    window.set_inner_size(LogicalSize::new(width, height));
-                    graphics.handle_event(&mut yak, &event, control_flow);
+                    window.request_redraw();
                 }
 
-                window.request_redraw();
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested { .. },
+                    ..
+                } => {
+                    yak.start();
+                    app();
+                    yak.finish();
+
+                    graphics.paint(&mut yak, wgpu::Color::BLACK);
+                }
+                _ => (),
             }
-
-            Event::RedrawRequested(_) => {
-                yak.start();
-                app();
-                yak.finish();
-
-                graphics.paint(&mut yak, wgpu::Color::BLACK);
-            }
-
-            _ => (),
-        }
-    });
+        })
+        .unwrap();
 }
 
 fn main() {
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let window = winit::window::Window::new(&event_loop).unwrap();
     #[cfg(not(target_arch = "wasm32"))]
     {
