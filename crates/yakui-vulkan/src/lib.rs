@@ -64,12 +64,14 @@ pub struct YakuiVulkan {
     uploads: UploadQueue,
 }
 
-/// Optional Vulkan configuration
+/// Vulkan configuration
 #[non_exhaustive]
 #[derive(Default)]
 pub struct Options {
     /// Indicates that VK_KHR_dynamic_rendering is enabled and should be used with the given format
     pub dynamic_rendering_format: Option<vk::Format>,
+    /// Render pass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
+    pub render_pass: vk::RenderPass,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -306,13 +308,18 @@ impl YakuiVulkan {
             .layout(pipeline_layout);
         let rendering_info_formats;
         let mut rendering_info;
+        assert!(
+            options.dynamic_rendering_format.is_some()
+                || options.render_pass != vk::RenderPass::null(),
+            "either dynamic_rendering_format or render_pass must be set"
+        );
         if let Some(format) = options.dynamic_rendering_format {
             rendering_info_formats = [format];
             rendering_info = vk::PipelineRenderingCreateInfo::builder()
                 .color_attachment_formats(&rendering_info_formats);
             graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
         } else {
-            graphic_pipeline_info = graphic_pipeline_info.render_pass(vulkan_context.render_pass);
+            graphic_pipeline_info = graphic_pipeline_info.render_pass(options.render_pass);
         }
 
         let graphics_pipelines = unsafe {

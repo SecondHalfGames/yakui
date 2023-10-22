@@ -46,9 +46,10 @@ fn main() {
             vulkan_test.present_queue,
             vulkan_test.draw_command_buffer,
             vulkan_test.device_memory_properties,
-            vulkan_test.render_pass,
         );
-        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, yakui_vulkan::Options::default());
+        let mut options = yakui_vulkan::Options::default();
+        options.render_pass = vulkan_test.render_pass;
+        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, options);
         // Prepare for one frame in flight
         yakui_vulkan.transfers_submitted();
         let gui_state = GuiState {
@@ -99,7 +100,6 @@ fn main() {
                     vulkan_test.present_queue,
                     vulkan_test.draw_command_buffer,
                     vulkan_test.device_memory_properties,
-                    vulkan_test.render_pass,
                 );
 
                 yak.start();
