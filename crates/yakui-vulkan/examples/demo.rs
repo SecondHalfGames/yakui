@@ -44,7 +44,6 @@ fn main() {
         let vulkan_context = VulkanContext::new(
             &vulkan_test.device,
             vulkan_test.present_queue,
-            vulkan_test.draw_command_buffer,
             vulkan_test.device_memory_properties,
         );
         let mut options = yakui_vulkan::Options::default();
@@ -98,7 +97,6 @@ fn main() {
                 let vulkan_context = VulkanContext::new(
                     &vulkan_test.device,
                     vulkan_test.present_queue,
-                    vulkan_test.draw_command_buffer,
                     vulkan_test.device_memory_properties,
                 );
 
@@ -111,13 +109,14 @@ fn main() {
                 let index = vulkan_test.cmd_begin();
                 unsafe {
                     yakui_vulkan.transfers_finished(&vulkan_context);
-                    yakui_vulkan.transfer(paint, &vulkan_context);
+                    yakui_vulkan.transfer(paint, &vulkan_context, vulkan_test.draw_command_buffer);
                 }
                 vulkan_test.render_begin(index);
                 unsafe {
                     yakui_vulkan.paint(
                         paint,
                         &vulkan_context,
+                        vulkan_test.draw_command_buffer,
                         vulkan_test.swapchain_info.surface_resolution,
                     );
                 }

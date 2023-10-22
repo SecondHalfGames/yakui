@@ -16,8 +16,6 @@ pub struct VulkanContext<'a> {
     pub device: &'a ash::Device,
     /// A queue that can call render and transfer commands
     pub queue: vk::Queue,
-    /// The command buffer that you'll ultimately submit to be presented/rendered
-    pub command_buffer: vk::CommandBuffer,
     /// Memory properties used for [`crate::YakuiVulkan`]'s allocation commands
     pub memory_properties: vk::PhysicalDeviceMemoryProperties,
 }
@@ -27,13 +25,11 @@ impl<'a> VulkanContext<'a> {
     pub fn new(
         device: &'a ash::Device,
         queue: vk::Queue,
-        command_buffer: vk::CommandBuffer,
         memory_properties: vk::PhysicalDeviceMemoryProperties,
     ) -> Self {
         Self {
             device,
             queue,
-            command_buffer,
             memory_properties,
         }
     }

@@ -245,9 +245,8 @@ impl UploadQueue {
         });
     }
 
-    pub unsafe fn record(&mut self, vulkan_context: &VulkanContext) {
+    pub unsafe fn record(&mut self, vulkan_context: &VulkanContext, cmd: vk::CommandBuffer) {
         let device = vulkan_context.device;
-        let cmd = vulkan_context.command_buffer;
         device.cmd_pipeline_barrier(
             cmd,
             vk::PipelineStageFlags::TOP_OF_PIPE,

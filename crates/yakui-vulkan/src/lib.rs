@@ -360,9 +360,10 @@ impl YakuiVulkan {
         &mut self,
         paint: &yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
+        cmd: vk::CommandBuffer,
     ) {
         self.update_textures(vulkan_context, paint);
-        self.uploads.record(vulkan_context);
+        self.uploads.record(vulkan_context, cmd);
     }
 
     /// Call when commands recorded by zero or more successive `transfer` calls have been submitted to
@@ -391,6 +392,7 @@ impl YakuiVulkan {
         &mut self,
         paint: &yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
+        cmd: vk::CommandBuffer,
         resolution: vk::Extent2D,
     ) {
         // If there's nothing to paint, well.. don't paint!
@@ -401,7 +403,7 @@ impl YakuiVulkan {
 
         let draw_calls = self.build_draw_calls(vulkan_context, paint);
 
-        self.render(vulkan_context, resolution, &draw_calls);
+        self.render(vulkan_context, resolution, cmd, &draw_calls);
     }
 
     /// Render the draw calls we've built up
@@ -409,10 +411,10 @@ impl YakuiVulkan {
         &self,
         vulkan_context: &VulkanContext,
         resolution: vk::Extent2D,
+        command_buffer: vk::CommandBuffer,
         draw_calls: &[DrawCall],
     ) {
         let device = vulkan_context.device;
-        let command_buffer = vulkan_context.command_buffer;
 
         let viewports = [vk::Viewport {
             x: 0.0,
