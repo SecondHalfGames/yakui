@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::f32::INFINITY;
+use std::mem;
 use std::rc::Rc;
 
 use fontdue::layout::{Layout, LinePosition};
@@ -53,10 +54,13 @@ pub struct TextBoxWidget {
     selected: bool,
     cursor: usize,
     text_layout: Option<IgnoreDebug<Rc<RefCell<Layout>>>>,
+    activated: bool,
 }
 
 pub struct TextBoxResponse {
     pub text: Option<String>,
+    /// Whether the user pressed "Enter" in this box
+    pub activated: bool,
 }
 
 impl Widget for TextBoxWidget {
@@ -70,6 +74,7 @@ impl Widget for TextBoxWidget {
             selected: false,
             cursor: 0,
             text_layout: None,
+            activated: false,
         }
     }
 
@@ -90,6 +95,7 @@ impl Widget for TextBoxWidget {
 
         Self::Response {
             text: self.updated_text.take(),
+            activated: mem::take(&mut self.activated),
         }
     }
 
@@ -212,6 +218,7 @@ impl Widget for TextBoxWidget {
                 KeyCode::Enter | KeyCode::NumpadEnter => {
                     if *down {
                         ctx.input.set_selection(None);
+                        self.activated = true;
                     }
                     EventResponse::Sink
                 }
