@@ -30,7 +30,7 @@ use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::NO_TEXTURE_ID;
+use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui::geometry::UVec2;
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
@@ -61,6 +61,7 @@ pub struct YakuiVulkan {
     user_textures: thunderdome::Arena<VulkanTexture>,
     /// A wrapper around descriptor set functionality
     descriptors: Descriptors,
+    uploads: UploadQueue,
 }
 
 /// Optional Vulkan configuration
@@ -340,7 +341,39 @@ impl YakuiVulkan {
             user_textures: Default::default(),
             yakui_managed_textures: Default::default(),
             initial_textures_synced: false,
+            uploads: UploadQueue::new(),
         }
+    }
+
+    /// Record transfer commands that must complete before painting this `paint`
+    ///
+    /// ## Safety
+    /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
+    pub unsafe fn transfer(
+        &mut self,
+        paint: &yakui_core::paint::PaintDom,
+        vulkan_context: &VulkanContext,
+    ) {
+        self.update_textures(vulkan_context, paint);
+        self.uploads.record(vulkan_context);
+    }
+
+    /// Call when commands recorded by zero or more successive `transfer` calls have been submitted to
+    /// a queue
+    ///
+    /// To support N concurrent frames in flight, call this N times before creating any textures.
+    pub fn transfers_submitted(&mut self) {
+        self.uploads.phase_submitted();
+    }
+
+    /// Call when the commands associated with the oldest call to `commands_submitted` have finished.
+    ///
+    /// ## Safety
+    ///
+    /// Those commands recorded prior to the oldest call to `commands_submitted` not yet associated
+    /// with a call to `commands_finished` must not be executing.
+    pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
+        self.uploads.phase_executed(vulkan_context);
     }
 
     /// Paint the yakui GUI using the provided [`VulkanContext`]
@@ -349,14 +382,10 @@ impl YakuiVulkan {
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
     pub unsafe fn paint(
         &mut self,
-        yak: &mut yakui_core::Yakui,
+        paint: &yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
         resolution: vk::Extent2D,
     ) {
-        let paint = yak.paint();
-
-        self.update_textures(vulkan_context, paint);
-
         // If there's nothing to paint, well.. don't paint!
         let layers = paint.layers();
         if layers.iter().all(|layer| layer.calls.is_empty()) {
@@ -376,7 +405,7 @@ impl YakuiVulkan {
         draw_calls: &[DrawCall],
     ) {
         let device = vulkan_context.device;
-        let command_buffer = vulkan_context.draw_command_buffer;
+        let command_buffer = vulkan_context.command_buffer;
 
         let viewports = [vk::Viewport {
             x: 0.0,
@@ -492,8 +521,12 @@ impl YakuiVulkan {
         vulkan_context: &VulkanContext,
         texture_create_info: VulkanTextureCreateInfo<Vec<u8>>,
     ) -> yakui::TextureId {
-        let texture =
-            VulkanTexture::new(vulkan_context, &mut self.descriptors, texture_create_info);
+        let texture = VulkanTexture::new(
+            vulkan_context,
+            &mut self.descriptors,
+            texture_create_info,
+            &mut self.uploads,
+        );
         yakui::TextureId::User(self.user_textures.insert(texture).to_bits())
     }
 
@@ -527,6 +560,7 @@ impl YakuiVulkan {
         device.destroy_pipeline(self.graphics_pipeline, None);
         self.index_buffer.cleanup(device);
         self.vertex_buffer.cleanup(device);
+        self.uploads.cleanup(device);
     }
 
     /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
@@ -544,6 +578,7 @@ impl YakuiVulkan {
                     vulkan_context,
                     &mut self.descriptors,
                     texture,
+                    &mut self.uploads,
                 );
                 self.yakui_managed_textures.insert(id, texture);
             }
@@ -559,6 +594,7 @@ impl YakuiVulkan {
                         vulkan_context,
                         &mut self.descriptors,
                         texture,
+                        &mut self.uploads,
                     );
                     self.yakui_managed_textures.insert(id, texture);
                 }
@@ -578,6 +614,7 @@ impl YakuiVulkan {
                         vulkan_context,
                         &mut self.descriptors,
                         new,
+                        &mut self.uploads,
                     );
                     self.yakui_managed_textures.insert(id, texture);
                 }

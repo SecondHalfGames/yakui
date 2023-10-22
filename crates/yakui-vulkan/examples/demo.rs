@@ -45,11 +45,12 @@ fn main() {
             &vulkan_test.device,
             vulkan_test.present_queue,
             vulkan_test.draw_command_buffer,
-            vulkan_test.command_pool,
             vulkan_test.device_memory_properties,
             vulkan_test.render_pass,
         );
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, yakui_vulkan::Options::default());
+        // Prepare for one frame in flight
+        yakui_vulkan.transfers_submitted();
         let gui_state = GuiState {
             monkey: yak.add_texture(create_yakui_texture(
                 MONKEY_PNG,
@@ -97,7 +98,6 @@ fn main() {
                     &vulkan_test.device,
                     vulkan_test.present_queue,
                     vulkan_test.draw_command_buffer,
-                    vulkan_test.command_pool,
                     vulkan_test.device_memory_properties,
                     vulkan_test.render_pass,
                 );
@@ -106,15 +106,23 @@ fn main() {
                 gui(&gui_state);
                 yak.finish();
 
-                let index = vulkan_test.render_begin();
+                let paint = yak.paint();
+
+                let index = vulkan_test.cmd_begin();
+                unsafe {
+                    yakui_vulkan.transfers_finished(&vulkan_context);
+                    yakui_vulkan.transfer(paint, &vulkan_context);
+                }
+                vulkan_test.render_begin(index);
                 unsafe {
                     yakui_vulkan.paint(
-                        &mut yak,
+                        paint,
                         &vulkan_context,
                         vulkan_test.swapchain_info.surface_resolution,
                     );
                 }
                 vulkan_test.render_end(index);
+                yakui_vulkan.transfers_submitted();
             }
             Event::WindowEvent {
                 event: WindowEvent::Resized(size),
@@ -561,7 +569,7 @@ impl VulkanTest {
             .destroy_swapchain(swapchain, None);
     }
 
-    pub fn render_begin(&self) -> u32 {
+    pub fn cmd_begin(&self) -> u32 {
         let (present_index, _) = unsafe {
             self.swapchain_info
                 .swapchain_loader
@@ -599,6 +607,13 @@ impl VulkanTest {
                         .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT),
                 )
                 .unwrap();
+        }
+        present_index
+    }
+
+    pub fn render_begin(&self, present_index: u32) -> u32 {
+        let device = &self.device;
+        unsafe {
             let clear_values = [
                 vk::ClearValue {
                     color: vk::ClearColorValue {

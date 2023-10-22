@@ -100,4 +100,8 @@ impl<T: Copy> Buffer<T> {
         device.free_memory(self.memory, None);
         device.destroy_buffer(self.handle, None);
     }
+
+    pub fn capacity(&self) -> usize {
+        self.len
+    }
 }
