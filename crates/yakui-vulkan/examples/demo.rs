@@ -32,9 +32,6 @@ fn main() {
     let (width, height) = (500, 500);
     let (mut event_loop, window) = init_winit(width, height);
     let mut vulkan_test = VulkanTest::new(width, height, &window);
-    let render_surface = RenderSurface {
-        resolution: vk::Extent2D { width, height },
-    };
 
     let mut yak = yakui::Yakui::new();
     yak.set_surface_size([width as f32, height as f32].into());
@@ -52,7 +49,7 @@ fn main() {
             vulkan_test.device_memory_properties,
             vulkan_test.render_pass,
         );
-        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
+        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context);
         let gui_state = GuiState {
             monkey: yak.add_texture(create_yakui_texture(
                 MONKEY_PNG,
@@ -110,7 +107,11 @@ fn main() {
                 yak.finish();
 
                 let index = vulkan_test.render_begin();
-                yakui_vulkan.paint(&mut yak, &vulkan_context);
+                yakui_vulkan.paint(
+                    &mut yak,
+                    &vulkan_context,
+                    vulkan_test.swapchain_info.surface_resolution,
+                );
                 vulkan_test.render_end(index);
             }
             Event::WindowEvent {
@@ -122,10 +123,6 @@ fn main() {
                 } else {
                     let PhysicalSize { width, height } = size;
                     vulkan_test.resized(width, height);
-                    let render_surface = RenderSurface {
-                        resolution: vk::Extent2D { width, height },
-                    };
-                    yakui_vulkan.update_surface(render_surface);
                     yak.set_surface_size([width as f32, height as f32].into());
                     yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
                         Default::default(),

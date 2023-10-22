@@ -45,8 +45,6 @@ use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 ///
 /// Make sure to call [`YakuiVulkan::cleanup()`].
 pub struct YakuiVulkan {
-    /// The surface to draw on
-    render_surface: RenderSurface,
     /// The pipeline layout used to draw
     pipeline_layout: vk::PipelineLayout,
     /// The graphics pipeline used to draw
@@ -63,13 +61,6 @@ pub struct YakuiVulkan {
     user_textures: thunderdome::Arena<VulkanTexture>,
     /// A wrapper around descriptor set functionality
     descriptors: Descriptors,
-}
-
-#[derive(Clone)]
-/// The surface for yakui to draw on
-pub struct RenderSurface {
-    /// The resolution of the surface
-    pub resolution: vk::Extent2D,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -147,7 +138,7 @@ impl YakuiVulkan {
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(vulkan_context: &VulkanContext, render_surface: RenderSurface) -> Self {
+    pub fn new(vulkan_context: &VulkanContext) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
 
@@ -245,18 +236,9 @@ impl YakuiVulkan {
             topology: vk::PrimitiveTopology::TRIANGLE_LIST,
             ..Default::default()
         };
-        let viewports = [vk::Viewport {
-            x: 0.0,
-            y: 0.0,
-            width: render_surface.resolution.width as f32,
-            height: render_surface.resolution.height as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        }];
-        let scissors = [render_surface.resolution.into()];
         let viewport_state_info = vk::PipelineViewportStateCreateInfo::builder()
-            .scissors(&scissors)
-            .viewports(&viewports);
+            .scissor_count(1)
+            .viewport_count(1);
 
         let rasterization_info = vk::PipelineRasterizationStateCreateInfo {
             front_face: vk::FrontFace::COUNTER_CLOCKWISE,
@@ -334,7 +316,6 @@ impl YakuiVulkan {
 
         Self {
             descriptors,
-            render_surface,
             pipeline_layout,
             graphics_pipeline,
             index_buffer,
@@ -349,7 +330,12 @@ impl YakuiVulkan {
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
-    pub fn paint(&mut self, yak: &mut yakui_core::Yakui, vulkan_context: &VulkanContext) {
+    pub fn paint(
+        &mut self,
+        yak: &mut yakui_core::Yakui,
+        vulkan_context: &VulkanContext,
+        resolution: vk::Extent2D,
+    ) {
         let paint = yak.paint();
 
         self.update_textures(vulkan_context, paint);
@@ -362,26 +348,29 @@ impl YakuiVulkan {
 
         let draw_calls = self.build_draw_calls(vulkan_context, paint);
 
-        self.render(vulkan_context, &draw_calls);
+        self.render(vulkan_context, resolution, &draw_calls);
     }
 
     /// Render the draw calls we've built up
-    fn render(&self, vulkan_context: &VulkanContext, draw_calls: &[DrawCall]) {
+    fn render(
+        &self,
+        vulkan_context: &VulkanContext,
+        resolution: vk::Extent2D,
+        draw_calls: &[DrawCall],
+    ) {
         let device = vulkan_context.device;
         let command_buffer = vulkan_context.draw_command_buffer;
-
-        let surface = &self.render_surface;
 
         let viewports = [vk::Viewport {
             x: 0.0,
             y: 0.0,
-            width: surface.resolution.width as f32,
-            height: surface.resolution.height as f32,
+            width: resolution.width as f32,
+            height: resolution.height as f32,
             min_depth: 0.0,
             max_depth: 1.0,
         }];
 
-        let surface_size = UVec2::new(surface.resolution.width, surface.resolution.height);
+        let surface_size = UVec2::new(resolution.width, resolution.height);
 
         unsafe {
             device.cmd_bind_pipeline(
@@ -390,7 +379,7 @@ impl YakuiVulkan {
                 self.graphics_pipeline,
             );
             device.cmd_set_viewport(command_buffer, 0, &viewports);
-            let default_scissor = [surface.resolution.into()];
+            let default_scissor = [resolution.into()];
 
             // We set the scissor first here as it's against the spec not to do so.
             device.cmd_set_scissor(command_buffer, 0, &default_scissor);
@@ -441,7 +430,7 @@ impl YakuiVulkan {
                                     x: pos.x as _,
                                     y: pos.y as _,
                                 },
-                                extent: surface.resolution,
+                                extent: resolution,
                             }];
                             // If there's a clip, update the scissor
                             device.cmd_set_scissor(command_buffer, 0, &scissors);
@@ -633,11 +622,5 @@ impl YakuiVulkan {
         }
 
         draw_calls
-    }
-
-    /// Update the surface that this [`YakuiVulkan`] instance will render to. You'll probably want to call
-    /// this if the user resizes the window.
-    pub fn update_surface(&mut self, render_surface: RenderSurface) {
-        self.render_surface = render_surface;
     }
 }
