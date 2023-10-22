@@ -617,8 +617,8 @@ impl YakuiVulkan {
         }
 
         unsafe {
-            self.index_buffer.overwrite(vulkan_context, &indices);
-            self.vertex_buffer.overwrite(vulkan_context, &vertices);
+            self.index_buffer.write(vulkan_context, 0, &indices);
+            self.vertex_buffer.write(vulkan_context, 0, &vertices);
         }
 
         draw_calls

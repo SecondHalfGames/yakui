@@ -71,17 +71,16 @@ impl<T: Copy> Buffer<T> {
         }
     }
 
-    pub unsafe fn overwrite(&mut self, _vulkan_context: &VulkanContext, new_data: &[T]) {
+    pub unsafe fn write(&mut self, _vulkan_context: &VulkanContext, offset: usize, new_data: &[T]) {
         let new_data_size = std::mem::size_of_val(new_data);
-        if new_data_size > self.size as usize {
+        if std::mem::size_of::<T>() * offset + new_data_size > self.size as usize {
             todo!("Support resizing buffers");
         }
 
         self.ptr
             .as_ptr()
+            .add(offset)
             .copy_from_nonoverlapping(new_data.as_ptr(), new_data.len());
-
-        self.len = new_data.len()
     }
 
     /// ## Safety
