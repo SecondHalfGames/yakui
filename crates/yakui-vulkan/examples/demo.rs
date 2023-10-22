@@ -49,7 +49,7 @@ fn main() {
             vulkan_test.device_memory_properties,
             vulkan_test.render_pass,
         );
-        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context);
+        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, yakui_vulkan::Options::default());
         let gui_state = GuiState {
             monkey: yak.add_texture(create_yakui_texture(
                 MONKEY_PNG,

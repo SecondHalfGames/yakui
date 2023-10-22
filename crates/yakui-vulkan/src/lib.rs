@@ -63,6 +63,14 @@ pub struct YakuiVulkan {
     descriptors: Descriptors,
 }
 
+/// Optional Vulkan configuration
+#[non_exhaustive]
+#[derive(Default)]
+pub struct Options {
+    /// Indicates that VK_KHR_dynamic_rendering is enabled and should be used with the given format
+    pub dynamic_rendering_format: Option<vk::Format>,
+}
+
 #[derive(Clone, Copy, Debug)]
 /// A single draw call to render a yakui mesh
 struct DrawCall {
@@ -138,7 +146,7 @@ impl YakuiVulkan {
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(vulkan_context: &VulkanContext) -> Self {
+    pub fn new(vulkan_context: &VulkanContext, options: Options) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
 
@@ -284,7 +292,7 @@ impl YakuiVulkan {
         let dynamic_state_info =
             vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&dynamic_state);
 
-        let graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+        let mut graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
             .stages(&shader_stage_create_infos)
             .vertex_input_state(&vertex_input_state_info)
             .input_assembly_state(&vertex_input_assembly_state_info)
@@ -294,8 +302,17 @@ impl YakuiVulkan {
             .depth_stencil_state(&depth_state_info)
             .color_blend_state(&color_blend_state)
             .dynamic_state(&dynamic_state_info)
-            .layout(pipeline_layout)
-            .render_pass(vulkan_context.render_pass);
+            .layout(pipeline_layout);
+        let rendering_info_formats;
+        let mut rendering_info;
+        if let Some(format) = options.dynamic_rendering_format {
+            rendering_info_formats = [format];
+            rendering_info = vk::PipelineRenderingCreateInfo::builder()
+                .color_attachment_formats(&rendering_info_formats);
+            graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
+        } else {
+            graphic_pipeline_info = graphic_pipeline_info.render_pass(vulkan_context.render_pass);
+        }
 
         let graphics_pipelines = unsafe {
             device
