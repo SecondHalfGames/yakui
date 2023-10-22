@@ -9,8 +9,12 @@ pub fn run() {
         my_box.style.font_size = 60.0;
         my_box.padding = Pad::all(50.0);
 
-        if let Some(new_text) = my_box.show().into_inner().text {
+        let response = my_box.show().into_inner();
+        if let Some(new_text) = response.text {
             text.set(new_text);
+        }
+        if response.activated {
+            println!("{}", text.borrow());
         }
     });
 }
