@@ -1,5 +1,6 @@
 mod custom_texture;
 
+use std::fmt::Write;
 use std::time::Instant;
 
 use winit::dpi::LogicalSize;
@@ -64,10 +65,16 @@ pub fn start(body: impl ExampleBody) {
 }
 
 async fn run(body: impl ExampleBody) {
+    let mut title = "yakui demo".to_owned();
+
+    if let Some(scale) = get_scale_override() {
+        write!(title, " (scale override {scale})").unwrap();
+    }
+
     // Normal winit setup for an EventLoop and Window.
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
-        .with_title("yakui Demo")
+        .with_title(title)
         .with_inner_size(LogicalSize::new(800.0, 600.0))
         .build(&event_loop)
         .unwrap();
