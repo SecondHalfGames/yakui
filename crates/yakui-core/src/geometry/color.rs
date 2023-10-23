@@ -78,6 +78,11 @@ impl Color {
             .into_components()
             .into()
     }
+
+    /// Blend with `other` in linear space
+    pub fn lerp(&self, other: &Color, ratio: f32) -> Self {
+        Self::from_linear(self.to_linear().lerp(other.to_linear(), ratio))
+    }
 }
 
 macro_rules! builtin_colors {

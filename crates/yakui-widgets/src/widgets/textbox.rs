@@ -30,6 +30,8 @@ pub struct TextBox {
     pub style: TextStyle,
     pub padding: Pad,
     pub fill: Option<Color>,
+    /// Drawn when no text has been set
+    pub placeholder: String,
 }
 
 impl TextBox {
@@ -39,6 +41,7 @@ impl TextBox {
             style: TextStyle::label(),
             padding: Pad::all(8.0),
             fill: Some(colors::BACKGROUND_3),
+            placeholder: String::new(),
         }
     }
 
@@ -81,12 +84,26 @@ impl Widget for TextBoxWidget {
     fn update(&mut self, props: Self::Props) -> Self::Response {
         self.props = props;
 
-        let text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+        let mut text = self.updated_text.as_ref().unwrap_or(&self.props.text);
+        let use_placeholder = text.is_empty();
+        if use_placeholder {
+            text = &self.props.placeholder;
+        }
 
         let mut render = RenderTextBox::new(text.clone());
         render.style = self.props.style.clone();
         render.selected = self.selected;
-        render.cursor = self.cursor;
+        if !use_placeholder {
+            render.cursor = self.cursor;
+        }
+        if use_placeholder {
+            // Dim towards background
+            render.style.color = self
+                .props
+                .style
+                .color
+                .lerp(&self.props.fill.unwrap_or(Color::CLEAR), 0.75);
+        }
 
         pad(self.props.padding, || {
             let res = render.show();
