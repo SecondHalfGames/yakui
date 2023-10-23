@@ -146,7 +146,7 @@ impl Widget for RenderTextBoxWidget {
 
         let metrics = font.vertical_line_metrics(font_size);
         let ascent = metrics.map(|m| m.ascent).unwrap_or(font_size);
-        let cursor_size = ascent;
+        let cursor_size = ascent / ctx.layout.scale_factor();
 
         let cursor_pos = Vec2::new(cursor_x.unwrap_or(0.0), cursor_y) / ctx.layout.scale_factor();
         *self.cursor_pos_size.borrow_mut() = (cursor_pos, cursor_size);
