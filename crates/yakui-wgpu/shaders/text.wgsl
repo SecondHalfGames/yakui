@@ -31,6 +31,8 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    var coverage = textureSample(coverage_texture, coverage_sampler, in.texcoord).r;
-    return in.color * coverage;
+    let coverage = textureSample(coverage_texture, coverage_sampler, in.texcoord).r;
+    let alpha = coverage * in.color.a;
+
+    return vec4(in.color.rgb * alpha, alpha);
 }
