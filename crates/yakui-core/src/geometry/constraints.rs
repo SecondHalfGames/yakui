@@ -75,7 +75,7 @@ impl Constraints {
 
     /// Constraints are bounded if the maximum size on both axes is finite.
     pub fn is_bounded(&self) -> bool {
-        self.max.is_finite()
+        self.max.is_finite() && is_nonmax(self.max)
     }
 
     /// Constraints are unbounded if the maximum size on either axis is
@@ -83,4 +83,8 @@ impl Constraints {
     pub fn is_unbounded(&self) -> bool {
         !self.is_bounded()
     }
+}
+
+fn is_nonmax(value: Vec2) -> bool {
+    value.x < f32::MAX && value.y < f32::MAX
 }
