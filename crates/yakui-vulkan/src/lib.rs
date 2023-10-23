@@ -599,7 +599,9 @@ impl YakuiVulkan {
 
                 TextureChange::Removed => {
                     if let Some(removed) = self.yakui_managed_textures.remove(&id) {
-                        unsafe { removed.cleanup(vulkan_context.device) };
+                        unsafe {
+                            self.uploads.dispose(removed);
+                        }
                     }
                 }
 

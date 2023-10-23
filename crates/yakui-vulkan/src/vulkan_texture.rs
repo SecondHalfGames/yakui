@@ -208,6 +208,12 @@ impl UploadQueue {
         finished.cleanup(vulkan_context.device);
     }
 
+    /// Schedule `texture` to be disposed of after the previous phase completes
+    pub unsafe fn dispose(&mut self, texture: VulkanTexture) {
+        let phase = self.in_flight.back_mut().unwrap_or(&mut self.phase);
+        phase.graveyard.push(texture);
+    }
+
     unsafe fn push(
         &mut self,
         vulkan_context: &VulkanContext,
@@ -300,12 +306,16 @@ impl UploadQueue {
 #[derive(Default)]
 struct UploadPhase {
     buffers: Vec<(Buffer<u8>, usize)>,
+    graveyard: Vec<VulkanTexture>,
 }
 
 impl UploadPhase {
     unsafe fn cleanup(&mut self, device: &ash::Device) {
         for (buffer, _) in &self.buffers {
             buffer.cleanup(device);
+        }
+        for texture in &self.graveyard {
+            texture.cleanup(device);
         }
     }
 
