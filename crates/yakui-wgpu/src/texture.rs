@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::UVec2;
 use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
 
@@ -11,7 +13,7 @@ pub(crate) struct GpuManagedTexture {
 }
 
 pub(crate) struct GpuTexture {
-    pub view: wgpu::TextureView,
+    pub view: Arc<wgpu::TextureView>,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
 }

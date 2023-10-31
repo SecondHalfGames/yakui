@@ -8,6 +8,7 @@ mod texture;
 use std::collections::HashMap;
 use std::mem::size_of;
 use std::ops::Range;
+use std::sync::Arc;
 
 use buffer::Buffer;
 use bytemuck::{Pod, Zeroable};
@@ -128,12 +129,12 @@ impl YakuiWgpu {
     /// any yakui widgets.
     pub fn add_texture(
         &mut self,
-        view: wgpu::TextureView,
+        view: impl Into<Arc<wgpu::TextureView>>,
         min_filter: wgpu::FilterMode,
         mag_filter: wgpu::FilterMode,
     ) -> TextureId {
         let index = self.textures.insert(GpuTexture {
-            view,
+            view: view.into(),
             min_filter,
             mag_filter,
         });
@@ -146,7 +147,7 @@ impl YakuiWgpu {
     ///
     /// Will panic if `TextureId` was not created from a previous call to
     /// `add_texture`.
-    pub fn update_texture(&mut self, id: TextureId, view: wgpu::TextureView) {
+    pub fn update_texture(&mut self, id: TextureId, view: impl Into<Arc<wgpu::TextureView>>) {
         let index = match id {
             TextureId::User(bits) => Index::from_bits(bits).expect("invalid user texture"),
             _ => panic!("invalid user texture"),
@@ -156,7 +157,7 @@ impl YakuiWgpu {
             .textures
             .get_mut(index)
             .expect("user texture does not exist");
-        existing.view = view;
+        existing.view = view.into();
     }
 
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
