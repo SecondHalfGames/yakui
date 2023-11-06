@@ -25,7 +25,14 @@ pub struct Graphics {
 
 impl Graphics {
     pub async fn new(window: &Window) -> Self {
-        let size = window.inner_size();
+        let mut size = window.inner_size();
+
+        // FIXME: On web, we're receiving (0, 0) as the initial size of the
+        // window, which makes wgpu upset. If we hit that case, let's just make
+        // up a size and let it get fixed later.
+        if size == PhysicalSize::new(0, 0) {
+            size = PhysicalSize::new(800, 600);
+        }
 
         let instance = wgpu::Instance::default();
         let surface =
