@@ -72,7 +72,7 @@ async fn run(body: impl ExampleBody) {
     }
 
     // Normal winit setup for an EventLoop and Window.
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new().unwrap();
     let window = WindowBuilder::new()
         .with_title(title)
         .with_inner_size(LogicalSize::new(800.0, 600.0))
@@ -137,78 +137,79 @@ async fn run(body: impl ExampleBody) {
 
     let start = Instant::now();
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
+    event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop
+        .run(move |event, elwt| {
+            if app.handle_event(&mut yak, &event, elwt) {
+                return;
+            }
 
-        if app.handle_event(&mut yak, &event, control_flow) {
-            return;
-        }
+            match event {
+                Event::AboutToWait => {
+                    state.time = (Instant::now() - start).as_secs_f32();
 
-        match event {
-            Event::MainEventsCleared => {
-                state.time = (Instant::now() - start).as_secs_f32();
+                    {
+                        profiling::scope!("Build UI");
 
-                {
-                    profiling::scope!("Build UI");
+                        // Every frame, call yak.start() to begin building the UI for
+                        // this frame. Any yakui widget calls that happen on this thread
+                        // between start() and finish() will be applied to this yakui
+                        // State.
+                        yak.start();
 
-                    // Every frame, call yak.start() to begin building the UI for
-                    // this frame. Any yakui widget calls that happen on this thread
-                    // between start() and finish() will be applied to this yakui
-                    // State.
-                    yak.start();
+                        // Call out to the body of the program, passing in a bit of
+                        // shared state that all the examples can use.
+                        body.run(&mut state);
 
-                    // Call out to the body of the program, passing in a bit of
-                    // shared state that all the examples can use.
-                    body.run(&mut state);
-
-                    // Finish building the UI and compute this frame's layout.
-                    yak.finish();
-                }
-
-                // The example graphics abstraction calls yak.paint() to get
-                // access to the underlying PaintDom, which holds all the state
-                // about how to paint widgets.
-                app.paint(&mut yak, {
-                    let bg = yakui::colors::BACKGROUND_1.to_linear();
-                    wgpu::Color {
-                        r: bg.x.into(),
-                        g: bg.y.into(),
-                        b: bg.z.into(),
-                        a: 1.0,
+                        // Finish building the UI and compute this frame's layout.
+                        yak.finish();
                     }
-                });
 
-                profiling::finish_frame!();
-            }
+                    // The example graphics abstraction calls yak.paint() to get
+                    // access to the underlying PaintDom, which holds all the state
+                    // about how to paint widgets.
+                    app.paint(&mut yak, {
+                        let bg = yakui::colors::BACKGROUND_1.to_linear();
+                        wgpu::Color {
+                            r: bg.x.into(),
+                            g: bg.y.into(),
+                            b: bg.z.into(),
+                            a: 1.0,
+                        }
+                    });
 
-            Event::WindowEvent {
-                event: WindowEvent::MouseInput { state, button, .. },
-                ..
-            } => {
-                // This print is a handy way to show which mouse events are
-                // handled by yakui, and which ones will make it to the
-                // underlying application.
-                if button == winit::event::MouseButton::Left {
-                    println!("Left mouse button {state:?}");
+                    profiling::finish_frame!();
                 }
-            }
 
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
-                if let Some(inset) = inset {
-                    let size = Vec2::new(size.width as f32, size.height as f32);
-                    yak.set_unscaled_viewport(Rect::from_pos_size(
-                        Vec2::splat(inset),
-                        size - Vec2::splat(inset * 2.0),
-                    ));
+                Event::WindowEvent {
+                    event: WindowEvent::MouseInput { state, button, .. },
+                    ..
+                } => {
+                    // This print is a handy way to show which mouse events are
+                    // handled by yakui, and which ones will make it to the
+                    // underlying application.
+                    if button == winit::event::MouseButton::Left {
+                        println!("Left mouse button {state:?}");
+                    }
                 }
-            }
 
-            _ => (),
-        }
-    });
+                Event::WindowEvent {
+                    event: WindowEvent::Resized(size),
+                    ..
+                } => {
+                    if let Some(inset) = inset {
+                        let size = Vec2::new(size.width as f32, size.height as f32);
+                        yak.set_unscaled_viewport(Rect::from_pos_size(
+                            Vec2::splat(inset),
+                            size - Vec2::splat(inset * 2.0),
+                        ));
+                    }
+                }
+
+                _ => (),
+            }
+        })
+        .unwrap();
 }
 
 /// This function takes some bytes and turns it into a yakui `Texture` object so
