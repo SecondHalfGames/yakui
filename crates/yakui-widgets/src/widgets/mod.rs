@@ -27,6 +27,7 @@ mod state;
 mod text;
 mod textbox;
 mod unconstrained_box;
+mod viewport;
 mod window;
 
 pub use self::align::*;
@@ -58,4 +59,5 @@ pub use self::state::*;
 pub use self::text::*;
 pub use self::textbox::*;
 pub use self::unconstrained_box::*;
+pub use self::viewport::*;
 pub use self::window::*;
