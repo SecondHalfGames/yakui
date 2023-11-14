@@ -4,7 +4,7 @@
 </div>
 
 <div align="center">
-    <a href="https://github.com/LPGhatguy/yakui/actions"><img src="https://github.com/LPGhatguy/yakui/workflows/CI/badge.svg" alt="Actions status" /></a>
+    <a href="https://github.com/SecondHalfGames/yakui/actions"><img src="https://github.com/SecondHalfGames/yakui/workflows/CI/badge.svg" alt="Actions status" /></a>
     <a href="https://crates.io/crates/yakui"><img src="https://img.shields.io/crates/v/yakui.svg?label=latest%20release" alt="Latest version" /></a>
     <a href="https://docs.rs/yakui"><img src="https://img.shields.io/badge/docs-docs.rs-brightgreen.svg" alt="Documentation" /></a>
     <a href="https://www.patreon.com/lpghatguy"><img src="https://img.shields.io/badge/sponsor-patreon-red" alt="Patreon" /></a>
@@ -75,7 +75,7 @@ your_renderer.draw(yak.paint());
 
 You can use the [`yakui-winit`] and [`yakui-wgpu`] crates to integrate with [winit] and [wgpu], respectively.
 
-[`yakui::Yakui`]: https://github.com/LPGhatguy/yakui/blob/main/crates/yakui-core/src/state.rs
+[`yakui::Yakui`]: https://github.com/SecondHalfGames/yakui/blob/main/crates/yakui-core/src/state.rs
 
 ## Examples
 Example setup code for yakui is available in [`crates/bootstrap`](crates/bootstrap).
