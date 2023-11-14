@@ -214,10 +214,10 @@ impl YakuiWgpu {
                     resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                 })],
-                depth_stencil_attachment: None,
+                ..Default::default()
             });
 
             render_pass.set_vertex_buffer(0, vertices.slice(..));
