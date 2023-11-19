@@ -33,11 +33,11 @@ impl CutOut {
         }
     }
 
-    pub fn show(self) -> Response<CutOutWidget> {
+    pub fn show(self) -> Response<CutOutResponse> {
         widget::<CutOutWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CutOutWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CutOutResponse> {
         widget_children::<CutOutWidget, F>(children, self)
     }
 }

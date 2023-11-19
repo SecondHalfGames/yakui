@@ -26,7 +26,7 @@ impl UnconstrainedBox {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxResponse> {
         widget_children::<UnconstrainedBoxWidget, F>(children, self)
     }
 }

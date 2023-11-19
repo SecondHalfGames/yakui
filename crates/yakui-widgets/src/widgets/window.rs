@@ -26,7 +26,7 @@ impl Window {
         }
     }
 
-    pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowWidget> {
+    pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowResponse> {
         self.children = Some(Box::new(children));
         widget::<WindowWidget>(self)
     }

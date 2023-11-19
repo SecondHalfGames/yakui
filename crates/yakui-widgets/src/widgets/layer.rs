@@ -20,7 +20,7 @@ impl Layer {
         Self {}
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerResponse> {
         widget_children::<LayerWidget, F>(children, self)
     }
 }

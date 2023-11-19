@@ -20,7 +20,7 @@ impl ConstrainedBox {
         Self { constraints }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxResponse> {
         widget_children::<ConstrainedBoxWidget, F>(children, self)
     }
 }

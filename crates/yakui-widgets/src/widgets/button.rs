@@ -98,7 +98,7 @@ impl Button {
         }
     }
 
-    pub fn show(self) -> Response<ButtonWidget> {
+    pub fn show(self) -> Response<ButtonResponse> {
         widget::<ButtonWidget>(self)
     }
 }

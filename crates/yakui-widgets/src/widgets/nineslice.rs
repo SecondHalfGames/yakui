@@ -25,7 +25,7 @@ impl NineSlice {
         }
     }
 
-    pub fn show(self, children: impl FnOnce()) -> Response<NineSliceWidget> {
+    pub fn show(self, children: impl FnOnce()) -> Response<()> {
         let scaled_margins = {
             let mut m = self.margins;
             m.left *= self.scale;

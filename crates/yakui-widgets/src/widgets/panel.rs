@@ -41,7 +41,7 @@ impl Panel {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelResponse> {
         widget_children::<PanelWidget, F>(children, self)
     }
 }

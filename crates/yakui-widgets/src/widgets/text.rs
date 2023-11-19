@@ -55,7 +55,7 @@ impl Text {
         }
     }
 
-    pub fn show(self) -> Response<TextWidget> {
+    pub fn show(self) -> Response<TextResponse> {
         widget::<TextWidget>(self)
     }
 }

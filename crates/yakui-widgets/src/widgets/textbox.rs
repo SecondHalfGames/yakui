@@ -45,7 +45,7 @@ impl TextBox {
         }
     }
 
-    pub fn show(self) -> Response<TextBoxWidget> {
+    pub fn show(self) -> Response<TextBoxResponse> {
         widget::<TextBoxWidget>(self)
     }
 }

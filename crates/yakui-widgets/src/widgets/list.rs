@@ -56,7 +56,7 @@ impl List {
         Self::new(Direction::Right)
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ListWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ListResponse> {
         widget_children::<ListWidget, F>(children, self)
     }
 }

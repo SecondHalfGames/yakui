@@ -22,7 +22,7 @@ impl MaxWidth {
         Self { max_width }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthResponse> {
         widget_children::<MaxWidthWidget, F>(children, self)
     }
 }

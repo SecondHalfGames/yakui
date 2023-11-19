@@ -38,7 +38,7 @@ impl RenderTextBox {
         }
     }
 
-    pub fn show(self) -> Response<RenderTextBoxWidget> {
+    pub fn show(self) -> Response<RenderTextBoxResponse> {
         widget::<RenderTextBoxWidget>(self)
     }
 }

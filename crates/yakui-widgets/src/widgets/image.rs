@@ -28,7 +28,7 @@ impl Image {
         }
     }
 
-    pub fn show(self) -> Response<ImageWidget> {
+    pub fn show(self) -> Response<ImageResponse> {
         widget::<ImageWidget>(self)
     }
 }

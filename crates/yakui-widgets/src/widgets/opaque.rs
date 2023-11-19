@@ -18,7 +18,7 @@ impl Opaque {
         Self {}
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<OpaqueWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<OpaqueResponse> {
         widget_children::<OpaqueWidget, F>(children, self)
     }
 }

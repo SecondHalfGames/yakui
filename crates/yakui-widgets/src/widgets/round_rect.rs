@@ -27,11 +27,11 @@ impl RoundRect {
         }
     }
 
-    pub fn show(self) -> Response<RoundRectWidget> {
+    pub fn show(self) -> Response<RoundRectResponse> {
         widget::<RoundRectWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<RoundRectWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<RoundRectResponse> {
         widget_children::<RoundRectWidget, F>(children, self)
     }
 }

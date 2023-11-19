@@ -21,8 +21,8 @@ impl<T: 'static> State<T> {
         }
     }
 
-    pub fn show(self) -> Response<StateWidget<T>> {
-        util::widget(self)
+    pub fn show(self) -> Response<StateResponse<T>> {
+        util::widget::<StateWidget<T>>(self)
     }
 }
 

@@ -23,11 +23,11 @@ impl Canvas {
         }
     }
 
-    pub fn show(self) -> Response<CanvasWidget> {
+    pub fn show(self) -> Response<CanvasResponse> {
         widget::<CanvasWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CanvasWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CanvasResponse> {
         widget_children::<CanvasWidget, F>(children, self)
     }
 }

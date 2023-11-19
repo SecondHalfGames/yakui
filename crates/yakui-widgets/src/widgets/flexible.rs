@@ -43,7 +43,7 @@ impl Flexible {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<FlexibleWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<FlexibleResponse> {
         widget_children::<FlexibleWidget, F>(children, self)
     }
 }

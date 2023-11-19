@@ -25,11 +25,11 @@ impl Circle {
         }
     }
 
-    pub fn show(self) -> Response<CircleWidget> {
+    pub fn show(self) -> Response<CircleResponse> {
         widget::<CircleWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleResponse> {
         widget_children::<CircleWidget, F>(children, self)
     }
 }

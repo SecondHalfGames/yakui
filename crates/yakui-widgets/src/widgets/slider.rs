@@ -35,8 +35,8 @@ impl Slider {
         }
     }
 
-    pub fn show(self) -> Response<SliderWidget> {
-        util::widget(self)
+    pub fn show(self) -> Response<SliderResponse> {
+        util::widget::<SliderWidget>(self)
     }
 }
 

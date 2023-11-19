@@ -20,7 +20,7 @@ impl Reflow {
         Self { anchor, offset }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowResponse> {
         widget_children::<ReflowWidget, F>(children, self)
     }
 }

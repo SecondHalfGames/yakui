@@ -18,7 +18,7 @@ impl Offset {
         Self { offset }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetResponse> {
         widget_children::<OffsetWidget, F>(children, self)
     }
 }

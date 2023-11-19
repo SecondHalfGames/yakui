@@ -49,7 +49,7 @@ impl Align {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<AlignWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<AlignResponse> {
         widget_children::<AlignWidget, F>(children, self)
     }
 }

@@ -42,7 +42,7 @@ impl RenderText {
         }
     }
 
-    pub fn show(self) -> Response<RenderTextWidget> {
+    pub fn show(self) -> Response<RenderTextResponse> {
         widget::<RenderTextWidget>(self)
     }
 }
