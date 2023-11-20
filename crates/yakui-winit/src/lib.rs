@@ -133,7 +133,8 @@ impl YakuiWinit {
                 event: WindowEvent::MouseWheel { delta, .. },
                 ..
             } => {
-                const LINE_HEIGHT: f32 = 90.0;
+                // Observed logical pixels per scroll wheel increment in Windows on Chrome
+                const LINE_HEIGHT: f32 = 100.0 / 3.0;
 
                 let delta = match *delta {
                     MouseScrollDelta::LineDelta(x, y) => Vec2::new(x, y) * LINE_HEIGHT,
