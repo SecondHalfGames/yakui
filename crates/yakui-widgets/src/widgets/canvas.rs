@@ -40,7 +40,7 @@ pub struct CanvasWidget {
 pub type CanvasResponse = ();
 
 impl Widget for CanvasWidget {
-    type Props = Canvas;
+    type Props<'a> = Canvas;
     type Response = CanvasResponse;
 
     fn new() -> Self {
@@ -51,7 +51,7 @@ impl Widget for CanvasWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

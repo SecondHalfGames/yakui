@@ -54,7 +54,7 @@ pub struct CheckboxResponse {
 }
 
 impl Widget for CheckboxWidget {
-    type Props = Checkbox;
+    type Props<'a> = Checkbox;
     type Response = CheckboxResponse;
 
     fn new() -> Self {
@@ -66,7 +66,7 @@ impl Widget for CheckboxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         let mut checked = self.props.checked;

@@ -33,7 +33,7 @@ pub struct ConstrainedBoxWidget {
 pub type ConstrainedBoxResponse = ();
 
 impl Widget for ConstrainedBoxWidget {
-    type Props = ConstrainedBox;
+    type Props<'a> = ConstrainedBox;
     type Response = ConstrainedBoxResponse;
 
     fn new() -> Self {
@@ -45,7 +45,7 @@ impl Widget for ConstrainedBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

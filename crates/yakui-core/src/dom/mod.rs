@@ -175,7 +175,7 @@ impl Dom {
 
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
-    pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T::Response> {
+    pub fn do_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         let response = self.begin_widget::<T>(props);
         self.end_widget::<T>(response.id);
         response
@@ -184,7 +184,7 @@ impl Dom {
     /// Begin building a widget with the given type and props.
     ///
     /// After calling this method, children can be added to this widget.
-    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Response<T::Response> {
+    pub fn begin_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
         let (id, mut widget) = {

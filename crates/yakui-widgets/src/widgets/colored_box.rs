@@ -56,7 +56,7 @@ pub struct ColoredBoxWidget {
 pub type ColoredBoxResponse = ();
 
 impl Widget for ColoredBoxWidget {
-    type Props = ColoredBox;
+    type Props<'a> = ColoredBox;
     type Response = ColoredBoxResponse;
 
     fn new() -> Self {
@@ -65,7 +65,7 @@ impl Widget for ColoredBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

@@ -44,7 +44,7 @@ pub struct RoundRectWidget {
 pub type RoundRectResponse = ();
 
 impl Widget for RoundRectWidget {
-    type Props = RoundRect;
+    type Props<'a> = RoundRect;
     type Response = RoundRectResponse;
 
     fn new() -> Self {
@@ -53,7 +53,7 @@ impl Widget for RoundRectWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

@@ -56,7 +56,7 @@ pub struct RenderTextBoxResponse {
 }
 
 impl Widget for RenderTextBoxWidget {
-    type Props = RenderTextBox;
+    type Props<'a> = RenderTextBox;
     type Response = RenderTextBoxResponse;
 
     fn new() -> Self {
@@ -69,7 +69,7 @@ impl Widget for RenderTextBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
         RenderTextBoxResponse {
             layout: self.layout.clone(),

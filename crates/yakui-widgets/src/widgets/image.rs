@@ -41,7 +41,7 @@ pub struct ImageWidget {
 pub type ImageResponse = ();
 
 impl Widget for ImageWidget {
-    type Props = Image;
+    type Props<'a> = Image;
     type Response = ImageResponse;
 
     fn new() -> Self {
@@ -53,7 +53,7 @@ impl Widget for ImageWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

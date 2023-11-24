@@ -45,14 +45,14 @@ pub struct Dragging {
 }
 
 impl Widget for DraggableWidget {
-    type Props = Draggable;
+    type Props<'a> = Draggable;
     type Response = DraggableResponse;
 
     fn new() -> Self {
         Self { current_drag: None }
     }
 
-    fn update(&mut self, _props: Self::Props) -> Self::Response {
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {
         let dragging = self.current_drag.as_ref().map(|drag| Dragging {
             start: drag.start_position,
             current: drag.mouse_position + drag.offset_from_mouse,

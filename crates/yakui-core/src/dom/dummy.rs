@@ -6,7 +6,7 @@ use crate::widget::Widget;
 pub(crate) struct DummyWidget;
 
 impl Widget for DummyWidget {
-    type Props = ();
+    type Props<'a> = ();
     type Response = ();
 
     #[inline]
@@ -15,5 +15,5 @@ impl Widget for DummyWidget {
     }
 
     #[inline]
-    fn update(&mut self, _props: Self::Props) -> Self::Response {}
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
 }

@@ -45,7 +45,7 @@ pub struct ScrollableWidget {
 pub type ScrollableResponse = ();
 
 impl Widget for ScrollableWidget {
-    type Props = Scrollable;
+    type Props<'a> = Scrollable;
     type Response = ScrollableResponse;
 
     fn new() -> Self {
@@ -56,7 +56,7 @@ impl Widget for ScrollableWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

@@ -56,7 +56,7 @@ pub struct FlexibleWidget {
 pub type FlexibleResponse = ();
 
 impl Widget for FlexibleWidget {
-    type Props = Flexible;
+    type Props<'a> = Flexible;
     type Response = FlexibleResponse;
 
     fn new() -> Self {
@@ -65,7 +65,7 @@ impl Widget for FlexibleWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

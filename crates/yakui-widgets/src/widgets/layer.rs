@@ -33,14 +33,14 @@ pub struct LayerWidget {
 pub type LayerResponse = ();
 
 impl Widget for LayerWidget {
-    type Props = Layer;
+    type Props<'a> = Layer;
     type Response = LayerResponse;
 
     fn new() -> Self {
         Self { props: Layer {} }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

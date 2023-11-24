@@ -62,7 +62,7 @@ pub struct AlignWidget {
 pub type AlignResponse = ();
 
 impl Widget for AlignWidget {
-    type Props = Align;
+    type Props<'a> = Align;
     type Response = AlignResponse;
 
     fn new() -> Self {
@@ -71,7 +71,7 @@ impl Widget for AlignWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 
