@@ -55,7 +55,7 @@ impl Text {
         }
     }
 
-    pub fn show(self) -> Response<TextWidget> {
+    pub fn show(self) -> Response<TextResponse> {
         widget::<TextWidget>(self)
     }
 }
@@ -68,7 +68,7 @@ pub struct TextWidget {
 pub type TextResponse = ();
 
 impl Widget for TextWidget {
-    type Props = Text;
+    type Props<'a> = Text;
     type Response = TextResponse;
 
     fn new() -> Self {
@@ -77,7 +77,7 @@ impl Widget for TextWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         let mut render = RenderText::label(self.props.text.clone());

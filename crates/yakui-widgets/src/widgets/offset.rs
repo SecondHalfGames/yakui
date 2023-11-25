@@ -18,7 +18,7 @@ impl Offset {
         Self { offset }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetResponse> {
         widget_children::<OffsetWidget, F>(children, self)
     }
 }
@@ -31,7 +31,7 @@ pub struct OffsetWidget {
 pub type OffsetResponse = ();
 
 impl Widget for OffsetWidget {
-    type Props = Offset;
+    type Props<'a> = Offset;
     type Response = OffsetResponse;
 
     fn new() -> Self {
@@ -40,7 +40,7 @@ impl Widget for OffsetWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

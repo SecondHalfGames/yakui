@@ -5,14 +5,14 @@ use crate::widget::{LayoutContext, Widget};
 pub struct RootWidget;
 
 impl Widget for RootWidget {
-    type Props = ();
+    type Props<'a> = ();
     type Response = ();
 
     fn new() -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props) -> Self::Response {}
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
 
     fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
         ctx.layout.new_layer(ctx.dom);

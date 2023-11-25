@@ -61,7 +61,7 @@ impl Pad {
         Vec2::new(self.left, self.top)
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<PadWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<PadResponse> {
         widget_children::<PadWidget, F>(children, self)
     }
 }
@@ -74,14 +74,14 @@ pub struct PadWidget {
 pub type PadResponse = ();
 
 impl Widget for PadWidget {
-    type Props = Pad;
+    type Props<'a> = Pad;
     type Response = PadResponse;
 
     fn new() -> Self {
         Self { props: Pad::ZERO }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

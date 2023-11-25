@@ -42,7 +42,7 @@ impl RenderText {
         }
     }
 
-    pub fn show(self) -> Response<RenderTextWidget> {
+    pub fn show(self) -> Response<RenderTextResponse> {
         widget::<RenderTextWidget>(self)
     }
 }
@@ -55,7 +55,7 @@ pub struct RenderTextWidget {
 pub type RenderTextResponse = ();
 
 impl Widget for RenderTextWidget {
-    type Props = RenderText;
+    type Props<'a> = RenderText;
     type Response = RenderTextResponse;
 
     fn new() -> Self {
@@ -67,7 +67,7 @@ impl Widget for RenderTextWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

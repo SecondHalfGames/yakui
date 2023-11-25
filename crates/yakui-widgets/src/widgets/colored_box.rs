@@ -39,11 +39,11 @@ impl ColoredBox {
         }
     }
 
-    pub fn show(self) -> Response<ColoredBoxWidget> {
+    pub fn show(self) -> Response<ColoredBoxResponse> {
         widget::<ColoredBoxWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<ColoredBoxWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<ColoredBoxResponse> {
         widget_children::<ColoredBoxWidget, F>(children, self)
     }
 }
@@ -56,7 +56,7 @@ pub struct ColoredBoxWidget {
 pub type ColoredBoxResponse = ();
 
 impl Widget for ColoredBoxWidget {
-    type Props = ColoredBox;
+    type Props<'a> = ColoredBox;
     type Response = ColoredBoxResponse;
 
     fn new() -> Self {
@@ -65,7 +65,7 @@ impl Widget for ColoredBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

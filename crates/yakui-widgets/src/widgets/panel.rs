@@ -41,7 +41,7 @@ impl Panel {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelResponse> {
         widget_children::<PanelWidget, F>(children, self)
     }
 }
@@ -55,7 +55,7 @@ pub struct PanelWidget {
 pub type PanelResponse = ();
 
 impl Widget for PanelWidget {
-    type Props = Panel;
+    type Props<'a> = Panel;
     type Response = PanelResponse;
 
     fn new() -> Self {
@@ -65,7 +65,7 @@ impl Widget for PanelWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

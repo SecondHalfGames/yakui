@@ -20,7 +20,7 @@ impl ConstrainedBox {
         Self { constraints }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxResponse> {
         widget_children::<ConstrainedBoxWidget, F>(children, self)
     }
 }
@@ -33,7 +33,7 @@ pub struct ConstrainedBoxWidget {
 pub type ConstrainedBoxResponse = ();
 
 impl Widget for ConstrainedBoxWidget {
-    type Props = ConstrainedBox;
+    type Props<'a> = ConstrainedBox;
     type Response = ConstrainedBoxResponse;
 
     fn new() -> Self {
@@ -45,7 +45,7 @@ impl Widget for ConstrainedBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

@@ -21,8 +21,8 @@ impl<T: 'static> State<T> {
         }
     }
 
-    pub fn show(self) -> Response<StateWidget<T>> {
-        util::widget(self)
+    pub fn show(self) -> Response<StateResponse<T>> {
+        util::widget::<StateWidget<T>>(self)
     }
 }
 
@@ -69,14 +69,14 @@ pub struct StateWidget<T> {
 }
 
 impl<T: 'static> Widget for StateWidget<T> {
-    type Props = State<T>;
+    type Props<'a> = State<T>;
     type Response = StateResponse<T>;
 
     fn new() -> Self {
         Self { value: None }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         let value = self
             .value
             .get_or_insert_with(|| Rc::new(RefCell::new((props.default)())))

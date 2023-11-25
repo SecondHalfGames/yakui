@@ -79,7 +79,7 @@ pub struct NavigateContext<'dom> {
 pub trait Widget: 'static + fmt::Debug {
     /// The props that this widget needs to be created or updated. Props define
     /// all of the values that a widget's user can specify every render.
-    type Props: Props;
+    type Props<'a>: Props;
 
     /// The type that the widget will return to the user when it is created or
     /// updated. This type should contain information like whether the widget
@@ -90,7 +90,7 @@ pub trait Widget: 'static + fmt::Debug {
     fn new() -> Self;
 
     /// Update the widget with new props.
-    fn update(&mut self, props: Self::Props) -> Self::Response;
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response;
 
     /// Returns whether this widget should grow to fill a flexible layout, and
     /// if so, what weight should be applied to it if other widgets also want to

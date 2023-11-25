@@ -25,11 +25,11 @@ impl Circle {
         }
     }
 
-    pub fn show(self) -> Response<CircleWidget> {
+    pub fn show(self) -> Response<CircleResponse> {
         widget::<CircleWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleResponse> {
         widget_children::<CircleWidget, F>(children, self)
     }
 }
@@ -42,7 +42,7 @@ pub struct CircleWidget {
 pub type CircleResponse = ();
 
 impl Widget for CircleWidget {
-    type Props = Circle;
+    type Props<'a> = Circle;
     type Response = CircleResponse;
 
     fn new() -> Self {
@@ -51,7 +51,7 @@ impl Widget for CircleWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

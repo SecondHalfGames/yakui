@@ -23,11 +23,11 @@ impl Canvas {
         }
     }
 
-    pub fn show(self) -> Response<CanvasWidget> {
+    pub fn show(self) -> Response<CanvasResponse> {
         widget::<CanvasWidget>(self)
     }
 
-    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CanvasWidget> {
+    pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CanvasResponse> {
         widget_children::<CanvasWidget, F>(children, self)
     }
 }
@@ -40,7 +40,7 @@ pub struct CanvasWidget {
 pub type CanvasResponse = ();
 
 impl Widget for CanvasWidget {
-    type Props = Canvas;
+    type Props<'a> = Canvas;
     type Response = CanvasResponse;
 
     fn new() -> Self {
@@ -51,7 +51,7 @@ impl Widget for CanvasWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

@@ -20,7 +20,7 @@ impl Layer {
         Self {}
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerResponse> {
         widget_children::<LayerWidget, F>(children, self)
     }
 }
@@ -33,14 +33,14 @@ pub struct LayerWidget {
 pub type LayerResponse = ();
 
 impl Widget for LayerWidget {
-    type Props = Layer;
+    type Props<'a> = Layer;
     type Response = LayerResponse;
 
     fn new() -> Self {
         Self { props: Layer {} }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

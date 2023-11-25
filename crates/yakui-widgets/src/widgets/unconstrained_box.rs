@@ -26,7 +26,7 @@ impl UnconstrainedBox {
         }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxResponse> {
         widget_children::<UnconstrainedBoxWidget, F>(children, self)
     }
 }
@@ -39,7 +39,7 @@ pub struct UnconstrainedBoxWidget {
 pub type UnconstrainedBoxResponse = ();
 
 impl Widget for UnconstrainedBoxWidget {
-    type Props = UnconstrainedBox;
+    type Props<'a> = UnconstrainedBox;
     type Response = UnconstrainedBoxResponse;
 
     fn new() -> Self {
@@ -48,7 +48,7 @@ impl Widget for UnconstrainedBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

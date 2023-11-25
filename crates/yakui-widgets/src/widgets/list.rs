@@ -56,7 +56,7 @@ impl List {
         Self::new(Direction::Right)
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ListWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ListResponse> {
         widget_children::<ListWidget, F>(children, self)
     }
 }
@@ -69,14 +69,14 @@ pub struct ListWidget {
 pub type ListResponse = ();
 
 impl Widget for ListWidget {
-    type Props = List;
+    type Props<'a> = List;
     type Response = ListResponse;
 
     fn new() -> Self {
         Self { props: List::row() }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

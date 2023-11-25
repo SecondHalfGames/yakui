@@ -26,7 +26,7 @@ impl Window {
         }
     }
 
-    pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowWidget> {
+    pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowResponse> {
         self.children = Some(Box::new(children));
         widget::<WindowWidget>(self)
     }
@@ -40,7 +40,7 @@ pub struct WindowWidget {
 pub type WindowResponse = ();
 
 impl Widget for WindowWidget {
-    type Props = Window;
+    type Props<'a> = Window;
     type Response = WindowResponse;
 
     fn new() -> Self {
@@ -49,7 +49,7 @@ impl Widget for WindowWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         crate::colored_box_container(colors::BACKGROUND_2, || {

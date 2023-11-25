@@ -11,14 +11,14 @@ use yakui_core::Yakui;
 struct TestWidget;
 
 impl Widget for TestWidget {
-    type Props = ();
+    type Props<'a> = ();
     type Response = ();
 
     fn new() -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props) -> Self::Response {}
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
 }
 
 /// https://github.com/LPGhatguy/yakui/issues/69
@@ -51,7 +51,7 @@ struct KeyboardWidget {
 }
 
 impl Widget for KeyboardWidget {
-    type Props = ();
+    type Props<'a> = ();
     type Response = Rc<AtomicUsize>;
 
     fn new() -> Self {
@@ -60,7 +60,7 @@ impl Widget for KeyboardWidget {
         }
     }
 
-    fn update(&mut self, _props: Self::Props) -> Self::Response {
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {
         self.count.clone()
     }
 

@@ -18,7 +18,7 @@ impl Opaque {
         Self {}
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<OpaqueWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<OpaqueResponse> {
         widget_children::<OpaqueWidget, F>(children, self)
     }
 }
@@ -31,14 +31,14 @@ pub struct OpaqueWidget {
 pub type OpaqueResponse = ();
 
 impl Widget for OpaqueWidget {
-    type Props = Opaque;
+    type Props<'a> = Opaque;
     type Response = OpaqueResponse;
 
     fn new() -> Self {
         Self { props: Opaque {} }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

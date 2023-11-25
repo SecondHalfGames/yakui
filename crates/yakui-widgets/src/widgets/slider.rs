@@ -35,8 +35,8 @@ impl Slider {
         }
     }
 
-    pub fn show(self) -> Response<SliderWidget> {
-        util::widget(self)
+    pub fn show(self) -> Response<SliderResponse> {
+        util::widget::<SliderWidget>(self)
     }
 }
 
@@ -53,7 +53,7 @@ pub struct SliderWidget {
 }
 
 impl Widget for SliderWidget {
-    type Props = Slider;
+    type Props<'a> = Slider;
     type Response = SliderResponse;
 
     fn new() -> Self {
@@ -63,7 +63,7 @@ impl Widget for SliderWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         colored_box(TRACK_COLOR, [0.0, TRACK_HEIGHT]);

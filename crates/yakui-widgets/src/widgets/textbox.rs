@@ -45,7 +45,7 @@ impl TextBox {
         }
     }
 
-    pub fn show(self) -> Response<TextBoxWidget> {
+    pub fn show(self) -> Response<TextBoxResponse> {
         widget::<TextBoxWidget>(self)
     }
 }
@@ -67,7 +67,7 @@ pub struct TextBoxResponse {
 }
 
 impl Widget for TextBoxWidget {
-    type Props = TextBox;
+    type Props<'a> = TextBox;
     type Response = TextBoxResponse;
 
     fn new() -> Self {
@@ -81,7 +81,7 @@ impl Widget for TextBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         let mut text = self.updated_text.as_ref().unwrap_or(&self.props.text);

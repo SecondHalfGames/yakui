@@ -20,7 +20,7 @@ impl Reflow {
         Self { anchor, offset }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowResponse> {
         widget_children::<ReflowWidget, F>(children, self)
     }
 }
@@ -33,7 +33,7 @@ pub struct ReflowWidget {
 pub type ReflowResponse = ();
 
 impl Widget for ReflowWidget {
-    type Props = Reflow;
+    type Props<'a> = Reflow;
     type Response = ReflowResponse;
 
     fn new() -> Self {
@@ -45,7 +45,7 @@ impl Widget for ReflowWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 

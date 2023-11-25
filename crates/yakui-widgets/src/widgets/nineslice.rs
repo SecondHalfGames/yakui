@@ -25,7 +25,7 @@ impl NineSlice {
         }
     }
 
-    pub fn show(self, children: impl FnOnce()) -> Response<NineSliceWidget> {
+    pub fn show(self, children: impl FnOnce()) -> Response<()> {
         let scaled_margins = {
             let mut m = self.margins;
             m.left *= self.scale;
@@ -50,14 +50,14 @@ pub struct NineSliceWidget {
 }
 
 impl Widget for NineSliceWidget {
-    type Props = NineSlice;
+    type Props<'a> = NineSlice;
     type Response = ();
 
     fn new() -> Self {
         Self { props: None }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = Some(props);
     }
 

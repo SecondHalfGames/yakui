@@ -98,7 +98,7 @@ impl Button {
         }
     }
 
-    pub fn show(self) -> Response<ButtonWidget> {
+    pub fn show(self) -> Response<ButtonResponse> {
         widget::<ButtonWidget>(self)
     }
 }
@@ -118,7 +118,7 @@ pub struct ButtonResponse {
 }
 
 impl Widget for ButtonWidget {
-    type Props = Button;
+    type Props<'a> = Button;
     type Response = ButtonResponse;
 
     fn new() -> Self {
@@ -130,7 +130,7 @@ impl Widget for ButtonWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
         let mut color = self.props.style.fill;

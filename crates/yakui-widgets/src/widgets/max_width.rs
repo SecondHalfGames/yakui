@@ -22,7 +22,7 @@ impl MaxWidth {
         Self { max_width }
     }
 
-    pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthWidget> {
+    pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthResponse> {
         widget_children::<MaxWidthWidget, F>(children, self)
     }
 }
@@ -35,7 +35,7 @@ pub struct MaxWidthWidget {
 pub type MaxWidthResponse = ();
 
 impl Widget for MaxWidthWidget {
-    type Props = MaxWidth;
+    type Props<'a> = MaxWidth;
     type Response = MaxWidthResponse;
 
     fn new() -> Self {
@@ -46,7 +46,7 @@ impl Widget for MaxWidthWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props) -> Self::Response {
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
     }
 
