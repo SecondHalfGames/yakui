@@ -178,6 +178,16 @@ impl YakuiWinit {
                     false
                 }
             }
+
+            WinitEvent::WindowEvent {
+                event: WindowEvent::Ime(winit::event::Ime::Commit(text)),
+                ..
+            } => {
+                for c in text.chars() {
+                    state.handle_event(Event::TextInput(c));
+                }
+                true
+            }
             _ => false,
         }
     }
