@@ -145,6 +145,9 @@ impl Widget for TextBoxWidget {
     }
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+        println!("Me: {:?}", ctx.dom.current());
+        println!("Selection: {:?}", ctx.input.selection());
+
         match event {
             WidgetEvent::FocusChanged(focused) => {
                 self.selected = *focused;
