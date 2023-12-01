@@ -231,7 +231,7 @@ fn load_texture(bytes: &[u8], filter: TextureFilter) -> Texture {
 fn init_logging() {
     let debug = std::env::var_os("YAKUI_LOG_DEBUG").is_some();
     let level = if debug {
-        log::LevelFilter::Debug
+        log::LevelFilter::Trace
     } else {
         log::LevelFilter::Info
     };

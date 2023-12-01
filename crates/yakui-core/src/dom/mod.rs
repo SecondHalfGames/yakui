@@ -80,6 +80,8 @@ impl Dom {
 
         let mut nodes = self.inner.nodes.borrow_mut();
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
+        removed_nodes.clear();
+
         let root = self.inner.root;
         trim_children(&mut nodes, &mut removed_nodes, root);
     }
@@ -210,7 +212,6 @@ impl Dom {
                 let widget = replace(&mut node.widget, Box::new(DummyWidget));
 
                 if widget.as_ref().type_id() == TypeId::of::<T>() {
-                    println!("happy happy happy");
                     // happy path! we can update our widget in place.
 
                     node.next_child = 0;
@@ -292,8 +293,9 @@ impl DomInner {
 
 fn next_existing_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> Option<WidgetId> {
     let parent = nodes.get_mut(parent_id.index()).unwrap();
-    if parent.next_child < parent.children.len() {
-        let id = parent.children[parent.next_child];
+
+    if let Some(&id) = parent.children.get(parent.next_child) {
+        parent.next_child += 1;
         Some(id)
     } else {
         None
