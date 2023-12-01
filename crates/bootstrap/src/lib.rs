@@ -229,11 +229,18 @@ fn load_texture(bytes: &[u8], filter: TextureFilter) -> Texture {
 /// Initialize our logging, adjusting the default log levels of some of our
 /// noisier dependencies.
 fn init_logging() {
+    let debug = std::env::var_os("YAKUI_LOG_DEBUG").is_some();
+    let level = if debug {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
     env_logger::builder()
         .filter_module("wgpu_hal::auxil::dxgi", log::LevelFilter::Off)
         .filter_module("wgpu_core", log::LevelFilter::Warn)
         .filter_module("wgpu_hal", log::LevelFilter::Warn)
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(level)
         .init();
 }
 
