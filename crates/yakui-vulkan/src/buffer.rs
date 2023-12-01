@@ -1,6 +1,4 @@
-use std::mem::align_of;
-
-use ash::{util::Align, vk};
+use ash::vk;
 
 use crate::{util::find_memorytype_index, vulkan_context::VulkanContext};
 
@@ -22,16 +20,16 @@ pub(crate) struct Buffer<T> {
 }
 
 impl<T: Copy> Buffer<T> {
-    pub fn new(
+    pub fn with_capacity(
         vulkan_context: &VulkanContext,
         usage: vk::BufferUsageFlags,
-        initial_data: &[T],
+        elements: usize,
     ) -> Self {
         let device = vulkan_context.device;
         let device_memory_properties = &vulkan_context.memory_properties;
 
         let buffer_info = vk::BufferCreateInfo::builder()
-            .size(std::mem::size_of_val(initial_data).max(MIN_BUFFER_SIZE as _) as u64)
+            .size(((std::mem::size_of::<T>() * elements) as vk::DeviceSize).max(MIN_BUFFER_SIZE))
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
 
@@ -55,8 +53,6 @@ impl<T: Copy> Buffer<T> {
             let ptr = device
                 .map_memory(memory, 0, size, vk::MemoryMapFlags::empty())
                 .unwrap();
-            let mut slice = Align::new(ptr, align_of::<T>() as u64, size);
-            slice.copy_from_slice(initial_data);
             device.bind_buffer_memory(handle, memory, 0).unwrap();
 
             // Safety: ptr is guaranteed to be a non-null pointer to T
@@ -68,21 +64,33 @@ impl<T: Copy> Buffer<T> {
             memory,
             _usage: usage,
             size,
-            len: initial_data.len(),
+            len: elements,
             ptr,
         }
     }
 
-    pub unsafe fn overwrite(&mut self, _vulkan_context: &VulkanContext, new_data: &[T]) {
+    pub fn new(
+        vulkan_context: &VulkanContext,
+        usage: vk::BufferUsageFlags,
+        initial_data: &[T],
+    ) -> Self {
+        let mut result = Self::with_capacity(vulkan_context, usage, initial_data.len());
+        unsafe {
+            result.write(vulkan_context, 0, initial_data);
+        }
+        result
+    }
+
+    pub unsafe fn write(&mut self, _vulkan_context: &VulkanContext, offset: usize, new_data: &[T]) {
         let new_data_size = std::mem::size_of_val(new_data);
-        if new_data_size > self.size as usize {
+        if std::mem::size_of::<T>() * offset + new_data_size > self.size as usize {
             todo!("Support resizing buffers");
         }
 
-        let mut slice = Align::new(self.ptr.as_ptr().cast(), align_of::<T>() as u64, self.size);
-        slice.copy_from_slice(new_data);
-
-        self.len = new_data.len()
+        self.ptr
+            .as_ptr()
+            .add(offset)
+            .copy_from_nonoverlapping(new_data.as_ptr(), new_data.len());
     }
 
     /// ## Safety
@@ -91,5 +99,9 @@ impl<T: Copy> Buffer<T> {
         device.unmap_memory(self.memory);
         device.free_memory(self.memory, None);
         device.destroy_buffer(self.handle, None);
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.len
     }
 }

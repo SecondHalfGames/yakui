@@ -15,7 +15,7 @@
 //! This crate requires at least Vulkan 1.2 and a GPU with support for `VkPhysicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound`.
 //! You should also, you know, enable that feature, or Vulkan Validation Layers will get mad at you. You definitely don't want that.
 //!
-//! For an example of how to use this crate, check out the cleverly named `it_works` test in `lib.rs` in the GitHub repo.
+//! For an example of how to use this crate, check out `examples/demo.rs`
 
 mod buffer;
 mod descriptors;
@@ -30,7 +30,7 @@ use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
 use std::{collections::HashMap, ffi::CStr, io::Cursor};
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::NO_TEXTURE_ID;
+use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui::geometry::UVec2;
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
@@ -40,20 +40,11 @@ use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 /// Uses a simple descriptor system that requires Vulkan 1.2 and some extensions to be enabled. See the [crate level documentation](`crate`)
 /// for details.
 ///
-/// Note that this implementation is currently only able to render to a present surface (ie. the swapchain).
-/// Future versions will support drawing to any [`vk::ImageView`](`ash::vk::ImageView`).
-///
 /// Construct the struct by populating a [`VulkanContext`] with the relevant handles to your Vulkan renderer and
 /// call [`YakuiVulkan::new()`].
 ///
 /// Make sure to call [`YakuiVulkan::cleanup()`].
 pub struct YakuiVulkan {
-    /// The render pass used to draw
-    render_pass: vk::RenderPass,
-    /// One or more framebuffers to draw on. This will match the number of `vk::ImageView` present in [`RenderSurface`]
-    framebuffers: Vec<vk::Framebuffer>,
-    /// The surface to draw on. Currently only supports present surfaces (ie. the swapchain)
-    render_surface: RenderSurface,
     /// The pipeline layout used to draw
     pipeline_layout: vk::PipelineLayout,
     /// The graphics pipeline used to draw
@@ -70,19 +61,17 @@ pub struct YakuiVulkan {
     user_textures: thunderdome::Arena<VulkanTexture>,
     /// A wrapper around descriptor set functionality
     descriptors: Descriptors,
+    uploads: UploadQueue,
 }
 
-#[derive(Clone)]
-/// The surface for yakui to draw on. Currently only supports present surfaces (ie. the swapchain)
-pub struct RenderSurface {
-    /// The resolution of the surface
-    pub resolution: vk::Extent2D,
-    /// The image format of the surface
-    pub format: vk::Format,
-    /// The image views to render to. One framebuffer will be created per view
-    pub image_views: Vec<vk::ImageView>,
-    /// What operation to perform when loading this image
-    pub load_op: vk::AttachmentLoadOp,
+/// Vulkan configuration
+#[non_exhaustive]
+#[derive(Default)]
+pub struct Options {
+    /// Indicates that VK_KHR_dynamic_rendering is enabled and should be used with the given format
+    pub dynamic_rendering_format: Option<vk::Format>,
+    /// Render pass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
+    pub render_pass: vk::RenderPass,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -155,53 +144,14 @@ impl From<&YakuiVertex> for Vertex {
 }
 
 impl YakuiVulkan {
-    /// Create a new [`YakuiVulkan`] instance. Currently only supports rendering directly to the swapchain.
+    /// Create a new [`YakuiVulkan`] instance
     ///
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(vulkan_context: &VulkanContext, render_surface: RenderSurface) -> Self {
+    pub fn new(vulkan_context: &VulkanContext, options: Options) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
-
-        // TODO: Don't write directly to the present surface..
-        let renderpass_attachments = [vk::AttachmentDescription {
-            format: render_surface.format,
-            samples: vk::SampleCountFlags::TYPE_1,
-            load_op: render_surface.load_op,
-            store_op: vk::AttachmentStoreOp::STORE,
-            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
-            ..Default::default()
-        }];
-        let color_attachment_refs = [vk::AttachmentReference {
-            attachment: 0,
-            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-        }];
-        let dependencies = [vk::SubpassDependency {
-            src_subpass: vk::SUBPASS_EXTERNAL,
-            src_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            dst_access_mask: vk::AccessFlags::COLOR_ATTACHMENT_READ
-                | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
-            dst_stage_mask: vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
-            ..Default::default()
-        }];
-
-        let subpass = vk::SubpassDescription::builder()
-            .color_attachments(&color_attachment_refs)
-            .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS);
-
-        let renderpass_create_info = vk::RenderPassCreateInfo::builder()
-            .attachments(&renderpass_attachments)
-            .subpasses(std::slice::from_ref(&subpass))
-            .dependencies(&dependencies);
-
-        let render_pass = unsafe {
-            device
-                .create_render_pass(&renderpass_create_info, None)
-                .unwrap()
-        };
-
-        let framebuffers = create_framebuffers(&render_surface, render_pass, device);
 
         let index_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::INDEX_BUFFER, &[]);
         let vertex_buffer = Buffer::new(vulkan_context, vk::BufferUsageFlags::VERTEX_BUFFER, &[]);
@@ -297,18 +247,9 @@ impl YakuiVulkan {
             topology: vk::PrimitiveTopology::TRIANGLE_LIST,
             ..Default::default()
         };
-        let viewports = [vk::Viewport {
-            x: 0.0,
-            y: 0.0,
-            width: render_surface.resolution.width as f32,
-            height: render_surface.resolution.height as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        }];
-        let scissors = [render_surface.resolution.into()];
         let viewport_state_info = vk::PipelineViewportStateCreateInfo::builder()
-            .scissors(&scissors)
-            .viewports(&viewports);
+            .scissor_count(1)
+            .viewport_count(1);
 
         let rasterization_info = vk::PipelineRasterizationStateCreateInfo {
             front_face: vk::FrontFace::COUNTER_CLOCKWISE,
@@ -354,7 +295,7 @@ impl YakuiVulkan {
         let dynamic_state_info =
             vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&dynamic_state);
 
-        let graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+        let mut graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
             .stages(&shader_stage_create_infos)
             .vertex_input_state(&vertex_input_state_info)
             .input_assembly_state(&vertex_input_assembly_state_info)
@@ -364,8 +305,22 @@ impl YakuiVulkan {
             .depth_stencil_state(&depth_state_info)
             .color_blend_state(&color_blend_state)
             .dynamic_state(&dynamic_state_info)
-            .layout(pipeline_layout)
-            .render_pass(render_pass);
+            .layout(pipeline_layout);
+        let rendering_info_formats;
+        let mut rendering_info;
+        assert!(
+            options.dynamic_rendering_format.is_some()
+                || options.render_pass != vk::RenderPass::null(),
+            "either dynamic_rendering_format or render_pass must be set"
+        );
+        if let Some(format) = options.dynamic_rendering_format {
+            rendering_info_formats = [format];
+            rendering_info = vk::PipelineRenderingCreateInfo::builder()
+                .color_attachment_formats(&rendering_info_formats);
+            graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
+        } else {
+            graphic_pipeline_info = graphic_pipeline_info.render_pass(options.render_pass);
+        }
 
         let graphics_pipelines = unsafe {
             device
@@ -385,10 +340,7 @@ impl YakuiVulkan {
         }
 
         Self {
-            render_pass,
             descriptors,
-            framebuffers,
-            render_surface,
             pipeline_layout,
             graphics_pipeline,
             index_buffer,
@@ -396,24 +348,54 @@ impl YakuiVulkan {
             user_textures: Default::default(),
             yakui_managed_textures: Default::default(),
             initial_textures_synced: false,
+            uploads: UploadQueue::new(),
         }
+    }
+
+    /// Record transfer commands that must complete before painting this `paint`
+    ///
+    /// ## Safety
+    /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
+    pub unsafe fn transfer(
+        &mut self,
+        paint: &yakui_core::paint::PaintDom,
+        vulkan_context: &VulkanContext,
+        cmd: vk::CommandBuffer,
+    ) {
+        self.update_textures(vulkan_context, paint);
+        self.uploads.record(vulkan_context, cmd);
+    }
+
+    /// Call when commands recorded by zero or more successive `transfer` calls have been submitted to
+    /// a queue
+    ///
+    /// To support N concurrent frames in flight, call this N times before creating any textures.
+    pub fn transfers_submitted(&mut self) {
+        self.uploads.phase_submitted();
+    }
+
+    /// Call when the commands associated with the oldest call to `commands_submitted` have finished.
+    ///
+    /// ## Safety
+    ///
+    /// Those commands recorded prior to the oldest call to `commands_submitted` not yet associated
+    /// with a call to `commands_finished` must not be executing.
+    pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
+        self.uploads.phase_executed(vulkan_context);
     }
 
     /// Paint the yakui GUI using the provided [`VulkanContext`]
     ///
     /// ## Safety
     /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
-    /// - `present_index` must be the a valid index into the framebuffer (ie. the result of calling [`vkAcquireNextImageKHR`](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkAcquireNextImageKHR.html))
-    pub fn paint(
+    /// - `cmd` must be in rendering state, with viewport and scissor dynamic states set.
+    pub unsafe fn paint(
         &mut self,
-        yak: &mut yakui_core::Yakui,
+        paint: &yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
-        present_index: u32,
+        cmd: vk::CommandBuffer,
+        resolution: vk::Extent2D,
     ) {
-        let paint = yak.paint();
-
-        self.update_textures(vulkan_context, paint);
-
         // If there's nothing to paint, well.. don't paint!
         let layers = paint.layers();
         if layers.iter().all(|layer| layer.calls.is_empty()) {
@@ -422,68 +404,29 @@ impl YakuiVulkan {
 
         let draw_calls = self.build_draw_calls(vulkan_context, paint);
 
-        self.render(vulkan_context, present_index, &draw_calls);
+        self.render(vulkan_context, resolution, cmd, &draw_calls);
     }
 
     /// Render the draw calls we've built up
     fn render(
         &self,
         vulkan_context: &VulkanContext,
-        framebuffer_index: u32,
+        resolution: vk::Extent2D,
+        command_buffer: vk::CommandBuffer,
         draw_calls: &[DrawCall],
     ) {
         let device = vulkan_context.device;
-        let command_buffer = vulkan_context.draw_command_buffer;
 
-        let clear_values = [
-            vk::ClearValue {
-                color: vk::ClearColorValue {
-                    float32: [0.0, 0.0, 0.0, 0.0],
-                },
-            },
-            vk::ClearValue {
-                depth_stencil: vk::ClearDepthStencilValue {
-                    depth: 1.0,
-                    stencil: 0,
-                },
-            },
-        ];
-
-        let surface = &self.render_surface;
-
-        let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
-            .render_pass(self.render_pass)
-            .framebuffer(self.framebuffers[framebuffer_index as usize])
-            .render_area(surface.resolution.into())
-            .clear_values(&clear_values);
-
-        let viewports = [vk::Viewport {
-            x: 0.0,
-            y: 0.0,
-            width: surface.resolution.width as f32,
-            height: surface.resolution.height as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        }];
-
-        let surface_size = UVec2::new(surface.resolution.width, surface.resolution.height);
+        let surface_size = UVec2::new(resolution.width, resolution.height);
 
         unsafe {
-            device.cmd_begin_render_pass(
-                command_buffer,
-                &render_pass_begin_info,
-                vk::SubpassContents::INLINE,
-            );
             device.cmd_bind_pipeline(
                 command_buffer,
                 vk::PipelineBindPoint::GRAPHICS,
                 self.graphics_pipeline,
             );
-            device.cmd_set_viewport(command_buffer, 0, &viewports);
-            let default_scissor = [surface.resolution.into()];
+            let default_scissor = [resolution.into()];
 
-            // We set the scissor first here as it's against the spec not to do so.
-            device.cmd_set_scissor(command_buffer, 0, &default_scissor);
             device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
             device.cmd_bind_index_buffer(
                 command_buffer,
@@ -531,7 +474,7 @@ impl YakuiVulkan {
                                     x: pos.x as _,
                                     y: pos.y as _,
                                 },
-                                extent: surface.resolution,
+                                extent: resolution,
                             }];
                             // If there's a clip, update the scissor
                             device.cmd_set_scissor(command_buffer, 0, &scissors);
@@ -563,7 +506,6 @@ impl YakuiVulkan {
                     1,
                 );
             }
-            device.cmd_end_render_pass(command_buffer);
         }
     }
 
@@ -577,8 +519,12 @@ impl YakuiVulkan {
         vulkan_context: &VulkanContext,
         texture_create_info: VulkanTextureCreateInfo<Vec<u8>>,
     ) -> yakui::TextureId {
-        let texture =
-            VulkanTexture::new(vulkan_context, &mut self.descriptors, texture_create_info);
+        let texture = VulkanTexture::new(
+            vulkan_context,
+            &mut self.descriptors,
+            texture_create_info,
+            &mut self.uploads,
+        );
         yakui::TextureId::User(self.user_textures.insert(texture).to_bits())
     }
 
@@ -612,8 +558,7 @@ impl YakuiVulkan {
         device.destroy_pipeline(self.graphics_pipeline, None);
         self.index_buffer.cleanup(device);
         self.vertex_buffer.cleanup(device);
-        self.destroy_framebuffers(device);
-        device.destroy_render_pass(self.render_pass, None);
+        self.uploads.cleanup(device);
     }
 
     /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
@@ -631,6 +576,7 @@ impl YakuiVulkan {
                     vulkan_context,
                     &mut self.descriptors,
                     texture,
+                    &mut self.uploads,
                 );
                 self.yakui_managed_textures.insert(id, texture);
             }
@@ -646,13 +592,16 @@ impl YakuiVulkan {
                         vulkan_context,
                         &mut self.descriptors,
                         texture,
+                        &mut self.uploads,
                     );
                     self.yakui_managed_textures.insert(id, texture);
                 }
 
                 TextureChange::Removed => {
                     if let Some(removed) = self.yakui_managed_textures.remove(&id) {
-                        unsafe { removed.cleanup(vulkan_context.device) };
+                        unsafe {
+                            self.uploads.dispose(removed);
+                        }
                     }
                 }
 
@@ -665,6 +614,7 @@ impl YakuiVulkan {
                         vulkan_context,
                         &mut self.descriptors,
                         new,
+                        &mut self.uploads,
                     );
                     self.yakui_managed_textures.insert(id, texture);
                 }
@@ -721,296 +671,10 @@ impl YakuiVulkan {
         }
 
         unsafe {
-            self.index_buffer.overwrite(vulkan_context, &indices);
-            self.vertex_buffer.overwrite(vulkan_context, &vertices);
+            self.index_buffer.write(vulkan_context, 0, &indices);
+            self.vertex_buffer.write(vulkan_context, 0, &vertices);
         }
 
         draw_calls
-    }
-
-    /// Update the surface that this [`YakuiVulkan`] instance will render to. You'll probably want to call
-    /// this if the user resizes the window to avoid writing to an out-of-date swapchain.
-    ///
-    /// ## Safety
-    /// - Care must be taken to ensure that the new [`RenderSurface`] points to images from a correct swapchain
-    /// - You must use the same [`ash::Device`] used to create this instance
-    pub fn update_surface(&mut self, render_surface: RenderSurface, device: &ash::Device) {
-        unsafe {
-            self.destroy_framebuffers(device);
-        }
-        self.framebuffers = create_framebuffers(&render_surface, self.render_pass, device);
-        self.render_surface = render_surface;
-    }
-
-    unsafe fn destroy_framebuffers(&mut self, device: &ash::Device) {
-        for framebuffer in &self.framebuffers {
-            device.destroy_framebuffer(*framebuffer, None);
-        }
-    }
-}
-
-fn create_framebuffers(
-    render_surface: &RenderSurface,
-    render_pass: vk::RenderPass,
-    device: &ash::Device,
-) -> Vec<vk::Framebuffer> {
-    let framebuffers: Vec<vk::Framebuffer> = render_surface
-        .image_views
-        .iter()
-        .map(|&present_image_view| {
-            let framebuffer_attachments = [present_image_view];
-            let frame_buffer_create_info = vk::FramebufferCreateInfo::builder()
-                .render_pass(render_pass)
-                .attachments(&framebuffer_attachments)
-                .width(render_surface.resolution.width)
-                .height(render_surface.resolution.height)
-                .layers(1);
-
-            unsafe {
-                device
-                    .create_framebuffer(&frame_buffer_create_info, None)
-                    .unwrap()
-            }
-        })
-        .collect();
-    framebuffers
-}
-
-#[cfg(all(windows, test))]
-mod tests {
-    use super::*;
-    use ash::vk;
-    use yakui::geometry::Vec2;
-
-    use winit::{
-        event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-        event_loop::ControlFlow,
-        platform::run_return::EventLoopExtRunReturn,
-    };
-    use yakui::image;
-
-    const MONKEY_PNG: &[u8] = include_bytes!("../../bootstrap/assets/monkey.png");
-    const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
-
-    #[derive(Debug, Clone)]
-    struct GuiState {
-        monkey: yakui::ManagedTextureId,
-        dog: yakui::TextureId,
-        which_image: WhichImage,
-    }
-
-    #[derive(Debug, Clone)]
-    enum WhichImage {
-        Monkey,
-        Dog,
-    }
-
-    #[test]
-    #[ignore]
-    /// Simple smoke test to make sure render screen properly pixel Vulkan.
-    fn it_works() {
-        use winit::dpi::PhysicalSize;
-
-        use crate::util::{init_winit, VulkanTest};
-
-        let (width, height) = (500, 500);
-        let (mut event_loop, window) = init_winit(width, height);
-        let mut vulkan_test = VulkanTest::new(width, height, &window);
-        let render_surface = RenderSurface {
-            resolution: vk::Extent2D { width, height },
-            format: vulkan_test.swapchain_info.surface_format.format,
-            image_views: vulkan_test.present_image_views.clone(),
-            load_op: vk::AttachmentLoadOp::CLEAR,
-        };
-        let mut yak = yakui::Yakui::new();
-        yak.set_surface_size([width as f32, height as f32].into());
-        yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
-            Default::default(),
-            [width as f32, height as f32].into(),
-        ));
-
-        let (mut yakui_vulkan, mut gui_state) = {
-            let vulkan_context = VulkanContext::new(
-                &vulkan_test.device,
-                vulkan_test.present_queue,
-                vulkan_test.draw_command_buffer,
-                vulkan_test.command_pool,
-                vulkan_test.device_memory_properties,
-            );
-            let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, render_surface);
-            let gui_state = GuiState {
-                monkey: yak.add_texture(create_yakui_texture(
-                    MONKEY_PNG,
-                    yakui::paint::TextureFilter::Linear,
-                )),
-                dog: yakui_vulkan.create_user_texture(
-                    &vulkan_context,
-                    create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
-                ),
-                which_image: WhichImage::Monkey,
-            };
-            (yakui_vulkan, gui_state)
-        };
-
-        let mut winit_initializing = true;
-
-        event_loop.run_return(|event, _, control_flow| {
-            *control_flow = ControlFlow::Poll;
-            match event {
-                Event::WindowEvent {
-                    event:
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        },
-                    ..
-                } => *control_flow = ControlFlow::Exit,
-
-                Event::NewEvents(cause) => {
-                    if cause == winit::event::StartCause::Init {
-                        winit_initializing = true;
-                    } else {
-                        winit_initializing = false;
-                    }
-                }
-
-                Event::MainEventsCleared => {
-                    let framebuffer_index = vulkan_test.render_begin();
-                    let vulkan_context = VulkanContext::new(
-                        &vulkan_test.device,
-                        vulkan_test.present_queue,
-                        vulkan_test.draw_command_buffer,
-                        vulkan_test.command_pool,
-                        vulkan_test.device_memory_properties,
-                    );
-
-                    yak.start();
-                    gui(&gui_state);
-                    yak.finish();
-
-                    yakui_vulkan.paint(&mut yak, &vulkan_context, framebuffer_index);
-                    vulkan_test.render_end(framebuffer_index);
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::Resized(size),
-                    ..
-                } => {
-                    if winit_initializing {
-                        println!("Ignoring resize during init!");
-                    } else {
-                        let PhysicalSize { width, height } = size;
-                        vulkan_test.resized(width, height);
-                        let render_surface = RenderSurface {
-                            resolution: vk::Extent2D { width, height },
-                            format: vulkan_test.swapchain_info.surface_format.format,
-                            image_views: vulkan_test.present_image_views.clone(),
-                            load_op: vk::AttachmentLoadOp::CLEAR,
-                        };
-                        yakui_vulkan.update_surface(render_surface, &vulkan_test.device);
-                        yak.set_surface_size([width as f32, height as f32].into());
-                        yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
-                            Default::default(),
-                            [width as f32, height as f32].into(),
-                        ));
-                    }
-                }
-                Event::WindowEvent {
-                    event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
-                    ..
-                } => yak.set_scale_factor(scale_factor as _),
-                Event::WindowEvent {
-                    event:
-                        WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Released,
-                                    virtual_keycode,
-                                    ..
-                                },
-                            ..
-                        },
-                    ..
-                } => match virtual_keycode {
-                    Some(VirtualKeyCode::A) => {
-                        gui_state.which_image = match &gui_state.which_image {
-                            WhichImage::Monkey => WhichImage::Dog,
-                            WhichImage::Dog => WhichImage::Monkey,
-                        }
-                    }
-                    _ => {}
-                },
-                _ => (),
-            }
-        });
-
-        unsafe {
-            yakui_vulkan.cleanup(&vulkan_test.device);
-        }
-    }
-
-    fn create_vulkan_texture_info(
-        compressed_image_bytes: &[u8],
-        filter: vk::Filter,
-    ) -> VulkanTextureCreateInfo<Vec<u8>> {
-        let image = image::load_from_memory(compressed_image_bytes)
-            .unwrap()
-            .into_rgba8();
-        let resolution = vk::Extent2D {
-            width: image.width(),
-            height: image.height(),
-        };
-
-        VulkanTextureCreateInfo::new(
-            image.into_raw(),
-            vk::Format::R8G8B8A8_UNORM,
-            resolution,
-            filter,
-            filter,
-        )
-    }
-
-    fn create_yakui_texture(
-        compressed_image_bytes: &[u8],
-        filter: yakui::paint::TextureFilter,
-    ) -> yakui::paint::Texture {
-        let image = image::load_from_memory(compressed_image_bytes)
-            .unwrap()
-            .into_rgba8();
-        let size = UVec2::new(image.width(), image.height());
-
-        let mut texture = yakui::paint::Texture::new(
-            yakui::paint::TextureFormat::Rgba8Srgb,
-            size,
-            image.into_raw(),
-        );
-        texture.mag_filter = filter;
-        texture
-    }
-
-    fn gui(gui_state: &GuiState) {
-        use yakui::{column, label, row, text, widgets::Text, Color};
-        let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
-            WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
-            WhichImage::Dog => ("dog haha good boy", gui_state.dog.into()),
-        };
-        column(|| {
-            row(|| {
-                label("Hello, world!");
-
-                let mut text = Text::new(48.0, "colored text!");
-                text.style.color = Color::RED;
-                text.show();
-            });
-
-            text(96.0, format!("look it is a {animal}"));
-
-            image(texture, Vec2::new(400.0, 400.0));
-        });
     }
 }
