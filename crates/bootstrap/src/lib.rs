@@ -79,6 +79,8 @@ async fn run(body: impl ExampleBody) {
         .build(&event_loop)
         .unwrap();
 
+    window.set_ime_allowed(true);
+
     // yakui_app has a helper for setting up winit and wgpu.
     let mut app = yakui_app::Graphics::new(&window).await;
 
@@ -124,6 +126,7 @@ async fn run(body: impl ExampleBody) {
         FontSettings::default(),
     )
     .unwrap();
+
     fonts.add(font, Some("monospace"));
 
     // Set up some default state that we'll modify later.
