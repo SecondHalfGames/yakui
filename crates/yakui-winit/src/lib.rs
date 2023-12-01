@@ -140,6 +140,7 @@ impl YakuiWinit {
                     MouseScrollDelta::LineDelta(x, y) => Vec2::new(x, y) * LINE_HEIGHT,
                     MouseScrollDelta::PixelDelta(offset) => {
                         Vec2::new(offset.x as f32, offset.y as f32)
+                            / state.layout_dom().scale_factor()
                     }
                 };
 
