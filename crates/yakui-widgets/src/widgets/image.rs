@@ -15,6 +15,7 @@ Responds with [ImageResponse].
 pub struct Image {
     pub image: Option<TextureId>,
     pub size: Vec2,
+    pub color: Color,
 }
 
 impl Image {
@@ -25,6 +26,7 @@ impl Image {
         Self {
             image: Some(image.into()),
             size,
+            color: Color::WHITE,
         }
     }
 
@@ -49,6 +51,7 @@ impl Widget for ImageWidget {
             props: Image {
                 image: None,
                 size: Vec2::ZERO,
+                color: Color::WHITE,
             },
         }
     }
@@ -66,7 +69,7 @@ impl Widget for ImageWidget {
 
         if let Some(image) = self.props.image {
             let mut rect = PaintRect::new(layout_node.rect);
-            rect.color = Color::WHITE;
+            rect.color = self.props.color;
             rect.texture = Some((image, Rect::ONE));
             rect.add(ctx.paint);
         }
