@@ -1,10 +1,13 @@
+mod multisampling;
+
 use winit::{
     dpi::PhysicalSize,
     event::{Event, StartCause, WindowEvent},
     event_loop::EventLoopWindowTarget,
     window::Window,
 };
-use yakui_wgpu::SurfaceInfo;
+
+use multisampling::Multisampling;
 
 /// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
@@ -15,6 +18,8 @@ pub struct Graphics {
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
+    sample_count: u32,
+    multisampling: Multisampling,
 
     window: yakui_winit::YakuiWinit,
     pub renderer: yakui_wgpu::YakuiWgpu,
@@ -24,7 +29,7 @@ pub struct Graphics {
 }
 
 impl Graphics {
-    pub async fn new(window: &Window) -> Self {
+    pub async fn new(window: &Window, sample_count: u32) -> Self {
         let mut size = window.inner_size();
 
         // FIXME: On web, we're receiving (0, 0) as the initial size of the
@@ -94,6 +99,8 @@ impl Graphics {
             surface,
             surface_config,
             size,
+            sample_count,
+            multisampling: Multisampling::new(),
 
             renderer,
             window,
@@ -134,6 +141,14 @@ impl Graphics {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
+        let surface = self.multisampling.surface_info(
+            &self.device,
+            &view,
+            self.size,
+            self.format,
+            self.sample_count,
+        );
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -144,8 +159,8 @@ impl Graphics {
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
+                    view: surface.color_attachment,
+                    resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(bg),
                         store: wgpu::StoreOp::Store,
@@ -157,12 +172,6 @@ impl Graphics {
 
         let clear = encoder.finish();
 
-        let surface = SurfaceInfo {
-            format: self.format,
-            sample_count: 1,
-            color_attachment: &view,
-            resolve_target: None,
-        };
         let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, surface);
 
         self.queue.submit([clear, paint_yak]);

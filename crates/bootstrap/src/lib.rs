@@ -81,8 +81,10 @@ async fn run(body: impl ExampleBody) {
 
     window.set_ime_allowed(true);
 
+    let sample_count = get_sample_count();
+
     // yakui_app has a helper for setting up winit and wgpu.
-    let mut app = yakui_app::Graphics::new(&window).await;
+    let mut app = yakui_app::Graphics::new(&window, sample_count).await;
 
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
@@ -250,4 +252,13 @@ fn get_inset_override() -> Option<f32> {
     std::env::var("YAKUI_INSET")
         .ok()
         .and_then(|s| s.parse().ok())
+}
+
+/// Enables the user to override the number of multisampling samples that yakui
+/// uses, defaulting to 4x MSAA.
+fn get_sample_count() -> u32 {
+    std::env::var("YAKUI_SAMPLE_COUNT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(4)
 }
