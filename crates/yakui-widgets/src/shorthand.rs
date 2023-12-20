@@ -12,8 +12,8 @@ use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
 use crate::widgets::{
     Align, AlignResponse, Button, ButtonResponse, Canvas, CanvasResponse, Checkbox,
     CheckboxResponse, Circle, CircleResponse, ColoredBox, ColoredBoxResponse, ConstrainedBox,
-    ConstrainedBoxResponse, Draggable, DraggableResponse, Flexible, FlexibleResponse, Image,
-    ImageResponse, List, ListResponse, MaxWidth, MaxWidthResponse, NineSlice, Offset,
+    ConstrainedBoxResponse, CountGrid, Draggable, DraggableResponse, Flexible, FlexibleResponse,
+    Image, ImageResponse, List, ListResponse, MaxWidth, MaxWidthResponse, NineSlice, Offset,
     OffsetResponse, Opaque, OpaqueResponse, Pad, PadResponse, Reflow, ReflowResponse, Scrollable,
     ScrollableResponse, Slider, SliderResponse, State, StateResponse, Text, TextBox,
     TextBoxResponse, TextResponse,
@@ -27,6 +27,16 @@ pub fn column<F: FnOnce()>(children: F) -> Response<ListResponse> {
 /// See [List].
 pub fn row<F: FnOnce()>(children: F) -> Response<ListResponse> {
     List::row().show(children)
+}
+
+/// See [CountGrid].
+pub fn countgrid_column<F: FnOnce()>(n_columns: usize, children: F) -> Response<ListResponse> {
+    CountGrid::col(n_columns).show(children)
+}
+
+/// See [CountGrid].
+pub fn countgrid_row<F: FnOnce()>(n_rows: usize, children: F) -> Response<ListResponse> {
+    CountGrid::row(n_rows).show(children)
 }
 
 /// See [Align].
