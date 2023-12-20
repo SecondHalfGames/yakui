@@ -1,5 +1,6 @@
 #![allow(clippy::new_without_default)]
 
+mod bindgroup_cache;
 mod buffer;
 mod pipeline_cache;
 mod samplers;
@@ -18,6 +19,8 @@ use yakui_core::geometry::{Rect, Vec2, Vec4};
 use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
 use yakui_core::{ManagedTextureId, TextureId};
 
+use self::bindgroup_cache::TextureBindgroupCache;
+use self::bindgroup_cache::TextureBindgroupCacheEntry;
 use self::pipeline_cache::PipelineCache;
 use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
@@ -25,11 +28,10 @@ use self::texture::{GpuManagedTexture, GpuTexture};
 pub struct YakuiWgpu {
     main_pipeline: PipelineCache,
     text_pipeline: PipelineCache,
-    layout: wgpu::BindGroupLayout,
-    default_texture: GpuManagedTexture,
     samplers: Samplers,
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
+    texture_bindgroup_cache: TextureBindgroupCache,
 
     vertices: Buffer,
     indices: Buffer,
@@ -109,16 +111,24 @@ impl YakuiWgpu {
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
         let default_texture = GpuManagedTexture::new(device, queue, &default_texture_data);
+        let default_bindgroup = bindgroup_cache::bindgroup(
+            device,
+            &layout,
+            &samplers,
+            &default_texture.view,
+            default_texture.min_filter,
+            default_texture.mag_filter,
+            wgpu::FilterMode::Nearest,
+        );
 
         Self {
             main_pipeline,
             text_pipeline,
-            layout,
-            default_texture,
             samplers,
             textures: Arena::new(),
             managed_textures: HashMap::new(),
 
+            texture_bindgroup_cache: TextureBindgroupCache::new(layout, default_bindgroup),
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
             commands: Vec::new(),
@@ -279,7 +289,12 @@ impl YakuiWgpu {
                     }
                 }
 
-                render_pass.set_bind_group(0, &command.bind_group, &[]);
+                let bindgroup = command
+                    .bind_group_entry
+                    .map(|entry| self.texture_bindgroup_cache.get(&entry))
+                    .unwrap_or(&self.texture_bindgroup_cache.default);
+
+                render_pass.set_bind_group(0, bindgroup, &[]);
                 render_pass.draw_indexed(command.index_range.clone(), 0, 0..1);
             }
         }
@@ -291,6 +306,7 @@ impl YakuiWgpu {
         self.vertices.clear();
         self.indices.clear();
         self.commands.clear();
+        self.texture_bindgroup_cache.clear();
 
         let commands = paint
             .layers()
@@ -312,12 +328,13 @@ impl YakuiWgpu {
                 self.vertices.extend(vertices);
                 self.indices.extend(indices);
 
-                let (view, min_filter, mag_filter, mipmap_filter) = call
+                let bind_group_entry = call
                     .texture
                     .and_then(|id| match id {
                         TextureId::Managed(managed) => {
                             let texture = self.managed_textures.get(&managed)?;
                             Some((
+                                id,
                                 &texture.view,
                                 texture.min_filter,
                                 texture.mag_filter,
@@ -328,6 +345,7 @@ impl YakuiWgpu {
                             let index = Index::from_bits(bits)?;
                             let texture = self.textures.get(index)?;
                             Some((
+                                id,
                                 &texture.view,
                                 texture.min_filter,
                                 texture.mag_filter,
@@ -335,33 +353,21 @@ impl YakuiWgpu {
                             ))
                         }
                     })
-                    .unwrap_or((
-                        &self.default_texture.view,
-                        self.default_texture.min_filter,
-                        self.default_texture.mag_filter,
-                        wgpu::FilterMode::Nearest,
-                    ));
-
-                let sampler = self.samplers.get(min_filter, mag_filter, mipmap_filter);
-
-                let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("yakui Bind Group"),
-                    layout: &self.layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(sampler),
-                        },
-                    ],
-                });
+                    .map(|(id, view, min_filter, mag_filter, mipmap_filter)| {
+                        let entry = TextureBindgroupCacheEntry {
+                            id,
+                            min_filter,
+                            mag_filter,
+                            mipmap_filter,
+                        };
+                        self.texture_bindgroup_cache
+                            .update(device, entry, view, &self.samplers);
+                        entry
+                    });
 
                 DrawCommand {
                     index_range: start..end,
-                    bind_group,
+                    bind_group_entry,
                     pipeline: call.pipeline,
                     clip: call.clip,
                 }
@@ -374,10 +380,9 @@ impl YakuiWgpu {
         profiling::scope!("update_textures");
 
         for (id, texture) in paint.textures() {
-            if !self.managed_textures.contains_key(&id) {
-                self.managed_textures
-                    .insert(id, GpuManagedTexture::new(device, queue, texture));
-            }
+            self.managed_textures
+                .entry(id)
+                .or_insert_with(|| GpuManagedTexture::new(device, queue, texture));
         }
 
         for (id, change) in paint.texture_edits() {
@@ -405,7 +410,7 @@ impl YakuiWgpu {
 
 struct DrawCommand {
     index_range: Range<u32>,
-    bind_group: wgpu::BindGroup,
+    bind_group_entry: Option<TextureBindgroupCacheEntry>,
     pipeline: Pipeline,
     clip: Option<Rect>,
 }
