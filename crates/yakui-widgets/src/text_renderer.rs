@@ -28,7 +28,7 @@ pub struct GlyphCache {
     pub texture_size: UVec2,
     glyphs: HashMap<GlyphRasterConfig, URect>,
     next_pos: UVec2,
-    row_height: u32,
+    max_height: u32,
 }
 
 impl GlyphCache {
@@ -60,14 +60,12 @@ impl GlyphCache {
 
             let glyph_max = self.next_pos + glyph_size;
             let pos = if glyph_max.x < self.texture_size.x {
-                let pos = self.next_pos;
-                self.row_height = self.row_height.max(glyph_size.y + 1);
-                pos
+                self.next_pos
             } else {
-                let pos = UVec2::new(0, self.row_height);
-                self.row_height = 0;
-                pos
+                UVec2::new(0, self.max_height)
             };
+
+            self.max_height = self.max_height.max(pos.y + glyph_size.y + 1);
             self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
 
             let size = texture.size();
@@ -111,7 +109,7 @@ impl TextGlobalState {
             texture: None,
             glyphs: HashMap::new(),
             next_pos: UVec2::ONE,
-            row_height: 0,
+            max_height: 0,
 
             // Not initializing to zero to avoid divide by zero issues if we do
             // intialize the texture incorrectly.
