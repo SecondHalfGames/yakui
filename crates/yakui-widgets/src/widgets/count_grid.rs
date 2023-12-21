@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::{CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize, Response};
+use yakui_core::{
+    CrossAxisAlignment, Direction, MainAxisAlignItems, MainAxisAlignment, MainAxisSize, Response,
+};
 
 use crate::util::widget_children;
 
@@ -31,6 +33,7 @@ pub struct CountGrid {
     pub cross_axis_count: usize,
     pub main_axis_alignment: MainAxisAlignment,
     pub main_axis_size: MainAxisSize,
+    pub main_axis_align_items: MainAxisAlignItems,
     pub cross_axis_alignment: CrossAxisAlignment,
 }
 
@@ -44,6 +47,7 @@ impl CountGrid {
             main_axis_size: MainAxisSize::Max,
             main_axis_alignment: MainAxisAlignment::Start,
             cross_axis_alignment: CrossAxisAlignment::Start,
+            main_axis_align_items: MainAxisAlignItems::Start,
         }
     }
 
@@ -56,6 +60,7 @@ impl CountGrid {
             main_axis_size: MainAxisSize::Max,
             main_axis_alignment: MainAxisAlignment::Start,
             cross_axis_alignment: CrossAxisAlignment::Start,
+            main_axis_align_items: MainAxisAlignItems::Start,
         }
     }
 
@@ -71,6 +76,11 @@ impl CountGrid {
 
     pub fn main_axis_size(mut self, size: MainAxisSize) -> Self {
         self.main_axis_size = size;
+        self
+    }
+
+    pub fn main_axis_align_items(mut self, items: MainAxisAlignItems) -> Self {
+        self.main_axis_align_items = items;
         self
     }
 
@@ -139,8 +149,11 @@ impl Widget for CountGridWidget {
             total_main_max = direction.get_main_axis(input.min);
         };
 
-        let cell_main_min = 0.0;
         let cell_main_max = total_main_max / n_main as f32;
+        let cell_main_min = match self.props.main_axis_align_items {
+            MainAxisAlignItems::Stretch => cell_main_max,
+            _ => 0.0,
+        };
 
         let cell_constraint = Constraints {
             min: direction.vec2(cell_main_min, cell_cross_min),
@@ -201,14 +214,14 @@ impl Widget for CountGridWidget {
         }
 
         // Calculate offset needed for alignment
-        let mut offset_main = match self.props.main_axis_alignment {
+        let mut offset_main_global = match self.props.main_axis_alignment {
             MainAxisAlignment::Start => 0.0,
             MainAxisAlignment::Center => ((total_main_max - total_main_size) / 2.0).max(0.0),
             MainAxisAlignment::End => (total_main_max - total_main_size).max(0.0),
             other => unimplemented!("MainAxisAlignment::{other:?}"),
         };
-        offset_main = match self.props.main_axis_size {
-            MainAxisSize::Max => offset_main,
+        offset_main_global = match self.props.main_axis_size {
+            MainAxisSize::Max => offset_main_global,
             MainAxisSize::Min => 0.0,
             other => unimplemented!("MainAxisSize::{other:?}"),
         };
@@ -228,6 +241,7 @@ impl Widget for CountGridWidget {
         // Apply alignment by offsetting all children
         for (i, &child_id) in node.children.iter().enumerate() {
             let cross_id = i % n_cross;
+            let main_id = i / n_cross;
 
             let layout = ctx.layout.get_mut(child_id).unwrap();
 
@@ -243,8 +257,23 @@ impl Widget for CountGridWidget {
                 other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
 
-            let offset_pos =
-                layout.rect.pos() + direction.vec2(offset_main, offset_cross_global + offset_cross);
+            let child_main_size = direction.get_main_axis(layout.rect.size());
+            let cell_main_size = match self.props.main_axis_align_items {
+                MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => cell_main_max,
+                _ => max_sizes[n_cross + main_id],
+            };
+            let offset_main = match self.props.main_axis_align_items {
+                MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => 0.0,
+                MainAxisAlignItems::Center => ((cell_main_size - child_main_size) / 2.0).max(0.0),
+                MainAxisAlignItems::End => (cell_main_size - child_main_size).max(0.0),
+                other => unimplemented!("MainAxisAlignItems::{other:?}"),
+            };
+
+            let offset_pos = layout.rect.pos()
+                + direction.vec2(
+                    offset_main_global + offset_main,
+                    offset_cross_global + offset_cross,
+                );
             layout.rect.set_pos(offset_pos);
         }
 

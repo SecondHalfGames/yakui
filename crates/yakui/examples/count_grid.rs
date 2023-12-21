@@ -1,7 +1,8 @@
 use yakui::{Color, Vec2};
 use yakui_core::geometry::Constraints;
 use yakui_core::{
-    Alignment, CrossAxisAlignment, Direction, MainAxisAlignment, MainAxisSize, Response,
+    Alignment, CrossAxisAlignment, Direction, MainAxisAlignItems, MainAxisAlignment, MainAxisSize,
+    Response,
 };
 use yakui_widgets::widgets::{CountGrid, List, StateResponse};
 use yakui_widgets::{
@@ -11,6 +12,7 @@ use yakui_widgets::{
 pub fn run() {
     let main_axis_size = use_state(|| MainAxisSize::Min);
     let main_axis_alignment = use_state(|| MainAxisAlignment::Start);
+    let main_axis_align_items = use_state(|| MainAxisAlignItems::Start);
     let cross_axis_alignment = use_state(|| CrossAxisAlignment::Start);
     let direction = use_state(|| Direction::Down);
     let compare_with_list = use_state(|| false);
@@ -19,6 +21,7 @@ pub fn run() {
         parameter_select(
             &main_axis_size,
             &main_axis_alignment,
+            &main_axis_align_items,
             &cross_axis_alignment,
             &direction,
         );
@@ -27,9 +30,10 @@ pub fn run() {
         test_window(|| {
             let mut g = CountGrid::row(2);
             g.direction = *direction.borrow();
-            g.main_axis_size = *main_axis_size.borrow();
-            g.cross_axis_alignment = *cross_axis_alignment.borrow();
             g.main_axis_alignment = *main_axis_alignment.borrow();
+            g.main_axis_size = *main_axis_size.borrow();
+            g.main_axis_align_items = *main_axis_align_items.borrow();
+            g.cross_axis_alignment = *cross_axis_alignment.borrow();
             g.show(|| {
                 box_with_label(Color::RED, 50.0);
                 box_with_label(Color::GREEN, 50.0);
@@ -76,6 +80,7 @@ fn test_window(children: impl FnOnce()) {
 fn parameter_select(
     main_axis_size: &Response<StateResponse<MainAxisSize>>,
     main_axis_alignment: &Response<StateResponse<MainAxisAlignment>>,
+    main_axis_align_items: &Response<StateResponse<MainAxisAlignItems>>,
     cross_axis_alignment: &Response<StateResponse<CrossAxisAlignment>>,
     direction: &Response<StateResponse<Direction>>,
 ) {
@@ -107,6 +112,22 @@ fn parameter_select(
         main_align_button("Start", MainAxisAlignment::Start);
         main_align_button("Center", MainAxisAlignment::Center);
         main_align_button("End", MainAxisAlignment::End);
+    });
+    row_spacing(|| {
+        label("Main axis align items:");
+        let main_align_items_button = |text, alignment| {
+            if main_axis_align_items.get() == alignment {
+                label(text);
+                return;
+            }
+            if button(text).clicked {
+                *main_axis_align_items.borrow_mut() = alignment;
+            }
+        };
+        main_align_items_button("Start", MainAxisAlignItems::Start);
+        main_align_items_button("Center", MainAxisAlignItems::Center);
+        main_align_items_button("End", MainAxisAlignItems::End);
+        main_align_items_button("Stretch", MainAxisAlignItems::Stretch);
     });
     row_spacing(|| {
         label("Cross axis alignment:");
