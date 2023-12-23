@@ -35,20 +35,21 @@ pub fn run() {
                     stat_column(|| {
                         label("Name");
                         for datum in &data {
+                            divider();
                             label(datum.name);
                         }
                     });
-
                     stat_column(|| {
                         label("Score");
                         for datum in &data {
+                            divider();
                             label(format!("{}", datum.score));
                         }
                     });
-
                     stat_column(|| {
                         label("Money");
                         for datum in &data {
+                            divider();
                             label(format!("{}", datum.currency));
                         }
                     });
@@ -56,6 +57,10 @@ pub fn run() {
             });
         });
     });
+}
+
+fn divider() {
+    yakui_widgets::divider(Color::GRAY, 1.0, 1.0);
 }
 
 fn stat_column(children: impl FnOnce()) {

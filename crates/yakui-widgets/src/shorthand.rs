@@ -12,11 +12,11 @@ use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
 use crate::widgets::{
     Align, AlignResponse, Button, ButtonResponse, Canvas, CanvasResponse, Checkbox,
     CheckboxResponse, Circle, CircleResponse, ColoredBox, ColoredBoxResponse, ConstrainedBox,
-    ConstrainedBoxResponse, CountGrid, Draggable, DraggableResponse, Flexible, FlexibleResponse,
-    Image, ImageResponse, List, ListResponse, MaxWidth, MaxWidthResponse, NineSlice, Offset,
-    OffsetResponse, Opaque, OpaqueResponse, Pad, PadResponse, Reflow, ReflowResponse, Scrollable,
-    ScrollableResponse, Slider, SliderResponse, State, StateResponse, Text, TextBox,
-    TextBoxResponse, TextResponse,
+    ConstrainedBoxResponse, CountGrid, Divider, DividerResponse, Draggable, DraggableResponse,
+    Flexible, FlexibleResponse, Image, ImageResponse, List, ListResponse, MaxWidth,
+    MaxWidthResponse, NineSlice, Offset, OffsetResponse, Opaque, OpaqueResponse, Pad, PadResponse,
+    Reflow, ReflowResponse, Scrollable, ScrollableResponse, Slider, SliderResponse, State,
+    StateResponse, Text, TextBox, TextBoxResponse, TextResponse,
 };
 
 /// See [List].
@@ -145,6 +145,11 @@ pub fn nineslice(
     children: impl FnOnce(),
 ) -> Response<()> {
     NineSlice::new(texture, margins, scale).show(children)
+}
+
+/// See [Divider].
+pub fn divider(color: Color, height: f32, thickness: f32) -> Response<DividerResponse> {
+    Divider::new(color, height, thickness).show()
 }
 
 /// See [Scrollable].
