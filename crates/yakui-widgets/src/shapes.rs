@@ -1,7 +1,7 @@
 use std::f32::consts::TAU;
 
 use yakui_core::geometry::{Color, Rect, Vec2};
-use yakui_core::paint::{PaintDom, PaintMesh, Vertex};
+use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
@@ -179,6 +179,10 @@ impl RoundedRectangle {
     }
 
     pub fn add(&self, output: &mut PaintDom) {
+        if self.radius <= 0.0 {
+            return PaintRect::new(self.rect).add(output);
+        }
+
         let rect = self.rect;
         let color = self.color.to_linear();
 
