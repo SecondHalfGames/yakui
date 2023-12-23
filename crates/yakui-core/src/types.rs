@@ -64,6 +64,33 @@ pub enum MainAxisAlignment {
     // SpaceEvenly,
 }
 
+/// Defines alignment for items within a container's main axis when there is space left.
+///
+/// This occurs in a Grid when items of the same row are bigger than one self.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum MainAxisAlignItems {
+    /// Align item to the beginning of the cell main axis.
+    ///
+    /// For a left-to-right grid, this is the left side of the cell.
+    ///
+    /// For a top-down grid, this is the top of the cell.
+    Start,
+
+    /// Align items to the center of the cell's main axis.
+    Center,
+
+    /// Align items to the end of the cell's main axis.
+    ///
+    /// For a left-to-right list, this is the right side of the cell.
+    ///
+    /// For a top-down list, this is the bottom of the cell.
+    End,
+
+    /// Stretch items to fill the maximum size of the cell's main axis.
+    Stretch,
+}
+
 /// Defines alignment along a container's cross axis.
 ///
 /// For example, a horizontal list's cross axis is vertical, and a vertical
