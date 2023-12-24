@@ -15,7 +15,7 @@ use crate::widgets::{
     ConstrainedBoxResponse, CountGrid, Divider, DividerResponse, Draggable, DraggableResponse,
     Flexible, FlexibleResponse, Image, ImageResponse, List, ListResponse, MaxWidth,
     MaxWidthResponse, NineSlice, Offset, OffsetResponse, Opaque, OpaqueResponse, Pad, PadResponse,
-    Reflow, ReflowResponse, Scrollable, ScrollableResponse, Slider, SliderResponse, State,
+    Reflow, ReflowResponse, Scrollable, ScrollableResponse, Slider, SliderResponse, Spacer, State,
     StateResponse, Text, TextBox, TextBoxResponse, TextResponse,
 };
 
@@ -150,6 +150,11 @@ pub fn nineslice(
 /// See [Divider].
 pub fn divider(color: Color, height: f32, thickness: f32) -> Response<DividerResponse> {
     Divider::new(color, height, thickness).show()
+}
+
+/// See [Spacer].
+pub fn spacer(flex: u32) -> Response<FlexibleResponse> {
+    Spacer::new(flex).show()
 }
 
 /// See [Scrollable].
