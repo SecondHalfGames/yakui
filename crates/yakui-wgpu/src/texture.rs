@@ -16,6 +16,7 @@ pub(crate) struct GpuTexture {
     pub view: Arc<wgpu::TextureView>,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
+    pub mipmap_filter: wgpu::FilterMode,
 }
 
 impl GpuManagedTexture {

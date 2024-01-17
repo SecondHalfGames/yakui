@@ -119,6 +119,7 @@ async fn run(body: impl ExampleBody) {
         custom_texture::generate(&app.device, &app.queue),
         wgpu::FilterMode::Nearest,
         wgpu::FilterMode::Nearest,
+        wgpu::FilterMode::Nearest,
     );
 
     // Add a custom font for some of the examples.
