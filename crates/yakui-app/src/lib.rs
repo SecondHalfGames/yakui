@@ -15,7 +15,7 @@ pub struct Graphics {
     pub queue: wgpu::Queue,
 
     format: wgpu::TextureFormat,
-    surface: wgpu::Surface,
+    surface: wgpu::Surface<'static>,
     surface_config: wgpu::SurfaceConfiguration,
     size: PhysicalSize<u32>,
     sample_count: u32,
@@ -40,8 +40,13 @@ impl Graphics {
         }
 
         let instance = wgpu::Instance::default();
-        let surface =
-            unsafe { instance.create_surface(&window) }.expect("Could not create wgpu surface");
+        let surface = unsafe {
+            instance.create_surface_unsafe(
+                wgpu::SurfaceTargetUnsafe::from_window(&window)
+                    .expect("Could not create wgpu surface from window"),
+            )
+        }
+        .expect("Could not create wgpu surface");
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -55,10 +60,10 @@ impl Graphics {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    required_features: wgpu::Features::empty(),
                     // WebGL doesn't support all of wgpu's features, so if
                     // we're building for the web we'll have to disable some.
-                    limits: if cfg!(target_arch = "wasm32") {
+                    required_limits: if cfg!(target_arch = "wasm32") {
                         wgpu::Limits::downlevel_webgl2_defaults()
                     } else {
                         wgpu::Limits::default()
@@ -80,6 +85,7 @@ impl Graphics {
             width: size.width,
             height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&device, &surface_config);
 
