@@ -1,5 +1,5 @@
+use crate::shapes::RoundedRectangle;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
@@ -18,6 +18,7 @@ pub struct CutOut {
     pub image_color: Color,
     pub overlay_color: Color,
     pub min_size: Vec2,
+    pub radius: f32,
 }
 
 impl CutOut {
@@ -30,6 +31,7 @@ impl CutOut {
             image_color: Color::WHITE,
             overlay_color,
             min_size: Vec2::ZERO,
+            radius: 0.0,
         }
     }
 
@@ -60,6 +62,7 @@ impl Widget for CutOutWidget {
                 image_color: Color::WHITE,
                 overlay_color: Color::CLEAR,
                 min_size: Vec2::ZERO,
+                radius: 0.0,
             },
         }
     }
@@ -91,13 +94,13 @@ impl Widget for CutOutWidget {
                 layout_node.rect.size() / ctx.layout.viewport().size(),
             );
 
-            let mut rect = PaintRect::new(layout_node.rect);
+            let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
             rect.color = self.props.image_color;
             rect.texture = Some((image, texture_rect));
             rect.add(ctx.paint);
         }
 
-        let mut rect = PaintRect::new(layout_node.rect);
+        let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
         rect.color = self.props.overlay_color;
         rect.add(ctx.paint);
 

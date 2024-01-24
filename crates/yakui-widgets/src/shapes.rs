@@ -2,6 +2,7 @@ use std::f32::consts::TAU;
 
 use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
+use yakui_core::TextureId;
 
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
@@ -167,6 +168,7 @@ pub struct RoundedRectangle {
     pub rect: Rect,
     pub radius: f32,
     pub color: Color,
+    pub texture: Option<(TextureId, Rect)>,
 }
 
 impl RoundedRectangle {
@@ -175,16 +177,12 @@ impl RoundedRectangle {
             rect,
             radius,
             color: Color::WHITE,
+            texture: None,
         }
     }
 
     pub fn add(&self, output: &mut PaintDom) {
-        if self.radius <= 0.0 {
-            return PaintRect::new(self.rect).add(output);
-        }
-
         let rect = self.rect;
-        let color = self.color.to_linear();
 
         // We are not prepared to let a corner's radius be bigger than a side's
         // half-length.
@@ -193,14 +191,35 @@ impl RoundedRectangle {
             .min(rect.size().x / 2.0)
             .min(rect.size().y / 2.0);
 
-        let slices = if radius >= 1.0 {
-            f32::ceil(TAU / 8.0 / f32::acos(1.0 - 0.2 / radius)) as u32
-        } else {
-            1
+        // Fallback to a rectangle if the radius is too small.
+        if radius < 1.0 {
+            let mut p = PaintRect::new(rect);
+            p.texture = self.texture;
+            p.color = self.color;
+            return p.add(output);
+        }
+
+        let color = self.color.to_linear();
+
+        let slices = f32::ceil(TAU / 8.0 / f32::acos(1.0 - 0.2 / radius)) as u32;
+
+        // 3 rectangles and 4 corners
+        let mut vertices = Vec::with_capacity(4 * 3 + (slices + 2) as usize * 4);
+        let mut indices = Vec::with_capacity(6 * 3 + slices as usize * (3 * 4));
+
+        let (uv_offset, uv_factor) = self
+            .texture
+            .map(|(_, texture_rect)| (texture_rect.pos(), texture_rect.size() / rect.size()))
+            .unwrap_or((Vec2::ZERO, Vec2::ZERO));
+
+        let calc_uv = |position| {
+            if self.texture.is_none() {
+                return Vec2::ZERO;
+            }
+            (position - rect.pos()) * uv_factor + uv_offset
         };
 
-        let mut vertices = Vec::new();
-        let mut indices = Vec::new();
+        let create_vertex = |pos| Vertex::new(pos, calc_uv(pos), color);
 
         let mut rectangle = |min: Vec2, max: Vec2| {
             let base_vertex = vertices.len();
@@ -208,7 +227,7 @@ impl RoundedRectangle {
             let size = max - min;
             let rect_vertices = RECT_POS
                 .map(Vec2::from)
-                .map(|vert| Vertex::new(vert * size + min, Vec2::ZERO, color));
+                .map(|vert| create_vertex(vert * size + min));
 
             let rect_indices = RECT_INDEX.map(|index| index + base_vertex as u16);
 
@@ -231,17 +250,17 @@ impl RoundedRectangle {
 
         let mut corner = |center: Vec2, start_angle: f32| {
             let center_vertex = vertices.len();
-            vertices.push(Vertex::new(center, Vec2::ZERO, color));
+            vertices.push(create_vertex(center));
 
             let first_offset = radius * Vec2::new(start_angle.cos(), -start_angle.sin());
-            vertices.push(Vertex::new(center + first_offset, Vec2::ZERO, color));
+            vertices.push(create_vertex(center + first_offset));
 
             for i in 1..=slices {
                 let percent = i as f32 / slices as f32;
                 let angle = start_angle + percent * TAU / 4.0;
                 let offset = radius * Vec2::new(angle.cos(), -angle.sin());
                 let index = vertices.len();
-                vertices.push(Vertex::new(center + offset, Vec2::ZERO, color));
+                vertices.push(create_vertex(center + offset));
 
                 indices.extend_from_slice(&[
                     center_vertex as u16,
@@ -265,7 +284,8 @@ impl RoundedRectangle {
             3.0 * TAU / 4.0,
         );
 
-        let mesh = PaintMesh::new(vertices, indices);
+        let mut mesh = PaintMesh::new(vertices, indices);
+        mesh.texture = self.texture;
         output.add_mesh(mesh);
     }
 }
