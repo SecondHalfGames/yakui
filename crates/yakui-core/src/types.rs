@@ -59,9 +59,18 @@ pub enum MainAxisAlignment {
     ///
     /// For a top-down list, this is the bottom of the container.
     End,
-    // SpaceAround,
-    // SpaceBetween,
-    // SpaceEvenly,
+
+    /// Spread the items evenly where the gap at the start and end of the container
+    /// is half the size of the gap between each adjacent item.
+    SpaceAround,
+
+    /// Spread the items evenly with no gap at the start and the end of the container.
+    /// If there is only one item, it will be at the start.
+    SpaceBetween,
+
+    /// Spread the items evenly where the gap at the start and end of the container
+    /// is the same size as the gap between each adjacent item.
+    SpaceEvenly,
 }
 
 /// Defines alignment for items within a container's main axis when there is space left.
