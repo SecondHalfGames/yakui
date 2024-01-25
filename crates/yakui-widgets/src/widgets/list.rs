@@ -31,6 +31,7 @@ yakui::row(|| {
 #[non_exhaustive]
 pub struct List {
     pub direction: Direction,
+    /// Added space at the end of each item.
     pub item_spacing: f32,
     pub main_axis_size: MainAxisSize,
     pub main_axis_alignment: MainAxisAlignment,
@@ -224,12 +225,41 @@ impl Widget for ListWidget {
         }
 
         // Finally, position all children based on the sizes calculated above.
-        let mut next_main = match self.props.main_axis_alignment {
-            MainAxisAlignment::Start => 0.0,
-            MainAxisAlignment::Center => (main_axis_size - total_main_axis_size) / 2.0,
-            MainAxisAlignment::End => main_axis_size - total_main_axis_size,
+        let (leading_space, mut between_space) = match self.props.main_axis_alignment {
+            MainAxisAlignment::Start => (0.0, 0.0),
+            MainAxisAlignment::Center => ((main_axis_size - total_main_axis_size) / 2.0, 0.0),
+            MainAxisAlignment::End => (main_axis_size - total_main_axis_size, 0.0),
+            MainAxisAlignment::SpaceAround => {
+                // avoid division by zero
+                if node.children.is_empty() {
+                    (0.0, 0.0)
+                } else {
+                    let between_space =
+                        (main_axis_size - total_main_axis_size) / node.children.len() as f32;
+                    (between_space * 0.5, between_space)
+                }
+            }
+            MainAxisAlignment::SpaceBetween => {
+                if node.children.len() <= 1 {
+                    // We follow CSS spec and Flutter behavior (as the Flutter doc isn't explicit)
+                    // of putting the first child at the start when there is only one
+                    (0.0, 0.0)
+                } else {
+                    let between_space = (main_axis_size - total_main_axis_size)
+                        / (node.children.len() as f32 - 1.0);
+                    (0.0, between_space)
+                }
+            }
+            MainAxisAlignment::SpaceEvenly => {
+                let between_space =
+                    (main_axis_size - total_main_axis_size) / (node.children.len() as f32 + 1.0);
+                (between_space, between_space)
+            }
             other => unimplemented!("MainAxisAlignment::{other:?}"),
         };
+        between_space += self.props.item_spacing;
+
+        let mut next_main = leading_space;
 
         for &child_index in &node.children {
             let child = ctx.dom.get(child_index).unwrap();
@@ -251,7 +281,7 @@ impl Widget for ListWidget {
             child_layout.rect.set_pos(direction.vec2(next_main, cross));
 
             next_main += child_main;
-            next_main += self.props.item_spacing;
+            next_main += between_space;
         }
 
         container_size

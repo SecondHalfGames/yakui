@@ -8,6 +8,9 @@ pub fn run(state: &mut ExampleState) {
         MainAxisAlignment::Start,
         MainAxisAlignment::Center,
         MainAxisAlignment::End,
+        MainAxisAlignment::SpaceBetween,
+        MainAxisAlignment::SpaceAround,
+        MainAxisAlignment::SpaceEvenly,
     ];
 
     let index = (state.time.floor() as usize) % alignments.len();
