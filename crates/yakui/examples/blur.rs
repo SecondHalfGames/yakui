@@ -23,12 +23,14 @@ pub fn run(state: &mut ExampleState) {
                 let mut col = List::column();
                 col.cross_axis_alignment = CrossAxisAlignment::Stretch;
                 col.show(|| {
-                    CutOut::new(state.monkey_blurred, Color::hex(0x5cc9ff).with_alpha(0.25))
-                        .show_children(|| {
-                            Pad::all(16.0).show(|| {
-                                text(48.0, "Blur Demo");
-                            });
+                    let mut cut_out =
+                        CutOut::new(state.monkey_blurred, Color::hex(0x5cc9ff).with_alpha(0.25));
+                    cut_out.radius = 25.0;
+                    cut_out.show_children(|| {
+                        Pad::all(16.0).show(|| {
+                            text(48.0, "Blur Demo");
                         });
+                    });
 
                     CutOut::new(state.monkey_blurred, Color::hex(0x444444).with_alpha(0.1))
                         .show_children(|| {
