@@ -49,9 +49,7 @@ impl Color {
     /// Create a new `Color` from a linear RGB color.
     pub fn from_linear(value: Vec4) -> Self {
         let linear = palette::LinSrgba::new(value.x, value.y, value.z, value.w);
-        let (r, g, b, a) = palette::Srgba::from_linear(linear)
-            .into_format::<u8, u8>()
-            .into_components();
+        let (r, g, b, a) = palette::Srgba::<u8>::from_linear(linear).into_components();
 
         Self::rgba(r, g, b, a)
     }
