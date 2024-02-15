@@ -58,12 +58,15 @@ pub struct TextBoxWidget {
     cursor: usize,
     text_layout: Option<IgnoreDebug<Rc<RefCell<Layout>>>>,
     activated: bool,
+    lost_focus: bool,
 }
 
 pub struct TextBoxResponse {
     pub text: Option<String>,
     /// Whether the user pressed "Enter" in this box
     pub activated: bool,
+    /// Whether the box lost focus
+    pub lost_focus: bool,
 }
 
 impl Widget for TextBoxWidget {
@@ -78,6 +81,7 @@ impl Widget for TextBoxWidget {
             cursor: 0,
             text_layout: None,
             activated: false,
+            lost_focus: false,
         }
     }
 
@@ -113,6 +117,7 @@ impl Widget for TextBoxWidget {
         Self::Response {
             text: self.updated_text.take(),
             activated: mem::take(&mut self.activated),
+            lost_focus: mem::take(&mut self.lost_focus),
         }
     }
 
@@ -148,6 +153,9 @@ impl Widget for TextBoxWidget {
         match event {
             WidgetEvent::FocusChanged(focused) => {
                 self.selected = *focused;
+                if !*focused {
+                    self.lost_focus = true;
+                }
                 EventResponse::Sink
             }
 
