@@ -15,6 +15,7 @@ use anymap::AnyMap;
 use thunderdome::Arena;
 
 use crate::id::WidgetId;
+use crate::input::InputState;
 use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
 
@@ -32,6 +33,7 @@ struct DomInner {
     removed_nodes: RefCell<Vec<WidgetId>>,
     root: WidgetId,
     globals: RefCell<AnyMap>,
+    pending_focus_request: RefCell<Option<WidgetId>>,
 }
 
 /// A node in the [`Dom`].
@@ -75,13 +77,17 @@ impl Dom {
     }
 
     /// End the DOM's build phase.
-    pub fn finish(&self) {
+    pub fn finish(&self, input: &InputState) {
         log::debug!("Dom::finish()");
 
         let mut nodes = self.inner.nodes.borrow_mut();
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
         let root = self.inner.root;
         trim_children(&mut nodes, &mut removed_nodes, root);
+
+        if let Some(widget_id) = self.inner.pending_focus_request.borrow_mut().take() {
+            input.set_selection(Some(widget_id));
+        }
     }
 
     /// Tells how many nodes are currently in the DOM.
@@ -97,6 +103,11 @@ impl Dom {
     /// Gives the root widget in the DOM. This widget will always exist.
     pub fn root(&self) -> WidgetId {
         self.inner.root
+    }
+
+    /// Request focus for the given widget id
+    pub fn request_focus(&self, id: WidgetId) {
+        *self.inner.pending_focus_request.borrow_mut() = Some(id);
     }
 
     /// Gives a list of all of the nodes that were removed in the last update.
@@ -258,6 +269,7 @@ impl DomInner {
             removed_nodes: RefCell::new(Vec::new()),
             stack: RefCell::new(Vec::new()),
             root: WidgetId::new(root),
+            pending_focus_request: RefCell::new(None),
         }
     }
 }
