@@ -5,6 +5,7 @@
 
 use yakui::widgets::Layer;
 use yakui::{align, button, column, reflow, use_state, widgets::Pad, Alignment, Dim2};
+use yakui_core::Pivot;
 
 pub fn run() {
     let open = use_state(|| false);
@@ -25,7 +26,7 @@ pub fn run() {
                 if open.get() {
                     Pad::ZERO.show(|| {
                         Layer::new().show(|| {
-                            reflow(Alignment::BOTTOM_LEFT, Dim2::ZERO, || {
+                            reflow(Alignment::BOTTOM_LEFT, Pivot::TOP_LEFT, Dim2::ZERO, || {
                                 column(|| {
                                     let current = selected.get();
                                     for (i, option) in options.iter().enumerate() {
