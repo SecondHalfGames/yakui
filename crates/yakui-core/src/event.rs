@@ -120,7 +120,7 @@ pub enum EventResponse {
 
 bitflags::bitflags! {
     /// A bitfield of events that a widget can register to be notified about.
-    #[derive(Default)]
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone, Copy, Default)]
     pub struct EventInterest: u8 {
         /// Notify this widget of mouse events occuring within its layout
         /// rectangle.
@@ -140,6 +140,6 @@ bitflags::bitflags! {
         const FOCUSED_KEYBOARD = 16;
 
         /// Notify this widget of all mouse events.
-        const MOUSE_ALL = Self::MOUSE_INSIDE.bits | Self::MOUSE_OUTSIDE.bits | Self::MOUSE_MOVE.bits;
+        const MOUSE_ALL = Self::MOUSE_INSIDE.bits() | Self::MOUSE_OUTSIDE.bits() | Self::MOUSE_MOVE.bits();
     }
 }
