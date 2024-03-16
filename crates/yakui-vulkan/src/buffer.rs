@@ -28,7 +28,7 @@ impl<T: Copy> Buffer<T> {
         let device = vulkan_context.device;
         let device_memory_properties = &vulkan_context.memory_properties;
 
-        let buffer_info = vk::BufferCreateInfo::builder()
+        let buffer_info = vk::BufferCreateInfo::default()
             .size(((std::mem::size_of::<T>() * elements) as vk::DeviceSize).max(MIN_BUFFER_SIZE))
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
