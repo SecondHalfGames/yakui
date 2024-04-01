@@ -65,7 +65,7 @@ impl VulkanTexture {
             vulkan_context
                 .device
                 .create_sampler(
-                    &vk::SamplerCreateInfo::builder()
+                    &vk::SamplerCreateInfo::default()
                         .address_mode_u(address_mode)
                         .address_mode_v(address_mode)
                         .address_mode_w(address_mode)
@@ -111,7 +111,7 @@ impl VulkanTexture {
             vulkan_context
                 .device
                 .create_sampler(
-                    &vk::SamplerCreateInfo::builder()
+                    &vk::SamplerCreateInfo::default()
                         .address_mode_u(address_mode)
                         .address_mode_v(address_mode)
                         .address_mode_w(address_mode)
@@ -186,8 +186,8 @@ pub(crate) struct UploadQueue {
     phase: UploadPhase,
     in_flight: VecDeque<UploadPhase>,
     textures: Vec<(vk::Image, vk::Extent2D, vk::Buffer, usize)>,
-    pre_barriers: Vec<vk::ImageMemoryBarrier>,
-    post_barriers: Vec<vk::ImageMemoryBarrier>,
+    pre_barriers: Vec<vk::ImageMemoryBarrier<'static>>,
+    post_barriers: Vec<vk::ImageMemoryBarrier<'static>>,
 }
 
 impl UploadQueue {

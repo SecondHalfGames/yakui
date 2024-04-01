@@ -16,7 +16,7 @@ impl Descriptors {
 
         let pool = unsafe {
             device.create_descriptor_pool(
-                &vk::DescriptorPoolCreateInfo::builder()
+                &vk::DescriptorPoolCreateInfo::default()
                     .max_sets(1)
                     .pool_sizes(&[vk::DescriptorPoolSize {
                         ty: vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
@@ -29,11 +29,11 @@ impl Descriptors {
 
         let flags = [vk::DescriptorBindingFlags::PARTIALLY_BOUND];
         let mut binding_flags =
-            vk::DescriptorSetLayoutBindingFlagsCreateInfo::builder().binding_flags(&flags);
+            vk::DescriptorSetLayoutBindingFlagsCreateInfo::default().binding_flags(&flags);
 
         let layout = unsafe {
             device.create_descriptor_set_layout(
-                &vk::DescriptorSetLayoutCreateInfo::builder()
+                &vk::DescriptorSetLayoutCreateInfo::default()
                     .bindings(&[vk::DescriptorSetLayoutBinding {
                         binding: 0,
                         descriptor_type: vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
@@ -49,7 +49,7 @@ impl Descriptors {
 
         let set = unsafe {
             device.allocate_descriptor_sets(
-                &vk::DescriptorSetAllocateInfo::builder()
+                &vk::DescriptorSetAllocateInfo::default()
                     .descriptor_pool(pool)
                     .set_layouts(std::slice::from_ref(&layout)),
             )
@@ -73,9 +73,9 @@ impl Descriptors {
         let texture_id = self.texture_count;
         vulkan_context.device.update_descriptor_sets(
             std::slice::from_ref(
-                &vk::WriteDescriptorSet::builder()
+                &vk::WriteDescriptorSet::default()
                     .image_info(std::slice::from_ref(
-                        &vk::DescriptorImageInfo::builder()
+                        &vk::DescriptorImageInfo::default()
                             .sampler(sampler)
                             .image_view(image_view)
                             .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL),
