@@ -7,10 +7,11 @@ use crate::dom::Dom;
 use crate::geometry::Rect;
 use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
+use crate::paint::{PaintCall, Pipeline};
 use crate::widget::PaintContext;
 
 use super::layers::PaintLayers;
-use super::primitives::{PaintCall, PaintMesh, Vertex};
+use super::primitives::{PaintMesh, Vertex};
 use super::texture::{Texture, TextureChange};
 
 /// Contains all information about how to paint the current set of widgets.
@@ -203,6 +204,10 @@ impl PaintDom {
             let mut pos = vertex.position * self.scale_factor;
             pos += self.unscaled_viewport.pos();
             pos /= self.surface_size;
+            if mesh.pipeline == Pipeline::Text {
+                pos = (pos * self.surface_size).round() / self.surface_size;
+            }
+
             vertex.position = pos;
             vertex
         });
