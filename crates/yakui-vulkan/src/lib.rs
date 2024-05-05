@@ -72,6 +72,8 @@ pub struct Options {
     pub dynamic_rendering_format: Option<vk::Format>,
     /// Render pass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
     pub render_pass: vk::RenderPass,
+    /// Subpass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
+    pub subpass: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -319,7 +321,9 @@ impl YakuiVulkan {
                 .color_attachment_formats(&rendering_info_formats);
             graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
         } else {
-            graphic_pipeline_info = graphic_pipeline_info.render_pass(options.render_pass);
+            graphic_pipeline_info = graphic_pipeline_info
+                .render_pass(options.render_pass)
+                .subpass(options.subpass);
         }
 
         let graphics_pipelines = unsafe {
