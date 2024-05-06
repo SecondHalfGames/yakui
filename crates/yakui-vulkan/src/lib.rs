@@ -611,7 +611,9 @@ impl YakuiVulkan {
 
                 TextureChange::Modified => {
                     if let Some(old) = self.yakui_managed_textures.remove(&id) {
-                        unsafe { old.cleanup(vulkan_context.device) };
+                        unsafe {
+                            self.uploads.dispose(old);
+                        }
                     }
                     let new = paint.texture(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
