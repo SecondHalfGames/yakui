@@ -18,9 +18,10 @@ pub struct Graphics {
 
     window: yakui_winit::YakuiWinit,
     pub renderer: yakui_wgpu::YakuiWgpu,
-
+    /*
     /// Tracks whether winit is still initializing
     is_init: bool,
+     */
 }
 
 impl Graphics {
@@ -105,8 +106,7 @@ impl Graphics {
 
             renderer,
             window,
-
-            is_init: true,
+            /*is_init: true,*/
         }
     }
 
@@ -203,9 +203,9 @@ impl Graphics {
                 // and causing issues.
                 //
                 // https://github.com/rust-windowing/winit/issues/2094
-                if self.is_init {
+                /*if self.is_init {
                     return false;
-                }
+                }*/
 
                 self.resize(*size);
             }
