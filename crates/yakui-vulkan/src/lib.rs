@@ -378,12 +378,12 @@ impl YakuiVulkan {
         self.uploads.phase_submitted();
     }
 
-    /// Call when the commands associated with the oldest call to `commands_submitted` have finished.
+    /// Call when the commands associated with the oldest call to `transfers_submitted` have finished.
     ///
     /// ## Safety
     ///
-    /// Those commands recorded prior to the oldest call to `commands_submitted` not yet associated
-    /// with a call to `commands_finished` must not be executing.
+    /// Those commands recorded prior to the oldest call to `transfers_submitted` not yet associated
+    /// with a call to `transfers_finished` must not be executing.
     pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
         self.uploads.phase_executed(vulkan_context);
     }

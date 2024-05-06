@@ -54,7 +54,7 @@ pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonResponse> {
     Button::styled(text.into()).show()
 }
 
-/// See [ColoredCircle].
+/// See [Circle].
 pub fn colored_circle<S: Into<f32>>(color: Color, size: S) -> Response<CircleResponse> {
     let mut circle = Circle::new();
     circle.min_radius = size.into();
