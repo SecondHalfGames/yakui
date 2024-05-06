@@ -3,9 +3,11 @@ mod custom_texture;
 use std::fmt::Write;
 use std::time::Instant;
 
-use winit::application::ApplicationHandler;
-use winit::event::WindowEvent;
-use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::{
+    application::ApplicationHandler,
+    event::WindowEvent,
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+};
 
 use winit::window::{Window, WindowAttributes, WindowId};
 use yakui::font::{Font, FontSettings, Fonts};
