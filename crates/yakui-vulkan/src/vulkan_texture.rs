@@ -100,7 +100,7 @@ impl VulkanTexture {
             mag_filter,
         } = create_info;
 
-        let address_mode = vk::SamplerAddressMode::REPEAT;
+        let address_mode = vk::SamplerAddressMode::CLAMP_TO_EDGE;
         let (image, memory) = unsafe { vulkan_context.create_image(resolution, format) };
         unsafe {
             queue.push(vulkan_context, image, resolution, image_data.as_ref());

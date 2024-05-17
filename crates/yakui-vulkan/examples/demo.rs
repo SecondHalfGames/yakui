@@ -277,12 +277,23 @@ impl VulkanTest {
             .engine_version(0)
             .api_version(vk::make_api_version(0, 1, 3, 0));
 
-        let extension_names =
+        #[allow(unused_mut)]
+        let mut extension_names =
             ash_window::enumerate_required_extensions(window.display_handle().unwrap().as_raw())
                 .unwrap()
                 .to_vec();
 
+        #[cfg(target_os = "macos")]
+        extension_names.push(ash::khr::portability_enumeration::NAME.as_ptr());
+
+        let create_flags = if cfg!(target_os = "macos") {
+            vk::InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR
+        } else {
+            vk::InstanceCreateFlags::default()
+        };
+
         let create_info = vk::InstanceCreateInfo::default()
+            .flags(create_flags)
             .application_info(&appinfo)
             .enabled_extension_names(&extension_names);
 
@@ -337,7 +348,13 @@ impl VulkanTest {
                 .expect("Couldn't find suitable device.")
         };
         let queue_family_index = queue_family_index as u32;
-        let device_extension_names_raw = [ash::khr::swapchain::NAME.as_ptr()];
+
+        #[allow(unused_mut)]
+        let mut device_exts = vec![ash::khr::swapchain::NAME.as_ptr()];
+
+        #[cfg(target_os = "macos")]
+        device_exts.push(ash::khr::portability_subset::NAME.as_ptr());
+
         let priorities = [1.0];
 
         let queue_info = vk::DeviceQueueCreateInfo::default()
@@ -350,7 +367,7 @@ impl VulkanTest {
 
         let device_create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(std::slice::from_ref(&queue_info))
-            .enabled_extension_names(&device_extension_names_raw)
+            .enabled_extension_names(&device_exts)
             .push_next(&mut descriptor_indexing_features);
 
         let device = unsafe {
