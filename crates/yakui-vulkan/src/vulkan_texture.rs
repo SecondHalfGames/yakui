@@ -59,7 +59,7 @@ impl VulkanTexture {
         memory: vk::DeviceMemory,
         view: vk::ImageView,
     ) -> Self {
-        let address_mode = vk::SamplerAddressMode::REPEAT;
+        let address_mode = vk::SamplerAddressMode::CLAMP_TO_EDGE;
         let filter = vk::Filter::LINEAR;
         let sampler = unsafe {
             vulkan_context
