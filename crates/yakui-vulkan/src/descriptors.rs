@@ -18,6 +18,7 @@ impl Descriptors {
             device.create_descriptor_pool(
                 &vk::DescriptorPoolCreateInfo::default()
                     .max_sets(1)
+                    .flags(vk::DescriptorPoolCreateFlags::UPDATE_AFTER_BIND)
                     .pool_sizes(&[vk::DescriptorPoolSize {
                         ty: vk::DescriptorType::COMBINED_IMAGE_SAMPLER,
                         descriptor_count: 1000,
@@ -27,7 +28,8 @@ impl Descriptors {
         }
         .unwrap();
 
-        let flags = [vk::DescriptorBindingFlags::PARTIALLY_BOUND];
+        let flags = [vk::DescriptorBindingFlags::PARTIALLY_BOUND
+            | vk::DescriptorBindingFlags::UPDATE_AFTER_BIND];
         let mut binding_flags =
             vk::DescriptorSetLayoutBindingFlagsCreateInfo::default().binding_flags(&flags);
 
@@ -41,6 +43,7 @@ impl Descriptors {
                         descriptor_count: 1000,
                         ..Default::default()
                     }])
+                    .flags(vk::DescriptorSetLayoutCreateFlags::UPDATE_AFTER_BIND_POOL)
                     .push_next(&mut binding_flags),
                 None,
             )
