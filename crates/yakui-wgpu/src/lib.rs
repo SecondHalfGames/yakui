@@ -374,10 +374,9 @@ impl YakuiWgpu {
         profiling::scope!("update_textures");
 
         for (id, texture) in paint.textures() {
-            if !self.managed_textures.contains_key(&id) {
-                self.managed_textures
-                    .insert(id, GpuManagedTexture::new(device, queue, texture));
-            }
+            self.managed_textures
+                .entry(id)
+                .or_insert_with(|| GpuManagedTexture::new(device, queue, texture));
         }
 
         for (id, change) in paint.texture_edits() {

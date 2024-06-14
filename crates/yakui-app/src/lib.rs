@@ -206,11 +206,7 @@ impl Graphics {
             }
 
             Event::NewEvents(cause) => {
-                if *cause == StartCause::Init {
-                    self.is_init = true;
-                } else {
-                    self.is_init = false;
-                }
+                self.is_init = *cause == StartCause::Init;
             }
 
             Event::WindowEvent {
