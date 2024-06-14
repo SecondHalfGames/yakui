@@ -85,11 +85,7 @@ fn main() {
         } => elwt.exit(),
 
         Event::NewEvents(cause) => {
-            if cause == winit::event::StartCause::Init {
-                winit_initializing = true;
-            } else {
-                winit_initializing = false;
-            }
+            winit_initializing = cause == winit::event::StartCause::Init;
         }
 
         Event::AboutToWait => {
@@ -148,21 +144,18 @@ fn main() {
                     event:
                         KeyEvent {
                             state: ElementState::Released,
-                            physical_key,
+                            physical_key: PhysicalKey::Code(KeyCode::KeyA),
                             ..
                         },
                     ..
                 },
             ..
-        } => match physical_key {
-            PhysicalKey::Code(KeyCode::KeyA) => {
-                gui_state.which_image = match &gui_state.which_image {
-                    WhichImage::Monkey => WhichImage::Dog,
-                    WhichImage::Dog => WhichImage::Monkey,
-                }
+        } => {
+            gui_state.which_image = match &gui_state.which_image {
+                WhichImage::Monkey => WhichImage::Dog,
+                WhichImage::Dog => WhichImage::Monkey,
             }
-            _ => {}
-        },
+        }
         _ => (),
     });
 
@@ -214,7 +207,7 @@ fn gui(gui_state: &GuiState) {
     use yakui::{column, label, row, text, widgets::Text, Color};
     let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
         WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
-        WhichImage::Dog => ("dog haha good boy", gui_state.dog.into()),
+        WhichImage::Dog => ("dog haha good boy", gui_state.dog),
     };
     column(|| {
         row(|| {
@@ -590,7 +583,7 @@ impl VulkanTest {
                 .swapchain_loader
                 .acquire_next_image(
                     self.swapchain,
-                    std::u64::MAX,
+                    u64::MAX,
                     self.present_complete_semaphore,
                     vk::Fence::null(),
                 )
@@ -603,7 +596,7 @@ impl VulkanTest {
                 .wait_for_fences(
                     std::slice::from_ref(&self.draw_commands_reuse_fence),
                     true,
-                    std::u64::MAX,
+                    u64::MAX,
                 )
                 .unwrap();
             device

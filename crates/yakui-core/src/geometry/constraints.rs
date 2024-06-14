@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use glam::Vec2;
 
 /// Defines box constraints used for layout.
@@ -36,7 +34,7 @@ impl Constraints {
     pub fn none() -> Self {
         Self {
             min: Vec2::ZERO,
-            max: Vec2::new(INFINITY, INFINITY),
+            max: Vec2::new(f32::INFINITY, f32::INFINITY),
         }
     }
 

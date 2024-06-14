@@ -8,7 +8,7 @@ use crate::dom::Dom;
 type Storage<T> = RefCell<Option<T>>;
 
 thread_local! {
-    static CURRENT_DOM: Storage<Dom> = RefCell::new(None);
+    static CURRENT_DOM: Storage<Dom> = const { RefCell::new(None) };
 }
 
 /// If there is a DOM currently being updated on this thread, returns a

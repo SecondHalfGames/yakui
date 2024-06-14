@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
@@ -41,7 +39,7 @@ impl Widget for MaxWidthWidget {
     fn new() -> Self {
         Self {
             props: MaxWidth {
-                max_width: INFINITY,
+                max_width: f32::INFINITY,
             },
         }
     }
