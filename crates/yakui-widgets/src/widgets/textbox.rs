@@ -93,6 +93,9 @@ impl Widget for TextBoxWidget {
             text = &self.props.placeholder;
         }
 
+        // Make sure the cursor is within bounds if the text has changed
+        self.cursor = self.cursor.min(text.len());
+
         let mut render = RenderTextBox::new(text.clone());
         render.style = self.props.style.clone();
         render.selected = self.selected;
