@@ -120,6 +120,7 @@ async fn run(body: impl ExampleBody) {
         wgpu::FilterMode::Nearest,
         wgpu::FilterMode::Nearest,
         wgpu::FilterMode::Nearest,
+        wgpu::AddressMode::ClampToEdge,
     );
 
     // Add a custom font for some of the examples.
