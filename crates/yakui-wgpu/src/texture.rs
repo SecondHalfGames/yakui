@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use {std::sync::Arc, yakui_core::paint::AddressMode};
 
 use glam::UVec2;
 use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
@@ -10,6 +10,7 @@ pub(crate) struct GpuManagedTexture {
     pub view: wgpu::TextureView,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
+    pub address_mode: wgpu::AddressMode,
 }
 
 pub(crate) struct GpuTexture {
@@ -17,6 +18,7 @@ pub(crate) struct GpuTexture {
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
     pub mipmap_filter: wgpu::FilterMode,
+    pub address_mode: wgpu::AddressMode,
 }
 
 impl GpuManagedTexture {
@@ -54,6 +56,7 @@ impl GpuManagedTexture {
 
         let min_filter = wgpu_filter_mode(texture.min_filter);
         let mag_filter = wgpu_filter_mode(texture.mag_filter);
+        let address_mode = wgpu_address_mode(texture.address_mode);
 
         Self {
             size: texture.size(),
@@ -62,6 +65,7 @@ impl GpuManagedTexture {
             view: gpu_view,
             min_filter,
             mag_filter,
+            address_mode,
         }
     }
 
@@ -120,5 +124,12 @@ fn wgpu_filter_mode(filter: TextureFilter) -> wgpu::FilterMode {
     match filter {
         TextureFilter::Linear => wgpu::FilterMode::Linear,
         TextureFilter::Nearest => wgpu::FilterMode::Nearest,
+    }
+}
+
+fn wgpu_address_mode(address_mode: AddressMode) -> wgpu::AddressMode {
+    match address_mode {
+        AddressMode::ClampToEdge => wgpu::AddressMode::ClampToEdge,
+        AddressMode::Repeat => wgpu::AddressMode::Repeat,
     }
 }

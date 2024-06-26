@@ -182,6 +182,7 @@ fn create_vulkan_texture_info(
         resolution,
         filter,
         filter,
+        vk::SamplerAddressMode::CLAMP_TO_EDGE,
     )
 }
 
