@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use {std::sync::Arc, yakui_core::paint::AddressMode};
 
 use glam::UVec2;
@@ -23,6 +25,8 @@ pub(crate) struct GpuTexture {
 
 impl GpuManagedTexture {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) -> Self {
+        let texture = premultiply_alpha(texture);
+
         let size = wgpu::Extent3d {
             width: texture.size().x,
             height: texture.size().y,
@@ -75,6 +79,8 @@ impl GpuManagedTexture {
             *self = Self::new(device, queue, texture);
             return;
         }
+
+        let texture = premultiply_alpha(texture);
 
         let size = wgpu::Extent3d {
             width: texture.size().x,
@@ -131,5 +137,29 @@ fn wgpu_address_mode(address_mode: AddressMode) -> wgpu::AddressMode {
     match address_mode {
         AddressMode::ClampToEdge => wgpu::AddressMode::ClampToEdge,
         AddressMode::Repeat => wgpu::AddressMode::Repeat,
+    }
+}
+
+fn premultiply_alpha(texture: &Texture) -> Cow<'_, Texture> {
+    fn premul(a: u8, b: u8) -> u8 {
+        let a = (a as f32) / 255.0;
+        let b = (b as f32) / 255.0;
+        ((a * b) * 255.0).round() as u8
+    }
+
+    match texture.format() {
+        TextureFormat::Rgba8Srgb => {
+            let mut texture = texture.clone();
+
+            for pixel in texture.data_mut().chunks_exact_mut(4) {
+                pixel[0] = premul(pixel[0], pixel[3]);
+                pixel[1] = premul(pixel[1], pixel[3]);
+                pixel[2] = premul(pixel[2], pixel[3]);
+            }
+
+            Cow::Owned(texture)
+        }
+        TextureFormat::R8 => Cow::Borrowed(texture),
+        _ => Cow::Borrowed(texture),
     }
 }

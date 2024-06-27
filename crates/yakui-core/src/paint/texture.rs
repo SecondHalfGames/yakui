@@ -1,6 +1,7 @@
 use glam::UVec2;
 
 /// A texture that is managed by yakui.
+#[derive(Clone)]
 pub struct Texture {
     format: TextureFormat,
     size: UVec2,
