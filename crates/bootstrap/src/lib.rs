@@ -89,6 +89,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
             wgpu::FilterMode::Nearest,
             wgpu::FilterMode::Nearest,
             wgpu::FilterMode::Nearest,
+            wgpu::AddressMode::ClampToEdge,
         );
         self.state.custom = Some(custom);
 
