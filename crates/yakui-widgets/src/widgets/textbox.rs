@@ -1,5 +1,4 @@
 use std::cell::RefCell;
-use std::f32::INFINITY;
 use std::mem;
 use std::rc::Rc;
 
@@ -93,6 +92,9 @@ impl Widget for TextBoxWidget {
         if use_placeholder {
             text = &self.props.placeholder;
         }
+
+        // Make sure the cursor is within bounds if the text has changed
+        self.cursor = self.cursor.min(text.len());
 
         let mut render = RenderTextBox::new(text.clone());
         render.style = self.props.style.clone();
@@ -349,7 +351,7 @@ fn pick_text_line(layout: &Layout, pos_y: f32) -> Option<&LinePosition> {
     let lines = layout.lines()?;
 
     let mut closest_line = 0;
-    let mut closest_line_dist = INFINITY;
+    let mut closest_line_dist = f32::INFINITY;
     for (index, line) in lines.iter().enumerate() {
         let dist = (pos_y - line.baseline_y).abs();
         if dist < closest_line_dist {
@@ -368,7 +370,7 @@ fn pick_character_on_line(
     pos_x: f32,
 ) -> usize {
     let mut closest_byte_offset = 0;
-    let mut closest_dist = INFINITY;
+    let mut closest_dist = f32::INFINITY;
 
     let possible_positions = layout
         .glyphs()

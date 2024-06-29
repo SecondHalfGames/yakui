@@ -1,4 +1,6 @@
-use std::sync::Arc;
+use std::borrow::Cow;
+
+use {std::sync::Arc, yakui_core::paint::AddressMode};
 
 use glam::UVec2;
 use yakui_core::paint::{Texture, TextureFilter, TextureFormat};
@@ -10,6 +12,7 @@ pub(crate) struct GpuManagedTexture {
     pub view: wgpu::TextureView,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
+    pub address_mode: wgpu::AddressMode,
 }
 
 pub(crate) struct GpuTexture {
@@ -17,10 +20,13 @@ pub(crate) struct GpuTexture {
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
     pub mipmap_filter: wgpu::FilterMode,
+    pub address_mode: wgpu::AddressMode,
 }
 
 impl GpuManagedTexture {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) -> Self {
+        let texture = premultiply_alpha(texture);
+
         let size = wgpu::Extent3d {
             width: texture.size().x,
             height: texture.size().y,
@@ -54,6 +60,7 @@ impl GpuManagedTexture {
 
         let min_filter = wgpu_filter_mode(texture.min_filter);
         let mag_filter = wgpu_filter_mode(texture.mag_filter);
+        let address_mode = wgpu_address_mode(texture.address_mode);
 
         Self {
             size: texture.size(),
@@ -62,6 +69,7 @@ impl GpuManagedTexture {
             view: gpu_view,
             min_filter,
             mag_filter,
+            address_mode,
         }
     }
 
@@ -71,6 +79,8 @@ impl GpuManagedTexture {
             *self = Self::new(device, queue, texture);
             return;
         }
+
+        let texture = premultiply_alpha(texture);
 
         let size = wgpu::Extent3d {
             width: texture.size().x,
@@ -120,5 +130,36 @@ fn wgpu_filter_mode(filter: TextureFilter) -> wgpu::FilterMode {
     match filter {
         TextureFilter::Linear => wgpu::FilterMode::Linear,
         TextureFilter::Nearest => wgpu::FilterMode::Nearest,
+    }
+}
+
+fn wgpu_address_mode(address_mode: AddressMode) -> wgpu::AddressMode {
+    match address_mode {
+        AddressMode::ClampToEdge => wgpu::AddressMode::ClampToEdge,
+        AddressMode::Repeat => wgpu::AddressMode::Repeat,
+    }
+}
+
+fn premultiply_alpha(texture: &Texture) -> Cow<'_, Texture> {
+    fn premul(a: u8, b: u8) -> u8 {
+        let a = (a as f32) / 255.0;
+        let b = (b as f32) / 255.0;
+        ((a * b) * 255.0).round() as u8
+    }
+
+    match texture.format() {
+        TextureFormat::Rgba8Srgb => {
+            let mut texture = texture.clone();
+
+            for pixel in texture.data_mut().chunks_exact_mut(4) {
+                pixel[0] = premul(pixel[0], pixel[3]);
+                pixel[1] = premul(pixel[1], pixel[3]);
+                pixel[2] = premul(pixel[2], pixel[3]);
+            }
+
+            Cow::Owned(texture)
+        }
+        TextureFormat::R8 => Cow::Borrowed(texture),
+        _ => Cow::Borrowed(texture),
     }
 }

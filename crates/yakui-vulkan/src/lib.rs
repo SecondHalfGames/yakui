@@ -72,6 +72,8 @@ pub struct Options {
     pub dynamic_rendering_format: Option<vk::Format>,
     /// Render pass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
     pub render_pass: vk::RenderPass,
+    /// Subpass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
+    pub subpass: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -319,7 +321,9 @@ impl YakuiVulkan {
                 .color_attachment_formats(&rendering_info_formats);
             graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
         } else {
-            graphic_pipeline_info = graphic_pipeline_info.render_pass(options.render_pass);
+            graphic_pipeline_info = graphic_pipeline_info
+                .render_pass(options.render_pass)
+                .subpass(options.subpass);
         }
 
         let graphics_pipelines = unsafe {
@@ -374,12 +378,12 @@ impl YakuiVulkan {
         self.uploads.phase_submitted();
     }
 
-    /// Call when the commands associated with the oldest call to `commands_submitted` have finished.
+    /// Call when the commands associated with the oldest call to `transfers_submitted` have finished.
     ///
     /// ## Safety
     ///
-    /// Those commands recorded prior to the oldest call to `commands_submitted` not yet associated
-    /// with a call to `commands_finished` must not be executing.
+    /// Those commands recorded prior to the oldest call to `transfers_submitted` not yet associated
+    /// with a call to `transfers_finished` must not be executing.
     pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
         self.uploads.phase_executed(vulkan_context);
     }
@@ -607,7 +611,9 @@ impl YakuiVulkan {
 
                 TextureChange::Modified => {
                     if let Some(old) = self.yakui_managed_textures.remove(&id) {
-                        unsafe { old.cleanup(vulkan_context.device) };
+                        unsafe {
+                            self.uploads.dispose(old);
+                        }
                     }
                     let new = paint.texture(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(

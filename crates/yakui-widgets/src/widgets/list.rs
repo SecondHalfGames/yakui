@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
@@ -137,7 +135,7 @@ impl Widget for ListWidget {
 
             let constraints = Constraints {
                 min: direction.vec2(0.0, cross_axis_min),
-                max: direction.vec2(INFINITY, cross_axis_max),
+                max: direction.vec2(f32::INFINITY, cross_axis_max),
             };
 
             let size = ctx.calculate_layout(child_index, constraints);
