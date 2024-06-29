@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use winit::{
     application::ApplicationHandler,
-    event::WindowEvent,
+    event::{StartCause, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
 };
 
@@ -97,6 +97,16 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
         self.window = Some(window);
     }
 
+    fn new_events(&mut self, _event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
+        if let Some(app) = self.app.as_mut() {
+            if cause == StartCause::Init {
+                app.is_init = true;
+            } else {
+                app.is_init = false;
+            }
+        }
+    }
+
     fn window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -107,7 +117,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
             .app
             .as_mut()
             .unwrap()
-            .handle_event(&mut self.yak, &event, event_loop)
+            .handle_window_event(&mut self.yak, &event, event_loop)
         {
             return;
         }

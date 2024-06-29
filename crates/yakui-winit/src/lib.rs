@@ -50,7 +50,11 @@ impl YakuiWinit {
         self.auto_viewport = enabled;
     }
 
-    pub fn handle_event(&mut self, state: &mut yakui_core::Yakui, event: &WindowEvent) -> bool {
+    pub fn handle_window_event(
+        &mut self,
+        state: &mut yakui_core::Yakui,
+        event: &WindowEvent,
+    ) -> bool {
         if let Some(init) = self.init.take() {
             let size = Vec2::new(init.size.width as f32, init.size.height as f32);
             state.set_surface_size(size);
