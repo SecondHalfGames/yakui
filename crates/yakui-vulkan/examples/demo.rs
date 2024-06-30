@@ -68,7 +68,7 @@ fn main() {
     let mut winit_initializing = true;
 
     event_loop.set_control_flow(ControlFlow::Poll);
-    _ = event_loop.run(|event, elwt| match event {
+    _ = event_loop.run(|event, event_loop| match event {
         Event::WindowEvent {
             event:
                 WindowEvent::CloseRequested
@@ -82,7 +82,7 @@ fn main() {
                     ..
                 },
             ..
-        } => elwt.exit(),
+        } => event_loop.exit(),
 
         Event::NewEvents(cause) => {
             winit_initializing = cause == winit::event::StartCause::Init;
@@ -708,17 +708,19 @@ fn init_winit(
     window_width: u32,
     window_height: u32,
 ) -> (winit::event_loop::EventLoop<()>, winit::window::Window) {
-    use winit::{event_loop::EventLoopBuilder, window::WindowBuilder};
+    use winit::{event_loop::EventLoop, window::Window};
 
-    let event_loop = EventLoopBuilder::new().build().unwrap();
+    let event_loop = EventLoop::new().unwrap();
 
-    let window = WindowBuilder::new()
-        .with_title("Yakui Vulkan - Test")
-        .with_inner_size(winit::dpi::LogicalSize::new(
-            f64::from(window_width),
-            f64::from(window_height),
-        ))
-        .build(&event_loop)
+    let window = event_loop
+        .create_window(
+            Window::default_attributes()
+                .with_title("Yakui Vulkan - Test")
+                .with_inner_size(winit::dpi::LogicalSize::new(
+                    f64::from(window_width),
+                    f64::from(window_height),
+                )),
+        )
         .unwrap();
     (event_loop, window)
 }
