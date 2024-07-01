@@ -306,7 +306,7 @@ impl InputState {
                 // Panic safety: if this node is in the layout DOM, it must be
                 // in the DOM.
                 let mut node = dom.get_mut(id).unwrap();
-                let event = WidgetEvent::TextInput(c);
+                let event = WidgetEvent::TextInput(c, self.modifiers.get());
                 return self.fire_event(dom, layout, id, &mut node, &event);
             }
         }
