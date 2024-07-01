@@ -33,6 +33,7 @@ pub use vulkan_context::VulkanContext;
 use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui::geometry::UVec2;
+use yakui::paint::PaintLimits;
 use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
@@ -151,7 +152,17 @@ impl YakuiVulkan {
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(vulkan_context: &VulkanContext, options: Options) -> Self {
+    pub fn new(
+        state: &mut yakui_core::Yakui,
+        vulkan_context: &VulkanContext,
+        options: Options,
+    ) -> Self {
+        state.set_paint_limit(PaintLimits {
+            max_texture_size_1d: vulkan_context.properties.limits.max_image_dimension1_d,
+            max_texture_size_2d: vulkan_context.properties.limits.max_image_dimension2_d,
+            max_texture_size_3d: vulkan_context.properties.limits.max_image_dimension3_d,
+        });
+
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
 

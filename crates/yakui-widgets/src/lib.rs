@@ -17,6 +17,8 @@ pub mod widgets;
 
 pub use self::shorthand::*;
 
+pub use cosmic_text;
+
 #[doc(hidden)]
 pub struct DocTest {
     state: yakui_core::Yakui,

@@ -18,6 +18,8 @@ pub struct VulkanContext<'a> {
     pub queue: vk::Queue,
     /// Memory properties used for [`crate::YakuiVulkan`]'s allocation commands
     pub memory_properties: vk::PhysicalDeviceMemoryProperties,
+    /// Device properties used for setting paint limits
+    pub properties: vk::PhysicalDeviceProperties,
 }
 
 impl<'a> VulkanContext<'a> {
@@ -26,11 +28,13 @@ impl<'a> VulkanContext<'a> {
         device: &'a ash::Device,
         queue: vk::Queue,
         memory_properties: vk::PhysicalDeviceMemoryProperties,
+        properties: vk::PhysicalDeviceProperties,
     ) -> Self {
         Self {
             device,
             queue,
             memory_properties,
+            properties,
         }
     }
 

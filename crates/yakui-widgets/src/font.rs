@@ -1,13 +1,6 @@
-use std::cell::Ref;
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt;
 use std::rc::Rc;
-
-use smol_str::SmolStr;
-use thunderdome::{Arena, Index};
-
-pub use fontdue::{Font, FontSettings};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Fonts {
@@ -15,104 +8,82 @@ pub struct Fonts {
 }
 
 struct FontsInner {
-    storage: Arena<Font>,
-    by_name: HashMap<FontName, FontId>,
+    font_system: cosmic_text::FontSystem,
 }
 
 impl Fonts {
     #[allow(unused_mut, unused_assignments)]
     fn new() -> Self {
-        let mut storage = Arena::new();
-        let mut by_name = HashMap::new();
+        let mut font_system = cosmic_text::FontSystem::new_with_locale_and_db(
+            sys_locale::get_locale().unwrap_or(String::from("en-US")),
+            {
+                let mut database = cosmic_text::fontdb::Database::default();
+                database.set_serif_family("");
+                database.set_sans_serif_family("");
+                database.set_cursive_family("");
+                database.set_fantasy_family("");
+                database.set_monospace_family("");
+                database
+            },
+        );
 
         #[cfg(feature = "default-fonts")]
         {
             static DEFAULT_BYTES: &[u8] = include_bytes!("../assets/Roboto-Regular.ttf");
 
-            let font = Font::from_bytes(DEFAULT_BYTES, FontSettings::default())
-                .expect("failed to load built-in font");
-            let id = FontId::new(storage.insert(font));
-            by_name.insert(FontName::new("default"), id);
+            font_system
+                .db_mut()
+                .load_font_source(cosmic_text::fontdb::Source::Binary(Arc::from(
+                    &DEFAULT_BYTES,
+                )));
         }
 
-        let inner = Rc::new(RefCell::new(FontsInner { storage, by_name }));
+        let inner = Rc::new(RefCell::new(FontsInner { font_system }));
         Self { inner }
     }
 
-    pub fn add<S: Into<FontName>>(&self, font: Font, name: Option<S>) -> FontId {
-        let mut inner = self.inner.borrow_mut();
+    pub fn with_system<T>(&self, f: impl FnOnce(&mut cosmic_text::FontSystem) -> T) -> T {
+        let mut inner = (*self.inner).borrow_mut();
 
-        let id = FontId::new(inner.storage.insert(font));
-        if let Some(name) = name {
-            inner.by_name.insert(name.into(), id);
-        }
-
-        id
+        f(&mut inner.font_system)
     }
 
-    pub fn get(&self, name: &FontName) -> Option<Ref<'_, Font>> {
-        let inner = self.inner.borrow();
+    pub fn load_font_source(
+        &self,
+        source: cosmic_text::fontdb::Source,
+    ) -> Vec<cosmic_text::fontdb::ID> {
+        self.with_system(|font_system| font_system.db_mut().load_font_source(source))
+            .to_vec()
+    }
 
-        let &id = inner.by_name.get(name)?;
-        if inner.storage.contains(id.0) {
-            Some(Ref::map(inner, |inner| inner.storage.get(id.0).unwrap()))
-        } else {
-            None
-        }
+    /// Sets the family that will be used by `Family::Serif`.
+    pub fn set_serif_family<S: Into<String>>(&self, family: S) {
+        self.with_system(|font_system| font_system.db_mut().set_serif_family(family));
+    }
+
+    /// Sets the family that will be used by `Family::SansSerif`.
+    pub fn set_sans_serif_family<S: Into<String>>(&self, family: S) {
+        self.with_system(|font_system| font_system.db_mut().set_sans_serif_family(family));
+    }
+
+    /// Sets the family that will be used by `Family::Cursive`.
+    pub fn set_cursive_family<S: Into<String>>(&self, family: S) {
+        self.with_system(|font_system| font_system.db_mut().set_cursive_family(family));
+    }
+
+    /// Sets the family that will be used by `Family::Fantasy`.
+    pub fn set_fantasy_family<S: Into<String>>(&self, family: S) {
+        self.with_system(|font_system| font_system.db_mut().set_fantasy_family(family));
+    }
+
+    /// Sets the family that will be used by `Family::Monospace`.
+    pub fn set_monospace_family<S: Into<String>>(&self, family: S) {
+        self.with_system(|font_system| font_system.db_mut().set_monospace_family(family));
     }
 }
 
 impl Default for Fonts {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct FontName(SmolStr);
-
-impl FontName {
-    pub fn new<S: AsRef<str>>(name: S) -> Self {
-        Self(name.as_ref().into())
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl From<&str> for FontName {
-    fn from(value: &str) -> Self {
-        Self(value.into())
-    }
-}
-
-impl From<&String> for FontName {
-    fn from(value: &String) -> Self {
-        Self(value.into())
-    }
-}
-
-impl fmt::Display for FontName {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-/// Identifies a font that has been loaded and can be used by yakui.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
-pub struct FontId(Index);
-
-impl FontId {
-    #[inline]
-    pub(crate) fn new(index: Index) -> Self {
-        Self(index)
-    }
-}
-
-impl fmt::Debug for FontId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FontId({}, {})", self.0.slot(), self.0.generation())
     }
 }
