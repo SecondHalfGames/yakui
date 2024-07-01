@@ -9,7 +9,7 @@ pub fn run() {
         });
 
         if let Some(new) = res.dragging {
-            pos.set(new.current);
+            pos.set(new.current - new.start);
         }
     });
 }
