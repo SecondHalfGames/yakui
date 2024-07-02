@@ -6,15 +6,6 @@ use yakui_core::geometry::{Rect, URect, UVec2, Vec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFilter, TextureFormat};
 use yakui_core::ManagedTextureId;
 
-#[cfg(not(target_arch = "wasm32"))]
-const TEXTURE_SIZE: u32 = 4096;
-
-// When targeting the web, limit the texture atlas size to 2048x2048 to fit into
-// WebGL 2's limitations. In the future, we should introduce a way to query for
-// these limits.
-#[cfg(target_arch = "wasm32")]
-const TEXTURE_SIZE: u32 = 2048;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
     Mask,
@@ -66,11 +57,13 @@ impl InnerAtlas {
     }
 
     fn ensure_texture(&mut self, paint: &mut PaintDom) {
+        let texture_size = paint.limits().max_texture_size_2d;
+
         if self.texture.is_none() {
             let mut texture = Texture::new(
                 self.kind.texture_format(),
-                UVec2::new(TEXTURE_SIZE, TEXTURE_SIZE),
-                vec![0; (TEXTURE_SIZE * TEXTURE_SIZE) as usize * self.kind.num_channels()],
+                UVec2::new(texture_size, texture_size),
+                vec![0; (texture_size * texture_size) as usize * self.kind.num_channels()],
             );
             texture.mag_filter = TextureFilter::Linear;
             texture.min_filter = TextureFilter::Linear;

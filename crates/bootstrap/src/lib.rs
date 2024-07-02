@@ -85,12 +85,12 @@ async fn run(body: impl ExampleBody) {
 
     let sample_count = get_sample_count();
 
-    // yakui_app has a helper for setting up winit and wgpu.
-    let mut app = yakui_app::Graphics::new(&window, sample_count).await;
-
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
     let mut yak = yakui::Yakui::new();
+
+    // yakui_app has a helper for setting up winit and wgpu.
+    let mut app = yakui_app::Graphics::new(&mut yak, &window, sample_count).await;
 
     // By default, yakui_winit will measure the system's scale factor and pass
     // it to yakui.
