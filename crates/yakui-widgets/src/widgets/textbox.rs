@@ -300,6 +300,9 @@ impl Widget for TextBoxWidget {
                 self.active = *focused;
                 if !*focused {
                     self.lost_focus = true;
+                    if let Some(editor) = self.cosmic_editor.get_mut() {
+                        editor.set_cursor(cosmic_text::Cursor::new(0, 0));
+                    }
                 }
                 EventResponse::Sink
             }
