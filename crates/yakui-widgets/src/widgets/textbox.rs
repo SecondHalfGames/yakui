@@ -25,7 +25,8 @@ Responds with [TextBoxResponse].
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct TextBox {
-    pub initial_text: String,
+    pub update_text: Option<String>,
+
     pub style: TextStyle,
     pub padding: Pad,
     pub fill: Option<Color>,
@@ -42,9 +43,10 @@ pub struct TextBox {
 }
 
 impl TextBox {
-    pub fn new<S: Into<String>>(initial_text: S) -> Self {
+    pub fn new(update_text: Option<String>) -> Self {
         Self {
-            initial_text: initial_text.into(),
+            update_text,
+
             style: TextStyle::label(),
             padding: Pad::all(8.0),
             fill: Some(colors::BACKGROUND_3),
@@ -56,6 +58,18 @@ impl TextBox {
             cursor_color: Color::RED,
 
             placeholder: String::new(),
+        }
+    }
+
+    pub fn with_text(initial_text: &str, updated_text: Option<&str>) -> TextBox {
+        let first_time = use_state(|| true);
+
+        if first_time.get() {
+            first_time.set(false);
+
+            TextBox::new(Some(initial_text.into()))
+        } else {
+            TextBox::new(updated_text.map(Into::into))
         }
     }
 
@@ -101,6 +115,7 @@ pub struct TextBoxWidget {
     active: bool,
     activated: bool,
     lost_focus: bool,
+    text_up_to_date: Cell<bool>,
     drag: DragState,
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
@@ -108,8 +123,8 @@ pub struct TextBoxWidget {
 }
 
 pub struct TextBoxResponse {
-    render_text: RenderText,
-    scroll: Option<cosmic_text::Scroll>,
+    pub render_text: RenderText,
+    pub scroll: Option<cosmic_text::Scroll>,
     pub text: Option<String>,
     /// Whether the user pressed "Enter" in this box, only makes sense in inline
     pub activated: bool,
@@ -123,10 +138,11 @@ impl Widget for TextBoxWidget {
 
     fn new() -> Self {
         Self {
-            props: TextBox::new(""),
+            props: TextBox::new(None),
             active: false,
             activated: false,
             lost_focus: false,
+            text_up_to_date: Cell::new(true),
             drag: DragState::None,
             cosmic_editor: RefCell::new(None),
             max_size: Cell::default(),
@@ -140,7 +156,7 @@ impl Widget for TextBoxWidget {
         let mut style = self.props.style.clone();
         let mut scroll = None;
 
-        let text = self.cosmic_editor.get_mut().as_mut().and_then(|editor| {
+        let text = self.cosmic_editor.borrow().as_ref().and_then(|editor| {
             editor.with_buffer(|buffer| {
                 scroll = Some(buffer.scroll());
 
@@ -163,6 +179,10 @@ impl Widget for TextBoxWidget {
                 }
             })
         });
+
+        if self.props.update_text.is_some() {
+            self.text_up_to_date.set(false);
+        }
 
         Self::Response {
             render_text: RenderText {
@@ -197,10 +217,10 @@ impl Widget for TextBoxWidget {
                 )));
             }
 
-            if self.scale_factor.get() != Some(ctx.layout.scale_factor())
-                || self.max_size.get() != Some(max_size)
-            {
-                if let Some(editor) = self.cosmic_editor.borrow_mut().as_mut() {
+            if let Some(editor) = self.cosmic_editor.borrow_mut().as_mut() {
+                if self.scale_factor.get() != Some(ctx.layout.scale_factor())
+                    || self.max_size.get() != Some(max_size)
+                {
                     editor.with_buffer_mut(|buffer| {
                         buffer.set_metrics(
                             font_system,
@@ -214,6 +234,25 @@ impl Widget for TextBoxWidget {
 
                     self.scale_factor.set(Some(ctx.layout.scale_factor()));
                     self.max_size.replace(Some(max_size));
+                }
+
+                if let Some(new_text) = &self.props.update_text {
+                    if !self.text_up_to_date.get() {
+                        editor.with_buffer_mut(|buffer| {
+                            buffer.set_text(
+                                font_system,
+                                &new_text,
+                                self.props.style.attrs.as_attrs(),
+                                cosmic_text::Shaping::Advanced,
+                            );
+
+                            println!("hi");
+                        });
+
+                        editor.set_cursor(cosmic_text::Cursor::new(0, 0));
+
+                        self.text_up_to_date.set(true);
+                    }
                 }
             }
         });
