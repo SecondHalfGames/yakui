@@ -4,7 +4,7 @@ use std::mem;
 use cosmic_text::Edit;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::input::{KeyCode, Modifiers, MouseButton};
+use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
@@ -101,7 +101,6 @@ pub struct TextBoxWidget {
     active: bool,
     activated: bool,
     lost_focus: bool,
-    modifiers: Modifiers,
     drag: DragState,
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
@@ -128,7 +127,6 @@ impl Widget for TextBoxWidget {
             active: false,
             activated: false,
             lost_focus: false,
-            modifiers: Modifiers::empty(),
             drag: DragState::None,
             cosmic_editor: RefCell::new(None),
             max_size: Cell::default(),
@@ -317,7 +315,7 @@ impl Widget for TextBoxWidget {
                         let scale_factor = ctx.layout.scale_factor();
                         let relative_pos =
                             *position - layout.rect.pos() - self.props.padding.offset();
-                        let glyph_pos = relative_pos * scale_factor;
+                        let glyph_pos = (relative_pos * scale_factor).round().as_ivec2();
 
                         let fonts = ctx.dom.get_global_or_init(Fonts::default);
                         fonts.with_system(|font_system| {
@@ -325,8 +323,8 @@ impl Widget for TextBoxWidget {
                                 editor.action(
                                     font_system,
                                     cosmic_text::Action::Drag {
-                                        x: glyph_pos.x.round() as i32,
-                                        y: glyph_pos.y.round() as i32,
+                                        x: glyph_pos.x,
+                                        y: glyph_pos.y,
                                     },
                                 );
                             }
@@ -344,6 +342,7 @@ impl Widget for TextBoxWidget {
                 inside,
                 down,
                 position,
+                modifiers,
                 ..
             } => {
                 if !inside {
@@ -353,7 +352,7 @@ impl Widget for TextBoxWidget {
                 if let Some(layout) = ctx.layout.get(ctx.dom.current()) {
                     let scale_factor = ctx.layout.scale_factor();
                     let relative_pos = *position - layout.rect.pos() - self.props.padding.offset();
-                    let glyph_pos = relative_pos * scale_factor;
+                    let glyph_pos = (relative_pos * scale_factor).round().as_ivec2();
 
                     let fonts = ctx.dom.get_global_or_init(Fonts::default);
                     fonts.with_system(|font_system| {
@@ -363,21 +362,22 @@ impl Widget for TextBoxWidget {
                             }
 
                             if let Some(editor) = self.cosmic_editor.get_mut() {
-                                if self.modifiers.shift() {
+                                if modifiers.shift() {
                                     // TODO wait for cosmic text for shift clicking selection
+                                    // Madeline Sparkles: emulating this with a drag
                                     editor.action(
                                         font_system,
-                                        cosmic_text::Action::Click {
-                                            x: glyph_pos.x.round() as i32,
-                                            y: glyph_pos.y.round() as i32,
+                                        cosmic_text::Action::Drag {
+                                            x: glyph_pos.x,
+                                            y: glyph_pos.y,
                                         },
                                     );
                                 } else {
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Click {
-                                            x: glyph_pos.x.round() as i32,
-                                            y: glyph_pos.y.round() as i32,
+                                            x: glyph_pos.x,
+                                            y: glyph_pos.y,
                                         },
                                     );
                                 }
@@ -399,8 +399,6 @@ impl Widget for TextBoxWidget {
                 modifiers,
                 ..
             } => {
-                self.modifiers = *modifiers;
-
                 let fonts = ctx.dom.get_global_or_init(Fonts::default);
                 fonts.with_system(|font_system| {
                     if let Some(editor) = self.cosmic_editor.get_mut() {
