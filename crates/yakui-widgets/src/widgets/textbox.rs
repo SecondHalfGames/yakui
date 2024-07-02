@@ -111,7 +111,7 @@ pub struct TextBoxResponse {
     render_text: RenderText,
     scroll: Option<cosmic_text::Scroll>,
     pub text: Option<String>,
-    /// Whether the user pressed "Enter" in this box
+    /// Whether the user pressed "Enter" in this box, only makes sense in inline
     pub activated: bool,
     /// Whether the box lost focus
     pub lost_focus: bool,
@@ -298,7 +298,6 @@ impl Widget for TextBoxWidget {
         match event {
             WidgetEvent::FocusChanged(focused) => {
                 self.active = *focused;
-                self.activated = *focused;
                 if !*focused {
                     self.lost_focus = true;
                 }
@@ -523,6 +522,7 @@ impl Widget for TextBoxWidget {
                                         if modifiers.shift() {
                                             editor.action(font_system, cosmic_text::Action::Enter);
                                         } else {
+                                            self.activated = true;
                                             ctx.input.set_selection(None);
                                         }
                                     } else {
