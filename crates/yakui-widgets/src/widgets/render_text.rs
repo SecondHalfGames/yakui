@@ -78,7 +78,10 @@ impl Widget for RenderTextWidget {
             Some(font) => font,
             None => {
                 // TODO: Log once that we were unable to find this font.
-                return input.min;
+                panic!(
+                    "font `{}` was set, but was not registered",
+                    self.props.style.font
+                );
             }
         };
 
