@@ -31,8 +31,12 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let coverage = textureSample(coverage_texture, coverage_sampler, in.texcoord).r;
-    let alpha = coverage * in.color.a;
+    let coverage = textureSample(coverage_texture, coverage_sampler, in.texcoord);
 
-    return vec4(in.color.rgb * alpha, alpha);
+    let alpha = max(max(coverage.r, coverage.g), coverage.b) * in.color.a;
+    let has_color = step(0.05, max(max(in.color.r, in.color.g), in.color.b));
+
+    let color = in.color.rgb * has_color * alpha + coverage.rgb * (1.0 - has_color);
+
+    return vec4(color, alpha);
 }

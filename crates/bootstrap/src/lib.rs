@@ -1,6 +1,7 @@
 mod custom_texture;
 
 use std::fmt::Write;
+use std::sync::Arc;
 use std::time::Instant;
 
 use winit::dpi::LogicalSize;
@@ -8,9 +9,10 @@ use winit::event::{Event, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 
-use yakui::font::{Font, FontSettings, Fonts};
+use yakui::font::Fonts;
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2};
+use yakui_widgets::cosmic_text::fontdb;
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 const MONKEY_BLURRED_PNG: &[u8] = include_bytes!("../assets/monkey-blurred.png");
@@ -83,12 +85,12 @@ async fn run(body: impl ExampleBody) {
 
     let sample_count = get_sample_count();
 
-    // yakui_app has a helper for setting up winit and wgpu.
-    let mut app = yakui_app::Graphics::new(&window, sample_count).await;
-
     // Create our yakui state. This is where our UI will be built, laid out, and
     // calculations for painting will happen.
     let mut yak = yakui::Yakui::new();
+
+    // yakui_app has a helper for setting up winit and wgpu.
+    let mut app = yakui_app::Graphics::new(&mut yak, &window, sample_count).await;
 
     // By default, yakui_winit will measure the system's scale factor and pass
     // it to yakui.
@@ -125,13 +127,10 @@ async fn run(body: impl ExampleBody) {
 
     // Add a custom font for some of the examples.
     let fonts = yak.dom().get_global_or_init(Fonts::default);
-    let font = Font::from_bytes(
-        include_bytes!("../assets/Hack-Regular.ttf").as_slice(),
-        FontSettings::default(),
-    )
-    .unwrap();
 
-    fonts.add(font, Some("monospace"));
+    static HACK_REGULAR: &[u8] = include_bytes!("../assets/Hack-Regular.ttf");
+
+    fonts.load_font_source(fontdb::Source::Binary(Arc::from(&HACK_REGULAR)));
 
     // Set up some default state that we'll modify later.
     let mut state = ExampleState {

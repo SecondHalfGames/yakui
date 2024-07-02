@@ -1,214 +1,265 @@
-use std::borrow::Cow;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::fmt;
+use std::sync::Arc;
 
-use fontdue::layout::{
-    CoordinateSystem, HorizontalAlign as FontdueAlign, Layout, LayoutSettings,
-    TextStyle as FontdueTextStyle,
-};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::{PaintRect, Pipeline};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
+use yakui_core::{Response, TextureId};
 
-use crate::font::{FontName, Fonts};
-use crate::style::{TextAlignment, TextStyle};
-use crate::text_renderer::TextGlobalState;
+use crate::font::Fonts;
+use crate::style::TextStyle;
+use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
 
 /**
 Renders text. You probably want to use [Text][super::Text] instead, which
 supports features like padding.
+
+Responds with [RenderTextBoxResponse].
 */
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 #[non_exhaustive]
 pub struct RenderText {
-    pub text: Cow<'static, str>,
+    pub text: String,
     pub style: TextStyle,
 }
 
 impl RenderText {
-    pub fn new(size: f32, text: Cow<'static, str>) -> Self {
-        let mut style = TextStyle::label();
-        style.font_size = size;
-
-        Self { text, style }
-    }
-
-    pub fn label(text: Cow<'static, str>) -> Self {
+    pub fn new<S: Into<String>>(text: S) -> Self {
         Self {
-            text,
+            text: text.into(),
             style: TextStyle::label(),
         }
     }
 
-    pub fn show(self) -> Response<RenderTextResponse> {
-        widget::<RenderTextWidget>(self)
-    }
-}
-
-pub struct RenderTextWidget {
-    props: RenderText,
-    layout: RefCell<Layout>,
-}
-
-pub type RenderTextResponse = ();
-
-impl Widget for RenderTextWidget {
-    type Props<'a> = RenderText;
-    type Response = RenderTextResponse;
-
-    fn new() -> Self {
-        let layout = Layout::new(CoordinateSystem::PositiveYDown);
-
+    pub fn with_style<S: Into<String>>(text: S, style: TextStyle) -> Self {
         Self {
-            props: RenderText::new(0.0, Cow::Borrowed("")),
-            layout: RefCell::new(layout),
+            text: text.into(),
+            style,
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
+    pub fn show(self) -> Response<Option<RenderTextBufferResponse>> {
+        Self::show_with_scroll(self, None)
     }
 
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
-        let fonts = ctx.dom.get_global_or_init(Fonts::default);
+    pub fn show_with_scroll(
+        self,
+        scroll: Option<cosmic_text::Scroll>,
+    ) -> Response<Option<RenderTextBufferResponse>> {
+        widget::<RenderTextWidget>((self, scroll))
+    }
+}
 
-        let font = match fonts.get(&self.props.style.font) {
-            Some(font) => font,
-            None => {
-                // TODO: Log once that we were unable to find this font.
-                return input.min;
-            }
-        };
+#[derive(Debug)]
+pub struct RenderTextWidget {
+    props: RenderText,
+    last_text: RefCell<String>,
+    buffer: RefCell<Option<Arc<cosmic_text::Buffer>>>,
+    max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
+    scale_factor: Cell<Option<f32>>,
+    last_scroll: Cell<Option<cosmic_text::Scroll>>,
+    scroll: Option<cosmic_text::Scroll>,
+}
 
-        let max_width = input
+impl Widget for RenderTextWidget {
+    type Props<'a> = (RenderText, Option<cosmic_text::Scroll>);
+    type Response = Option<RenderTextBufferResponse>;
+
+    fn new() -> Self {
+        Self {
+            props: RenderText::new(""),
+            last_text: RefCell::new(String::new()),
+            buffer: RefCell::default(),
+            max_size: Cell::default(),
+            scale_factor: Cell::default(),
+            last_scroll: Cell::default(),
+            scroll: None,
+        }
+    }
+
+    fn update(&mut self, (props, scroll): Self::Props<'_>) -> Self::Response {
+        self.props = props;
+        self.scroll = scroll;
+
+        if let Some(buffer) = self.buffer.borrow().clone() {
+            Some(widget::<RenderTextBufferWidget>((buffer, self.props.style.color)).into_inner())
+        } else {
+            None
+        }
+    }
+
+    fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        let max_width = constraints
             .max
             .x
             .is_finite()
-            .then_some(input.max.x * ctx.layout.scale_factor());
-        let max_height = input
+            .then_some(constraints.max.x * ctx.layout.scale_factor());
+        let max_height = constraints
             .max
             .y
             .is_finite()
-            .then_some(input.max.y * ctx.layout.scale_factor());
+            .then_some(constraints.max.y * ctx.layout.scale_factor());
+        let max_size = (max_width, max_height);
 
-        let horizontal_align = match self.props.style.align {
-            TextAlignment::Start => FontdueAlign::Left,
-            TextAlignment::Center => FontdueAlign::Center,
-            TextAlignment::End => FontdueAlign::Right,
+        if self.buffer.borrow().is_none()
+            || self.last_text.borrow().as_str() != self.props.text.as_str()
+            || self.scale_factor.get() != Some(ctx.layout.scale_factor())
+            || self.max_size.get() != Some(max_size)
+            || self.last_scroll.get() != self.scroll
+        {
+            let fonts = ctx.dom.get_global_or_init(Fonts::default);
+
+            fonts.with_system(|font_system| {
+                let mut buffer = cosmic_text::Buffer::new(
+                    font_system,
+                    self.props.style.to_metrics(ctx.layout.scale_factor()),
+                );
+
+                buffer.set_size(font_system, max_width, max_height);
+
+                buffer.set_text(
+                    font_system,
+                    &self.props.text,
+                    self.props.style.attrs.as_attrs(),
+                    cosmic_text::Shaping::Advanced,
+                );
+
+                if let Some(scroll) = self.scroll {
+                    buffer.set_scroll(scroll);
+                }
+
+                buffer.shape_until_scroll(font_system, false);
+
+                self.last_text.replace(self.props.text.clone());
+                self.scale_factor.set(Some(ctx.layout.scale_factor()));
+                self.max_size.replace(Some(max_size));
+                self.last_scroll.replace(self.scroll);
+
+                self.buffer.replace(Some(Arc::new(buffer)));
+            });
+        }
+
+        self.default_layout(ctx, constraints)
+    }
+}
+
+pub struct RenderTextBufferWidget {
+    buffer: Option<Arc<cosmic_text::Buffer>>,
+    color: Color,
+    size: Cell<Vec2>,
+}
+
+pub struct RenderTextBufferResponse {
+    pub size: Vec2,
+}
+
+impl Widget for RenderTextBufferWidget {
+    type Props<'a> = (Arc<cosmic_text::Buffer>, Color);
+    type Response = RenderTextBufferResponse;
+
+    fn new() -> Self {
+        Self {
+            buffer: None,
+            color: Color::WHITE,
+            size: Cell::default(),
+        }
+    }
+
+    fn update(&mut self, (buffer, color): Self::Props<'_>) -> Self::Response {
+        self.buffer = Some(buffer);
+        self.color = color;
+
+        RenderTextBufferResponse {
+            size: self.size.get(),
+        }
+    }
+
+    fn layout(&self, _ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        let Some(buffer) = self.buffer.clone() else {
+            return Vec2::ZERO;
         };
 
-        let mut text_layout = self.layout.borrow_mut();
-        text_layout.reset(&LayoutSettings {
-            max_width,
-            max_height,
-            horizontal_align,
-            ..LayoutSettings::default()
-        });
+        let size = {
+            let size_x = buffer
+                .layout_runs()
+                .map(|layout| layout.line_w)
+                .max_by(|a, b| a.total_cmp(b))
+                .unwrap_or_default();
 
-        text_layout.append(
-            &[&*font],
-            &FontdueTextStyle::new(
-                &self.props.text,
-                (self.props.style.font_size * ctx.layout.scale_factor()).ceil(),
-                0,
-            ),
-        );
+            let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
 
-        let offset_x = get_text_layout_offset_x(&text_layout, ctx.layout.scale_factor());
+            Vec2::new(size_x, size_y)
+        };
 
-        let size = get_text_layout_size(&text_layout, ctx.layout.scale_factor())
-            - Vec2::new(offset_x, 0.0);
+        let size = constraints.constrain(size);
 
-        input.constrain_min(size)
+        self.size.set(size);
+
+        size
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
-        let text_layout = self.layout.borrow_mut();
-        let offset_x = get_text_layout_offset_x(&text_layout, ctx.layout.scale_factor());
+        let fonts = ctx.dom.get_global_or_init(Fonts::default);
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        paint_text(
-            &mut ctx,
-            &self.props.style.font,
-            layout_node.rect.pos() - Vec2::new(offset_x, 0.0),
-            &text_layout,
-            self.props.style.color,
-        );
+        let Some(buffer) = self.buffer.clone() else {
+            return;
+        };
+
+        fonts.with_system(|font_system| {
+            let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
+
+            for layout in buffer.layout_runs() {
+                for glyph in layout.glyphs {
+                    if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, &glyph)
+                    {
+                        paint_text(
+                            &mut ctx,
+                            self.color,
+                            glyph,
+                            render,
+                            layout_node.rect.pos(),
+                            layout.line_y,
+                        )
+                    }
+                }
+            }
+        });
     }
 }
 
-impl fmt::Debug for RenderTextWidget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("TextComponent")
-            .field("props", &self.props)
-            .field("layout", &"(no debug impl)")
-            .finish()
-    }
-}
-
-pub(crate) fn get_text_layout_offset_x(text_layout: &Layout, scale_factor: f32) -> f32 {
-    let offset_x = text_layout
-        .glyphs()
-        .iter()
-        .map(|glyph| glyph.x)
-        .min_by(|a, b| a.total_cmp(b))
-        .unwrap_or_default();
-
-    offset_x / scale_factor
-}
-
-pub(crate) fn get_text_layout_size(text_layout: &Layout, scale_factor: f32) -> Vec2 {
-    let height = text_layout
-        .lines()
-        .iter()
-        .flat_map(|line_pos_vec| line_pos_vec.iter())
-        .map(|line| line.baseline_y - line.min_descent)
-        .max_by(|a, b| a.total_cmp(b))
-        .unwrap_or_default();
-
-    let width = text_layout
-        .glyphs()
-        .iter()
-        .map(|glyph| glyph.x + glyph.width as f32)
-        .max_by(|a, b| a.total_cmp(b))
-        .unwrap_or_default();
-
-    Vec2::new(width, height) / scale_factor
-}
-
-pub fn paint_text(
+fn paint_text(
     ctx: &mut PaintContext<'_>,
-    font: &FontName,
-    pos: Vec2,
-    text_layout: &Layout,
     color: Color,
+    glyph: &cosmic_text::LayoutGlyph,
+    render: GlyphRender,
+    layout_pos: Vec2,
+    line_y: f32,
 ) {
-    let pos = pos.round();
-    let fonts = ctx.dom.get_global_or_init(Fonts::default);
-    let font = match fonts.get(font) {
-        Some(font) => font,
-        None => return,
-    };
+    let size = render.rect.size().as_vec2();
+    let physical = glyph.physical((layout_pos.x, layout_pos.y), 1.0);
+    let pos = Vec2::new(physical.x as f32, physical.y as f32);
 
-    let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
-    let mut glyph_cache = text_global.glyph_cache.borrow_mut();
-    glyph_cache.ensure_texture(ctx.paint);
+    let mut rect = PaintRect::new(Rect::from_pos_size(
+        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y),
+        Vec2::new(size.x, size.y),
+    ));
 
-    for glyph in text_layout.glyphs() {
-        let tex_rect = glyph_cache
-            .get_or_insert(ctx.paint, &font, glyph.key)
-            .as_rect()
-            .div_vec2(glyph_cache.texture_size.as_vec2());
-
-        let size = Vec2::new(glyph.width as f32, glyph.height as f32) / ctx.layout.scale_factor();
-        let pos = pos + Vec2::new(glyph.x, glyph.y) / ctx.layout.scale_factor();
-
-        let mut rect = PaintRect::new(Rect::from_pos_size(pos, size));
+    if render.kind == Kind::Mask {
         rect.color = color;
-        rect.texture = Some((glyph_cache.texture.unwrap().into(), tex_rect));
-        rect.pipeline = Pipeline::Text;
-        rect.add(ctx.paint);
+    } else {
+        rect.color = Color::rgba(0, 0, 0, 255);
+    }
+    rect.texture = Some((TextureId::Managed(render.texture), render.tex_rect));
+    rect.pipeline = Pipeline::Text;
+
+    rect.add(ctx.paint);
+}
+
+impl fmt::Debug for RenderTextBufferWidget {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RenderTextBufferWidget").finish()
     }
 }

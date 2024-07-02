@@ -80,7 +80,7 @@ impl Widget for TextWidget {
     fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
-        let mut render = RenderText::label(self.props.text.clone());
+        let mut render = RenderText::new(self.props.text.clone());
         render.style = self.props.style.clone();
 
         pad(self.props.padding, || {
