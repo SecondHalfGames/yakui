@@ -47,6 +47,14 @@ impl Text {
         }
     }
 
+    pub fn with_style<S: Into<Cow<'static, str>>>(text: S, style: TextStyle) -> Self {
+        Self {
+            text: text.into(),
+            style,
+            padding: Pad::ZERO,
+        }
+    }
+
     pub fn label(text: Cow<'static, str>) -> Self {
         Self {
             text,
