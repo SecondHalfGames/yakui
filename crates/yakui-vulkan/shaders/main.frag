@@ -21,8 +21,9 @@ void main() {
     
     if (workflow == WORKFLOW_TEXT) {
         vec4 coverage = texture(textures[texture_id], in_uv);
-        float alpha = max(max(coverage.r, coverage.g), coverage.b) * in_color.a;
-        float has_color = step(0.05, max(max(in_color.r, in_color.g), in_color.b));
+
+        float alpha = max(max(coverage.r, coverage.g), coverage.b) * in_color.a * coverage.a;
+        float has_color = step(0.05, max(max(in_color.r, in_color.g), max(in_color.b, in_color.a)));
         vec3 color = in_color.rgb * has_color * alpha + coverage.rgb * (1.0 - has_color);
 
         out_color = vec4(color, alpha);

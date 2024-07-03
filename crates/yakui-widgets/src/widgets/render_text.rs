@@ -249,7 +249,7 @@ fn paint_text(
     if render.kind == Kind::Mask {
         rect.color = color;
     } else {
-        rect.color = Color::rgba(0, 0, 0, 255);
+        rect.color = Color::CLEAR;
     }
     rect.texture = Some((TextureId::Managed(render.texture), render.tex_rect));
     rect.pipeline = Pipeline::Text;
