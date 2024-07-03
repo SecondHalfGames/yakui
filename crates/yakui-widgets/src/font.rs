@@ -2,8 +2,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use cosmic_text::fontdb;
-
 #[derive(Clone)]
 pub struct Fonts {
     inner: Rc<RefCell<FontsInner>>,
@@ -19,7 +17,7 @@ impl Fonts {
         let mut font_system = cosmic_text::FontSystem::new_with_locale_and_db(
             sys_locale::get_locale().unwrap_or(String::from("en-US")),
             {
-                let mut database = fontdb::Database::default();
+                let mut database = cosmic_text::fontdb::Database::default();
                 database.set_serif_family("");
                 database.set_sans_serif_family("");
                 database.set_cursive_family("");
@@ -35,7 +33,9 @@ impl Fonts {
 
             font_system
                 .db_mut()
-                .load_font_source(fontdb::Source::Binary(Arc::from(&DEFAULT_BYTES)));
+                .load_font_source(cosmic_text::fontdb::Source::Binary(Arc::from(
+                    &DEFAULT_BYTES,
+                )));
         }
 
         let inner = Rc::new(RefCell::new(FontsInner { font_system }));
@@ -48,8 +48,12 @@ impl Fonts {
         f(&mut inner.font_system)
     }
 
-    pub fn load_font_source(&self, source: fontdb::Source) {
-        self.with_system(|font_system| font_system.db_mut().load_font_source(source));
+    pub fn load_font_source(
+        &self,
+        source: cosmic_text::fontdb::Source,
+    ) -> Vec<cosmic_text::fontdb::ID> {
+        self.with_system(|font_system| font_system.db_mut().load_font_source(source))
+            .to_vec()
     }
 
     /// Sets the family that will be used by `Family::Serif`.
