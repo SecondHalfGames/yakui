@@ -31,11 +31,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             }
 
             Event::NewEvents(cause) => {
-                if cause == StartCause::Init {
-                    graphics.is_init = true;
-                } else {
-                    graphics.is_init = false;
-                }
+                graphics.is_init = cause == StartCause::Init;
             }
 
             Event::WindowEvent {

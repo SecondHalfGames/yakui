@@ -99,11 +99,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
 
     fn new_events(&mut self, _event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
         if let Some(app) = self.app.as_mut() {
-            if cause == StartCause::Init {
-                app.is_init = true;
-            } else {
-                app.is_init = false;
-            }
+            app.is_init = cause == StartCause::Init;
         }
     }
 
