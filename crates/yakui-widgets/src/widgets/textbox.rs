@@ -249,8 +249,6 @@ impl Widget for TextBoxWidget {
                                 self.props.style.attrs.as_attrs(),
                                 cosmic_text::Shaping::Advanced,
                             );
-
-                            println!("hi");
                         });
 
                         editor.set_cursor(cosmic_text::Cursor::new(0, 0));
