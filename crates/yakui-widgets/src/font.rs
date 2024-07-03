@@ -57,27 +57,27 @@ impl Fonts {
     }
 
     /// Sets the family that will be used by `Family::Serif`.
-    pub fn set_serif_family<S: Into<String>>(&mut self, family: S) {
+    pub fn set_serif_family<S: Into<String>>(&self, family: S) {
         self.with_system(|font_system| font_system.db_mut().set_serif_family(family));
     }
 
     /// Sets the family that will be used by `Family::SansSerif`.
-    pub fn set_sans_serif_family<S: Into<String>>(&mut self, family: S) {
+    pub fn set_sans_serif_family<S: Into<String>>(&self, family: S) {
         self.with_system(|font_system| font_system.db_mut().set_sans_serif_family(family));
     }
 
     /// Sets the family that will be used by `Family::Cursive`.
-    pub fn set_cursive_family<S: Into<String>>(&mut self, family: S) {
+    pub fn set_cursive_family<S: Into<String>>(&self, family: S) {
         self.with_system(|font_system| font_system.db_mut().set_cursive_family(family));
     }
 
     /// Sets the family that will be used by `Family::Fantasy`.
-    pub fn set_fantasy_family<S: Into<String>>(&mut self, family: S) {
+    pub fn set_fantasy_family<S: Into<String>>(&self, family: S) {
         self.with_system(|font_system| font_system.db_mut().set_fantasy_family(family));
     }
 
     /// Sets the family that will be used by `Family::Monospace`.
-    pub fn set_monospace_family<S: Into<String>>(&mut self, family: S) {
+    pub fn set_monospace_family<S: Into<String>>(&self, family: S) {
         self.with_system(|font_system| font_system.db_mut().set_monospace_family(family));
     }
 }
