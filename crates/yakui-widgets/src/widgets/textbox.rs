@@ -33,6 +33,7 @@ pub struct TextBox {
 
     /// Whether or not enter triggers a loss of focus and if shift would be needed to override that
     pub inline_edit: bool,
+    pub multiline: bool,
 
     pub selection_halo_color: Color,
     pub selected_bg_color: Color,
@@ -52,6 +53,7 @@ impl TextBox {
             fill: Some(colors::BACKGROUND_3),
 
             inline_edit: true,
+            multiline: false,
 
             selection_halo_color: Color::WHITE,
             selected_bg_color: Color::CORNFLOWER_BLUE.adjust(0.4),
@@ -561,7 +563,7 @@ impl Widget for TextBoxWidget {
                             KeyCode::Enter | KeyCode::NumpadEnter => {
                                 if *down {
                                     if self.props.inline_edit {
-                                        if modifiers.shift() {
+                                        if self.props.multiline && modifiers.shift() {
                                             editor.action(font_system, cosmic_text::Action::Enter);
                                         } else {
                                             self.activated = true;
