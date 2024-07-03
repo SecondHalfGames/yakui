@@ -126,7 +126,7 @@ async fn run(body: impl ExampleBody) {
     );
 
     // Add a custom font for some of the examples.
-    let mut fonts = yak.dom().get_global_or_init(Fonts::default);
+    let fonts = yak.dom().get_global_or_init(Fonts::default);
 
     static HACK_REGULAR: &[u8] = include_bytes!("../assets/Hack-Regular.ttf");
 
