@@ -30,6 +30,7 @@ pub struct TextBox {
     pub style: TextStyle,
     pub padding: Pad,
     pub fill: Option<Color>,
+    pub radius: f32,
 
     /// Whether or not enter triggers a loss of focus and if shift would be needed to override that
     pub inline_edit: bool,
@@ -51,6 +52,7 @@ impl TextBox {
             style: TextStyle::label(),
             padding: Pad::all(8.0),
             fill: Some(colors::BACKGROUND_3),
+            radius: 6.0,
 
             inline_edit: true,
             multiline: false,
@@ -268,7 +270,7 @@ impl Widget for TextBoxWidget {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
         fonts.with_system(|font_system| {
             if let Some(fill_color) = self.props.fill {
-                let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
+                let mut bg = RoundedRectangle::new(layout_node.rect, self.props.radius);
                 bg.color = fill_color;
                 bg.add(ctx.paint);
             }
