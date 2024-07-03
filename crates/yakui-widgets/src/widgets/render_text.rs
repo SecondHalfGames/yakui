@@ -239,11 +239,11 @@ fn paint_text(
     line_y: f32,
 ) {
     let size = render.rect.size().as_vec2();
-    let physical = glyph.physical((layout_pos.x, layout_pos.y), 1.0);
+    let physical = glyph.physical((0.0, 0.0), 1.0);
     let pos = Vec2::new(physical.x as f32, physical.y as f32);
 
     let mut rect = PaintRect::new(Rect::from_pos_size(
-        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y),
+        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y) + layout_pos,
         Vec2::new(size.x, size.y),
     ));
 
