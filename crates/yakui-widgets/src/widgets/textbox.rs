@@ -241,7 +241,7 @@ impl Widget for TextBoxWidget {
                         editor.with_buffer_mut(|buffer| {
                             buffer.set_text(
                                 font_system,
-                                &new_text,
+                                new_text,
                                 self.props.style.attrs.as_attrs(),
                                 cosmic_text::Shaping::Advanced,
                             );

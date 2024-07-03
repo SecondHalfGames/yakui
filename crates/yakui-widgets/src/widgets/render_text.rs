@@ -213,8 +213,7 @@ impl Widget for RenderTextBufferWidget {
 
             for layout in buffer.layout_runs() {
                 for glyph in layout.glyphs {
-                    if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, &glyph)
-                    {
+                    if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, glyph) {
                         paint_text(
                             &mut ctx,
                             self.color,

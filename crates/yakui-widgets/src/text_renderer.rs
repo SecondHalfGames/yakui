@@ -90,7 +90,7 @@ impl InnerAtlas {
                 rect,
                 offset,
                 tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
-                texture: self.texture.unwrap().clone(),
+                texture: self.texture.unwrap(),
             });
         }
 
@@ -159,7 +159,7 @@ impl InnerAtlas {
             rect,
             offset,
             tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
-            texture: self.texture.unwrap().clone(),
+            texture: self.texture.unwrap(),
         })
     }
 
@@ -230,7 +230,7 @@ impl InnerState {
                 .get_or_insert(paint, font_system, &mut self.swash, glyph, None);
 
         match a {
-            Ok(glyph) => return Some(glyph),
+            Ok(glyph) => Some(glyph),
             Err(image) => {
                 let b = self.atlas.color_atlas.get_or_insert(
                     paint,
