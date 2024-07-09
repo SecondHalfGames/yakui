@@ -35,9 +35,7 @@ pub fn run() {
                             let name = use_state(|| String::new());
 
                             let res = textbox("Hello", None);
-                            if let Some(new_name) = res.into_inner().text {
-                                name.set(new_name);
-                            }
+                            name.set(res.into_inner().text);
                         });
                     });
 

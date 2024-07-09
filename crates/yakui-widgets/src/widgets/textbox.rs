@@ -118,7 +118,6 @@ pub struct TextBoxWidget {
     active: bool,
     activated: bool,
     lost_focus: bool,
-    text_up_to_date: Cell<bool>,
     drag: DragState,
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
@@ -128,7 +127,7 @@ pub struct TextBoxWidget {
 pub struct TextBoxResponse {
     pub render_text: RenderText,
     pub scroll: Option<cosmic_text::Scroll>,
-    pub text: Option<String>,
+    pub text: String,
     /// Whether the user pressed "Enter" in this box, only makes sense in inline
     pub activated: bool,
     /// Whether the box lost focus
@@ -145,7 +144,6 @@ impl Widget for TextBoxWidget {
             active: false,
             activated: false,
             lost_focus: false,
-            text_up_to_date: Cell::new(true),
             drag: DragState::None,
             cosmic_editor: RefCell::new(None),
             max_size: Cell::default(),
@@ -183,17 +181,13 @@ impl Widget for TextBoxWidget {
             })
         });
 
-        if self.props.update_text.is_some() {
-            self.text_up_to_date.set(false);
-        }
-
         Self::Response {
             render_text: RenderText {
                 text: text.clone().unwrap_or(self.props.placeholder.clone()),
                 style,
             },
             scroll,
-            text,
+            text: text.unwrap_or_default(),
             activated: mem::take(&mut self.activated),
             lost_focus: mem::take(&mut self.lost_focus),
         }
@@ -231,8 +225,6 @@ impl Widget for TextBoxWidget {
                         );
 
                         buffer.set_size(font_system, max_width, max_height);
-
-                        buffer.shape_until_scroll(font_system, false);
                     });
 
                     self.scale_factor.set(Some(ctx.layout.scale_factor()));
@@ -240,20 +232,16 @@ impl Widget for TextBoxWidget {
                 }
 
                 if let Some(new_text) = &self.props.update_text {
-                    if !self.text_up_to_date.get() {
-                        editor.with_buffer_mut(|buffer| {
-                            buffer.set_text(
-                                font_system,
-                                new_text,
-                                self.props.style.attrs.as_attrs(),
-                                cosmic_text::Shaping::Advanced,
-                            );
-                        });
+                    editor.with_buffer_mut(|buffer| {
+                        buffer.set_text(
+                            font_system,
+                            new_text,
+                            self.props.style.attrs.as_attrs(),
+                            cosmic_text::Shaping::Advanced,
+                        );
+                    });
 
-                        editor.set_cursor(cosmic_text::Cursor::new(0, 0));
-
-                        self.text_up_to_date.set(true);
-                    }
+                    editor.set_cursor(cosmic_text::Cursor::new(0, 0));
                 }
             }
         });
