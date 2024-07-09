@@ -88,8 +88,7 @@ impl TextBox {
                         let (text, scroll) = mem::take(r);
 
                         RenderText::show_with_scroll(text, scroll)
-                            .into_inner()
-                            .map(|v| v.size)
+                            .size
                             .unwrap_or(Vec2::ZERO);
                     });
                 }

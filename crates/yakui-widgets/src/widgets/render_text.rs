@@ -1,6 +1,4 @@
 use std::cell::{Cell, RefCell};
-use std::fmt;
-use std::sync::Arc;
 
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::{PaintRect, Pipeline};
@@ -25,6 +23,10 @@ pub struct RenderText {
     pub style: TextStyle,
 }
 
+pub struct RenderTextResponse {
+    pub size: Option<Vec2>,
+}
+
 impl RenderText {
     pub fn new<S: Into<String>>(text: S) -> Self {
         Self {
@@ -40,14 +42,14 @@ impl RenderText {
         }
     }
 
-    pub fn show(self) -> Response<Option<RenderTextBufferResponse>> {
+    pub fn show(self) -> Response<RenderTextResponse> {
         Self::show_with_scroll(self, None)
     }
 
     pub fn show_with_scroll(
         self,
         scroll: Option<cosmic_text::Scroll>,
-    ) -> Response<Option<RenderTextBufferResponse>> {
+    ) -> Response<RenderTextResponse> {
         widget::<RenderTextWidget>((self, scroll))
     }
 }
@@ -55,8 +57,9 @@ impl RenderText {
 #[derive(Debug)]
 pub struct RenderTextWidget {
     props: RenderText,
+    buffer: RefCell<Option<cosmic_text::Buffer>>,
+    size: Cell<Option<Vec2>>,
     last_text: RefCell<String>,
-    buffer: RefCell<Option<Arc<cosmic_text::Buffer>>>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
     scale_factor: Cell<Option<f32>>,
     last_scroll: Cell<Option<cosmic_text::Scroll>>,
@@ -65,13 +68,14 @@ pub struct RenderTextWidget {
 
 impl Widget for RenderTextWidget {
     type Props<'a> = (RenderText, Option<cosmic_text::Scroll>);
-    type Response = Option<RenderTextBufferResponse>;
+    type Response = RenderTextResponse;
 
     fn new() -> Self {
         Self {
             props: RenderText::new(""),
-            last_text: RefCell::new(String::new()),
             buffer: RefCell::default(),
+            size: Cell::default(),
+            last_text: RefCell::new(String::new()),
             max_size: Cell::default(),
             scale_factor: Cell::default(),
             last_scroll: Cell::default(),
@@ -83,10 +87,8 @@ impl Widget for RenderTextWidget {
         self.props = props;
         self.scroll = scroll;
 
-        if let Some(buffer) = self.buffer.borrow().clone() {
-            Some(widget::<RenderTextBufferWidget>((buffer, self.props.style.color)).into_inner())
-        } else {
-            None
+        Self::Response {
+            size: self.size.get(),
         }
     }
 
@@ -103,22 +105,39 @@ impl Widget for RenderTextWidget {
             .then_some(constraints.max.y * ctx.layout.scale_factor());
         let max_size = (max_width, max_height);
 
-        if self.buffer.borrow().is_none()
-            || self.last_text.borrow().as_str() != self.props.text.as_str()
-            || self.scale_factor.get() != Some(ctx.layout.scale_factor())
-            || self.max_size.get() != Some(max_size)
-            || self.last_scroll.get() != self.scroll
-        {
-            let fonts = ctx.dom.get_global_or_init(Fonts::default);
+        let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
-            fonts.with_system(|font_system| {
-                let mut buffer = cosmic_text::Buffer::new(
+        fonts.with_system(|font_system| {
+            let mut buffer = self.buffer.take().unwrap_or_else(|| {
+                cosmic_text::Buffer::new(
                     font_system,
                     self.props.style.to_metrics(ctx.layout.scale_factor()),
+                )
+            });
+
+            if self.scale_factor.get() != Some(ctx.layout.scale_factor())
+                || self.max_size.get() != Some(max_size)
+            {
+                buffer.set_metrics_and_size(
+                    font_system,
+                    self.props.style.to_metrics(ctx.layout.scale_factor()),
+                    max_width,
+                    max_height,
                 );
 
-                buffer.set_size(font_system, max_width, max_height);
+                self.max_size.replace(Some(max_size));
+                self.scale_factor.set(Some(ctx.layout.scale_factor()));
+            }
 
+            if self.last_scroll.get() != self.scroll {
+                if let Some(scroll) = self.scroll {
+                    buffer.set_scroll(scroll);
+                }
+
+                self.last_scroll.replace(self.scroll);
+            }
+
+            if self.last_text.borrow().as_str() != self.props.text.as_str() {
                 buffer.set_text(
                     font_system,
                     &self.props.text,
@@ -126,85 +145,36 @@ impl Widget for RenderTextWidget {
                     cosmic_text::Shaping::Advanced,
                 );
 
-                if let Some(scroll) = self.scroll {
-                    buffer.set_scroll(scroll);
-                }
-
-                buffer.shape_until_scroll(font_system, false);
-
                 self.last_text.replace(self.props.text.clone());
-                self.scale_factor.set(Some(ctx.layout.scale_factor()));
-                self.max_size.replace(Some(max_size));
-                self.last_scroll.replace(self.scroll);
+            }
 
-                self.buffer.replace(Some(Arc::new(buffer)));
-            });
-        }
+            let size = {
+                let size_x = buffer
+                    .layout_runs()
+                    .map(|layout| layout.line_w)
+                    .max_by(|a, b| a.total_cmp(b))
+                    .unwrap_or_default();
 
-        self.default_layout(ctx, constraints)
-    }
-}
+                let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
 
-pub struct RenderTextBufferWidget {
-    buffer: Option<Arc<cosmic_text::Buffer>>,
-    color: Color,
-    size: Cell<Vec2>,
-}
+                Vec2::new(size_x, size_y)
+            };
 
-pub struct RenderTextBufferResponse {
-    pub size: Vec2,
-}
+            let size = constraints.constrain(size);
+            self.size.set(Some(size));
 
-impl Widget for RenderTextBufferWidget {
-    type Props<'a> = (Arc<cosmic_text::Buffer>, Color);
-    type Response = RenderTextBufferResponse;
+            self.buffer.replace(Some(buffer));
 
-    fn new() -> Self {
-        Self {
-            buffer: None,
-            color: Color::WHITE,
-            size: Cell::default(),
-        }
-    }
-
-    fn update(&mut self, (buffer, color): Self::Props<'_>) -> Self::Response {
-        self.buffer = Some(buffer);
-        self.color = color;
-
-        RenderTextBufferResponse {
-            size: self.size.get(),
-        }
-    }
-
-    fn layout(&self, _ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
-        let Some(buffer) = self.buffer.clone() else {
-            return Vec2::ZERO;
-        };
-
-        let size = {
-            let size_x = buffer
-                .layout_runs()
-                .map(|layout| layout.line_w)
-                .max_by(|a, b| a.total_cmp(b))
-                .unwrap_or_default();
-
-            let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
-
-            Vec2::new(size_x, size_y)
-        };
-
-        let size = constraints.constrain(size);
-
-        self.size.set(size);
-
-        size
+            size
+        })
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let Some(buffer) = self.buffer.clone() else {
+        let buffer_ref = self.buffer.borrow();
+        let Some(buffer) = buffer_ref.as_ref() else {
             return;
         };
 
@@ -216,7 +186,7 @@ impl Widget for RenderTextBufferWidget {
                     if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, glyph) {
                         paint_text(
                             &mut ctx,
-                            self.color,
+                            self.props.style.color,
                             glyph,
                             render,
                             layout_node.rect.pos(),
@@ -255,10 +225,4 @@ fn paint_text(
     rect.pipeline = Pipeline::Text;
 
     rect.add(ctx.paint);
-}
-
-impl fmt::Debug for RenderTextBufferWidget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RenderTextBufferWidget").finish()
-    }
 }
