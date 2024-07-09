@@ -14,6 +14,8 @@ use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2};
 use yakui_widgets::cosmic_text::fontdb;
 
+pub static OPENMOJI: &[u8] = include_bytes!("../assets/OpenMoji-color-glyf_colr_0.ttf");
+
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 const MONKEY_BLURRED_PNG: &[u8] = include_bytes!("../assets/monkey-blurred.png");
 const BROWN_INLAY_PNG: &[u8] = include_bytes!("../assets/brown_inlay.png");
