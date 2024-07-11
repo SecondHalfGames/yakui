@@ -18,7 +18,9 @@ pub fn run() {
             response.request_focus();
         }
 
-        text.set(response.into_inner().text);
+        if let Some(new_text) = response.into_inner().text {
+            text.set(new_text);
+        }
     });
 }
 

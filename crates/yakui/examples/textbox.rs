@@ -11,7 +11,9 @@ pub fn run() {
         my_box.placeholder = "placeholder".into();
 
         let response = my_box.show().into_inner();
-        text.set(response.text);
+        if let Some(new_text) = response.text {
+            text.set(new_text);
+        }
         if response.activated {
             println!("{}", text.borrow());
         }

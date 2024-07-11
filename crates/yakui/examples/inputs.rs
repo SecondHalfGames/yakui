@@ -19,7 +19,9 @@ pub fn run() {
             checked.set(res.checked);
 
             let res = textbox("Hello", None);
-            name.set(res.into_inner().text);
+            if let Some(new_text) = res.into_inner().text {
+                name.set(new_text);
+            }
 
             row(|| {
                 if let Some(new_step_size) = slider(step_size.get(), 0.0, 1.0).value {
