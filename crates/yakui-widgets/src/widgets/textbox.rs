@@ -12,7 +12,7 @@ use yakui_core::Response;
 use crate::font::Fonts;
 use crate::shapes::{self, RoundedRectangle};
 use crate::style::TextStyle;
-use crate::util::widget_children;
+use crate::util::widget;
 use crate::{colors, pad, use_state};
 
 use super::{Pad, RenderText};
@@ -65,41 +65,23 @@ impl TextBox {
         }
     }
 
-    pub fn with_text(initial_text: &str, updated_text: Option<&str>) -> TextBox {
+    pub fn show_with_text(
+        initial_text: &str,
+        updated_text: Option<&str>,
+    ) -> Response<TextBoxResponse> {
         let first_time = use_state(|| true);
 
         if first_time.get() {
             first_time.set(false);
 
-            TextBox::new(Some(initial_text.into()))
+            TextBox::new(Some(initial_text.into())).show()
         } else {
-            TextBox::new(updated_text.map(Into::into))
+            TextBox::new(updated_text.map(Into::into)).show()
         }
     }
 
     pub fn show(self) -> Response<TextBoxResponse> {
-        let render_text = use_state(|| None as Option<(RenderText, Option<cosmic_text::Scroll>)>);
-
-        let padding = self.padding;
-        let mut res = widget_children::<TextBoxWidget, _>(
-            || {
-                if let Some(r) = render_text.borrow_mut().as_mut() {
-                    pad(padding, || {
-                        let (text, scroll) = mem::take(r);
-
-                        RenderText::show_with_scroll(text, scroll);
-                    });
-                }
-            },
-            self,
-        );
-
-        render_text.set(Some((
-            mem::take(&mut res.render_text),
-            mem::take(&mut res.scroll),
-        )));
-
-        res
+        widget::<TextBoxWidget>(self)
     }
 }
 
@@ -124,8 +106,6 @@ pub struct TextBoxWidget {
 }
 
 pub struct TextBoxResponse {
-    pub render_text: RenderText,
-    pub scroll: Option<cosmic_text::Scroll>,
     pub text: Option<String>,
     /// Whether the user pressed "Enter" in this box, only makes sense in inline
     pub activated: bool,
@@ -180,19 +160,21 @@ impl Widget for TextBoxWidget {
                 .lerp(&self.props.fill.unwrap_or(Color::CLEAR), 0.75);
         }
 
+        let render_text = text.clone();
+        pad(self.props.padding, || {
+            let render_text = (!is_empty)
+                .then_some(render_text)
+                .flatten()
+                .unwrap_or(self.props.placeholder.clone());
+
+            RenderText::with_style(render_text, style).show_with_scroll(scroll);
+        });
+
         Self::Response {
-            scroll,
             text: if self.text_changed.take() {
                 text.clone()
             } else {
                 None
-            },
-            render_text: RenderText {
-                text: (!is_empty)
-                    .then_some(text)
-                    .flatten()
-                    .unwrap_or(self.props.placeholder.clone()),
-                style,
             },
             activated: mem::take(&mut self.activated),
             lost_focus: mem::take(&mut self.lost_focus),
