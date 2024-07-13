@@ -87,9 +87,7 @@ impl TextBox {
                     pad(padding, || {
                         let (text, scroll) = mem::take(r);
 
-                        RenderText::show_with_scroll(text, scroll)
-                            .size
-                            .unwrap_or(Vec2::ZERO);
+                        RenderText::show_with_scroll(text, scroll);
                     });
                 }
             },
