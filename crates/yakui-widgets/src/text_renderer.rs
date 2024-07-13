@@ -69,37 +69,27 @@ impl GlyphCache {
             self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
 
             let size = texture.size();
-            blit(pos, &bitmap, glyph_size, texture.data_mut(), size);
+            blit(pos, glyph_size, &bitmap, size, texture.data_mut());
 
             URect::from_pos_size(pos, glyph_size)
         })
     }
 }
 
-fn get_pixel(data: &[u8], size: UVec2, pos: UVec2) -> u8 {
-    let offset = pos.y * size.x + pos.x;
-    data[offset as usize]
-}
+fn blit(pos: UVec2, src_size: UVec2, src: &[u8], dst_size: UVec2, dst: &mut [u8]) {
+    debug_assert!(dst_size.x >= src_size.x);
+    debug_assert!(dst_size.y >= src_size.y);
 
-fn set_pixel(data: &mut [u8], size: UVec2, pos: UVec2, value: u8) {
-    let offset = pos.y * size.x + pos.x;
-    data[offset as usize] = value;
-}
+    for row in 0..src_size.y {
+        let y1 = row;
+        let s1 = y1 * src_size.x;
+        let e1 = s1 + src_size.x;
 
-pub fn blit(
-    dest_pos: UVec2,
-    source_data: &[u8],
-    source_size: UVec2,
-    dest_data: &mut [u8],
-    dest_size: UVec2,
-) {
-    for h in 0..source_size.y {
-        for w in 0..source_size.x {
-            let pos = UVec2::new(dest_pos.x + w, dest_pos.y + h);
+        let y2 = row + pos.y;
+        let s2 = y2 * dst_size.x + pos.x;
+        let e2 = s2 + src_size.x;
 
-            let value = get_pixel(source_data, source_size, UVec2::new(w, h));
-            set_pixel(dest_data, dest_size, pos, value);
-        }
+        dst[s2 as usize..e2 as usize].copy_from_slice(&src[s1 as usize..e1 as usize])
     }
 }
 

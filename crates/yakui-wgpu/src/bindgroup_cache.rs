@@ -1,14 +1,14 @@
 use crate::samplers::Samplers;
 use std::collections::HashMap;
-use wgpu::{FilterMode, TextureView};
 use yakui_core::TextureId;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub(crate) struct TextureBindgroupCacheEntry {
     pub id: TextureId,
-    pub min_filter: FilterMode,
-    pub mag_filter: FilterMode,
-    pub mipmap_filter: FilterMode,
+    pub min_filter: wgpu::FilterMode,
+    pub mag_filter: wgpu::FilterMode,
+    pub mipmap_filter: wgpu::FilterMode,
+    pub address_mode: wgpu::AddressMode,
 }
 
 pub(crate) struct TextureBindgroupCache {
@@ -34,7 +34,7 @@ impl TextureBindgroupCache {
         &mut self,
         device: &wgpu::Device,
         entry: TextureBindgroupCacheEntry,
-        view: &TextureView,
+        view: &wgpu::TextureView,
         samplers: &Samplers,
     ) {
         self.cache.entry(entry).or_insert_with(|| {
@@ -46,6 +46,7 @@ impl TextureBindgroupCache {
                 entry.min_filter,
                 entry.mag_filter,
                 entry.mipmap_filter,
+                entry.address_mode,
             )
         });
     }
@@ -59,10 +60,11 @@ pub fn bindgroup(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     samplers: &Samplers,
-    view: &TextureView,
-    min_filter: FilterMode,
-    mag_filter: FilterMode,
-    mipmap_filter: FilterMode,
+    view: &wgpu::TextureView,
+    min_filter: wgpu::FilterMode,
+    mag_filter: wgpu::FilterMode,
+    mipmap_filter: wgpu::FilterMode,
+    address_mode: wgpu::AddressMode,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("yakui Bind Group"),
@@ -78,6 +80,7 @@ pub fn bindgroup(
                     min_filter,
                     mag_filter,
                     mipmap_filter,
+                    address_mode,
                 )),
             },
         ],

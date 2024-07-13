@@ -68,7 +68,7 @@ fn main() {
     let mut winit_initializing = true;
 
     event_loop.set_control_flow(ControlFlow::Poll);
-    _ = event_loop.run(|event, elwt| match event {
+    _ = event_loop.run(|event, event_loop| match event {
         Event::WindowEvent {
             event:
                 WindowEvent::CloseRequested
@@ -82,14 +82,10 @@ fn main() {
                     ..
                 },
             ..
-        } => elwt.exit(),
+        } => event_loop.exit(),
 
         Event::NewEvents(cause) => {
-            if cause == winit::event::StartCause::Init {
-                winit_initializing = true;
-            } else {
-                winit_initializing = false;
-            }
+            winit_initializing = cause == winit::event::StartCause::Init;
         }
 
         Event::AboutToWait => {
@@ -148,21 +144,18 @@ fn main() {
                     event:
                         KeyEvent {
                             state: ElementState::Released,
-                            physical_key,
+                            physical_key: PhysicalKey::Code(KeyCode::KeyA),
                             ..
                         },
                     ..
                 },
             ..
-        } => match physical_key {
-            PhysicalKey::Code(KeyCode::KeyA) => {
-                gui_state.which_image = match &gui_state.which_image {
-                    WhichImage::Monkey => WhichImage::Dog,
-                    WhichImage::Dog => WhichImage::Monkey,
-                }
+        } => {
+            gui_state.which_image = match &gui_state.which_image {
+                WhichImage::Monkey => WhichImage::Dog,
+                WhichImage::Dog => WhichImage::Monkey,
             }
-            _ => {}
-        },
+        }
         _ => (),
     });
 
@@ -189,6 +182,7 @@ fn create_vulkan_texture_info(
         resolution,
         filter,
         filter,
+        vk::SamplerAddressMode::CLAMP_TO_EDGE,
     )
 }
 
@@ -214,7 +208,7 @@ fn gui(gui_state: &GuiState) {
     use yakui::{column, label, row, text, widgets::Text, Color};
     let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
         WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
-        WhichImage::Dog => ("dog haha good boy", gui_state.dog.into()),
+        WhichImage::Dog => ("dog haha good boy", gui_state.dog),
     };
     column(|| {
         row(|| {
@@ -236,7 +230,7 @@ struct VulkanTest {
     device: ash::Device,
     physical_device: vk::PhysicalDevice,
     instance: ash::Instance,
-    surface_loader: ash::extensions::khr::Surface,
+    surface_loader: ash::khr::surface::Instance,
     device_memory_properties: vk::PhysicalDeviceMemoryProperties,
 
     present_queue: vk::Queue,
@@ -264,25 +258,36 @@ impl VulkanTest {
     /// Bring up all the Vulkan pomp and ceremony required to render things.
     /// Vulkan Broadly lifted from: https://github.com/ash-rs/ash/blob/0.37.2/examples/src/lib.rs
     pub fn new(window_width: u32, window_height: u32, window: &winit::window::Window) -> Self {
-        use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
+        use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
         use std::ffi::CStr;
 
         let entry = unsafe { ash::Entry::load().expect("failed to load Vulkan") };
         let app_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"Yakui Vulkan Test\0") };
 
-        let appinfo = vk::ApplicationInfo::builder()
+        let appinfo = vk::ApplicationInfo::default()
             .application_name(app_name)
             .application_version(0)
             .engine_name(app_name)
             .engine_version(0)
             .api_version(vk::make_api_version(0, 1, 3, 0));
 
-        let extension_names =
-            ash_window::enumerate_required_extensions(window.raw_display_handle())
+        #[allow(unused_mut)]
+        let mut extension_names =
+            ash_window::enumerate_required_extensions(window.display_handle().unwrap().as_raw())
                 .unwrap()
                 .to_vec();
 
-        let create_info = vk::InstanceCreateInfo::builder()
+        #[cfg(target_os = "macos")]
+        extension_names.push(ash::khr::portability_enumeration::NAME.as_ptr());
+
+        let create_flags = if cfg!(target_os = "macos") {
+            vk::InstanceCreateFlags::ENUMERATE_PORTABILITY_KHR
+        } else {
+            vk::InstanceCreateFlags::default()
+        };
+
+        let create_info = vk::InstanceCreateInfo::default()
+            .flags(create_flags)
             .application_info(&appinfo)
             .enabled_extension_names(&extension_names);
 
@@ -296,8 +301,8 @@ impl VulkanTest {
             ash_window::create_surface(
                 &entry,
                 &instance,
-                window.raw_display_handle(),
-                window.raw_window_handle(),
+                window.display_handle().unwrap().as_raw(),
+                window.window_handle().unwrap().as_raw(),
                 None,
             )
             .unwrap()
@@ -308,7 +313,7 @@ impl VulkanTest {
                 .enumerate_physical_devices()
                 .expect("Physical device error")
         };
-        let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
+        let surface_loader = ash::khr::surface::Instance::new(&entry, &instance);
         let (physical_device, queue_family_index) = unsafe {
             pdevices
                 .iter()
@@ -337,20 +342,27 @@ impl VulkanTest {
                 .expect("Couldn't find suitable device.")
         };
         let queue_family_index = queue_family_index as u32;
-        let device_extension_names_raw = [ash::extensions::khr::Swapchain::name().as_ptr()];
+
+        #[allow(unused_mut)]
+        let mut device_exts = vec![ash::khr::swapchain::NAME.as_ptr()];
+
+        #[cfg(target_os = "macos")]
+        device_exts.push(ash::khr::portability_subset::NAME.as_ptr());
+
         let priorities = [1.0];
 
-        let queue_info = vk::DeviceQueueCreateInfo::builder()
+        let queue_info = vk::DeviceQueueCreateInfo::default()
             .queue_family_index(queue_family_index)
             .queue_priorities(&priorities);
 
         let mut descriptor_indexing_features =
-            vk::PhysicalDeviceDescriptorIndexingFeatures::builder()
-                .descriptor_binding_partially_bound(true);
+            vk::PhysicalDeviceDescriptorIndexingFeatures::default()
+                .descriptor_binding_partially_bound(true)
+                .descriptor_binding_sampled_image_update_after_bind(true);
 
-        let device_create_info = vk::DeviceCreateInfo::builder()
+        let device_create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(std::slice::from_ref(&queue_info))
-            .enabled_extension_names(&device_extension_names_raw)
+            .enabled_extension_names(&device_exts)
             .push_next(&mut descriptor_indexing_features);
 
         let device = unsafe {
@@ -395,7 +407,7 @@ impl VulkanTest {
             .cloned()
             .find(|&mode| mode == vk::PresentModeKHR::MAILBOX)
             .unwrap_or(vk::PresentModeKHR::FIFO);
-        let swapchain_loader = ash::extensions::khr::Swapchain::new(&instance, &device);
+        let swapchain_loader = ash::khr::swapchain::Device::new(&instance, &device);
 
         let swapchain_info = SwapchainInfo::new(
             swapchain_loader,
@@ -429,11 +441,11 @@ impl VulkanTest {
             ..Default::default()
         }];
 
-        let subpass = vk::SubpassDescription::builder()
+        let subpass = vk::SubpassDescription::default()
             .color_attachments(&color_attachment_refs)
             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS);
 
-        let renderpass_create_info = vk::RenderPassCreateInfo::builder()
+        let renderpass_create_info = vk::RenderPassCreateInfo::default()
             .attachments(&renderpass_attachments)
             .subpasses(std::slice::from_ref(&subpass))
             .dependencies(&dependencies);
@@ -451,13 +463,13 @@ impl VulkanTest {
             &device,
         );
 
-        let pool_create_info = vk::CommandPoolCreateInfo::builder()
+        let pool_create_info = vk::CommandPoolCreateInfo::default()
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
             .queue_family_index(queue_family_index);
 
         let pool = unsafe { device.create_command_pool(&pool_create_info, None).unwrap() };
 
-        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::builder()
+        let command_buffer_allocate_info = vk::CommandBufferAllocateInfo::default()
             .command_buffer_count(1)
             .command_pool(pool)
             .level(vk::CommandBufferLevel::PRIMARY);
@@ -470,7 +482,7 @@ impl VulkanTest {
         let draw_command_buffer = command_buffers[0];
 
         let fence_create_info =
-            vk::FenceCreateInfo::builder().flags(vk::FenceCreateFlags::SIGNALED);
+            vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
 
         let draw_commands_reuse_fence = unsafe {
             device
@@ -572,7 +584,7 @@ impl VulkanTest {
                 .swapchain_loader
                 .acquire_next_image(
                     self.swapchain,
-                    std::u64::MAX,
+                    u64::MAX,
                     self.present_complete_semaphore,
                     vk::Fence::null(),
                 )
@@ -585,7 +597,7 @@ impl VulkanTest {
                 .wait_for_fences(
                     std::slice::from_ref(&self.draw_commands_reuse_fence),
                     true,
-                    std::u64::MAX,
+                    u64::MAX,
                 )
                 .unwrap();
             device
@@ -600,7 +612,7 @@ impl VulkanTest {
             device
                 .begin_command_buffer(
                     self.draw_command_buffer,
-                    &vk::CommandBufferBeginInfo::builder()
+                    &vk::CommandBufferBeginInfo::default()
                         .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT),
                 )
                 .unwrap();
@@ -633,7 +645,7 @@ impl VulkanTest {
                 max_depth: 1.0,
             }];
 
-            let render_pass_begin_info = vk::RenderPassBeginInfo::builder()
+            let render_pass_begin_info = vk::RenderPassBeginInfo::default()
                 .render_pass(self.render_pass)
                 .framebuffer(self.framebuffers[present_index as usize])
                 .render_area(self.swapchain_info.surface_resolution.into())
@@ -661,7 +673,7 @@ impl VulkanTest {
             device.end_command_buffer(self.draw_command_buffer).unwrap();
             let swapchains = [self.swapchain];
             let image_indices = [present_index];
-            let submit_info = vk::SubmitInfo::builder()
+            let submit_info = vk::SubmitInfo::default()
                 .wait_semaphores(std::slice::from_ref(&self.present_complete_semaphore))
                 .wait_dst_stage_mask(&[vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT])
                 .command_buffers(std::slice::from_ref(&self.draw_command_buffer))
@@ -677,7 +689,7 @@ impl VulkanTest {
 
             match self.swapchain_info.swapchain_loader.queue_present(
                 self.present_queue,
-                &vk::PresentInfoKHR::builder()
+                &vk::PresentInfoKHR::default()
                     .image_indices(&image_indices)
                     .wait_semaphores(std::slice::from_ref(&self.rendering_complete_semaphore))
                     .swapchains(&swapchains),
@@ -696,17 +708,19 @@ fn init_winit(
     window_width: u32,
     window_height: u32,
 ) -> (winit::event_loop::EventLoop<()>, winit::window::Window) {
-    use winit::{event_loop::EventLoopBuilder, window::WindowBuilder};
+    use winit::{event_loop::EventLoop, window::Window};
 
-    let event_loop = EventLoopBuilder::new().build().unwrap();
+    let event_loop = EventLoop::new().unwrap();
 
-    let window = WindowBuilder::new()
-        .with_title("Yakui Vulkan - Test")
-        .with_inner_size(winit::dpi::LogicalSize::new(
-            f64::from(window_width),
-            f64::from(window_height),
-        ))
-        .build(&event_loop)
+    let window = event_loop
+        .create_window(
+            Window::default_attributes()
+                .with_title("Yakui Vulkan - Test")
+                .with_inner_size(winit::dpi::LogicalSize::new(
+                    f64::from(window_width),
+                    f64::from(window_height),
+                )),
+        )
         .unwrap();
     (event_loop, window)
 }
@@ -725,7 +739,7 @@ fn create_swapchain(
         desired_image_count,
     } = swapchain_info;
 
-    let mut swapchain_create_info = vk::SwapchainCreateInfoKHR::builder()
+    let mut swapchain_create_info = vk::SwapchainCreateInfoKHR::default()
         .surface(*surface)
         .min_image_count(*desired_image_count)
         .image_color_space(surface_format.color_space)
@@ -753,7 +767,7 @@ fn create_swapchain(
     let present_image_views: Vec<vk::ImageView> = present_images
         .iter()
         .map(|&image| {
-            let create_view_info = vk::ImageViewCreateInfo::builder()
+            let create_view_info = vk::ImageViewCreateInfo::default()
                 .view_type(vk::ImageViewType::TYPE_2D)
                 .format(surface_format.format)
                 .components(vk::ComponentMapping {
@@ -800,7 +814,7 @@ impl Drop for VulkanTest {
 }
 
 struct SwapchainInfo {
-    pub swapchain_loader: ash::extensions::khr::Swapchain,
+    pub swapchain_loader: ash::khr::swapchain::Device,
     pub surface_format: vk::SurfaceFormatKHR,
     pub surface_resolution: vk::Extent2D,
     pub present_mode: vk::PresentModeKHR,
@@ -810,7 +824,7 @@ struct SwapchainInfo {
 
 impl SwapchainInfo {
     pub fn new(
-        swapchain_loader: ash::extensions::khr::Swapchain,
+        swapchain_loader: ash::khr::swapchain::Device,
         surface_format: vk::SurfaceFormatKHR,
         surface_resolution: vk::Extent2D,
         present_mode: vk::PresentModeKHR,
@@ -838,7 +852,7 @@ fn create_framebuffers(
         .iter()
         .map(|&present_image_view| {
             let framebuffer_attachments = [present_image_view];
-            let frame_buffer_create_info = vk::FramebufferCreateInfo::builder()
+            let frame_buffer_create_info = vk::FramebufferCreateInfo::default()
                 .render_pass(render_pass)
                 .attachments(&framebuffer_attachments)
                 .width(extent.width)

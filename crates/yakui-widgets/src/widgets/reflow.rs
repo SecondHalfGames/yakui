@@ -1,6 +1,6 @@
 use yakui_core::geometry::{Constraints, Dim2, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::{Alignment, Flow, Response};
+use yakui_core::{Alignment, Flow, Pivot, Response};
 
 use crate::util::widget_children;
 
@@ -12,12 +12,17 @@ or table layouts.
 #[non_exhaustive]
 pub struct Reflow {
     pub anchor: Alignment,
+    pub pivot: Pivot,
     pub offset: Dim2,
 }
 
 impl Reflow {
-    pub fn new(anchor: Alignment, offset: Dim2) -> Self {
-        Self { anchor, offset }
+    pub fn new(anchor: Alignment, pivot: Pivot, offset: Dim2) -> Self {
+        Self {
+            anchor,
+            pivot,
+            offset,
+        }
     }
 
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowResponse> {
@@ -40,6 +45,7 @@ impl Widget for ReflowWidget {
         Self {
             props: Reflow {
                 anchor: Alignment::TOP_LEFT,
+                pivot: Pivot::TOP_LEFT,
                 offset: Dim2::ZERO,
             },
         }
@@ -58,8 +64,14 @@ impl Widget for ReflowWidget {
 
     fn layout(&self, mut ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
+        let mut size = Vec2::ZERO;
         for &child in &node.children {
-            ctx.calculate_layout(child, Constraints::none());
+            size = size.max(ctx.calculate_layout(child, Constraints::none()));
+        }
+
+        let pivot_offset = -size * self.props.pivot.as_vec2();
+        for &child in &node.children {
+            ctx.layout.set_pos(child, pivot_offset);
         }
 
         Vec2::ZERO

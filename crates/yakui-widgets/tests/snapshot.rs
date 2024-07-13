@@ -1,6 +1,6 @@
 use yakui::{Constraints, CrossAxisAlignment, Dim2, MainAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
-use yakui_core::Alignment;
+use yakui_core::{Alignment, Pivot};
 use yakui_test::{run, Test};
 use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
@@ -351,13 +351,18 @@ fn row_reflow() {
                 colored_box(Color::RED, [50.0, 50.0]);
                 colored_box(Color::GREEN, [50.0, 50.0]);
 
-                reflow(Alignment::BOTTOM_RIGHT, Dim2::ZERO, || {
+                reflow(Alignment::BOTTOM_RIGHT, Pivot::TOP_LEFT, Dim2::ZERO, || {
                     colored_box(Color::BLUE, [100.0, 50.0]);
                 });
 
-                reflow(Alignment::BOTTOM_RIGHT, Dim2::pixels(0.0, 50.0), || {
-                    colored_box(Color::WHITE, [100.0, 100.0]);
-                });
+                reflow(
+                    Alignment::BOTTOM_RIGHT,
+                    Pivot::TOP_LEFT,
+                    Dim2::pixels(0.0, 50.0),
+                    || {
+                        colored_box(Color::WHITE, [100.0, 100.0]);
+                    },
+                );
             });
         });
     });

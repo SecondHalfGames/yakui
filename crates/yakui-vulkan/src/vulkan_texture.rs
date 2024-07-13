@@ -24,6 +24,7 @@ pub struct VulkanTextureCreateInfo<T> {
     resolution: vk::Extent2D,
     min_filter: vk::Filter,
     mag_filter: vk::Filter,
+    address_mode: vk::SamplerAddressMode,
 }
 
 impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
@@ -35,6 +36,7 @@ impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
         resolution: vk::Extent2D,
         min_filter: vk::Filter,
         mag_filter: vk::Filter,
+        address_mode: vk::SamplerAddressMode,
     ) -> Self {
         Self {
             image_data,
@@ -42,6 +44,7 @@ impl<T: AsRef<[u8]>> VulkanTextureCreateInfo<T> {
             resolution,
             min_filter,
             mag_filter,
+            address_mode,
         }
     }
 }
@@ -59,13 +62,13 @@ impl VulkanTexture {
         memory: vk::DeviceMemory,
         view: vk::ImageView,
     ) -> Self {
-        let address_mode = vk::SamplerAddressMode::REPEAT;
+        let address_mode = vk::SamplerAddressMode::CLAMP_TO_EDGE;
         let filter = vk::Filter::LINEAR;
         let sampler = unsafe {
             vulkan_context
                 .device
                 .create_sampler(
-                    &vk::SamplerCreateInfo::builder()
+                    &vk::SamplerCreateInfo::default()
                         .address_mode_u(address_mode)
                         .address_mode_v(address_mode)
                         .address_mode_w(address_mode)
@@ -98,9 +101,9 @@ impl VulkanTexture {
             resolution,
             min_filter,
             mag_filter,
+            address_mode,
         } = create_info;
 
-        let address_mode = vk::SamplerAddressMode::REPEAT;
         let (image, memory) = unsafe { vulkan_context.create_image(resolution, format) };
         unsafe {
             queue.push(vulkan_context, image, resolution, image_data.as_ref());
@@ -111,7 +114,7 @@ impl VulkanTexture {
             vulkan_context
                 .device
                 .create_sampler(
-                    &vk::SamplerCreateInfo::builder()
+                    &vk::SamplerCreateInfo::default()
                         .address_mode_u(address_mode)
                         .address_mode_v(address_mode)
                         .address_mode_w(address_mode)
@@ -150,10 +153,18 @@ impl VulkanTexture {
 
         let mag_filter = get_filter(texture.mag_filter);
         let min_filter = get_filter(texture.min_filter);
+        let address_mode = get_address_mode(texture.address_mode);
         VulkanTexture::new(
             vulkan_context,
             descriptors,
-            VulkanTextureCreateInfo::new(image_data, format, resolution, min_filter, mag_filter),
+            VulkanTextureCreateInfo::new(
+                image_data,
+                format,
+                resolution,
+                min_filter,
+                mag_filter,
+                address_mode,
+            ),
             queue,
         )
     }
@@ -168,7 +179,7 @@ impl VulkanTexture {
 
 fn get_format(yakui_format: yakui::paint::TextureFormat) -> vk::Format {
     match yakui_format {
-        yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_UNORM,
+        yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_SRGB,
         yakui::paint::TextureFormat::R8 => vk::Format::R8_UNORM,
         _ => panic!("Unsupported texture format: {yakui_format:?}"),
     }
@@ -181,13 +192,20 @@ fn get_filter(yakui_filter: yakui::paint::TextureFilter) -> vk::Filter {
     }
 }
 
+fn get_address_mode(yakui_address_mode: yakui::paint::AddressMode) -> vk::SamplerAddressMode {
+    match yakui_address_mode {
+        yakui::paint::AddressMode::ClampToEdge => vk::SamplerAddressMode::CLAMP_TO_EDGE,
+        yakui::paint::AddressMode::Repeat => vk::SamplerAddressMode::REPEAT,
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct UploadQueue {
     phase: UploadPhase,
     in_flight: VecDeque<UploadPhase>,
     textures: Vec<(vk::Image, vk::Extent2D, vk::Buffer, usize)>,
-    pre_barriers: Vec<vk::ImageMemoryBarrier>,
-    post_barriers: Vec<vk::ImageMemoryBarrier>,
+    pre_barriers: Vec<vk::ImageMemoryBarrier<'static>>,
+    post_barriers: Vec<vk::ImageMemoryBarrier<'static>>,
 }
 
 impl UploadQueue {

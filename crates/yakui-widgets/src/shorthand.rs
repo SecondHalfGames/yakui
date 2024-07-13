@@ -7,7 +7,7 @@ use std::borrow::Cow;
 
 use yakui_core::geometry::{Color, Constraints, Dim2, Vec2};
 use yakui_core::widget::PaintContext;
-use yakui_core::{Alignment, ManagedTextureId, Response, TextureId};
+use yakui_core::{Alignment, ManagedTextureId, Pivot, Response, TextureId};
 
 use crate::widgets::{
     Align, AlignResponse, Button, ButtonResponse, Canvas, CanvasResponse, Checkbox,
@@ -54,7 +54,7 @@ pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonResponse> {
     Button::styled(text.into()).show()
 }
 
-/// See [ColoredCircle].
+/// See [Circle].
 pub fn colored_circle<S: Into<f32>>(color: Color, size: S) -> Response<CircleResponse> {
     let mut circle = Circle::new();
     circle.min_radius = size.into();
@@ -170,10 +170,11 @@ pub fn slider(value: f64, min: f64, max: f64) -> Response<SliderResponse> {
 /// See [Reflow].
 pub fn reflow(
     anchor: Alignment,
+    pivot: Pivot,
     offset: Dim2,
     children: impl FnOnce(),
 ) -> Response<ReflowResponse> {
-    Reflow::new(anchor, offset).show(children)
+    Reflow::new(anchor, pivot, offset).show(children)
 }
 
 /// See [Opaque].

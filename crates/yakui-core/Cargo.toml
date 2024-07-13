@@ -10,11 +10,11 @@ edition = "2021"
 
 [dependencies]
 anymap = "0.12.1"
-bitflags = "1.3.2"
-glam = "0.24.2"
-keyboard-types = { version = "0.6.2", default-features = false }
+bitflags = "2.4.2"
+glam = "0.27.0"
+keyboard-types = { version = "0.7.0", default-features = false }
 log = "0.4.17"
-palette = "0.7.4"
+fast-srgb8 = "1.0.0"
 profiling = "1.0.6"
 smallvec = "1.9.0"
 thunderdome = "0.6.0"

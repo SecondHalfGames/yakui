@@ -1,5 +1,3 @@
-use std::f32::INFINITY;
-
 use bootstrap::ExampleState;
 use yakui::widgets::CutOut;
 use yakui::{draggable, image, offset, text, use_state, Color, Constraints, Vec2};
@@ -16,7 +14,7 @@ pub fn run(state: &mut ExampleState) {
         let res = draggable(|| {
             let constraints = Constraints {
                 min: Vec2::new(400.0, 0.0),
-                max: Vec2::new(400.0, INFINITY),
+                max: Vec2::new(400.0, f32::INFINITY),
             };
 
             constrained(constraints, || {

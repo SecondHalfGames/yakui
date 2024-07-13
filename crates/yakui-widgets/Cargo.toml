@@ -15,9 +15,9 @@ default-fonts = []
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.2.0" }
 
-fontdue = "0.7.2"
+fontdue = "0.8.0"
 thunderdome = "0.6.0"
-smol_str = "0.1.23"
+smol_str = "0.2.1"
 
 [dev-dependencies]
 yakui = { path = "../yakui" }

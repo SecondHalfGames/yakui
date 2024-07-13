@@ -119,6 +119,7 @@ impl YakuiWgpu {
             default_texture.min_filter,
             default_texture.mag_filter,
             wgpu::FilterMode::Nearest,
+            wgpu::AddressMode::ClampToEdge,
         );
 
         Self {
@@ -143,12 +144,14 @@ impl YakuiWgpu {
         min_filter: wgpu::FilterMode,
         mag_filter: wgpu::FilterMode,
         mipmap_filter: wgpu::FilterMode,
+        address_mode: wgpu::AddressMode,
     ) -> TextureId {
         let index = self.textures.insert(GpuTexture {
             view: view.into(),
             min_filter,
             mag_filter,
             mipmap_filter,
+            address_mode,
         });
         TextureId::User(index.to_bits())
     }
@@ -339,6 +342,7 @@ impl YakuiWgpu {
                                 texture.min_filter,
                                 texture.mag_filter,
                                 wgpu::FilterMode::Nearest,
+                                texture.address_mode,
                             ))
                         }
                         TextureId::User(bits) => {
@@ -350,20 +354,28 @@ impl YakuiWgpu {
                                 texture.min_filter,
                                 texture.mag_filter,
                                 texture.mipmap_filter,
+                                texture.address_mode,
                             ))
                         }
                     })
-                    .map(|(id, view, min_filter, mag_filter, mipmap_filter)| {
-                        let entry = TextureBindgroupCacheEntry {
-                            id,
-                            min_filter,
-                            mag_filter,
-                            mipmap_filter,
-                        };
-                        self.texture_bindgroup_cache
-                            .update(device, entry, view, &self.samplers);
-                        entry
-                    });
+                    .map(
+                        |(id, view, min_filter, mag_filter, mipmap_filter, address_mode)| {
+                            let entry = TextureBindgroupCacheEntry {
+                                id,
+                                min_filter,
+                                mag_filter,
+                                mipmap_filter,
+                                address_mode,
+                            };
+                            self.texture_bindgroup_cache.update(
+                                device,
+                                entry,
+                                view,
+                                &self.samplers,
+                            );
+                            entry
+                        },
+                    );
 
                 DrawCommand {
                     index_range: start..end,
@@ -432,14 +444,16 @@ fn make_main_pipeline(
         vertex: wgpu::VertexState {
             module: &main_shader,
             entry_point: "vs_main",
+            compilation_options: Default::default(),
             buffers: &[Vertex::DESCRIPTOR],
         },
         fragment: Some(wgpu::FragmentState {
             module: &main_shader,
             entry_point: "fs_main",
+            compilation_options: Default::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format,
-                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })],
         }),
@@ -478,11 +492,13 @@ fn make_text_pipeline(
         vertex: wgpu::VertexState {
             module: &text_shader,
             entry_point: "vs_main",
+            compilation_options: Default::default(),
             buffers: &[Vertex::DESCRIPTOR],
         },
         fragment: Some(wgpu::FragmentState {
             module: &text_shader,
             entry_point: "fs_main",
+            compilation_options: Default::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format,
                 blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),

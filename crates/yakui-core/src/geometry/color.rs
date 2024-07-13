@@ -48,9 +48,10 @@ impl Color {
 
     /// Create a new `Color` from a linear RGB color.
     pub fn from_linear(value: Vec4) -> Self {
-        let linear = palette::LinSrgba::new(value.x, value.y, value.z, value.w);
-        let (r, g, b, a) = palette::Srgba::<u8>::from_linear(linear).into_components();
-
+        let r = fast_srgb8::f32_to_srgb8(value.x);
+        let g = fast_srgb8::f32_to_srgb8(value.y);
+        let b = fast_srgb8::f32_to_srgb8(value.z);
+        let a = (value.w * 255.0).round() as u8;
         Self::rgba(r, g, b, a)
     }
 
@@ -70,11 +71,11 @@ impl Color {
 
     /// Convert this color to a linear RGB color.
     pub fn to_linear(&self) -> Vec4 {
-        palette::Srgba::new(self.r, self.g, self.b, self.a)
-            .into_format::<f32, f32>()
-            .into_linear()
-            .into_components()
-            .into()
+        let r = fast_srgb8::srgb8_to_f32(self.r);
+        let g = fast_srgb8::srgb8_to_f32(self.g);
+        let b = fast_srgb8::srgb8_to_f32(self.b);
+        let a = self.a as f32 / 255.0;
+        Vec4::new(r, g, b, a)
     }
 
     /// Blend with `other` in linear space

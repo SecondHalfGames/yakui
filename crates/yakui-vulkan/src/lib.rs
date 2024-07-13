@@ -72,6 +72,8 @@ pub struct Options {
     pub dynamic_rendering_format: Option<vk::Format>,
     /// Render pass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
     pub render_pass: vk::RenderPass,
+    /// Subpass that the GUI will be drawn in. Ignored if `dynamic_rendering_format` is set.
+    pub subpass: u32,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -161,11 +163,11 @@ impl YakuiVulkan {
 
         let vertex_code =
             read_spv(&mut vertex_spv_file).expect("Failed to read vertex shader spv file");
-        let vertex_shader_info = vk::ShaderModuleCreateInfo::builder().code(&vertex_code);
+        let vertex_shader_info = vk::ShaderModuleCreateInfo::default().code(&vertex_code);
 
         let frag_code =
             read_spv(&mut frag_spv_file).expect("Failed to read fragment shader spv file");
-        let frag_shader_info = vk::ShaderModuleCreateInfo::builder().code(&frag_code);
+        let frag_shader_info = vk::ShaderModuleCreateInfo::default().code(&frag_code);
 
         let vertex_shader_module = unsafe {
             device
@@ -182,9 +184,9 @@ impl YakuiVulkan {
         let pipeline_layout = unsafe {
             device
                 .create_pipeline_layout(
-                    &vk::PipelineLayoutCreateInfo::builder()
+                    &vk::PipelineLayoutCreateInfo::default()
                         .push_constant_ranges(std::slice::from_ref(
-                            &vk::PushConstantRange::builder()
+                            &vk::PushConstantRange::default()
                                 .stage_flags(vk::ShaderStageFlags::FRAGMENT)
                                 .size(std::mem::size_of::<PushConstant>() as _),
                         ))
@@ -240,14 +242,14 @@ impl YakuiVulkan {
             },
         ];
 
-        let vertex_input_state_info = vk::PipelineVertexInputStateCreateInfo::builder()
+        let vertex_input_state_info = vk::PipelineVertexInputStateCreateInfo::default()
             .vertex_attribute_descriptions(&vertex_input_attribute_descriptions)
             .vertex_binding_descriptions(&vertex_input_binding_descriptions);
         let vertex_input_assembly_state_info = vk::PipelineInputAssemblyStateCreateInfo {
             topology: vk::PrimitiveTopology::TRIANGLE_LIST,
             ..Default::default()
         };
-        let viewport_state_info = vk::PipelineViewportStateCreateInfo::builder()
+        let viewport_state_info = vk::PipelineViewportStateCreateInfo::default()
             .scissor_count(1)
             .viewport_count(1);
 
@@ -287,15 +289,15 @@ impl YakuiVulkan {
             alpha_blend_op: vk::BlendOp::ADD,
             color_write_mask: vk::ColorComponentFlags::RGBA,
         }];
-        let color_blend_state = vk::PipelineColorBlendStateCreateInfo::builder()
+        let color_blend_state = vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op(vk::LogicOp::CLEAR)
             .attachments(&color_blend_attachment_states);
 
         let dynamic_state = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
         let dynamic_state_info =
-            vk::PipelineDynamicStateCreateInfo::builder().dynamic_states(&dynamic_state);
+            vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_state);
 
-        let mut graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
+        let mut graphic_pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&shader_stage_create_infos)
             .vertex_input_state(&vertex_input_state_info)
             .input_assembly_state(&vertex_input_assembly_state_info)
@@ -315,18 +317,20 @@ impl YakuiVulkan {
         );
         if let Some(format) = options.dynamic_rendering_format {
             rendering_info_formats = [format];
-            rendering_info = vk::PipelineRenderingCreateInfo::builder()
+            rendering_info = vk::PipelineRenderingCreateInfo::default()
                 .color_attachment_formats(&rendering_info_formats);
             graphic_pipeline_info = graphic_pipeline_info.push_next(&mut rendering_info);
         } else {
-            graphic_pipeline_info = graphic_pipeline_info.render_pass(options.render_pass);
+            graphic_pipeline_info = graphic_pipeline_info
+                .render_pass(options.render_pass)
+                .subpass(options.subpass);
         }
 
         let graphics_pipelines = unsafe {
             device
                 .create_graphics_pipelines(
                     vk::PipelineCache::null(),
-                    &[graphic_pipeline_info.build()],
+                    &[graphic_pipeline_info],
                     None,
                 )
                 .expect("Unable to create graphics pipeline")
@@ -374,12 +378,12 @@ impl YakuiVulkan {
         self.uploads.phase_submitted();
     }
 
-    /// Call when the commands associated with the oldest call to `commands_submitted` have finished.
+    /// Call when the commands associated with the oldest call to `transfers_submitted` have finished.
     ///
     /// ## Safety
     ///
-    /// Those commands recorded prior to the oldest call to `commands_submitted` not yet associated
-    /// with a call to `commands_finished` must not be executing.
+    /// Those commands recorded prior to the oldest call to `transfers_submitted` not yet associated
+    /// with a call to `transfers_finished` must not be executing.
     pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
         self.uploads.phase_executed(vulkan_context);
     }
@@ -607,7 +611,9 @@ impl YakuiVulkan {
 
                 TextureChange::Modified => {
                     if let Some(old) = self.yakui_managed_textures.remove(&id) {
-                        unsafe { old.cleanup(vulkan_context.device) };
+                        unsafe {
+                            self.uploads.dispose(old);
+                        }
                     }
                     let new = paint.texture(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
