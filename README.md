@@ -45,8 +45,9 @@ yakui has the following priorities:
 ## Getting Started
 Add the [`yakui`] crate to your project:
 
-```bash
-cargo add yakui
+```toml
+[dependencies]
+yakui = { git = "https://github.com/SecondHalfGames/yakui" }
 ```
 
 Create a [`yakui::Yakui`] when your game starts:
@@ -73,7 +74,14 @@ Finally, call `paint()` and feed the result to your renderer:
 your_renderer.draw(yak.paint());
 ```
 
-You can use the [`yakui-winit`] and [`yakui-wgpu`] crates to integrate with [winit] and [wgpu], respectively.
+To see your UI, you'll need a renderer crate. You can also write your own integration for your game. Here are the officially supported renderer crates:
+
+- [`yakui-wgpu`] — wgpu renderer
+- [`yakui-vulkan`] — Vulkan renderer
+
+You'll also need to send window and input events to yakui. These are the officially supported windowing library crates:
+
+- [`yakui-winit`] — Winit integration
 
 [`yakui::Yakui`]: https://github.com/SecondHalfGames/yakui/blob/main/crates/yakui-core/src/state.rs
 
