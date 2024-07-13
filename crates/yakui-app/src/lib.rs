@@ -1,11 +1,6 @@
 mod multisampling;
 
-use winit::{
-    dpi::PhysicalSize,
-    event::{Event, StartCause, WindowEvent},
-    event_loop::EventLoopWindowTarget,
-    window::Window,
-};
+use winit::{dpi::PhysicalSize, event::WindowEvent, event_loop::ActiveEventLoop, window::Window};
 
 use multisampling::Multisampling;
 
@@ -23,9 +18,8 @@ pub struct Graphics {
 
     window: yakui_winit::YakuiWinit,
     pub renderer: yakui_wgpu::YakuiWgpu,
-
     /// Tracks whether winit is still initializing
-    is_init: bool,
+    pub is_init: bool,
 }
 
 impl Graphics {
@@ -110,7 +104,6 @@ impl Graphics {
 
             renderer,
             window,
-
             is_init: true,
         }
     }
@@ -184,35 +177,25 @@ impl Graphics {
         output.present();
     }
 
-    pub fn handle_event<T>(
+    pub fn handle_window_event(
         &mut self,
         yak: &mut yakui::Yakui,
-        event: &Event<T>,
-        elwt: &EventLoopWindowTarget<T>,
+        event: &WindowEvent,
+        event_loop: &ActiveEventLoop,
     ) -> bool {
         // yakui_winit will return whether it handled an event. This means that
         // yakui believes it should handle that event exclusively, like if a
         // button in the UI was clicked.
-        if self.window.handle_event(yak, event) {
+        if self.window.handle_window_event(yak, event) {
             return true;
         }
 
         match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                elwt.exit();
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
             }
 
-            Event::NewEvents(cause) => {
-                self.is_init = *cause == StartCause::Init;
-            }
-
-            Event::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
+            WindowEvent::Resized(size) => {
                 // Ignore any resize events that happen during Winit's
                 // initialization in order to avoid racing the wgpu swapchain
                 // and causing issues.
