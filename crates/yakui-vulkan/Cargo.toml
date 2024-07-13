@@ -19,4 +19,4 @@ ash = { version = "0.38", default-features = false, features = ["loaded"] }
 ash-window = "0.13"
 image = "0.24.5"
 raw-window-handle = "0.6.0"
-winit = "0.29.2"
+winit = "0.30.0"

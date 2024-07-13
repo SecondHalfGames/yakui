@@ -1,10 +1,7 @@
 mod keys;
 
 use winit::dpi::PhysicalSize;
-use winit::event::{
-    ElementState, Event as WinitEvent, MouseButton as WinitMouseButton, MouseScrollDelta,
-    WindowEvent,
-};
+use winit::event::{ElementState, MouseButton as WinitMouseButton, MouseScrollDelta, WindowEvent};
 use winit::window::Window;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, Vec2};
@@ -53,10 +50,10 @@ impl YakuiWinit {
         self.auto_viewport = enabled;
     }
 
-    pub fn handle_event<T>(
+    pub fn handle_window_event(
         &mut self,
         state: &mut yakui_core::Yakui,
-        event: &WinitEvent<T>,
+        event: &WindowEvent,
     ) -> bool {
         if let Some(init) = self.init.take() {
             let size = Vec2::new(init.size.width as f32, init.size.height as f32);
@@ -72,10 +69,7 @@ impl YakuiWinit {
         }
 
         match event {
-            WinitEvent::WindowEvent {
-                event: WindowEvent::Resized(size),
-                ..
-            } => {
+            WindowEvent::Resized(size) => {
                 let size = Vec2::new(size.width as f32, size.height as f32);
                 state.set_surface_size(size);
 
@@ -85,34 +79,22 @@ impl YakuiWinit {
 
                 false
             }
-            WinitEvent::WindowEvent {
-                event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
-                ..
-            } => {
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 if self.auto_scale {
                     state.set_scale_factor(*scale_factor as f32)
                 }
 
                 false
             }
-            WinitEvent::WindowEvent {
-                event: WindowEvent::CursorMoved { position, .. },
-                ..
-            } => {
+            WindowEvent::CursorMoved { position, .. } => {
                 let pos = Vec2::new(position.x as f32, position.y as f32);
                 state.handle_event(Event::CursorMoved(Some(pos)))
             }
-            WinitEvent::WindowEvent {
-                event: WindowEvent::CursorLeft { .. },
-                ..
-            } => state.handle_event(Event::CursorMoved(None)),
-            WinitEvent::WindowEvent {
-                event:
-                    WindowEvent::MouseInput {
-                        button,
-                        state: button_state,
-                        ..
-                    },
+            WindowEvent::CursorLeft { .. } => state.handle_event(Event::CursorMoved(None)),
+
+            WindowEvent::MouseInput {
+                button,
+                state: button_state,
                 ..
             } => {
                 let button = match button {
@@ -129,10 +111,7 @@ impl YakuiWinit {
 
                 state.handle_event(Event::MouseButtonChanged { button, down })
             }
-            WinitEvent::WindowEvent {
-                event: WindowEvent::MouseWheel { delta, .. },
-                ..
-            } => {
+            WindowEvent::MouseWheel { delta, .. } => {
                 // Observed logical pixels per scroll wheel increment in Windows on Chrome
                 const LINE_HEIGHT: f32 = 100.0 / 3.0;
 
@@ -149,14 +128,10 @@ impl YakuiWinit {
 
                 state.handle_event(Event::MouseScroll { delta })
             }
-            WinitEvent::WindowEvent {
-                event: WindowEvent::ModifiersChanged(mods),
-                ..
-            } => state.handle_event(Event::ModifiersChanged(from_winit_modifiers(mods.state()))),
-            WinitEvent::WindowEvent {
-                event: WindowEvent::KeyboardInput { event, .. },
-                ..
-            } => {
+            WindowEvent::ModifiersChanged(mods) => {
+                state.handle_event(Event::ModifiersChanged(from_winit_modifiers(mods.state())))
+            }
+            WindowEvent::KeyboardInput { event, .. } => {
                 if event.state == ElementState::Pressed {
                     if let Some(text) = event.text.as_ref() {
                         for c in text.chars() {
@@ -180,10 +155,7 @@ impl YakuiWinit {
                 }
             }
 
-            WinitEvent::WindowEvent {
-                event: WindowEvent::Ime(winit::event::Ime::Commit(text)),
-                ..
-            } => {
+            WindowEvent::Ime(winit::event::Ime::Commit(text)) => {
                 for c in text.chars() {
                     state.handle_event(Event::TextInput(c));
                 }

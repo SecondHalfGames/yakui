@@ -1,5 +1,5 @@
 use winit::{
-    event::{Event, WindowEvent},
+    event::{Event, StartCause, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -25,35 +25,41 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
     event_loop.set_control_flow(ControlFlow::Poll);
     event_loop
-        .run(move |event, elwt| {
-            if graphics.handle_event(&mut yak, &event, elwt) {
-                return;
+        .run(move |event, event_loop| match event {
+            Event::AboutToWait => {
+                window.request_redraw();
             }
 
-            match event {
-                Event::AboutToWait => {
-                    window.request_redraw();
-                }
-
-                Event::WindowEvent {
-                    event: WindowEvent::RedrawRequested { .. },
-                    ..
-                } => {
-                    yak.start();
-                    app();
-                    yak.finish();
-
-                    graphics.paint(&mut yak, wgpu::Color::BLACK);
-                }
-                _ => (),
+            Event::NewEvents(cause) => {
+                graphics.is_init = cause == StartCause::Init;
             }
+
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested { .. },
+                ..
+            } => {
+                yak.start();
+                app();
+                yak.finish();
+
+                graphics.paint(&mut yak, wgpu::Color::BLACK);
+            }
+
+            Event::WindowEvent { event, .. } => {
+                if graphics.handle_window_event(&mut yak, &event, event_loop) {
+                    return;
+                }
+            }
+            _ => (),
         })
         .unwrap();
 }
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
-    let window = winit::window::Window::new(&event_loop).unwrap();
+    let window = event_loop
+        .create_window(winit::window::Window::default_attributes())
+        .unwrap();
 
     #[cfg(not(target_arch = "wasm32"))]
     {
