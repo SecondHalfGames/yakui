@@ -23,7 +23,7 @@ impl Kind {
     fn texture_format(self) -> TextureFormat {
         match self {
             Kind::Mask => TextureFormat::R8,
-            Kind::Color => TextureFormat::Rgba8Srgb,
+            Kind::Color => TextureFormat::Rgba8SrgbPremultiplied,
         }
     }
 }
