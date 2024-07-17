@@ -157,7 +157,7 @@ impl Widget for RenderTextWidget {
 
                 let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
 
-                Vec2::new(size_x, size_y)
+                Vec2::new(size_x, size_y) / ctx.layout.scale_factor()
             };
 
             let size = constraints.constrain(size);
@@ -207,13 +207,17 @@ fn paint_text(
     layout_pos: Vec2,
     line_y: f32,
 ) {
+    let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
+
     let size = render.rect.size().as_vec2();
+
     let physical = glyph.physical((0.0, 0.0), 1.0);
     let pos = Vec2::new(physical.x as f32, physical.y as f32);
 
     let mut rect = PaintRect::new(Rect::from_pos_size(
-        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y) + layout_pos,
-        Vec2::new(size.x, size.y),
+        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y) * inv_scale_factor
+            + layout_pos,
+        Vec2::new(size.x, size.y) * inv_scale_factor,
     ));
 
     if render.kind == Kind::Mask {
