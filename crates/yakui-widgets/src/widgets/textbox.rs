@@ -256,6 +256,8 @@ impl Widget for TextBoxWidget {
                 let cursor = editor.cursor();
                 let selection = editor.selection_bounds();
                 editor.with_buffer_mut(|buffer| {
+                    let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
+
                     if let Some((a, b)) = selection {
                         for ((x, w), (y, h)) in buffer
                             .layout_runs()
@@ -269,8 +271,8 @@ impl Widget for TextBoxWidget {
                             let mut bg = PaintRect::new(Rect::from_pos_size(
                                 layout_node.rect.pos()
                                     + self.props.padding.offset()
-                                    + Vec2::new(x, y),
-                                Vec2::new(w, h),
+                                    + Vec2::new(x, y) * inv_scale_factor,
+                                Vec2::new(w, h) * inv_scale_factor,
                             ));
                             bg.color = self.props.selected_bg_color;
                             bg.add(ctx.paint);
@@ -290,8 +292,8 @@ impl Widget for TextBoxWidget {
                             let mut bg = PaintRect::new(Rect::from_pos_size(
                                 layout_node.rect.pos()
                                     + self.props.padding.offset()
-                                    + Vec2::new(x, y),
-                                Vec2::new(1.5, h),
+                                    + Vec2::new(x, y) * inv_scale_factor,
+                                Vec2::new(1.5, h) * inv_scale_factor,
                             ));
                             bg.color = self.props.cursor_color;
                             bg.add(ctx.paint);
