@@ -148,7 +148,7 @@ fn wgpu_address_mode(address_mode: AddressMode) -> wgpu::AddressMode {
 
 fn premultiply_alpha(texture: &Texture) -> Cow<'_, Texture> {
     fn premul(a: u8, b: u8) -> u8 {
-        (((a as u32) * (b as u32)) >> 8) as u8
+        (((a as u32) * (b as u32) + 255) >> 8) as u8
     }
 
     match texture.format() {
