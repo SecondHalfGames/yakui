@@ -472,6 +472,7 @@ fn make_main_pipeline(
             ..Default::default()
         },
         multiview: None,
+        cache: None,
     })
 }
 
@@ -520,5 +521,6 @@ fn make_text_pipeline(
             ..Default::default()
         },
         multiview: None,
+        cache: None,
     })
 }
