@@ -478,7 +478,10 @@ impl YakuiVulkan {
                                     x: pos.x as _,
                                     y: pos.y as _,
                                 },
-                                extent: resolution,
+                                extent: vk::Extent2D {
+                                    width: size.x,
+                                    height: size.y,
+                                },
                             }];
                             // If there's a clip, update the scissor
                             device.cmd_set_scissor(command_buffer, 0, &scissors);
