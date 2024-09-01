@@ -9,6 +9,7 @@ use crate::util::widget_children;
 
 #[derive(Debug)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Scrollable {
     pub direction: Option<ScrollDirection>,
 }

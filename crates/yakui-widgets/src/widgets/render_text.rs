@@ -22,6 +22,7 @@ supports features like padding.
 */
 #[derive(Debug)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RenderText {
     pub text: Cow<'static, str>,
     pub style: TextStyle,

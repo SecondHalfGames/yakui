@@ -9,6 +9,7 @@ Offsets its child by the given number of logical pixels.
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Offset {
     pub offset: Vec2,
 }

@@ -7,6 +7,7 @@ use yakui_core::Response;
 
 use crate::util;
 
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct State<T> {
     default: Box<dyn FnOnce() -> T>,
 }

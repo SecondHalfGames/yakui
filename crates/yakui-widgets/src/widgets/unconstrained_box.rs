@@ -11,6 +11,7 @@ Responds with [UnconstrainedBoxResponse].
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct UnconstrainedBox {
     pub constrain_x: bool,
     pub constrain_y: bool,

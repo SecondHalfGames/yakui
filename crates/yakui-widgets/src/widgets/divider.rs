@@ -8,6 +8,7 @@ use yakui_core::Response;
 /// Responds with [DividerResponse].
 #[derive(Debug)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Divider {
     /// The color of the divider.
     pub color: Color,

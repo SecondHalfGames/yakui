@@ -8,6 +8,7 @@ use yakui_core::{
 use crate::{shorthand::pad, util::widget_children, widgets::pad::Pad};
 
 #[derive(Debug)]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct NineSlice {
     texture: ManagedTextureId,
     /// Texture margins in pixels around the central NineSlice region, before

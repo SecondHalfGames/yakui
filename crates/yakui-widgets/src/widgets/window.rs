@@ -13,6 +13,7 @@ A floating window within the application.
 
 Responds with [WindowResponse].
 */
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Window {
     pub initial_size: Vec2,
     children: Option<Box<dyn Fn()>>,

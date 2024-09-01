@@ -11,6 +11,7 @@ Responds with [PadResponse].
 */
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Pad {
     pub left: f32,
     pub right: f32,
