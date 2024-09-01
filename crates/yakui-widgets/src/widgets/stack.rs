@@ -19,8 +19,8 @@ yakui::column(|| {
         // this would compose, by being stacked,
         // to appear like "hello world", barring issues from spacing,
         // as opposed to continuing the columnar layout setup above.
-        yakui::text(12, "hello");
-        yakui::text(12, "      world");
+        yakui::text(12.0, "hello");
+        yakui::text(12.0, "      world");
     });
     yakui::label("on bottom");
 });
