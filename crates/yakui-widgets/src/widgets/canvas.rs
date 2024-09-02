@@ -12,6 +12,7 @@ Allows the user to draw arbitrary graphics in a region.
 Responds with [CanvasResponse].
 */
 #[derive(Debug)]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Canvas {
     draw: IgnoreDebug<Option<DrawCallback>>,
 }

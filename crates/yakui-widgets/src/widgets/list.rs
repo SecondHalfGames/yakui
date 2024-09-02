@@ -27,6 +27,7 @@ yakui::row(|| {
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct List {
     pub direction: Direction,
     /// Added space at the end of each item.

@@ -11,6 +11,7 @@ Responds with [MaxWidthResponse].
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct MaxWidth {
     pub max_width: f32,
 }

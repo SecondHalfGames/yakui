@@ -34,6 +34,7 @@ Align::new(yakui::Alignment::TOP_RIGHT).show(|| {
 */
 #[derive(Debug, Clone)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Align {
     pub alignment: Alignment,
 }

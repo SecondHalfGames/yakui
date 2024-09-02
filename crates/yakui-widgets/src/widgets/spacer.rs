@@ -11,6 +11,7 @@ use crate::util::widget;
 /// Responds with [SpacerResponse].
 #[derive(Debug)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Spacer {
     pub flex: u32,
 }

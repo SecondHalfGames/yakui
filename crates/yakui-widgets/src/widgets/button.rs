@@ -28,6 +28,7 @@ if yakui::button("Hello").clicked {
 */
 #[derive(Debug)]
 #[non_exhaustive]
+#[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Button {
     pub text: Cow<'static, str>,
     pub padding: Pad,
