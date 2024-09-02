@@ -15,8 +15,8 @@ use crate::widgets::{
     ConstrainedBoxResponse, CountGrid, Divider, DividerResponse, Draggable, DraggableResponse,
     Flexible, FlexibleResponse, Image, ImageResponse, List, ListResponse, MaxWidth,
     MaxWidthResponse, NineSlice, Offset, OffsetResponse, Opaque, OpaqueResponse, Pad, PadResponse,
-    Reflow, ReflowResponse, Scrollable, ScrollableResponse, Slider, SliderResponse, Spacer, State,
-    StateResponse, Text, TextBox, TextBoxResponse, TextResponse,
+    Reflow, ReflowResponse, Scrollable, ScrollableResponse, Slider, SliderResponse, Spacer, Stack,
+    StackResponse, State, StateResponse, Text, TextBox, TextBoxResponse, TextResponse,
 };
 
 /// See [List].
@@ -190,6 +190,11 @@ pub fn canvas(paint: impl Fn(&mut PaintContext<'_>) + 'static) -> Response<Canva
 /// See [MaxWidth].
 pub fn max_width(max_width: f32, children: impl FnOnce()) -> Response<MaxWidthResponse> {
     MaxWidth::new(max_width).show(children)
+}
+
+/// See [Stack].
+pub fn stack(children: impl FnOnce()) -> Response<StackResponse> {
+    Stack::new().show(children)
 }
 
 pub fn use_state<F, T: 'static>(default: F) -> Response<StateResponse<T>>
