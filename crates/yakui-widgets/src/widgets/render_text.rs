@@ -154,7 +154,8 @@ impl Widget for RenderTextWidget {
                     .layout_runs()
                     .map(|layout| layout.line_w)
                     .max_by(|a, b| a.total_cmp(b))
-                    .unwrap_or_default();
+                    .unwrap_or_default()
+                    .ceil();
 
                 let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
 
