@@ -157,9 +157,13 @@ impl Widget for RenderTextWidget {
                     .unwrap_or_default()
                     .ceil();
 
-                let size_y = buffer.layout_runs().map(|layout| layout.line_height).sum();
+                let size_y = buffer
+                    .layout_runs()
+                    .map(|layout| layout.line_height)
+                    .sum::<f32>()
+                    .ceil();
 
-                Vec2::new(size_x, size_y) / ctx.layout.scale_factor()
+                (Vec2::new(size_x, size_y) / ctx.layout.scale_factor()).round()
             };
 
             let size = constraints.constrain(size);

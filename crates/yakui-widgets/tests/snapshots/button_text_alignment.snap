@@ -9,5 +9,4 @@ expression: view
       - RoundRectWidget pos(0, 0) size(800, 800)
         - PadWidget pos(0, 0) size(800, 800)
           - AlignWidget pos(20, 10) size(760, 780)
-            - RenderTextWidget pos(276, 365) size(248, 70)
-
+            - RenderTextWidget pos(276, 364.5) size(248, 71)
