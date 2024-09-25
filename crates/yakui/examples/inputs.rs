@@ -3,7 +3,7 @@ use yakui::{button, checkbox, label, pad, row, slider, textbox, use_state};
 
 pub fn run() {
     let checked = use_state(|| false);
-    let name = use_state(|| String::from("Hello"));
+    let name = use_state(|| String::new());
     let step_size = use_state(|| 0.0);
     let sliding = use_state(|| 50.0);
 
@@ -18,9 +18,9 @@ pub fn run() {
             let res = checkbox(checked.get());
             checked.set(res.checked);
 
-            let res = textbox(name.borrow().clone());
-            if let Some(new_name) = res.text.as_ref() {
-                name.set(new_name.clone());
+            let res = textbox("Hello", None);
+            if let Some(new_text) = res.into_inner().text {
+                name.set(new_text);
             }
 
             row(|| {

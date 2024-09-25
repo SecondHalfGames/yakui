@@ -21,7 +21,7 @@ fn app() {
 
 async fn run(event_loop: EventLoop<()>, window: Window) {
     let mut yak = Yakui::new();
-    let mut graphics = Graphics::new(&window, 4).await;
+    let mut graphics = Graphics::new(&mut yak, &window, 4).await;
 
     event_loop.set_control_flow(ControlFlow::Poll);
     event_loop

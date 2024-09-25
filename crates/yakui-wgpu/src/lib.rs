@@ -16,7 +16,7 @@ use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use thunderdome::{Arena, Index};
 use yakui_core::geometry::{Rect, Vec2, Vec4};
-use yakui_core::paint::{PaintDom, Pipeline, Texture, TextureChange, TextureFormat};
+use yakui_core::paint::{PaintDom, PaintLimits, Pipeline, Texture, TextureChange, TextureFormat};
 use yakui_core::{ManagedTextureId, TextureId};
 
 use self::bindgroup_cache::TextureBindgroupCache;
@@ -67,7 +67,13 @@ impl Vertex {
 }
 
 impl YakuiWgpu {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+    pub fn new(state: &mut yakui_core::Yakui, device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+        state.set_paint_limit(PaintLimits {
+            max_texture_size_1d: device.limits().max_texture_dimension_1d,
+            max_texture_size_2d: device.limits().max_texture_dimension_2d,
+            max_texture_size_3d: device.limits().max_texture_dimension_3d,
+        });
+
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("yakui Bind Group Layout"),
             entries: &[

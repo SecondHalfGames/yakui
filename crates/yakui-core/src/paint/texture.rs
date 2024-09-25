@@ -37,6 +37,10 @@ pub enum TextureFormat {
     /// color channels are sRGB-encoded.
     Rgba8Srgb,
 
+    /// Red, green, blue, and alpha channels, each represented as a `u8`. The
+    /// color channels are sRGB-encoded and premultiplied by the alpha.
+    Rgba8SrgbPremultiplied,
+
     /// A single color channel represented as a `u8`.
     R8,
 }
