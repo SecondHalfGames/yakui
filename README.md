@@ -23,7 +23,7 @@ yakui has the following priorities:
 3. Performance — yakui must be fast enough to use in a shipping game
 
 <div align="center">
-    <div><img width="720" id="panels" src="assets/ms80-editor.png" /></div>
+    <div><img width="760" id="panels" src="assets/ms80-editor.png" /></div>
     <label for="#panels">yakui being used in the editor for <a href="https://secondhalf.games/">MS80</a></code></label>
 </div>
 
