@@ -32,6 +32,7 @@ mod text;
 mod textbox;
 mod unconstrained_box;
 mod window;
+mod outline;
 
 pub use self::align::*;
 pub use self::button::*;
@@ -67,3 +68,4 @@ pub use self::text::*;
 pub use self::textbox::*;
 pub use self::unconstrained_box::*;
 pub use self::window::*;
+pub use self::outline::*;
