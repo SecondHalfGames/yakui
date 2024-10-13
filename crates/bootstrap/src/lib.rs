@@ -1,6 +1,7 @@
 mod custom_texture;
 
 use std::fmt::Write;
+use std::sync::Arc;
 use std::time::Instant;
 
 use winit::{
@@ -10,10 +11,13 @@ use winit::{
 };
 
 use winit::window::{Window, WindowAttributes, WindowId};
-use yakui::font::{Font, FontSettings, Fonts};
+use yakui::font::Fonts;
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2, Yakui};
 use yakui_app::Graphics;
+use yakui_widgets::cosmic_text::fontdb;
+
+pub const OPENMOJI: &[u8] = include_bytes!("../assets/OpenMoji-color-glyf_colr_0.ttf");
 
 const MONKEY_PNG: &[u8] = include_bytes!("../assets/monkey.png");
 const MONKEY_BLURRED_PNG: &[u8] = include_bytes!("../assets/monkey-blurred.png");
@@ -61,7 +65,11 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
 
         let sample_count = get_sample_count();
 
-        let mut app = pollster::block_on(yakui_app::Graphics::new(&window, sample_count));
+        let mut app = pollster::block_on(yakui_app::Graphics::new(
+            &mut self.yak,
+            &window,
+            sample_count,
+        ));
 
         // By default, yakui_winit will measure the system's scale factor and pass
         // it to yakui.
@@ -232,13 +240,11 @@ fn run(body: impl ExampleBody) {
 
     // Add a custom font for some of the examples.
     let fonts = yak.dom().get_global_or_init(Fonts::default);
-    let font = Font::from_bytes(
-        include_bytes!("../assets/Hack-Regular.ttf").as_slice(),
-        FontSettings::default(),
-    )
-    .unwrap();
 
-    fonts.add(font, Some("monospace"));
+    static HACK_REGULAR: &[u8] = include_bytes!("../assets/Hack-Regular.ttf");
+
+    fonts.load_font_source(fontdb::Source::Binary(Arc::from(&HACK_REGULAR)));
+    fonts.set_monospace_family("Hack");
 
     // Set up some default state that we'll modify later.
     let mut app = App {

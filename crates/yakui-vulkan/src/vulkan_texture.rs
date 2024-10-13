@@ -180,6 +180,7 @@ impl VulkanTexture {
 fn get_format(yakui_format: yakui::paint::TextureFormat) -> vk::Format {
     match yakui_format {
         yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_SRGB,
+        yakui::paint::TextureFormat::Rgba8SrgbPremultiplied => vk::Format::R8G8B8A8_SRGB,
         yakui::paint::TextureFormat::R8 => vk::Format::R8_UNORM,
         _ => panic!("Unsupported texture format: {yakui_format:?}"),
     }

@@ -15,9 +15,12 @@ default-fonts = []
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.2.0" }
 
-fontdue = "0.8.0"
+cosmic-text = { version = "0.12.0", default-features = false, features = [
+    "std",
+    "swash",
+] }
+sys-locale = "0.3.1"
 thunderdome = "0.6.0"
-smol_str = "0.2.1"
 
 [dev-dependencies]
 yakui = { path = "../yakui" }
