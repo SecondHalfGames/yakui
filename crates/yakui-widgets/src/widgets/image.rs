@@ -2,7 +2,7 @@ use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
-
+use yakui_core::dom::{Dom, DomNode};
 use crate::util::widget;
 
 /**
@@ -74,5 +74,9 @@ impl Widget for ImageWidget {
             rect.texture = Some((image, Rect::ONE));
             rect.add(ctx.paint);
         }
+    }
+
+    fn intrinsic_width(&self, node: &DomNode, dom: &Dom) -> f32 {
+        self.props.size.x
     }
 }
