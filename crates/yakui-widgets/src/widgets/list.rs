@@ -98,13 +98,13 @@ impl Widget for ListWidget {
                 self.props.item_spacing * node.children.len().saturating_sub(1) as f32;
 
             for &child in &node.children {
-                let child_width = dom.get(child).unwrap().widget.intrinsic_width(node,dom);
+                let node=dom.get(child).unwrap();
+                let child_width = node.widget.intrinsic_width(&node,dom);
                 width += child_width;
             }
-
             width+total_item_spacing
         } else {
-            self.default_intrinsic_width(node,dom)
+            self.default_intrinsic_width(node,dom);
         }
     }
 
