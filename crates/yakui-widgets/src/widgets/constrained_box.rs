@@ -1,3 +1,4 @@
+use yakui_core::dom::{Dom, DomNode};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
@@ -64,5 +65,8 @@ impl Widget for ConstrainedBoxWidget {
         }
 
         input.constrain(constraints.constrain(size))
+    }
+    fn intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32 {
+        self.props.constraints.min.x.max(self.default_intrinsic_width(node,dom))
     }
 }
