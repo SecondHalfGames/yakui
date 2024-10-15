@@ -1,6 +1,7 @@
+use yakui_core::dom::{Dom, DomNode};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::Response;
+use yakui_core::{Direction, Response};
 
 use crate::util::widget_children;
 
@@ -109,5 +110,9 @@ impl Widget for PadWidget {
 
         self_size = self_size.max(total_padding);
         input.constrain_min(self_size)
+    }
+
+    fn intrinsic_width(&self, node: &DomNode, dom: &Dom) -> f32 {
+        self.default_intrinsic_width(node, dom) + self.props.left + self.props.right
     }
 }

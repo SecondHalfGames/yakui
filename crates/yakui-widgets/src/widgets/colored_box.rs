@@ -1,3 +1,4 @@
+use yakui_core::dom::{Dom, DomNode};
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
@@ -47,6 +48,7 @@ impl ColoredBox {
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<ColoredBoxResponse> {
         widget_children::<ColoredBoxWidget, F>(children, self)
     }
+
 }
 
 #[derive(Debug)]
@@ -80,6 +82,10 @@ impl Widget for ColoredBoxWidget {
         }
 
         input.constrain_min(size)
+    }
+
+    fn intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32 {
+        self.props.min_size.x.max(self.default_intrinsic_width(node,dom))
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {

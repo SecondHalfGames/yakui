@@ -1,8 +1,8 @@
+use crate::util::widget_children;
+use yakui_core::dom::{Dom, DomNode};
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
-
-use crate::util::widget_children;
 
 /**
 Lays out children in a single direction. Supports flex sizing.
@@ -88,6 +88,24 @@ impl Widget for ListWidget {
         };
 
         (flex, FlexFit::Tight)
+    }
+
+    fn intrinsic_width(&self,node:&DomNode, dom: &Dom) -> f32 {
+        if self.props.direction == Direction::Right {
+            let mut width:f32 = 0.0;
+
+            let total_item_spacing =
+                self.props.item_spacing * node.children.len().saturating_sub(1) as f32;
+
+            for &child in &node.children {
+                let child_width = dom.get(child).unwrap().widget.intrinsic_width(node,dom);
+                width += child_width;
+            }
+
+            width+total_item_spacing
+        } else {
+            self.default_intrinsic_width(node,dom)
+        }
     }
 
     // This approach to layout is based on Flutter's Flex layout algorithm.

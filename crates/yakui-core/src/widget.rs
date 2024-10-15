@@ -5,7 +5,7 @@ use std::fmt;
 
 use glam::Vec2;
 
-use crate::dom::Dom;
+use crate::dom::{Dom, DomNode};
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
@@ -119,6 +119,26 @@ pub trait Widget: 'static + fmt::Debug {
         self.default_layout(ctx, constraints)
     }
 
+    /// Tells the intrinsic width of the object, which is its width if the
+    /// widget were given unbounded constraints.
+    fn intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32 {
+        self.default_intrinsic_width(node, dom)
+    }
+
+    /// Default implementation of intrinsic width calculation.
+    /// Calculates the maximum of child widths
+    fn default_intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32 {
+        let mut width:f32 = 0.0;
+
+        for &child in &node.children {
+            let node=dom.get(child).unwrap();
+            let child_width=node.widget.intrinsic_width(&node,dom);
+            width = width.max(child_width);
+
+        }
+        width
+    }
+
     /// A convenience method that always performs the default layout strategy
     /// for a widget. This method is intended to be called from custom widget's
     /// `layout` methods.
@@ -183,6 +203,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
 
+    /// See [`Widget::intrinsic_width`].
+    fn intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32;
+
     /// See [`Widget::flow`].
     fn flow(&self) -> Flow;
 
@@ -194,6 +217,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
 
     /// See [`Widget::event`].
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse;
+
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
@@ -209,6 +233,10 @@ where
 
     fn flex(&self) -> (u32, FlexFit) {
         <T as Widget>::flex(self)
+    }
+
+    fn intrinsic_width(&self,node:&DomNode,dom:&Dom) -> f32 {
+        <T as Widget>::intrinsic_width(self,node,dom)
     }
 
     fn flow(&self) -> Flow {
