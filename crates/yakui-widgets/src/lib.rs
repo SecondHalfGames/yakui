@@ -3,6 +3,7 @@
                             // out our Response type even if it's unit.
     clippy::new_without_default,
 )]
+#![doc = include_str!("../README.md")]
 
 mod ignore_debug;
 

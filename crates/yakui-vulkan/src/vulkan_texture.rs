@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, mem};
 
 use ash::vk;
+use yakui_core as yakui;
 
 use crate::{buffer::Buffer, descriptors::Descriptors, vulkan_context::VulkanContext};
 

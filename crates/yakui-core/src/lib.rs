@@ -4,8 +4,7 @@
     clippy::collapsible_if
 )]
 #![deny(missing_docs)]
-
-//! TODO: Crate docs
+#![doc = include_str!("../README.md")]
 
 #[macro_use]
 mod mopmopa;

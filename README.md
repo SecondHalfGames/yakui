@@ -24,7 +24,7 @@ yakui has the following priorities:
 
 <div align="center">
     <div><img width="760" id="panels" src="assets/ms80-editor.png" /></div>
-    <label for="#panels">yakui being used in the editor for <a href="https://secondhalf.games/">MS80</a></code></label>
+    <label for="#panels">yakui being used in the editor for <a href="https://secondhalf.games/">MS80</a></label>
 </div>
 
 [Flutter]: https://flutter.dev/
@@ -43,8 +43,13 @@ yakui has the following priorities:
 * [License](#license)
 
 ## Getting Started
-Add the [`yakui`] crate to your project:
+Add the [`yakui`] crate to your project, either from crates.io:
 
+```bash
+cargo add yakui
+```
+
+...or by editing your `Cargo.toml` to use the latest version from GitHub:
 ```toml
 [dependencies]
 yakui = { git = "https://github.com/SecondHalfGames/yakui" }
@@ -74,7 +79,7 @@ Finally, call `paint()` and feed the result to your renderer:
 your_renderer.draw(yak.paint());
 ```
 
-To see your UI, you'll need a renderer crate. You can also write your own integration for your game. Here are the officially supported renderer crates:
+To see your UI, you'll need a renderer crate. You can also write your own renderer for your game. Here are the officially supported renderer crates:
 
 - [`yakui-wgpu`] — wgpu renderer
 - [`yakui-vulkan`] — Vulkan renderer
