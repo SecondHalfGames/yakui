@@ -9,10 +9,11 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
+use crate::id::WidgetId;
 use crate::input::{InputState, NavDirection};
 use crate::layout::LayoutDom;
 use crate::paint::PaintDom;
-use crate::{Flow, WidgetId};
+use crate::types::{Axis, Flow};
 
 /// Trait that's automatically implemented for all widget props.
 ///
@@ -37,6 +38,26 @@ impl<'dom> LayoutContext<'dom> {
     pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
         self.layout
             .calculate(self.dom, self.input, widget, constraints)
+    }
+
+    /// Calculates the intrinsic size for the given widget on the given axis.
+    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis) -> f32 {
+        self.layout.intrinsic_size(self.dom, widget, axis)
+    }
+}
+
+/// Information available to a widget during the layout phase.
+#[non_exhaustive]
+#[allow(missing_docs)]
+pub struct IntrinsicSizeContext<'dom> {
+    pub dom: &'dom Dom,
+    pub layout: &'dom LayoutDom,
+}
+
+impl<'dom> IntrinsicSizeContext<'dom> {
+    /// Calculates the intrinsic size for the given widget on the given axis.
+    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis) -> f32 {
+        self.layout.intrinsic_size(self.dom, widget, axis)
     }
 }
 
@@ -134,6 +155,21 @@ pub trait Widget: 'static + fmt::Debug {
         constraints.constrain_min(size)
     }
 
+    /// Tells the intrinsic size on one axis of the object, which is its size
+    /// along that axis if the widget were given unbounded constraints on the
+    /// other axis.
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32 {
+        let node = ctx.dom.get_current();
+        let mut size: f32 = 0.0;
+
+        for &child in &node.children {
+            let child_size = ctx.intrinsic_size(child, axis);
+            size = size.max(child_size);
+        }
+
+        size
+    }
+
     /// Paint the widget based on its current state.
     ///
     /// The default implementation will paint all of the widget's children.
@@ -180,6 +216,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
     /// See [`Widget::layout`].
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2;
 
+    /// See [`Widget::intrinsic_size`].
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32;
+
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
 
@@ -205,6 +244,10 @@ where
 {
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
         <T as Widget>::layout(self, ctx, constraints)
+    }
+
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32 {
+        <T as Widget>::intrinsic_size(self, ctx, axis)
     }
 
     fn flex(&self) -> (u32, FlexFit) {

@@ -256,3 +256,21 @@ impl Pivot {
     pub const BOTTOM_CENTER: Self = Self::new(0.5, 1.0);
     pub const BOTTOM_RIGHT: Self = Self::new(1.0, 1.0);
 }
+
+/// Defines an axis usable by the UI.
+#[allow(missing_docs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Axis {
+    X,
+    Y,
+}
+
+impl Axis {
+    /// Return the component of a [`Vec2`] that matches this axis.
+    pub fn select(self, v: Vec2) -> f32 {
+        match self {
+            Axis::X => v.x,
+            Axis::Y => v.y,
+        }
+    }
+}

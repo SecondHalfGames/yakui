@@ -10,7 +10,8 @@ use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
 use crate::id::WidgetId;
 use crate::input::{InputState, MouseInterest};
-use crate::widget::LayoutContext;
+use crate::types::Axis;
+use crate::widget::{IntrinsicSizeContext, LayoutContext};
 
 /// Contains information on how each widget in the DOM is laid out and what
 /// events they're interested in.
@@ -194,6 +195,18 @@ impl LayoutDom {
         if clipping_enabled {
             self.clip_stack.pop();
         }
+
+        dom.exit(id);
+        size
+    }
+
+    /// Calculates the intrinsic size of the given widget along the given axis.
+    pub fn intrinsic_size(&self, dom: &Dom, id: WidgetId, axis: Axis) -> f32 {
+        dom.enter(id);
+        let dom_node = dom.get(id).unwrap();
+
+        let context = IntrinsicSizeContext { dom, layout: self };
+        let size = dom_node.widget.intrinsic_size(context, axis);
 
         dom.exit(id);
         size
