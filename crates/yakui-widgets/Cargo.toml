@@ -1,7 +1,7 @@
 [package]
 name = "yakui-widgets"
 description = "Built-in widgets for yakui"
-version = "0.2.0"
+version = "0.3.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/LPGhatguy/yakui"
 edition = "2021"
@@ -13,7 +13,7 @@ default = ["default-fonts"]
 default-fonts = []
 
 [dependencies]
-yakui-core = { path = "../yakui-core", version = "0.2.0" }
+yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
 fontdue = "0.8.0"
 thunderdome = "0.6.0"

@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 mod multisampling;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, event_loop::ActiveEventLoop, window::Window};

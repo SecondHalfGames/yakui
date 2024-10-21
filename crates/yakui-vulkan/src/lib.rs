@@ -1,21 +1,5 @@
 #![deny(missing_docs)]
-
-//! A Vulkan backend for the [`yakui`] crate. Uses [`ash`] to wrap Vulkan related functionality.
-//!
-//! The main entrypoint is the [`YakuiVulkan`] struct which creates a [`ash::vk::RenderPass`] and [`ash::vk::Pipeline`]
-//! to draw yakui GUIs. This is initialised by populating a [`VulkanContext`] helper struct to pass down the relevant hooks
-//! into your Vulkan renderer.
-//!
-//! Like most Vulkan applications, this crate uses unsafe Rust! No checks are made to ensure that Vulkan handles are valid,
-//! so take note of the safety warnings on the various methods of [`YakuiVulkan`].
-//!
-//! Currently this crate only supports drawing to images in the `VK_IMAGE_LAYOUT_PRESENT_SRC_KHR` layout, but future
-//! releases will support drawing to any arbitrary [`vk::ImageView`].
-//!
-//! This crate requires at least Vulkan 1.2 and a GPU with support for `VkPhysicalDeviceDescriptorIndexingFeatures.descriptorBindingPartiallyBound`.
-//! You should also, you know, enable that feature, or Vulkan Validation Layers will get mad at you. You definitely don't want that.
-//!
-//! For an example of how to use this crate, check out `examples/demo.rs`
+#![doc = include_str!("../README.md")]
 
 mod buffer;
 mod descriptors;
@@ -32,8 +16,10 @@ use std::{collections::HashMap, ffi::CStr, io::Cursor};
 pub use vulkan_context::VulkanContext;
 use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
-use yakui::geometry::UVec2;
-use yakui::{paint::Vertex as YakuiVertex, ManagedTextureId};
+
+use yakui_core as yakui;
+use yakui_core::geometry::UVec2;
+use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///

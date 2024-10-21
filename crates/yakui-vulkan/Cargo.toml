@@ -1,20 +1,21 @@
 [package]
 name = "yakui-vulkan"
 description = "vulkan bindings for yakui"
-version = "0.2.0"
+version = "0.3.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/LPGhatguy/yakui"
 edition = "2021"
 
 [dependencies]
-yakui = { path = "../yakui" }
-yakui-core = { path = "../yakui-core" }
+yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
 ash = { version = "0.38", default-features = false, features = ["std"] }
 bytemuck = "1.13.0"
 thunderdome = "0.6.0"
 
 [dev-dependencies]
+yakui = { path = "../yakui", version = "0.3.0" }
+
 ash = { version = "0.38", default-features = false, features = ["loaded"] }
 ash-window = "0.13"
 image = "0.24.5"

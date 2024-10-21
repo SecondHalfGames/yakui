@@ -1,4 +1,5 @@
 #![allow(clippy::new_without_default)]
+#![doc = include_str!("../README.md")]
 
 mod bindgroup_cache;
 mod buffer;
