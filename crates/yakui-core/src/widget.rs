@@ -41,8 +41,8 @@ impl<'dom> LayoutContext<'dom> {
     }
 
     /// Calculates the intrinsic size for the given widget on the given axis.
-    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis) -> f32 {
-        self.layout.intrinsic_size(self.dom, widget, axis)
+    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis, extent: f32) -> f32 {
+        self.layout.intrinsic_size(self.dom, widget, axis, extent)
     }
 }
 
@@ -56,8 +56,8 @@ pub struct IntrinsicSizeContext<'dom> {
 
 impl<'dom> IntrinsicSizeContext<'dom> {
     /// Calculates the intrinsic size for the given widget on the given axis.
-    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis) -> f32 {
-        self.layout.intrinsic_size(self.dom, widget, axis)
+    pub fn intrinsic_size(&self, widget: WidgetId, axis: Axis, extent: f32) -> f32 {
+        self.layout.intrinsic_size(self.dom, widget, axis, extent)
     }
 }
 
@@ -156,14 +156,14 @@ pub trait Widget: 'static + fmt::Debug {
     }
 
     /// Tells the intrinsic size on one axis of the object, which is its size
-    /// along that axis if the widget were given unbounded constraints on the
-    /// other axis.
-    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32 {
+    /// along that axis if the widget is provided the given `extent` as the max
+    /// size along the other axis.
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis, extent: f32) -> f32 {
         let node = ctx.dom.get_current();
         let mut size: f32 = 0.0;
 
         for &child in &node.children {
-            let child_size = ctx.intrinsic_size(child, axis);
+            let child_size = ctx.intrinsic_size(child, axis, extent);
             size = size.max(child_size);
         }
 
@@ -217,7 +217,7 @@ pub trait ErasedWidget: Any + fmt::Debug {
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2;
 
     /// See [`Widget::intrinsic_size`].
-    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32;
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis, extent: f32) -> f32;
 
     /// See [`Widget::flex`].
     fn flex(&self) -> (u32, FlexFit);
@@ -246,8 +246,8 @@ where
         <T as Widget>::layout(self, ctx, constraints)
     }
 
-    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis) -> f32 {
-        <T as Widget>::intrinsic_size(self, ctx, axis)
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis, extent: f32) -> f32 {
+        <T as Widget>::intrinsic_size(self, ctx, axis, extent)
     }
 
     fn flex(&self) -> (u32, FlexFit) {

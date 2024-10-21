@@ -273,4 +273,15 @@ impl Axis {
             Axis::Y => v.y,
         }
     }
+
+    /// Tells whether this axis indicates the same axis as a given [`Direction`].
+    pub fn is_direction(self, dir: Direction) -> bool {
+        match (self, dir) {
+            (Axis::X, Direction::Right) => true,
+            (Axis::Y, Direction::Down) => true,
+
+            (Axis::X, Direction::Down) => false,
+            (Axis::Y, Direction::Right) => false,
+        }
+    }
 }

@@ -201,12 +201,12 @@ impl LayoutDom {
     }
 
     /// Calculates the intrinsic size of the given widget along the given axis.
-    pub fn intrinsic_size(&self, dom: &Dom, id: WidgetId, axis: Axis) -> f32 {
+    pub fn intrinsic_size(&self, dom: &Dom, id: WidgetId, axis: Axis, extent: f32) -> f32 {
         dom.enter(id);
         let dom_node = dom.get(id).unwrap();
 
         let context = IntrinsicSizeContext { dom, layout: self };
-        let size = dom_node.widget.intrinsic_size(context, axis);
+        let size = dom_node.widget.intrinsic_size(context, axis, extent);
 
         dom.exit(id);
         size

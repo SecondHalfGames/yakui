@@ -1,6 +1,8 @@
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
-use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
+use yakui_core::widget::{IntrinsicSizeContext, LayoutContext, Widget};
+use yakui_core::{
+    Axis, CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response,
+};
 
 use crate::util::widget_children;
 
@@ -284,5 +286,40 @@ impl Widget for ListWidget {
         }
 
         container_size
+    }
+
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis, extent: f32) -> f32 {
+        let node = ctx.dom.get_current();
+
+        if axis.is_direction(self.props.direction) {
+            // main axis layout
+            let mut total_flex = 0.0;
+            let mut inflexible_space = 0.0;
+
+            for &child_id in &node.children {
+                let child_size = ctx.intrinsic_size(child_id, axis, extent);
+                let child = ctx.dom.get(child_id).unwrap();
+
+                let (flex, _) = child.widget.flex();
+
+                if flex > 0 {
+                    // TODO
+                } else {
+                    inflexible_space += child_size;
+                }
+            }
+
+            inflexible_space
+        } else {
+            // cross axis layout
+            let mut max_size: f32 = 0.0;
+
+            for &child_id in &node.children {
+                let child_size = ctx.intrinsic_size(child_id, axis, extent);
+                max_size = max_size.max(child_size);
+            }
+
+            max_size
+        }
     }
 }
