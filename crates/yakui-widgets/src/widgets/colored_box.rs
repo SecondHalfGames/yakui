@@ -1,7 +1,7 @@
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::paint::PaintRect;
-use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
+use yakui_core::widget::{IntrinsicSizeContext, LayoutContext, PaintContext, Widget};
+use yakui_core::{Axis, Response};
 
 use crate::util::{widget, widget_children};
 
@@ -80,6 +80,17 @@ impl Widget for ColoredBoxWidget {
         }
 
         input.constrain_min(size)
+    }
+
+    fn intrinsic_size(&self, ctx: IntrinsicSizeContext<'_>, axis: Axis, extent: f32) -> f32 {
+        let node = ctx.dom.get_current();
+        let mut size = axis.select(self.props.min_size);
+
+        for &child in &node.children {
+            size = size.max(ctx.intrinsic_size(child, axis, extent));
+        }
+
+        size
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
