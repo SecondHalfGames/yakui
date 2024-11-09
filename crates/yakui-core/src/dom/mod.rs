@@ -82,6 +82,8 @@ impl Dom {
 
         let mut nodes = self.inner.nodes.borrow_mut();
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
+        removed_nodes.clear();
+
         let root = self.inner.root;
         trim_children(&mut nodes, &mut removed_nodes, root);
 
@@ -146,6 +148,13 @@ impl Dom {
         Ref::map(nodes, |nodes| nodes.get(index).unwrap())
     }
 
+    /// Tells whether the DOM contains a widget with the given ID.
+    pub fn contains(&self, id: WidgetId) -> bool {
+        let nodes = self.inner.nodes.borrow();
+        let index = id.index();
+        nodes.contains(index)
+    }
+
     /// Get the node with the given widget ID.
     pub fn get(&self, id: WidgetId) -> Option<Ref<'_, DomNode>> {
         let nodes = self.inner.nodes.borrow();
@@ -198,27 +207,47 @@ impl Dom {
     pub fn begin_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
+        let parent_id = self.current();
+
         let (id, mut widget) = {
             let mut nodes = self.inner.nodes.borrow_mut();
-            let id = next_widget(&mut nodes, self.current());
-            self.inner.stack.borrow_mut().push(id);
 
-            // Component::update needs mutable access to both the widget and the
-            // DOM, so we need to rip the widget out of the tree so we can
-            // release our lock.
-            let node = nodes.get_mut(id.index()).unwrap();
-            let widget = replace(&mut node.widget, Box::new(DummyWidget));
+            if let Some(id) = next_existing_widget(&mut nodes, parent_id) {
+                // There is an existing child in this slot. It may or may not
+                // match up with the widget we're starting here.
 
-            node.next_child = 0;
-            (id, widget)
+                // Component::update needs mutable access to both the widget and the
+                // DOM, so we need to rip the widget out of the tree so we can
+                // release our lock.
+                let node = nodes.get_mut(id.index()).unwrap();
+                let widget = replace(&mut node.widget, Box::new(DummyWidget));
+
+                if widget.as_ref().type_id() == TypeId::of::<T>() {
+                    // happy path! we can update our widget in place.
+
+                    node.next_child = 0;
+                    (id, widget)
+                } else {
+                    // sad path! the widget changed type, so we have to burn
+                    // down the world and try again.
+
+                    let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
+                    remove_recursive(&mut nodes, &mut removed_nodes, id);
+
+                    new_widget::<T>(&mut nodes, parent_id)
+                }
+            } else {
+                // we're in uncharted territory!
+
+                new_widget::<T>(&mut nodes, parent_id)
+            }
         };
 
-        // Potentially recreate the widget, then update it.
-        let response = {
-            if widget.as_ref().type_id() != TypeId::of::<T>() {
-                widget = Box::new(T::new());
-            }
+        // After this point, we've officially entered our widget.
+        self.inner.stack.borrow_mut().push(id);
 
+        // Update the widget now that we've released our locks.
+        let response = {
             let widget = widget.downcast_mut::<T>().unwrap();
             widget.update(props)
         };
@@ -274,27 +303,43 @@ impl DomInner {
     }
 }
 
-fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
+fn next_existing_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> Option<WidgetId> {
     let parent = nodes.get_mut(parent_id.index()).unwrap();
-    if parent.next_child < parent.children.len() {
-        let id = parent.children[parent.next_child];
+
+    if let Some(&id) = parent.children.get(parent.next_child) {
         parent.next_child += 1;
-        id
+        Some(id)
     } else {
-        let index = nodes.insert(DomNode {
-            widget: Box::new(DummyWidget),
-            parent: Some(parent_id),
-            children: Vec::new(),
-            next_child: 0,
-        });
-
-        let id = WidgetId::new(index);
-
-        let parent = nodes.get_mut(parent_id.index()).unwrap();
-        parent.children.push(id);
-        parent.next_child += 1;
-        id
+        None
     }
+}
+
+fn new_widget<T: Widget>(
+    nodes: &mut Arena<DomNode>,
+    parent_id: WidgetId,
+) -> (WidgetId, Box<dyn ErasedWidget>) {
+    let index = nodes.insert(DomNode {
+        widget: Box::new(DummyWidget),
+        parent: Some(parent_id),
+        children: Vec::new(),
+        next_child: 0,
+    });
+
+    let id = WidgetId::new(index);
+
+    let parent = nodes.get_mut(parent_id.index()).unwrap();
+
+    if parent.next_child < parent.children.len() {
+        parent.children[parent.next_child] = id;
+    } else {
+        parent.children.push(id);
+    }
+
+    parent.next_child += 1;
+
+    let widget = Box::new(T::new());
+
+    (id, widget)
 }
 
 /// Remove children from the given node that weren't present in the latest
@@ -315,5 +360,24 @@ fn trim_children(nodes: &mut Arena<DomNode>, removed_nodes: &mut Vec<WidgetId>, 
             let child = nodes.remove(child_id.index()).unwrap();
             queue.extend(child.children);
         }
+    }
+}
+
+/// Remove a widget and all of its descendants recursively.
+fn remove_recursive(nodes: &mut Arena<DomNode>, removed_nodes: &mut Vec<WidgetId>, id: WidgetId) {
+    let mut queue = VecDeque::new();
+    queue.push_back(id);
+
+    while let Some(id) = queue.pop_front() {
+        removed_nodes.push(id);
+
+        let Some(node) = nodes.get(id.index()) else {
+            continue;
+        };
+
+        let to_drop = node.children.as_slice();
+        queue.extend(to_drop);
+
+        nodes.remove(id.index());
     }
 }
