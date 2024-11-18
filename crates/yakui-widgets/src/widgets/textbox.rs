@@ -26,7 +26,7 @@ Responds with [TextBoxResponse].
 #[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct TextBox {
-    pub update_text: Option<String>,
+    pub text: String,
 
     pub style: TextStyle,
     pub padding: Pad,
@@ -46,9 +46,9 @@ pub struct TextBox {
 }
 
 impl TextBox {
-    pub fn new(update_text: Option<String>) -> Self {
+    pub fn new(text: String) -> Self {
         Self {
-            update_text,
+            text,
 
             style: TextStyle::label(),
             padding: Pad::all(8.0),
@@ -63,18 +63,6 @@ impl TextBox {
             cursor_color: Color::RED,
 
             placeholder: String::new(),
-        }
-    }
-
-    pub fn with_text(initial_text: &str, updated_text: Option<&str>) -> TextBox {
-        let first_time = use_state(|| true);
-
-        if first_time.get() {
-            first_time.set(false);
-
-            TextBox::new(Some(initial_text.into()))
-        } else {
-            TextBox::new(updated_text.map(Into::into))
         }
     }
 
@@ -93,6 +81,7 @@ enum DragState {
 #[derive(Debug)]
 pub struct TextBoxWidget {
     props: TextBox,
+    text_updated: bool,
     active: bool,
     activated: bool,
     lost_focus: bool,
@@ -117,7 +106,8 @@ impl Widget for TextBoxWidget {
 
     fn new() -> Self {
         Self {
-            props: TextBox::new(None),
+            props: TextBox::new(String::new()),
+            text_updated: false,
             active: false,
             activated: false,
             lost_focus: false,
@@ -130,6 +120,7 @@ impl Widget for TextBoxWidget {
     }
 
     fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
+        self.text_updated = props.text != self.props.text;
         self.props = props;
 
         let mut style = self.props.style.clone();
@@ -217,13 +208,13 @@ impl Widget for TextBoxWidget {
                     self.max_size.replace(Some(max_size));
                 }
 
-                if let Some(new_text) = &self.props.update_text {
+                if self.text_updated {
                     self.text_changed.set(true);
 
                     editor.with_buffer_mut(|buffer| {
                         buffer.set_text(
                             font_system,
-                            new_text,
+                            &self.props.text,
                             self.props.style.attrs.as_attrs(),
                             cosmic_text::Shaping::Advanced,
                         );

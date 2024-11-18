@@ -100,8 +100,8 @@ pub fn label<S: Into<Cow<'static, str>>>(text: S) -> Response<TextResponse> {
 }
 
 /// See [TextBox].
-pub fn textbox(initial_text: &str, updated_text: Option<&str>) -> Response<TextBoxResponse> {
-    TextBox::with_text(initial_text, updated_text).show()
+pub fn textbox(text: &str) -> Response<TextBoxResponse> {
+    TextBox::new(text.to_owned()).show()
 }
 
 /// See [Flexible].

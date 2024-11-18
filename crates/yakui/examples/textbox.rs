@@ -5,7 +5,7 @@ pub fn run() {
     let text = use_state(|| String::new());
 
     center(|| {
-        let mut my_box = TextBox::new(None);
+        let mut my_box = TextBox::new(text.borrow().to_owned());
         my_box.style.font_size = 60.0;
         my_box.padding = Pad::all(50.0);
         my_box.placeholder = "placeholder".into();
