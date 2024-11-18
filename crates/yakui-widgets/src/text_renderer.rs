@@ -56,8 +56,8 @@ impl InnerAtlas {
         }
     }
 
-    fn ensure_texture(&mut self, paint: &mut PaintDom) {
-        let texture_size = paint.limits().max_texture_size_2d;
+    fn ensure_texture(&mut self, paint: &mut PaintDom) -> Option<ManagedTextureId> {
+        let texture_size = paint.limits()?.max_texture_size_2d;
 
         if self.texture.is_none() {
             let mut texture = Texture::new(
@@ -69,6 +69,8 @@ impl InnerAtlas {
             texture.min_filter = TextureFilter::Linear;
             self.texture = Some(paint.add_texture(texture))
         }
+
+        self.texture
     }
 
     fn get_or_insert(
@@ -78,20 +80,22 @@ impl InnerAtlas {
         cache: &mut cosmic_text::SwashCache,
         glyph: &cosmic_text::LayoutGlyph,
         image: Option<cosmic_text::SwashImage>,
-    ) -> Result<GlyphRender, Option<cosmic_text::SwashImage>> {
-        self.ensure_texture(paint);
+    ) -> Result<Option<GlyphRender>, Option<cosmic_text::SwashImage>> {
+        let Some(texture_id) = self.ensure_texture(paint) else {
+            return Ok(None);
+        };
 
         let texture_size = paint.texture_mut(self.texture.unwrap()).unwrap().size();
 
         let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
         if let Some((rect, offset)) = self.glyph_rects.get(&physical_glyph.cache_key).cloned() {
-            return Ok(GlyphRender {
+            return Ok(Some(GlyphRender {
                 kind: self.kind,
                 rect,
                 offset,
                 tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
                 texture: self.texture.unwrap(),
-            });
+            }));
         }
 
         if glyph.color_opt.is_some() {
@@ -129,10 +133,6 @@ impl InnerAtlas {
         };
 
         let glyph_max = pos + glyph_size;
-
-        println!("Getting glyph of kind {:?}", self.kind);
-        println!("Paint glyph at {pos:?} to {glyph_max:?} on atlas of size {texture_size:?}");
-
         if glyph_max.x >= texture_size.x || glyph_max.y >= texture_size.y {
             panic!("Overflowed glyph cache!");
         }
@@ -157,13 +157,13 @@ impl InnerAtlas {
         self.glyph_rects
             .insert(physical_glyph.cache_key, (rect, offset));
 
-        Ok(GlyphRender {
+        Ok(Some(GlyphRender {
             kind: self.kind,
             rect,
             offset,
             tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
             texture: self.texture.unwrap(),
-        })
+        }))
     }
 
     fn clear(&mut self, paint: &mut PaintDom) {
@@ -233,7 +233,7 @@ impl InnerState {
                 .get_or_insert(paint, font_system, &mut self.swash, glyph, None);
 
         match a {
-            Ok(glyph) => Some(glyph),
+            Ok(glyph) => glyph,
             Err(image) => {
                 let b = self.atlas.color_atlas.get_or_insert(
                     paint,
@@ -243,7 +243,7 @@ impl InnerState {
                     image,
                 );
 
-                b.ok()
+                b.ok()?
             }
         }
     }

@@ -33,7 +33,7 @@ pub struct PaintDom {
     surface_size: Vec2,
     unscaled_viewport: Rect,
     scale_factor: f32,
-    limits: PaintLimits,
+    limits: Option<PaintLimits>,
 
     layers: PaintLayers,
     clip_stack: Vec<Rect>,
@@ -48,7 +48,7 @@ impl PaintDom {
             surface_size: Vec2::ONE,
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
-            limits: PaintLimits::default(),
+            limits: None,
 
             layers: PaintLayers::new(),
             clip_stack: Vec::new(),
@@ -56,13 +56,13 @@ impl PaintDom {
     }
 
     /// Gets the paint limits.
-    pub fn limits(&self) -> PaintLimits {
+    pub fn limits(&self) -> Option<PaintLimits> {
         self.limits
     }
 
     /// Sets the paint limits, should be called once by rendering backends.
     pub fn set_limit(&mut self, limits: PaintLimits) {
-        self.limits = limits
+        self.limits = Some(limits);
     }
 
     /// Prepares the PaintDom to be updated for the frame.
