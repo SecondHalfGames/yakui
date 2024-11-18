@@ -6,6 +6,7 @@ pub struct TextStyle {
     pub font_size: f32,
     pub line_height_override: Option<f32>,
     pub color: Color,
+    pub align: TextAlignment,
     pub attrs: cosmic_text::AttrsOwned,
 }
 
@@ -15,6 +16,7 @@ impl Default for TextStyle {
             font_size: 14.0,
             line_height_override: None,
             color: Color::WHITE,
+            align: TextAlignment::Center,
             attrs: cosmic_text::AttrsOwned {
                 family_owned: cosmic_text::FamilyOwned::SansSerif,
                 ..cosmic_text::AttrsOwned::new(cosmic_text::Attrs::new())
@@ -40,4 +42,11 @@ impl TextStyle {
             (self.line_height() * scale_factor).ceil(),
         )
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TextAlignment {
+    Start,
+    Center,
+    End,
 }
