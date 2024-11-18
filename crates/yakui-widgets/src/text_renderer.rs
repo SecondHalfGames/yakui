@@ -16,7 +16,7 @@ impl Kind {
     fn num_channels(self) -> usize {
         match self {
             Kind::Mask => 1,
-            Kind::Color { .. } => 4,
+            Kind::Color => 4,
         }
     }
 
@@ -122,17 +122,20 @@ impl InnerAtlas {
 
         let glyph_size = UVec2::new(image.placement.width, image.placement.height);
 
-        let glyph_max = self.next_pos + glyph_size;
-        if glyph_max.x >= texture_size.x || glyph_max.y >= texture_size.y {
-            self.clear(paint);
-            return self.get_or_insert(paint, font_system, cache, glyph, Some(image));
-        }
-
-        let pos = if glyph_max.x < texture_size.x {
+        let pos = if (self.next_pos + glyph_size).x < texture_size.x {
             self.next_pos
         } else {
             UVec2::new(0, self.max_height)
         };
+
+        let glyph_max = pos + glyph_size;
+
+        println!("Getting glyph of kind {:?}", self.kind);
+        println!("Paint glyph at {pos:?} to {glyph_max:?} on atlas of size {texture_size:?}");
+
+        if glyph_max.x >= texture_size.x || glyph_max.y >= texture_size.y {
+            panic!("Overflowed glyph cache!");
+        }
 
         self.max_height = self.max_height.max(pos.y + glyph_size.y + 1);
         self.next_pos = pos + UVec2::new(glyph_size.x + 1, 0);
