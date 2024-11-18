@@ -1,4 +1,5 @@
 #![allow(clippy::new_without_default)]
+#![doc = include_str!("../README.md")]
 
 mod bindgroup_cache;
 mod buffer;
@@ -478,6 +479,7 @@ fn make_main_pipeline(
             ..Default::default()
         },
         multiview: None,
+        cache: None,
     })
 }
 
@@ -526,5 +528,6 @@ fn make_text_pipeline(
             ..Default::default()
         },
         multiview: None,
+        cache: None,
     })
 }

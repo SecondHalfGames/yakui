@@ -1,7 +1,12 @@
 # yakui Changelog
 
 ## Unreleased Changes
-**See <https://github.com/LPGhatguy/yakui/compare/v0.2.0...main>**
+**See <https://github.com/LPGhatguy/yakui/compare/v0.3.0...main>**
+
+## 0.3.0 — 2024-10-20
+It's been a minute since any crates.io releases were published! This is a release to make yakui a bit more accessible.
+
+To see a summary of all of the changes since 0.2.0, check out [the commit log from GitHub](https://github.com/LPGhatguy/yakui/compare/v0.2.0...v0.3.0).
 
 ## 0.2.0 — 2022-09-17
 This release features improved documentation and several major improvements to yakui's implementation and interface.

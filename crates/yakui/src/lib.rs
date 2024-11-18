@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 pub use yakui_core::geometry::*;
 pub use yakui_core::*;
 

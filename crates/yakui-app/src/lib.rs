@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 mod multisampling;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, event_loop::ActiveEventLoop, window::Window};
@@ -62,6 +64,7 @@ impl Graphics {
                     } else {
                         wgpu::Limits::default()
                     },
+                    memory_hints: Default::default(),
                     label: None,
                 },
                 None, // Trace path

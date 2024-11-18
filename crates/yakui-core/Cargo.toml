@@ -1,7 +1,7 @@
 [package]
 name = "yakui-core"
 description = "Core crate for yakui, a UI library for games"
-version = "0.2.0"
+version = "0.3.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/LPGhatguy/yakui"
 edition = "2021"
@@ -11,7 +11,7 @@ edition = "2021"
 [dependencies]
 anymap = "0.12.1"
 bitflags = "2.4.2"
-glam = "0.27.0"
+glam = "0.29.0"
 keyboard-types = { version = "0.7.0", default-features = false }
 log = "0.4.17"
 fast-srgb8 = "1.0.0"
