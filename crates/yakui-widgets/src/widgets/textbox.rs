@@ -4,7 +4,7 @@ use std::mem;
 use cosmic_text::Edit;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::input::{KeyCode, MouseButton};
+use yakui_core::input::{KeyCode, Modifiers, MouseButton};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
@@ -13,7 +13,7 @@ use crate::font::Fonts;
 use crate::shapes::{self, RoundedRectangle};
 use crate::style::TextStyle;
 use crate::util::widget;
-use crate::{colors, pad, use_state};
+use crate::{colors, pad};
 
 use super::{Pad, RenderText};
 
@@ -580,6 +580,27 @@ impl Widget for TextBoxWidget {
                                 }
                                 EventResponse::Sink
                             }
+
+                            KeyCode::KeyA if *down && main_modifier(modifiers) => {
+                                editor.set_selection(cosmic_text::Selection::Line(editor.cursor()));
+
+                                if let Some((_start, end)) = editor.selection_bounds() {
+                                    editor.set_cursor(end);
+                                }
+
+                                EventResponse::Sink
+                            }
+
+                            KeyCode::KeyC if *down && main_modifier(modifiers) => {
+                                println!("TODO: Copy!");
+                                EventResponse::Sink
+                            }
+
+                            KeyCode::KeyV if *down && main_modifier(modifiers) => {
+                                println!("TODO: Paste!");
+                                EventResponse::Sink
+                            }
+
                             _ => EventResponse::Sink,
                         }
                     } else {
@@ -592,23 +613,29 @@ impl Widget for TextBoxWidget {
                     return EventResponse::Bubble;
                 }
 
-                let fonts = ctx.dom.get_global_or_init(Fonts::default);
-                fonts.with_system(|font_system| {
-                    if let Some(editor) = self.cosmic_editor.get_mut() {
-                        if modifiers.ctrl() {
-                            if c.eq_ignore_ascii_case(&'a') {
-                                editor.set_selection(cosmic_text::Selection::Line(editor.cursor()));
-                            }
-                        } else {
+                if !modifiers.ctrl() && !modifiers.meta() {
+                    let fonts = ctx.dom.get_global_or_init(Fonts::default);
+                    fonts.with_system(|font_system| {
+                        if let Some(editor) = self.cosmic_editor.get_mut() {
                             editor.action(font_system, cosmic_text::Action::Insert(*c));
                             self.text_changed.set(true);
                         }
-                    }
-                });
+                    });
+                }
 
                 EventResponse::Sink
             }
             _ => EventResponse::Bubble,
         }
+    }
+}
+
+/// Tells whether the set of modifiers contains the primary modifier, like ctrl
+/// on Windows or Linux or Command on macOS.
+fn main_modifier(modifiers: &Modifiers) -> bool {
+    if cfg!(target_os = "macos") {
+        modifiers.meta()
+    } else {
+        modifiers.ctrl()
     }
 }

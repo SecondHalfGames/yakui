@@ -85,7 +85,7 @@ impl InnerAtlas {
             return Ok(None);
         };
 
-        let texture_size = paint.texture_mut(self.texture.unwrap()).unwrap().size();
+        let texture_size = paint.texture_mut(texture_id).unwrap().size();
 
         let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
         if let Some((rect, offset)) = self.glyph_rects.get(&physical_glyph.cache_key).cloned() {
