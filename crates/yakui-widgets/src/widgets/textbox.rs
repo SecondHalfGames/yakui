@@ -121,10 +121,18 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, mut props: Self::Props<'_>) -> Self::Response {
         if self.text_changed.get() {
+            println!("Text marked as changed from cosmic text...");
             self.text_updated = false;
             props.text = std::mem::take(&mut self.props.text);
         } else {
             self.text_updated = props.text != self.props.text;
+        }
+
+        if self.text_updated {
+            println!(
+                "text updated from {:?} to {:?}",
+                self.props.text, props.text
+            );
         }
 
         self.props = props;
@@ -134,7 +142,7 @@ impl Widget for TextBoxWidget {
 
         let mut is_empty = false;
 
-        self.props.text = self
+        let editor_text = self
             .cosmic_editor
             .borrow()
             .as_ref()
@@ -163,6 +171,8 @@ impl Widget for TextBoxWidget {
         pad(self.props.padding, || {
             let render_text = if is_empty {
                 self.props.placeholder.clone()
+            } else if self.text_changed.get() {
+                editor_text.clone()
             } else {
                 self.props.text.clone()
             };
@@ -170,9 +180,13 @@ impl Widget for TextBoxWidget {
             RenderText::with_style(render_text, style).show_with_scroll(scroll);
         });
 
+        if self.text_changed.get() {
+            self.props.text = editor_text.clone();
+        }
+
         Self::Response {
             text: if self.text_changed.take() {
-                Some(self.props.text.clone())
+                Some(editor_text)
             } else {
                 None
             },
@@ -220,7 +234,7 @@ impl Widget for TextBoxWidget {
                 }
 
                 if self.text_updated {
-                    self.text_changed.set(true);
+                    // self.text_changed.set(true);
 
                     editor.with_buffer_mut(|buffer| {
                         buffer.set_text(
