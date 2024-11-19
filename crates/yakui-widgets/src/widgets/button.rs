@@ -7,7 +7,7 @@ use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
 use crate::colors;
-use crate::style::TextStyle;
+use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
 
@@ -49,8 +49,11 @@ pub struct DynamicButtonStyle {
 
 impl Default for DynamicButtonStyle {
     fn default() -> Self {
+        let mut text = TextStyle::label();
+        text.align = TextAlignment::Center;
+
         Self {
-            text: TextStyle::label(),
+            text,
             fill: Color::GRAY,
         }
     }
@@ -148,7 +151,7 @@ impl Widget for ButtonWidget {
         container.color = color;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
-                crate::align(self.props.alignment, || {
+                crate::align(Alignment::CENTER_LEFT, || {
                     RenderText::with_style(self.props.text.clone(), text_style).show();
                 });
             });

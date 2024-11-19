@@ -11,7 +11,7 @@ use yakui_core::Response;
 
 use crate::font::Fonts;
 use crate::shapes::{self, RoundedRectangle};
-use crate::style::TextStyle;
+use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::{colors, pad};
 
@@ -47,10 +47,13 @@ pub struct TextBox {
 
 impl TextBox {
     pub fn new(text: String) -> Self {
+        let mut style = TextStyle::label();
+        style.align = TextAlignment::Start;
+
         Self {
             text,
 
-            style: TextStyle::label(),
+            style,
             padding: Pad::all(8.0),
             fill: Some(colors::BACKGROUND_3),
             radius: 6.0,
@@ -159,7 +162,7 @@ impl Widget for TextBoxWidget {
                         .join("\n")
                 })
             })
-            .unwrap_or_else(String::new);
+            .unwrap_or_default();
 
         if is_empty {
             // Dim towards background
@@ -247,6 +250,14 @@ impl Widget for TextBoxWidget {
 
                     editor.set_cursor(cosmic_text::Cursor::new(0, 0));
                 }
+
+                // Perf note: https://github.com/pop-os/cosmic-text/issues/166
+                editor.with_buffer_mut(|buffer| {
+                    for buffer_line in buffer.lines.iter_mut() {
+                        buffer_line.set_align(Some(self.props.style.align.into()));
+                    }
+                    buffer.shape_until_scroll(font_system, true);
+                });
             }
         });
 

@@ -16,7 +16,7 @@ impl Default for TextStyle {
             font_size: 14.0,
             line_height_override: None,
             color: Color::WHITE,
-            align: TextAlignment::Center,
+            align: TextAlignment::Start,
             attrs: cosmic_text::AttrsOwned {
                 family_owned: cosmic_text::FamilyOwned::SansSerif,
                 ..cosmic_text::AttrsOwned::new(cosmic_text::Attrs::new())
@@ -49,4 +49,14 @@ pub enum TextAlignment {
     Start,
     Center,
     End,
+}
+
+impl From<TextAlignment> for cosmic_text::Align {
+    fn from(value: TextAlignment) -> Self {
+        match value {
+            TextAlignment::Start => cosmic_text::Align::Left,
+            TextAlignment::Center => cosmic_text::Align::Center,
+            TextAlignment::End => cosmic_text::Align::Right,
+        }
+    }
 }

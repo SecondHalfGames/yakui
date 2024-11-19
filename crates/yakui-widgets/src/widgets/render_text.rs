@@ -6,7 +6,7 @@ use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
 use crate::font::Fonts;
-use crate::style::TextStyle;
+use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
 
@@ -148,6 +148,13 @@ impl Widget for RenderTextWidget {
 
                 self.last_text.replace(self.props.text.clone());
             }
+
+            // Perf note: https://github.com/pop-os/cosmic-text/issues/166
+            for buffer_line in buffer.lines.iter_mut() {
+                buffer_line.set_align(Some(self.props.style.align.into()));
+            }
+
+            buffer.shape_until_scroll(font_system, true);
 
             let size = {
                 let size_x = buffer
