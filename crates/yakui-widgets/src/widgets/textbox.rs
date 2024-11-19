@@ -119,8 +119,14 @@ impl Widget for TextBoxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.text_updated = props.text != self.props.text;
+    fn update(&mut self, mut props: Self::Props<'_>) -> Self::Response {
+        if self.text_changed.get() {
+            self.text_updated = false;
+            props.text = std::mem::take(&mut self.props.text);
+        } else {
+            self.text_updated = props.text != self.props.text;
+        }
+
         self.props = props;
 
         let mut style = self.props.style.clone();
@@ -128,19 +134,24 @@ impl Widget for TextBoxWidget {
 
         let mut is_empty = false;
 
-        let text = self.cosmic_editor.borrow().as_ref().map(|editor| {
-            editor.with_buffer(|buffer| {
-                scroll = Some(buffer.scroll());
-                is_empty = buffer.lines.iter().all(|v| v.text().is_empty());
+        self.props.text = self
+            .cosmic_editor
+            .borrow()
+            .as_ref()
+            .map(|editor| {
+                editor.with_buffer(|buffer| {
+                    scroll = Some(buffer.scroll());
+                    is_empty = buffer.lines.iter().all(|v| v.text().is_empty());
 
-                buffer
-                    .lines
-                    .iter()
-                    .map(|v| v.text())
-                    .collect::<Vec<_>>()
-                    .join("\n")
+                    buffer
+                        .lines
+                        .iter()
+                        .map(|v| v.text())
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                })
             })
-        });
+            .unwrap_or_else(String::new);
 
         if is_empty {
             // Dim towards background
@@ -149,19 +160,19 @@ impl Widget for TextBoxWidget {
                 .lerp(&self.props.fill.unwrap_or(Color::CLEAR), 0.75);
         }
 
-        let render_text = text.clone();
         pad(self.props.padding, || {
-            let render_text = (!is_empty)
-                .then_some(render_text)
-                .flatten()
-                .unwrap_or(self.props.placeholder.clone());
+            let render_text = if is_empty {
+                self.props.placeholder.clone()
+            } else {
+                self.props.text.clone()
+            };
 
             RenderText::with_style(render_text, style).show_with_scroll(scroll);
         });
 
         Self::Response {
             text: if self.text_changed.take() {
-                text.clone()
+                Some(self.props.text.clone())
             } else {
                 None
             },
