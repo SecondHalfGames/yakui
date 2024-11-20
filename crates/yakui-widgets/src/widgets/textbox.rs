@@ -276,14 +276,15 @@ impl Widget for TextBoxWidget {
                     let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
 
                     if let Some((a, b)) = selection {
-                        for ((x, w), (y, h)) in buffer
+                        for ((x, y), (w, h)) in buffer
                             .layout_runs()
-                            .flat_map(|layout| {
-                                layout
-                                    .highlight(a, b)
-                                    .zip(Some((layout.line_top, layout.line_height)))
+                            .filter_map(|layout| {
+                                let (x, w) = layout.highlight(a, b)?;
+                                let (y, h) = (layout.line_top, layout.line_height);
+
+                                Some(((x, y), (w, h)))
                             })
-                            .filter(|((_, w), ..)| *w > 0.1)
+                            .filter(|(_, (w, _))| *w > 0.1)
                         {
                             let mut bg = PaintRect::new(Rect::from_pos_size(
                                 layout_node.rect.pos()
@@ -297,25 +298,24 @@ impl Widget for TextBoxWidget {
                     }
 
                     if self.active {
-                        if let Some(((x, _), (y, h))) = buffer
+                        let ((x, y), (_, h)) = buffer
                             .layout_runs()
-                            .flat_map(|layout| {
-                                layout
-                                    .highlight(cursor, cursor)
-                                    .zip(Some((layout.line_top, layout.line_height)))
+                            .find_map(|layout| {
+                                let (x, w) = layout.highlight(cursor, cursor)?;
+                                let (y, h) = (layout.line_top, layout.line_height);
+
+                                Some(((x, y), (w, h)))
                             })
-                            .next()
-                            .or(Some(((0.0, 0.0), (0.0, buffer.metrics().line_height))))
-                        {
-                            let mut bg = PaintRect::new(Rect::from_pos_size(
-                                layout_node.rect.pos()
-                                    + self.props.padding.offset()
-                                    + Vec2::new(x, y) * inv_scale_factor,
-                                Vec2::new(1.5, h) * inv_scale_factor,
-                            ));
-                            bg.color = self.props.cursor_color;
-                            bg.add(ctx.paint);
-                        }
+                            .unwrap_or(((0.0, 0.0), (0.0, buffer.metrics().line_height)));
+
+                        let mut bg = PaintRect::new(Rect::from_pos_size(
+                            layout_node.rect.pos()
+                                + self.props.padding.offset()
+                                + Vec2::new(x, y) * inv_scale_factor,
+                            Vec2::new(1.5, h) * inv_scale_factor,
+                        ));
+                        bg.color = self.props.cursor_color;
+                        bg.add(ctx.paint);
                     }
                 });
             }
