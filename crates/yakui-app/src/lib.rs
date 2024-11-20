@@ -25,7 +25,7 @@ pub struct Graphics {
 }
 
 impl Graphics {
-    pub async fn new(state: &mut yakui_core::Yakui, window: &Window, sample_count: u32) -> Self {
+    pub async fn new(window: &Window, sample_count: u32) -> Self {
         let mut size = window.inner_size();
 
         // FIXME: On web, we're receiving (0, 0) as the initial size of the

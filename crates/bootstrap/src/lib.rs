@@ -65,11 +65,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
 
         let sample_count = get_sample_count();
 
-        let mut app = pollster::block_on(yakui_app::Graphics::new(
-            &mut self.yak,
-            &window,
-            sample_count,
-        ));
+        let mut app = pollster::block_on(yakui_app::Graphics::new(&window, sample_count));
 
         // By default, yakui_winit will measure the system's scale factor and pass
         // it to yakui.
