@@ -46,12 +46,12 @@ pub struct TextBox {
 }
 
 impl TextBox {
-    pub fn new(text: String) -> Self {
+    pub fn new<S: Into<String>>(text: S) -> Self {
         let mut style = TextStyle::label();
         style.align = TextAlignment::Start;
 
         Self {
-            text,
+            text: text.into(),
 
             style,
             padding: Pad::all(8.0),

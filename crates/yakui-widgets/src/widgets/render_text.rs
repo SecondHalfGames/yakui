@@ -14,7 +14,7 @@ use crate::util::widget;
 Renders text. You probably want to use [Text][super::Text] instead, which
 supports features like padding.
 
-Responds with [RenderTextBoxResponse].
+Responds with [RenderTextResponse].
 */
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive]

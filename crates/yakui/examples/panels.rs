@@ -32,9 +32,9 @@ pub fn run() {
                     row(|| {
                         label("Input");
                         expanded(|| {
-                            let name = use_state(|| String::new());
+                            let name = use_state(|| String::from("Hello"));
 
-                            let res = textbox("Hello");
+                            let res = textbox(name.borrow().clone());
                             if let Some(new_text) = res.into_inner().text {
                                 name.set(new_text);
                             }
