@@ -84,22 +84,37 @@ enum DragState {
 #[derive(Debug)]
 pub struct TextBoxWidget {
     props: TextBox,
-    text_updated: bool,
+
+    /// Whether the caller of this widget has changed `props.text` since the
+    /// previous update.
+    text_changed_by_caller: bool,
+
+    /// Whether the Cosmic Text editor context has changed the text since the
+    /// previous update. Edits from the user take precedence over edits from the
+    /// application.
+    text_changed_by_cosmic: Cell<bool>,
+
+    /// Whether this widget is focused and receiving input from the user.
     active: bool,
+
     activated: bool,
     lost_focus: bool,
     drag: DragState,
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
-    text_changed: Cell<bool>,
     scale_factor: Cell<Option<f32>>,
 }
 
 pub struct TextBoxResponse {
+    /// If the contents of the textbox are different than what was passed into
+    /// props, contains the new string.
     pub text: Option<String>,
-    /// Whether the user pressed "Enter" in this box, only makes sense in inline
+
+    /// Whether the user pressed "Enter" in this textbox. This only happens when
+    /// the textbox is inline.
     pub activated: bool,
-    /// Whether the box lost focus
+
+    /// Whether the textbox lost focus.
     pub lost_focus: bool,
 }
 
@@ -110,24 +125,24 @@ impl Widget for TextBoxWidget {
     fn new() -> Self {
         Self {
             props: TextBox::new(String::new()),
-            text_updated: false,
+            text_changed_by_caller: false,
             active: false,
             activated: false,
             lost_focus: false,
             drag: DragState::None,
             cosmic_editor: RefCell::new(None),
             max_size: Cell::default(),
-            text_changed: Cell::default(),
+            text_changed_by_cosmic: Cell::default(),
             scale_factor: Cell::default(),
         }
     }
 
     fn update(&mut self, mut props: Self::Props<'_>) -> Self::Response {
-        if self.text_changed.get() {
-            self.text_updated = false;
-            props.text = std::mem::take(&mut self.props.text);
+        if self.text_changed_by_cosmic.get() {
+            self.text_changed_by_caller = false;
+            props.text = mem::take(&mut self.props.text);
         } else {
-            self.text_updated = props.text != self.props.text;
+            self.text_changed_by_caller = props.text != self.props.text;
         }
 
         self.props = props;
@@ -166,7 +181,7 @@ impl Widget for TextBoxWidget {
         pad(self.props.padding, || {
             let render_text = if is_empty {
                 self.props.placeholder.clone()
-            } else if self.text_changed.get() {
+            } else if self.text_changed_by_cosmic.get() {
                 editor_text.clone()
             } else {
                 self.props.text.clone()
@@ -175,12 +190,12 @@ impl Widget for TextBoxWidget {
             RenderText::with_style(render_text, style).show_with_scroll(scroll);
         });
 
-        if self.text_changed.get() {
+        if self.text_changed_by_cosmic.get() {
             self.props.text = editor_text.clone();
         }
 
         Self::Response {
-            text: if self.text_changed.take() {
+            text: if self.text_changed_by_cosmic.take() {
                 Some(editor_text)
             } else {
                 None
@@ -228,9 +243,7 @@ impl Widget for TextBoxWidget {
                     self.max_size.replace(Some(max_size));
                 }
 
-                if self.text_updated {
-                    // self.text_changed.set(true);
-
+                if self.text_changed_by_caller {
                     editor.with_buffer_mut(|buffer| {
                         buffer.set_text(
                             font_system,
@@ -524,7 +537,7 @@ impl Widget for TextBoxWidget {
                             KeyCode::Backspace => {
                                 if *down {
                                     editor.action(font_system, cosmic_text::Action::Backspace);
-                                    self.text_changed.set(true);
+                                    self.text_changed_by_cosmic.set(true);
                                 }
                                 EventResponse::Sink
                             }
@@ -532,7 +545,7 @@ impl Widget for TextBoxWidget {
                             KeyCode::Delete => {
                                 if *down {
                                     editor.action(font_system, cosmic_text::Action::Delete);
-                                    self.text_changed.set(true);
+                                    self.text_changed_by_cosmic.set(true);
                                 }
                                 EventResponse::Sink
                             }
@@ -562,14 +575,14 @@ impl Widget for TextBoxWidget {
                                     if self.props.inline_edit {
                                         if self.props.multiline && modifiers.shift() {
                                             editor.action(font_system, cosmic_text::Action::Enter);
-                                            self.text_changed.set(true);
+                                            self.text_changed_by_cosmic.set(true);
                                         } else {
                                             self.activated = true;
                                             ctx.input.set_selection(None);
                                         }
                                     } else {
                                         editor.action(font_system, cosmic_text::Action::Enter);
-                                        self.text_changed.set(true);
+                                        self.text_changed_by_cosmic.set(true);
                                     }
                                 }
                                 EventResponse::Sink
@@ -622,7 +635,7 @@ impl Widget for TextBoxWidget {
                     fonts.with_system(|font_system| {
                         if let Some(editor) = self.cosmic_editor.get_mut() {
                             editor.action(font_system, cosmic_text::Action::Insert(*c));
-                            self.text_changed.set(true);
+                            self.text_changed_by_cosmic.set(true);
                         }
                     });
                 }
