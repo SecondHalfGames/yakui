@@ -124,18 +124,10 @@ impl Widget for TextBoxWidget {
 
     fn update(&mut self, mut props: Self::Props<'_>) -> Self::Response {
         if self.text_changed.get() {
-            println!("Text marked as changed from cosmic text...");
             self.text_updated = false;
             props.text = std::mem::take(&mut self.props.text);
         } else {
             self.text_updated = props.text != self.props.text;
-        }
-
-        if self.text_updated {
-            println!(
-                "text updated from {:?} to {:?}",
-                self.props.text, props.text
-            );
         }
 
         self.props = props;
@@ -304,7 +296,7 @@ impl Widget for TextBoxWidget {
                         }
                     }
 
-                    {
+                    if self.active {
                         if let Some(((x, _), (y, h))) = buffer
                             .layout_runs()
                             .flat_map(|layout| {
@@ -313,6 +305,7 @@ impl Widget for TextBoxWidget {
                                     .zip(Some((layout.line_top, layout.line_height)))
                             })
                             .next()
+                            .or(Some(((0.0, 0.0), (0.0, buffer.metrics().line_height))))
                         {
                             let mut bg = PaintRect::new(Rect::from_pos_size(
                                 layout_node.rect.pos()

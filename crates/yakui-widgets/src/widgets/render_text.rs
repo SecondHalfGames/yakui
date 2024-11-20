@@ -6,7 +6,7 @@ use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
 use crate::font::Fonts;
-use crate::style::{TextAlignment, TextStyle};
+use crate::style::TextStyle;
 use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
 
