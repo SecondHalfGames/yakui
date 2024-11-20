@@ -5,7 +5,7 @@ use crate::geometry::{Rect, Vec2};
 use crate::id::ManagedTextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{PaintDom, Texture};
+use crate::paint::{PaintDom, PaintLimits, Texture};
 
 /// The entrypoint for yakui.
 #[derive(Debug)]
@@ -119,5 +119,10 @@ impl Yakui {
     /// Returns access to the state's Layout DOM.
     pub fn layout_dom(&self) -> &LayoutDom {
         &self.layout
+    }
+
+    /// Sets the paint limits, should be called once by rendering backends.
+    pub fn set_paint_limit(&mut self, limits: PaintLimits) {
+        self.paint.set_limit(limits)
     }
 }
