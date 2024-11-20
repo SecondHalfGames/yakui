@@ -2,11 +2,11 @@ use yakui::widgets::{Pad, TextBox};
 use yakui::{center, use_state};
 
 pub fn run() {
-    let text = use_state(|| String::new());
+    let text = use_state(String::new);
     let autofocus = use_state(|| false);
 
     center(|| {
-        let mut box1 = TextBox::new("".to_owned());
+        let mut box1 = TextBox::new(text.borrow().clone());
         box1.style.font_size = 60.0;
         box1.padding = Pad::all(50.0);
         box1.placeholder = "placeholder".into();
