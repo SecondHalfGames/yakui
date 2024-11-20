@@ -10,7 +10,7 @@ fn run() {
             clear.set(false);
         }
 
-        let res = textbox(&text.borrow());
+        let res = textbox(text.borrow().clone());
         if let Some(new_text) = res.into_inner().text {
             text.set(new_text);
         }
