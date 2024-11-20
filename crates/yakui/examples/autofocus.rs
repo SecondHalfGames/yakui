@@ -6,7 +6,7 @@ pub fn run() {
     let autofocus = use_state(|| false);
 
     center(|| {
-        let mut box1 = TextBox::with_text("", None);
+        let mut box1 = TextBox::new("".to_owned());
         box1.style.font_size = 60.0;
         box1.padding = Pad::all(50.0);
         box1.placeholder = "placeholder".into();

@@ -88,7 +88,7 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(state, &device, &queue);
+        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue);
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.

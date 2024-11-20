@@ -18,7 +18,7 @@ pub fn run() {
             let res = checkbox(checked.get());
             checked.set(res.checked);
 
-            let res = textbox("Hello", None);
+            let res = textbox("Hello");
             if let Some(new_text) = res.into_inner().text {
                 name.set(new_text);
             }

@@ -2,11 +2,15 @@ use yakui::{button, column, textbox, use_state};
 
 fn run() {
     column(|| {
-        let text = use_state(|| String::new());
+        let text = use_state(String::new);
         let clear = use_state(|| false);
 
-        let res = textbox("Hello", if clear.get() { Some("") } else { None });
-        clear.set(false);
+        if clear.get() {
+            text.borrow_mut().clear();
+            clear.set(false);
+        }
+
+        let res = textbox(&text.borrow());
         if let Some(new_text) = res.into_inner().text {
             text.set(new_text);
         }

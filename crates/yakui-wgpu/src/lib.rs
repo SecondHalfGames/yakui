@@ -27,6 +27,7 @@ use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
 
 pub struct YakuiWgpu {
+    limits: PaintLimits,
     main_pipeline: PipelineCache,
     text_pipeline: PipelineCache,
     samplers: Samplers,
@@ -68,12 +69,12 @@ impl Vertex {
 }
 
 impl YakuiWgpu {
-    pub fn new(state: &mut yakui_core::Yakui, device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
-        state.set_paint_limit(PaintLimits {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+        let limits = PaintLimits {
             max_texture_size_1d: device.limits().max_texture_dimension_1d,
             max_texture_size_2d: device.limits().max_texture_dimension_2d,
             max_texture_size_3d: device.limits().max_texture_dimension_3d,
-        });
+        };
 
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("yakui Bind Group Layout"),
@@ -130,6 +131,7 @@ impl YakuiWgpu {
         );
 
         Self {
+            limits,
             main_pipeline,
             text_pipeline,
             samplers,
@@ -209,6 +211,7 @@ impl YakuiWgpu {
     ) {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
+        state.set_paint_limit(self.limits);
         let paint = state.paint();
 
         self.update_textures(device, paint, queue);
