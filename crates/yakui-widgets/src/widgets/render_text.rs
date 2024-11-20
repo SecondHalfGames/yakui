@@ -109,7 +109,8 @@ impl Widget for RenderTextWidget {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
         fonts.with_system(|font_system| {
-            let mut buffer = self.buffer.take().unwrap_or_else(|| {
+            let mut buffer_ref = self.buffer.borrow_mut();
+            let buffer = buffer_ref.get_or_insert_with(|| {
                 cosmic_text::Buffer::new(
                     font_system,
                     self.props.style.to_metrics(ctx.layout.scale_factor()),
@@ -126,7 +127,7 @@ impl Widget for RenderTextWidget {
                     max_height,
                 );
 
-                self.max_size.replace(Some(max_size));
+                self.max_size.set(Some(max_size));
                 self.scale_factor.set(Some(ctx.layout.scale_factor()));
             }
 
@@ -135,7 +136,7 @@ impl Widget for RenderTextWidget {
                     buffer.set_scroll(scroll);
                 }
 
-                self.last_scroll.replace(self.scroll);
+                self.last_scroll.set(self.scroll);
             }
 
             if self.last_text.borrow().as_str() != self.props.text.as_str() {
@@ -175,8 +176,6 @@ impl Widget for RenderTextWidget {
 
             let size = constraints.constrain(size);
             self.size.set(Some(size));
-
-            self.buffer.replace(Some(buffer));
 
             size
         })
