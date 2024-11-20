@@ -1,6 +1,6 @@
+use yakui::cosmic_text::FamilyOwned;
 use yakui::widgets::Text;
 use yakui::{column, text, Color};
-use yakui_widgets::cosmic_text::FamilyOwned;
 
 pub fn run() {
     column(|| {

@@ -1,8 +1,8 @@
 use std::{cell::Cell, sync::Arc};
 
 use bootstrap::OPENMOJI;
+use yakui::cosmic_text::fontdb;
 use yakui::{column, font::Fonts, text, util::widget, widget::Widget, Vec2};
-use yakui_widgets::cosmic_text::fontdb;
 
 #[derive(Debug)]
 struct LoadFontsWidget {

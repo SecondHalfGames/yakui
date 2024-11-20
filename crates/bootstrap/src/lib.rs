@@ -11,11 +11,11 @@ use winit::{
 };
 
 use winit::window::{Window, WindowAttributes, WindowId};
+use yakui::cosmic_text::fontdb;
 use yakui::font::Fonts;
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
 use yakui::{ManagedTextureId, Rect, TextureId, UVec2, Vec2, Yakui};
 use yakui_app::Graphics;
-use yakui_widgets::cosmic_text::fontdb;
 
 pub const OPENMOJI: &[u8] = include_bytes!("../assets/OpenMoji-color-glyf_colr_0.ttf");
 
