@@ -147,11 +147,17 @@ impl Widget for ButtonWidget {
             text_style = style.text.clone();
         }
 
+        let align = match text_style.align {
+            TextAlignment::Start => Alignment::CENTER_LEFT,
+            TextAlignment::Center => Alignment::CENTER,
+            TextAlignment::End => Alignment::CENTER_RIGHT,
+        };
+
         let mut container = RoundRect::new(self.props.border_radius);
         container.color = color;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
-                crate::align(Alignment::CENTER_LEFT, || {
+                crate::align(align, || {
                     RenderText::with_style(self.props.text.clone(), text_style).show();
                 });
             });

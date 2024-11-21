@@ -6,7 +6,7 @@ use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
 use crate::font::Fonts;
-use crate::style::TextStyle;
+use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
 
@@ -59,6 +59,7 @@ impl RenderText {
 pub struct RenderTextWidget {
     props: RenderText,
     buffer: RefCell<Option<cosmic_text::Buffer>>,
+    line_offsets: RefCell<Vec<f32>>,
     size: Cell<Option<Vec2>>,
     last_text: RefCell<String>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
@@ -75,6 +76,7 @@ impl Widget for RenderTextWidget {
         Self {
             props: RenderText::new(""),
             buffer: RefCell::default(),
+            line_offsets: RefCell::default(),
             size: Cell::default(),
             last_text: RefCell::new(String::new()),
             max_size: Cell::default(),
@@ -157,22 +159,42 @@ impl Widget for RenderTextWidget {
 
             buffer.shape_until_scroll(font_system, true);
 
-            let size = {
-                let size_x = buffer
-                    .layout_runs()
-                    .map(|layout| layout.line_w)
-                    .max_by(|a, b| a.total_cmp(b))
-                    .unwrap_or_default()
-                    .ceil();
+            let mut line_offsets = self.line_offsets.borrow_mut();
+            line_offsets.clear();
 
+            let widest_line = buffer
+                .layout_runs()
+                .map(|layout| layout.line_w)
+                .max_by(|a, b| a.total_cmp(b))
+                .unwrap_or_default()
+                .ceil()
+                .max(constraints.min.x * ctx.layout.scale_factor());
+
+            for run in buffer.layout_runs() {
+                let offset = match self.props.style.align {
+                    TextAlignment::Start => 0.0,
+                    TextAlignment::Center => (widest_line - run.line_w) / 2.0,
+                    TextAlignment::End => widest_line - run.line_w,
+                };
+
+                line_offsets.push(offset / ctx.layout.scale_factor());
+            }
+
+            let mut size = {
                 let size_y = buffer
                     .layout_runs()
                     .map(|layout| layout.line_height)
                     .sum::<f32>()
                     .ceil();
 
-                (Vec2::new(size_x, size_y) / ctx.layout.scale_factor()).round()
+                (Vec2::new(widest_line, size_y) / ctx.layout.scale_factor()).round()
             };
+
+            size.x = size.x.max(constraints.min.x);
+
+            if constraints.max.x.is_finite() {
+                size.x = size.x.max(constraints.max.x);
+            }
 
             let size = constraints.constrain(size);
             self.size.set(Some(size));
@@ -191,9 +213,10 @@ impl Widget for RenderTextWidget {
         };
 
         fonts.with_system(|font_system| {
+            let line_offsets = self.line_offsets.borrow();
             let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
 
-            for layout in buffer.layout_runs() {
+            for (layout, x_offset) in buffer.layout_runs().zip(line_offsets.iter().copied()) {
                 for glyph in layout.glyphs {
                     if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, glyph) {
                         paint_text(
@@ -201,7 +224,7 @@ impl Widget for RenderTextWidget {
                             self.props.style.color,
                             glyph,
                             render,
-                            layout_node.rect.pos(),
+                            layout_node.rect.pos() + Vec2::new(x_offset, 0.0),
                             layout.line_y,
                         )
                     }
