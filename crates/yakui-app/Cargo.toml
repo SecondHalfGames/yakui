@@ -11,7 +11,6 @@ edition = "2021"
 [dependencies]
 yakui = { path = "../yakui", version = "0.3.0" }
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
-yakui-widgets = { path = "../yakui-widgets", version = "0.3.0", default-features = false }
 yakui-winit = { path = "../yakui-winit", version = "0.3.0" }
 yakui-wgpu = { path = "../yakui-wgpu", version = "0.3.0" }
 
