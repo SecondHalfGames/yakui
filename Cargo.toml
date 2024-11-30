@@ -2,3 +2,6 @@
 resolver = "2"
 members = ["crates/*"]
 default-members = ["crates/*"]
+
+[workspace.dependencies]
+wgpu = "23.0.1"
