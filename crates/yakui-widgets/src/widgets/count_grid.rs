@@ -27,7 +27,6 @@ Check the count_grid example to see it in action with different alignments and s
 Responds with [CountGridResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct CountGrid {
     pub direction: Direction,
@@ -224,7 +223,6 @@ impl Widget for CountGridWidget {
         offset_main_global = match self.props.main_axis_size {
             MainAxisSize::Max => offset_main_global,
             MainAxisSize::Min => 0.0,
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         // only used in case the widget total cross is less than the minimum cross axis
@@ -236,7 +234,6 @@ impl Widget for CountGridWidget {
             CrossAxisAlignment::End => {
                 (direction.get_cross_axis(input.min) - max_total_cross_size).max(0.0)
             }
-            other => unimplemented!("CrossAxisAlignment::{other:?}"),
         };
 
         // Apply alignment by offsetting all children
@@ -255,7 +252,6 @@ impl Widget for CountGridWidget {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => ((cell_cross_size - child_cross_size) / 2.0).max(0.0),
                 CrossAxisAlignment::End => (cell_cross_size - child_cross_size).max(0.0),
-                other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
 
             let child_main_size = direction.get_main_axis(layout.rect.size());
@@ -267,7 +263,6 @@ impl Widget for CountGridWidget {
                 MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => 0.0,
                 MainAxisAlignItems::Center => ((cell_main_size - child_main_size) / 2.0).max(0.0),
                 MainAxisAlignItems::End => (cell_main_size - child_main_size).max(0.0),
-                other => unimplemented!("MainAxisAlignItems::{other:?}"),
             };
 
             let offset_pos = layout.rect.pos()
@@ -290,7 +285,6 @@ impl Widget for CountGridWidget {
         let main_grid_size = match self.props.main_axis_size {
             MainAxisSize::Max => total_main_max,
             MainAxisSize::Min => total_main_size,
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         direction.vec2(main_grid_size, cross_grid_size)

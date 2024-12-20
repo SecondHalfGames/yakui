@@ -4,7 +4,6 @@ use crate::geometry::{Constraints, Dim2, Vec2};
 
 /// Defines how an object participates in layout.
 #[derive(Debug, Clone, Copy, PartialEq)]
-#[non_exhaustive]
 pub enum Flow {
     /// The widget participates in list, grid, and table layouts.
     ///
@@ -27,7 +26,6 @@ pub enum Flow {
 /// For example, a horizontal list's main axis is horizontal, and a vertical
 /// list's main axis is vertical.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum MainAxisSize {
     /// Make the container fill all available space along its main axis.
     Max,
@@ -41,7 +39,6 @@ pub enum MainAxisSize {
 /// For example, a horizontal list's main axis is horizontal, and a vertical
 /// list's main axis is vertical.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum MainAxisAlignment {
     /// Align items to the beginning of the container's main axis.
     ///
@@ -77,7 +74,6 @@ pub enum MainAxisAlignment {
 ///
 /// This occurs in a Grid when items of the same row are bigger than one self.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum MainAxisAlignItems {
     /// Align item to the beginning of the cell main axis.
     ///
@@ -105,7 +101,6 @@ pub enum MainAxisAlignItems {
 /// For example, a horizontal list's cross axis is vertical, and a vertical
 /// list's cross axis is horizontal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum CrossAxisAlignment {
     /// Align items to the beginning of the container's cross axis.
     ///
@@ -130,7 +125,6 @@ pub enum CrossAxisAlignment {
 
 /// Defines the direction that a container will lay out its children.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum Direction {
     /// Lay out children from top to bottom.
     Down,

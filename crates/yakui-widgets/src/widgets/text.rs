@@ -28,7 +28,6 @@ text.show();
 ```
 */
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Text {
     pub text: Cow<'static, str>,

@@ -27,7 +27,6 @@ yakui::column(|| {
 ```
 */
 #[derive(Debug, Default)]
-#[non_exhaustive]
 pub struct Stack {}
 
 impl Stack {

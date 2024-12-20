@@ -50,7 +50,6 @@ pub struct YakuiVulkan {
 }
 
 /// Vulkan configuration
-#[non_exhaustive]
 #[derive(Default)]
 pub struct Options {
     /// Indicates that VK_KHR_dynamic_rendering is enabled and should be used with the given format
@@ -107,7 +106,6 @@ impl From<yakui_core::paint::Pipeline> for Workflow {
         match p {
             yakui_core::paint::Pipeline::Main => Workflow::Main,
             yakui_core::paint::Pipeline::Text => Workflow::Text,
-            _ => panic!("Unknown pipeline {p:?}"),
         }
     }
 }

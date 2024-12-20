@@ -11,7 +11,6 @@ A colored box with rounded corners that can contain children.
 Responds with [RoundRectResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
     pub radius: f32,

@@ -8,7 +8,6 @@ use yakui_core::Response;
 use crate::util::widget_children;
 
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Scrollable {
     pub direction: Option<ScrollDirection>,
@@ -36,7 +35,6 @@ pub enum ScrollDirection {
 }
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct ScrollableWidget {
     props: Scrollable,
     scroll_position: Cell<Vec2>,
