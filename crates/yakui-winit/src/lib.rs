@@ -11,7 +11,6 @@ use yakui_core::input::MouseButton;
 
 pub use self::keys::{from_winit_key, from_winit_modifiers};
 
-#[non_exhaustive]
 pub struct YakuiWinit {
     auto_scale: bool,
     auto_viewport: bool,

@@ -17,7 +17,6 @@ supports features like padding.
 Responds with [RenderTextResponse].
 */
 #[derive(Debug, Clone, Default)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RenderText {
     pub text: String,

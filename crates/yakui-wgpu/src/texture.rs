@@ -119,7 +119,6 @@ fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
             bytes_per_row: Some(size.x),
             rows_per_image: Some(size.y),
         },
-        _ => panic!("Unsupported texture format {format:?}"),
     }
 }
 
@@ -128,7 +127,6 @@ fn wgpu_format(format: TextureFormat) -> wgpu::TextureFormat {
         TextureFormat::Rgba8Srgb => wgpu::TextureFormat::Rgba8UnormSrgb,
         TextureFormat::Rgba8SrgbPremultiplied => wgpu::TextureFormat::Rgba8UnormSrgb,
         TextureFormat::R8 => wgpu::TextureFormat::R8Unorm,
-        _ => panic!("Unsupported texture format {format:?}"),
     }
 }
 
@@ -165,6 +163,5 @@ fn premultiply_alpha(texture: &Texture) -> Cow<'_, Texture> {
         }
         TextureFormat::Rgba8SrgbPremultiplied => Cow::Borrowed(texture),
         TextureFormat::R8 => Cow::Borrowed(texture),
-        _ => Cow::Borrowed(texture),
     }
 }

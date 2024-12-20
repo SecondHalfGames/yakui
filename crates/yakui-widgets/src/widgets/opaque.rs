@@ -10,7 +10,6 @@ used as a top-level element in windows, panels, pop-ups, and similar widgets
 that don't want mouse input to go through them.
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Opaque {}
 

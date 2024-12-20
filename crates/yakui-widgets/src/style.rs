@@ -1,7 +1,6 @@
 use yakui_core::geometry::Color;
 
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub struct TextStyle {
     pub font_size: f32,
     pub line_height_override: Option<f32>,

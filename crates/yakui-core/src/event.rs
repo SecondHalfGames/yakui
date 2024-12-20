@@ -7,7 +7,6 @@ use crate::input::{KeyCode, Modifiers, MouseButton};
 
 /// An event that can be handled by yakui.
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum Event {
     /// The viewport has changed. This can mean resizing as well as positioning.
     ViewportChanged(Rect),
@@ -49,7 +48,6 @@ pub enum Event {
 
 /// An event that can be handled by an individual widget.
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum WidgetEvent {
     /// The mouse entered the widget's layout rectangle.
     MouseEnter,
@@ -68,7 +66,6 @@ pub enum WidgetEvent {
 
     /// A mouse button changed state while the cursor was inside the widget's
     /// layout rectangle.
-    #[non_exhaustive]
     MouseButtonChanged {
         /// Which button was changed.
         button: MouseButton,
@@ -87,7 +84,6 @@ pub enum WidgetEvent {
     },
 
     /// A keyboard key changed.
-    #[non_exhaustive]
     KeyChanged {
         /// Which key was changed.
         key: KeyCode,

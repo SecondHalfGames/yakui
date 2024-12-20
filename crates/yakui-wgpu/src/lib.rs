@@ -268,7 +268,6 @@ impl YakuiWgpu {
                 match command.pipeline {
                     Pipeline::Main => render_pass.set_pipeline(main_pipeline),
                     Pipeline::Text => render_pass.set_pipeline(text_pipeline),
-                    _ => continue,
                 }
 
                 if command.clip != last_clip {

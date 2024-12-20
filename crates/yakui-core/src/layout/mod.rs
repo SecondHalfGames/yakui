@@ -27,7 +27,6 @@ pub struct LayoutDom {
 
 /// A node in a [`LayoutDom`].
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct LayoutDomNode {
     /// The bounding rectangle of the node in logical pixels.
     pub rect: Rect,

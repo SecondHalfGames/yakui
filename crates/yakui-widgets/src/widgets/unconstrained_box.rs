@@ -10,7 +10,6 @@ A box that renders its child with one or both of its constraint axes ignored.
 Responds with [UnconstrainedBoxResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct UnconstrainedBox {
     pub constrain_x: bool,

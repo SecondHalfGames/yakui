@@ -26,7 +26,6 @@ yakui::row(|| {
 ```
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct List {
     pub direction: Direction,
@@ -195,7 +194,6 @@ impl Widget for ListWidget {
                     total_main_axis_size
                 }
             }
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         let container_size = input.constrain(direction.vec2(main_axis_size, cross_size));
@@ -218,8 +216,6 @@ impl Widget for ListWidget {
                     let child_layout = ctx.layout.get_mut(child_id).unwrap();
                     child_layout.rect.set_pos(anchor + offset);
                 }
-
-                other => unimplemented!("Flow::{other:?}"),
             }
         }
 
@@ -254,7 +250,6 @@ impl Widget for ListWidget {
                     (main_axis_size - total_main_axis_size) / (node.children.len() as f32 + 1.0);
                 (between_space, between_space)
             }
-            other => unimplemented!("MainAxisAlignment::{other:?}"),
         };
         between_space += self.props.item_spacing;
 
@@ -275,7 +270,6 @@ impl Widget for ListWidget {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => (cross_size - child_cross) / 2.0,
                 CrossAxisAlignment::End => cross_size - child_cross,
-                other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
             child_layout.rect.set_pos(direction.vec2(next_main, cross));
 

@@ -21,7 +21,6 @@ pub trait Props: fmt::Debug {}
 impl<T> Props for T where T: fmt::Debug {}
 
 /// Information available to a widget during the layout phase.
-#[non_exhaustive]
 #[allow(missing_docs)]
 pub struct LayoutContext<'dom> {
     pub dom: &'dom Dom,
@@ -41,7 +40,6 @@ impl<'dom> LayoutContext<'dom> {
 }
 
 /// Information available to a widget during the paint phase.
-#[non_exhaustive]
 #[allow(missing_docs)]
 pub struct PaintContext<'dom> {
     pub dom: &'dom Dom,
@@ -57,7 +55,6 @@ impl<'dom> PaintContext<'dom> {
 }
 
 /// Information available to a widget when it has received an event.
-#[non_exhaustive]
 #[allow(missing_docs)]
 pub struct EventContext<'dom> {
     pub dom: &'dom Dom,
@@ -66,7 +63,6 @@ pub struct EventContext<'dom> {
 }
 
 /// Information available to a widget when it is being queried for navigation.
-#[non_exhaustive]
 #[allow(missing_docs)]
 pub struct NavigateContext<'dom> {
     pub dom: &'dom Dom,

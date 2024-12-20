@@ -12,7 +12,6 @@ implementing a blur-behind effect.
 Responds with [CutOutResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct CutOut {
     pub image: Option<TextureId>,

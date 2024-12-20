@@ -22,7 +22,6 @@ yakui::flexible(2, || {
 ```
 */
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Flexible {
     pub flex: u32,

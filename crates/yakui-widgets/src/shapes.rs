@@ -103,7 +103,6 @@ pub fn outline(output: &mut PaintDom, rect: Rect, w: f32, color: Color) {
     output.add_mesh(mesh);
 }
 
-#[non_exhaustive]
 pub struct Circle {
     pub center: Vec2,
     pub radius: f32,
@@ -163,7 +162,6 @@ const RECT_INDEX: [u16; 6] = [
     3, 0, 2,
 ];
 
-#[non_exhaustive]
 pub struct RoundedRectangle {
     pub rect: Rect,
     pub radius: f32,

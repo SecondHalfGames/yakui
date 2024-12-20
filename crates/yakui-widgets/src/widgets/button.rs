@@ -27,7 +27,6 @@ if yakui::button("Hello").clicked {
 ```
 */
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Button {
     pub text: Cow<'static, str>,
@@ -41,7 +40,6 @@ pub struct Button {
 
 /// Contains styles that can vary based on the state of the button.
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub struct DynamicButtonStyle {
     pub text: TextStyle,
     pub fill: Color,

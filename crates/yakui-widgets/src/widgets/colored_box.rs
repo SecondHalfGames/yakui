@@ -11,7 +11,6 @@ A colored box that can contain children.
 Responds with [ColoredBoxResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct ColoredBox {
     pub color: Color,

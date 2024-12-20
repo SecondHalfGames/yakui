@@ -7,7 +7,6 @@ use yakui_core::Response;
 use crate::util::widget_children;
 
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Draggable {}
 
@@ -34,7 +33,6 @@ struct DragState {
 }
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct DraggableResponse {
     pub dragging: Option<Dragging>,
 }

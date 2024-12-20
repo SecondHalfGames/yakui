@@ -12,7 +12,6 @@ In the future, this widget may be extended to support arbitrary transforms
 applied to layers.
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Layer {}
 
