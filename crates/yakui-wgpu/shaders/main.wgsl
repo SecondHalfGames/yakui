@@ -35,7 +35,7 @@ fn vs_main(
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var color = textureSample(color_texture, color_sampler, in.texcoord);
-    color *= vec4(vec3(in.color.a), 1.0);
+    color *= vec4(color.rgb * in.color.a, 1.0);
 
     return in.color * color;
 }
