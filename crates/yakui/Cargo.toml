@@ -3,7 +3,7 @@ name = "yakui"
 description = "A UI library for games"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
 [features]

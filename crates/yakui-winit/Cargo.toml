@@ -3,7 +3,7 @@ name = "yakui-winit"
 description = "winit bindings for yakui"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
