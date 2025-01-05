@@ -93,9 +93,14 @@ impl YakuiSdl2 {
                 precise_x,
                 precise_y,
                 ..
-            } => state.handle_event(Event::MouseScroll {
-                delta: Vec2::new(*precise_x, *precise_y),
-            }),
+            } => {
+                // Observed logical pixels per scroll wheel increment in Windows on Chrome
+                const LINE_HEIGHT: f32 = 100.0 / 3.0;
+
+                state.handle_event(Event::MouseScroll {
+                    delta: Vec2::new(*precise_x, -*precise_y) * LINE_HEIGHT,
+                })
+            }
 
             SdlEvent::TextInput { text, .. } => {
                 for c in text.chars() {
