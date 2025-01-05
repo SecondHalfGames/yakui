@@ -1,0 +1,8 @@
+[package]
+name = "yakui-sdl2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+yakui-core = { path = "../yakui-core", version = "0.3.0" }
+sdl2 = "0.37.0"
