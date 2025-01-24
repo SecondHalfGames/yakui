@@ -60,6 +60,11 @@ impl Yakui {
         self.paint.set_surface_size(size);
     }
 
+    /// Return the current size of the primary surface.
+    pub fn surface_size(&self) -> Vec2 {
+        self.paint.surface_size()
+    }
+
     /// Set the size and position of the viewport in physical units.
     pub fn set_unscaled_viewport(&mut self, view: Rect) {
         self.layout.set_unscaled_viewport(view);
@@ -99,7 +104,8 @@ impl Yakui {
 
         self.dom.finish(&self.input);
         self.layout.sync_removals(&self.dom.removed_nodes());
-        self.layout.calculate_all(&self.dom, &self.input);
+        self.layout
+            .calculate_all(&self.dom, &self.input, &self.paint);
         self.input.finish();
     }
 

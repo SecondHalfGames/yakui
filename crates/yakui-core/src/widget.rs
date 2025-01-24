@@ -26,6 +26,7 @@ pub struct LayoutContext<'dom> {
     pub dom: &'dom Dom,
     pub input: &'dom InputState,
     pub layout: &'dom mut LayoutDom,
+    pub paint: &'dom PaintDom,
 }
 
 impl<'dom> LayoutContext<'dom> {
@@ -35,7 +36,7 @@ impl<'dom> LayoutContext<'dom> {
     /// phase.
     pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
         self.layout
-            .calculate(self.dom, self.input, widget, constraints)
+            .calculate(self.dom, self.input, self.paint, widget, constraints)
     }
 }
 

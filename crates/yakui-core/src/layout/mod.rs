@@ -10,6 +10,7 @@ use crate::event::EventInterest;
 use crate::geometry::{Constraints, Rect};
 use crate::id::WidgetId;
 use crate::input::{InputState, MouseInterest};
+use crate::paint::PaintDom;
 use crate::widget::LayoutContext;
 
 /// Contains information on how each widget in the DOM is laid out and what
@@ -114,7 +115,7 @@ impl LayoutDom {
     }
 
     /// Calculate the layout of all elements in the given DOM.
-    pub fn calculate_all(&mut self, dom: &Dom, input: &InputState) {
+    pub fn calculate_all(&mut self, dom: &Dom, input: &InputState, paint: &PaintDom) {
         profiling::scope!("LayoutDom::calculate_all");
         log::debug!("LayoutDom::calculate_all()");
 
@@ -123,7 +124,7 @@ impl LayoutDom {
 
         let constraints = Constraints::tight(self.viewport().size());
 
-        self.calculate(dom, input, dom.root(), constraints);
+        self.calculate(dom, input, paint, dom.root(), constraints);
         self.resolve_positions(dom);
     }
 
@@ -136,6 +137,7 @@ impl LayoutDom {
         &mut self,
         dom: &Dom,
         input: &InputState,
+        paint: &PaintDom,
         id: WidgetId,
         constraints: Constraints,
     ) -> Vec2 {
@@ -146,6 +148,7 @@ impl LayoutDom {
             dom,
             input,
             layout: self,
+            paint,
         };
 
         let size = dom_node.widget.layout(context, constraints);
