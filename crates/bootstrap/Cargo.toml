@@ -9,9 +9,9 @@ profile = ["profiling/profile-with-tracy", "tracy-client"]
 
 [dependencies]
 yakui = { path = "../yakui" }
-yakui-app = { path = "../yakui-app" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 yakui-winit = { path = "../yakui-winit" }
+yakui-sdl3 = { path = "../yakui-sdl3" }
 
 anyhow = "1.0.58"
 env_logger = "0.10.0"
@@ -22,4 +22,5 @@ profiling = "1.0.6"
 tracy-client = { version = "0.15.1", optional = true }
 
 winit = "0.30.0"
+sdl3 = { version = "0.14.0", features = ["build-from-source", "raw-window-handle"] }
 wgpu.workspace = true
