@@ -24,6 +24,16 @@ impl Color {
         Self { r, g, b, a: 255 }
     }
 
+    /// Create a new `Color` with all channels set to the given value.
+    pub const fn greyscale(v: u8) -> Self {
+        Self {
+            r: v,
+            g: v,
+            b: v,
+            a: 255,
+        }
+    }
+
     /// Create a color from a number, intended to be written as a hex literal.
     ///
     /// ```rust

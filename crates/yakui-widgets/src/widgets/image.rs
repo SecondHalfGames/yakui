@@ -41,6 +41,14 @@ impl Image {
     pub fn show(self) -> Response<ImageResponse> {
         widget::<ImageWidget>(self)
     }
+
+    pub fn color(self, color: Color) -> Self {
+        Self { color, ..self }
+    }
+
+    pub fn fit_mode(self, fit_mode: ImageFit) -> Self {
+        Self { fit_mode, ..self }
+    }
 }
 
 #[derive(Debug)]
