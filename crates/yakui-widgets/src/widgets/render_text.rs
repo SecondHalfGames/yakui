@@ -151,11 +151,6 @@ impl Widget for RenderTextWidget {
                 self.last_text.replace(self.props.text.clone());
             }
 
-            // Perf note: https://github.com/pop-os/cosmic-text/issues/166
-            for buffer_line in buffer.lines.iter_mut() {
-                buffer_line.set_align(Some(self.props.style.align.into()));
-            }
-
             buffer.shape_until_scroll(font_system, true);
 
             let mut line_offsets = self.line_offsets.borrow_mut();
@@ -179,7 +174,7 @@ impl Widget for RenderTextWidget {
                 line_offsets.push(offset / ctx.layout.scale_factor());
             }
 
-            let mut size = {
+            let size = {
                 let size_y = buffer
                     .layout_runs()
                     .map(|layout| layout.line_height)
@@ -188,12 +183,6 @@ impl Widget for RenderTextWidget {
 
                 (Vec2::new(widest_line, size_y) / ctx.layout.scale_factor()).round()
             };
-
-            size.x = size.x.max(constraints.min.x);
-
-            if constraints.max.x.is_finite() {
-                size.x = size.x.max(constraints.max.x);
-            }
 
             let size = constraints.constrain(size);
             self.size.set(Some(size));
