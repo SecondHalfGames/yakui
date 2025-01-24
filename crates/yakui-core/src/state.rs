@@ -125,4 +125,10 @@ impl Yakui {
     pub fn set_paint_limit(&mut self, limits: PaintLimits) {
         self.paint.set_limit(limits)
     }
+
+    /// Tells whether a widget is currently looking for text input, like a
+    /// focused textbox.
+    pub fn text_input_enabled(&self) -> bool {
+        self.input.text_input_enabled()
+    }
 }

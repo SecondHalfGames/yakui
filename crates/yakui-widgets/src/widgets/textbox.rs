@@ -205,6 +205,10 @@ impl Widget for TextBoxWidget {
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        if self.active {
+            ctx.input.enable_text_input();
+        }
+
         let max_width = constraints.max.x.is_finite().then_some(
             (constraints.max.x - self.props.padding.offset().x * 2.0) * ctx.layout.scale_factor(),
         );

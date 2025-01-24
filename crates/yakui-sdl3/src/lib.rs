@@ -2,6 +2,7 @@ mod keys;
 
 use sdl3::event::{Event as SdlEvent, WindowEvent};
 use sdl3::mouse::MouseButton as SdlMouseButton;
+use sdl3::sys::keyboard::{SDL_StartTextInput, SDL_StopTextInput};
 use sdl3::sys::video::SDL_GetWindowDisplayScale;
 use sdl3::video::Window;
 use yakui_core::event::Event;
@@ -10,8 +11,9 @@ use yakui_core::input::MouseButton;
 
 use self::keys::from_sdl_scancode;
 
-pub struct YakuiSdl2 {
+pub struct YakuiSdl3 {
     init: Option<InitState>,
+    text_input_enabled: bool,
 }
 
 struct InitState {
@@ -23,13 +25,28 @@ fn scale_factor(window: &Window) -> f32 {
     unsafe { SDL_GetWindowDisplayScale(window.raw()) }
 }
 
-impl YakuiSdl2 {
+impl YakuiSdl3 {
     pub fn new(window: &Window) -> Self {
         let size = window.size().into();
         let scale = scale_factor(window);
 
         Self {
             init: Some(InitState { size, scale }),
+            text_input_enabled: false,
+        }
+    }
+
+    pub fn update(&mut self, window: &Window, state: &mut yakui_core::Yakui) {
+        let new_value = state.text_input_enabled();
+
+        match (self.text_input_enabled, new_value) {
+            (false, true) => unsafe {
+                SDL_StartTextInput(window.raw());
+            },
+            (true, false) => unsafe {
+                SDL_StopTextInput(window.raw());
+            },
+            (true, true) | (false, false) => {}
         }
     }
 

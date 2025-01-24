@@ -31,6 +31,9 @@ pub struct InputState {
 
     /// The widget that was selected last frame.
     last_selection: Cell<Option<WidgetId>>,
+
+    /// If set, text input should be active.
+    text_input_enabled: Cell<bool>,
 }
 
 #[derive(Debug)]
@@ -111,17 +114,31 @@ impl InputState {
             }),
             last_selection: Cell::new(None),
             selection: Cell::new(None),
+            text_input_enabled: Cell::new(false),
         }
     }
 
     /// Begin a new frame for input handling.
     pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
+        self.text_input_enabled.set(false);
         self.notify_selection(dom, layout);
     }
 
     /// Finish applying input events for this frame.
     pub fn finish(&self) {
         self.settle_buttons();
+    }
+
+    /// Enables text input. Should be called every update from a widget that
+    /// expects text events when it's focused.
+    pub fn enable_text_input(&self) {
+        self.text_input_enabled.set(true);
+    }
+
+    /// Tells whether a widget is currently looking for text input, like a
+    /// focused textbox.
+    pub fn text_input_enabled(&self) -> bool {
+        self.text_input_enabled.get()
     }
 
     /// Return the currently selected widget, if there is one.
