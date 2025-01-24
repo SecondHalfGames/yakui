@@ -16,6 +16,13 @@ pub struct Image {
     pub image: Option<TextureId>,
     pub size: Vec2,
     pub color: Color,
+    pub fit_mode: ImageFit,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ImageFit {
+    Stretch,
+    Fit,
 }
 
 impl Image {
@@ -27,6 +34,7 @@ impl Image {
             image: Some(image.into()),
             size,
             color: Color::WHITE,
+            fit_mode: ImageFit::Fit,
         }
     }
 
@@ -52,6 +60,7 @@ impl Widget for ImageWidget {
                 image: None,
                 size: Vec2::ZERO,
                 color: Color::WHITE,
+                fit_mode: ImageFit::Stretch,
             },
         }
     }
@@ -60,8 +69,32 @@ impl Widget for ImageWidget {
         self.props = props;
     }
 
-    fn layout(&self, _ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
-        input.constrain_min(self.props.size)
+    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let mut output_size = input.constrain(self.props.size);
+
+        match self.props.fit_mode {
+            ImageFit::Stretch => {}
+
+            ImageFit::Fit => {
+                if let Some(TextureId::Managed(id)) = self.props.image {
+                    if let Some(texture) = ctx.paint.texture(id) {
+                        let real_size = texture.size().as_vec2();
+                        let aspect_ratio = real_size.x / real_size.y;
+
+                        let width_from_height = output_size.y * aspect_ratio;
+                        let height_from_width = output_size.x / aspect_ratio;
+
+                        if output_size.x < width_from_height {
+                            output_size = Vec2::new(output_size.x, height_from_width);
+                        } else {
+                            output_size = Vec2::new(width_from_height, output_size.y);
+                        }
+                    }
+                }
+            }
+        }
+
+        output_size
     }
 
     fn paint(&self, ctx: PaintContext<'_>) {
