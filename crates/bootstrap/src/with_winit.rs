@@ -171,6 +171,10 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
                         size - Vec2::splat(inset * 2.0),
                     ));
                 }
+
+                if let Some(graphics) = &mut self.graphics {
+                    graphics.resize(self.yak.surface_size().as_uvec2());
+                }
             }
 
             WindowEvent::CloseRequested => {
