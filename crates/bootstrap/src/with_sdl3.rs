@@ -62,6 +62,8 @@ pub fn run<T: ExampleBody>(mut yak: Yakui, mut state: ExampleState, title: Strin
             yak.finish();
         }
 
+        yak_window.update(&window, &mut yak);
+
         graphics.paint(&mut yak, {
             let bg = yakui::colors::BACKGROUND_1.to_linear();
             wgpu::Color {
