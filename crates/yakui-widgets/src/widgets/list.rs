@@ -1,6 +1,5 @@
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
-use yakui_core::input::NavDirection;
-use yakui_core::widget::{LayoutContext, NavigateContext, Widget};
+use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{
     CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response, WidgetId,
 };
@@ -98,10 +97,6 @@ impl Widget for ListWidget {
         };
 
         (flex, FlexFit::Tight)
-    }
-
-    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
-        todo!()
     }
 
     // This approach to layout is based on Flutter's Flex layout algorithm.

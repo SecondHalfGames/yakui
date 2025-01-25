@@ -14,10 +14,9 @@ pub fn navigate(
 
     while let Some(id) = current {
         let node = dom.get(id).unwrap();
-
         let ctx = NavigateContext { dom, layout, input };
 
-        if let Some(new_id) = node.widget.navigate(ctx, dir) {
+        if let Some(new_id) = ctx.try_navigate(id, dir) {
             return Some(new_id);
         }
 

@@ -1,6 +1,7 @@
 //! Defines traits for building widgets.
 
 use std::any::{type_name, Any, TypeId};
+use std::collections::VecDeque;
 use std::fmt;
 
 use glam::Vec2;
@@ -70,6 +71,35 @@ pub struct NavigateContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
     pub input: &'dom InputState,
+}
+
+impl<'dom> NavigateContext<'dom> {
+    /// Query for navigation to the given widget or one of its descendents.
+    pub fn try_navigate(&self, widget: WidgetId, dir: NavDirection) -> Option<WidgetId> {
+        self.dom.enter(widget);
+        let node = self.dom.get(widget).unwrap();
+        let res = node.widget.navigate(*self, dir);
+        self.dom.exit(widget);
+
+        res
+    }
+
+    /// Tells whether `descendent` is a descendent of `parent`.
+    pub fn contains(&self, parent: WidgetId, descendent: WidgetId) -> bool {
+        let mut queue = VecDeque::new();
+        queue.push_back(parent);
+
+        while let Some(current) = queue.pop_front() {
+            if current == descendent {
+                return true;
+            }
+
+            let node = self.dom.get(current).unwrap();
+            queue.extend(node.children.iter().copied());
+        }
+
+        false
+    }
 }
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
@@ -169,20 +199,75 @@ pub trait Widget: 'static + fmt::Debug {
     /// given direction.
     #[allow(unused)]
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
-        if dir != NavDirection::Here {
-            return None;
-        }
-
+        let node_id = ctx.dom.current();
         let node = ctx.dom.get_current();
-        for &child in &node.children {
-            let child = ctx.dom.get(child).unwrap();
 
-            if let Some(id) = child.widget.navigate(ctx, dir) {
-                return Some(id);
+        println!("Navigate {dir:?} on {node_id:?} ({})", type_name::<Self>());
+
+        if dir == NavDirection::HereFromPrev {
+            if self.event_interest().contains(EventInterest::FOCUS) {
+                return Some(node_id);
             }
-        }
 
-        None
+            for &child in &node.children {
+                if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromPrev) {
+                    return Some(id);
+                }
+            }
+
+            None
+        } else if dir == NavDirection::HereFromNext {
+            if self.event_interest().contains(EventInterest::FOCUS) {
+                return Some(node_id);
+            }
+
+            for &child in node.children.iter().rev() {
+                if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromNext) {
+                    return Some(id);
+                }
+            }
+
+            None
+        } else {
+            let selection = ctx.input.selection()?;
+            let mut current_index = None;
+
+            for (index, &child) in node.children.iter().enumerate() {
+                if ctx.contains(child, selection) {
+                    current_index = Some(index);
+                    break;
+                }
+            }
+
+            if let Some(index) = current_index {
+                match dir {
+                    NavDirection::Next => {
+                        for &child in node.children.iter().skip(index + 1) {
+                            if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromPrev) {
+                                return Some(id);
+                            }
+                        }
+                    }
+
+                    NavDirection::Previous => {
+                        if let Some(prev_index) = index.checked_sub(1) {
+                            let skip = node.children.len() - prev_index - 1;
+                            for &child in node.children.iter().rev().skip(skip) {
+                                if let Some(id) =
+                                    ctx.try_navigate(child, NavDirection::HereFromNext)
+                                {
+                                    return Some(id);
+                                }
+                            }
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
+
+            None
+        }
     }
 }
 

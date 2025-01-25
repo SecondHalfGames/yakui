@@ -359,7 +359,10 @@ impl Widget for TextBoxWidget {
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD | EventInterest::MOUSE_MOVE
+        EventInterest::MOUSE_INSIDE
+            | EventInterest::FOCUS
+            | EventInterest::FOCUSED_KEYBOARD
+            | EventInterest::MOUSE_MOVE
     }
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -487,10 +490,12 @@ impl Widget for TextBoxWidget {
 
                         match key {
                             KeyCode::Tab => {
-                                if modifiers.shift() {
-                                    ctx.input.navigate(NavDirection::Previous);
-                                } else {
-                                    ctx.input.navigate(NavDirection::Next);
+                                if *down {
+                                    if modifiers.shift() {
+                                        ctx.input.navigate(NavDirection::Previous);
+                                    } else {
+                                        ctx.input.navigate(NavDirection::Next);
+                                    }
                                 }
 
                                 res = EventResponse::Sink;

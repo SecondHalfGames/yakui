@@ -3,7 +3,8 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[allow(missing_docs)]
 pub enum NavDirection {
-    Here,
+    HereFromPrev,
+    HereFromNext,
 
     Down,
     Up,
