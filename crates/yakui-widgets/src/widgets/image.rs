@@ -3,6 +3,7 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
+use crate::auto_builders;
 use crate::util::widget;
 
 /**
@@ -18,6 +19,12 @@ pub struct Image {
     pub color: Color,
     pub fit_mode: ImageFit,
 }
+
+auto_builders!(Image {
+    size: Vec2,
+    color: Color,
+    fit_mode: ImageFit,
+});
 
 #[derive(Debug, Clone, Copy)]
 pub enum ImageFit {
@@ -40,14 +47,6 @@ impl Image {
 
     pub fn show(self) -> Response<ImageResponse> {
         widget::<ImageWidget>(self)
-    }
-
-    pub fn color(self, color: Color) -> Self {
-        Self { color, ..self }
-    }
-
-    pub fn fit_mode(self, fit_mode: ImageFit) -> Self {
-        Self { fit_mode, ..self }
     }
 }
 

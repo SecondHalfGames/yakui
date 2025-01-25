@@ -5,6 +5,7 @@ use yakui_core::{
     CrossAxisAlignment, Direction, MainAxisAlignItems, MainAxisAlignment, MainAxisSize, Response,
 };
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -37,6 +38,15 @@ pub struct CountGrid {
     pub cross_axis_alignment: CrossAxisAlignment,
 }
 
+auto_builders!(CountGrid {
+    direction: Direction,
+    cross_axis_count: usize,
+    main_axis_alignment: MainAxisAlignment,
+    main_axis_size: MainAxisSize,
+    main_axis_align_items: MainAxisAlignItems,
+    cross_axis_alignment: CrossAxisAlignment,
+});
+
 impl CountGrid {
     /// The children will be laid out in a grid with the given number of columns.
     /// They should be provided in row-major order.
@@ -62,26 +72,6 @@ impl CountGrid {
             cross_axis_alignment: CrossAxisAlignment::Start,
             main_axis_align_items: MainAxisAlignItems::Start,
         }
-    }
-
-    pub fn cross_axis_aligment(mut self, alignment: CrossAxisAlignment) -> Self {
-        self.cross_axis_alignment = alignment;
-        self
-    }
-
-    pub fn main_axis_aligment(mut self, alignment: MainAxisAlignment) -> Self {
-        self.main_axis_alignment = alignment;
-        self
-    }
-
-    pub fn main_axis_size(mut self, size: MainAxisSize) -> Self {
-        self.main_axis_size = size;
-        self
-    }
-
-    pub fn main_axis_align_items(mut self, items: MainAxisAlignItems) -> Self {
-        self.main_axis_align_items = items;
-        self
     }
 
     /// The children will be laid out in a grid with the given number of columns/rows.

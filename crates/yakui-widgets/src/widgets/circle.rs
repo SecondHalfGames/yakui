@@ -2,8 +2,8 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::shapes;
 use crate::util::{widget, widget_children};
+use crate::{auto_builders, shapes};
 
 /**
 A colored circle that can contain children.
@@ -16,6 +16,11 @@ pub struct Circle {
     pub color: Color,
     pub min_radius: f32,
 }
+
+auto_builders!(Circle {
+    color: Color,
+    min_radius: f32,
+});
 
 impl Circle {
     pub fn new() -> Self {

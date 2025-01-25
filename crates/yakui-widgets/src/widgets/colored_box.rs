@@ -3,6 +3,7 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::{widget, widget_children};
 
 /**
@@ -16,6 +17,11 @@ pub struct ColoredBox {
     pub color: Color,
     pub min_size: Vec2,
 }
+
+auto_builders!(ColoredBox {
+    color: Color,
+    min_size: Vec2,
+});
 
 impl ColoredBox {
     pub fn empty() -> Self {

@@ -23,3 +23,22 @@ where
     let dom = context::dom();
     dom.do_widget::<T>(props)
 }
+
+#[macro_export]
+macro_rules! auto_builders {
+    (
+        $struct:ident {
+            $( $name:ident: $type:ty, )*
+        }
+    ) => {
+        impl $struct {
+            $(
+                pub fn $name(self, $name: $type) -> Self {
+                    Self { $name, ..self }
+                }
+            )*
+        }
+    };
+}
+
+pub use auto_builders;

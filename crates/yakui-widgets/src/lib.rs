@@ -7,13 +7,14 @@
 
 mod ignore_debug;
 
+pub mod util;
+
 pub mod colors;
 pub mod font;
 pub mod shapes;
 pub mod shorthand;
 pub mod style;
 pub mod text_renderer;
-pub mod util;
 pub mod widgets;
 
 pub use self::shorthand::*;

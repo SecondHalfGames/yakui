@@ -3,6 +3,8 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
+
 /// A horizontal divider line. Will take up the whole width of the parent.
 ///
 /// Responds with [DividerResponse].
@@ -21,6 +23,14 @@ pub struct Divider {
     /// The indent of the divider from the right.
     pub end_indent: f32,
 }
+
+auto_builders!(Divider {
+    color: Color,
+    thickness: f32,
+    height: f32,
+    indent: f32,
+    end_indent: f32,
+});
 
 impl Divider {
     pub fn new(color: Color, height: f32, thickness: f32) -> Self {

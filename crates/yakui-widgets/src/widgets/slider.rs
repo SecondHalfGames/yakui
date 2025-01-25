@@ -4,7 +4,7 @@ use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::{colored_circle, colors, draggable, util};
+use crate::{auto_builders, colored_circle, colors, draggable, util};
 
 use crate::colored_box;
 
@@ -24,6 +24,13 @@ pub struct Slider {
     pub max: f64,
     pub step: Option<f64>,
 }
+
+auto_builders!(Slider {
+    value: f64,
+    min: f64,
+    max: f64,
+    step: Option<f64>,
+});
 
 impl Slider {
     pub fn new(value: f64, min: f64, max: f64) -> Self {

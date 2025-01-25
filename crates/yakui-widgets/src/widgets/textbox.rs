@@ -13,7 +13,7 @@ use crate::font::Fonts;
 use crate::shapes::{self, RoundedRectangle};
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
-use crate::{colors, pad};
+use crate::{auto_builders, colors, pad};
 
 use super::{Pad, RenderText};
 
@@ -43,6 +43,19 @@ pub struct TextBox {
     /// Drawn when no text has been set
     pub placeholder: String,
 }
+
+auto_builders!(TextBox {
+    style: TextStyle,
+    padding: Pad,
+    fill: Option<Color>,
+    radius: f32,
+    inline_edit: bool,
+    multiline: bool,
+    selection_halo_color: Color,
+    selected_bg_color: Color,
+    cursor_color: Color,
+    placeholder: String,
+});
 
 impl TextBox {
     pub fn new<S: Into<String>>(text: S) -> Self {

@@ -1,3 +1,4 @@
+use crate::auto_builders;
 use crate::shapes::RoundedRectangle;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
@@ -20,6 +21,13 @@ pub struct CutOut {
     pub min_size: Vec2,
     pub radius: f32,
 }
+
+auto_builders!(CutOut {
+    image_color: Color,
+    overlay_color: Color,
+    min_size: Vec2,
+    radius: f32,
+});
 
 impl CutOut {
     pub fn new<I>(image: I, overlay_color: Color) -> Self

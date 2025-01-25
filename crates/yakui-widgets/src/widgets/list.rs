@@ -2,6 +2,7 @@ use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -35,6 +36,13 @@ pub struct List {
     pub main_axis_alignment: MainAxisAlignment,
     pub cross_axis_alignment: CrossAxisAlignment,
 }
+
+auto_builders!(List {
+    item_spacing: f32,
+    main_axis_size: MainAxisSize,
+    main_axis_alignment: MainAxisAlignment,
+    cross_axis_alignment: CrossAxisAlignment,
+});
 
 impl List {
     pub fn new(direction: Direction) -> Self {

@@ -3,9 +3,9 @@ use std::borrow::Cow;
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
-use crate::pad;
 use crate::style::TextStyle;
 use crate::util::widget;
+use crate::{auto_builders, pad};
 
 use super::{Pad, RenderText};
 
@@ -34,6 +34,11 @@ pub struct Text {
     pub style: TextStyle,
     pub padding: Pad,
 }
+
+auto_builders!(Text {
+    style: TextStyle,
+    padding: Pad,
+});
 
 impl Text {
     pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {

@@ -6,10 +6,10 @@ use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
-use crate::colors;
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
+use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
 
@@ -37,6 +37,16 @@ pub struct Button {
     pub hover_style: DynamicButtonStyle,
     pub down_style: DynamicButtonStyle,
 }
+
+auto_builders!(Button {
+    text: Cow<'static, str>,
+    alignment: Alignment,
+    padding: Pad,
+    border_radius: f32,
+    style: DynamicButtonStyle,
+    hover_style: DynamicButtonStyle,
+    down_style: DynamicButtonStyle,
+});
 
 /// Contains styles that can vary based on the state of the button.
 #[derive(Debug, Clone)]

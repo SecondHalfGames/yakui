@@ -2,8 +2,8 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::shapes;
 use crate::util::{widget, widget_children};
+use crate::{auto_builders, shapes};
 
 /**
 A colored box with rounded corners that can contain children.
@@ -17,6 +17,12 @@ pub struct RoundRect {
     pub color: Color,
     pub min_size: Vec2,
 }
+
+auto_builders!(RoundRect {
+    radius: f32,
+    color: Color,
+    min_size: Vec2,
+});
 
 impl RoundRect {
     pub fn new(radius: f32) -> Self {

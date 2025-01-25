@@ -5,17 +5,25 @@ use yakui_core::{
     ManagedTextureId, Response,
 };
 
-use crate::{shorthand::pad, util::widget_children, widgets::pad::Pad};
+use crate::{auto_builders, shorthand::pad, util::widget_children, widgets::pad::Pad};
 
 #[derive(Debug)]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct NineSlice {
-    texture: ManagedTextureId,
+    pub texture: ManagedTextureId,
+
     /// Texture margins in pixels around the central NineSlice region, before
     /// scaling.
+    pub margins: Pad,
+
+    pub scale: f32,
+}
+
+auto_builders!(NineSlice {
+    texture: ManagedTextureId,
     margins: Pad,
     scale: f32,
-}
+});
 
 impl NineSlice {
     pub fn new(texture: ManagedTextureId, margins: Pad, scale: f32) -> Self {
