@@ -37,6 +37,9 @@ pub enum Event {
 
         /// Whether the key is now down.
         down: bool,
+
+        /// Modifiers pressed for this event.
+        modifiers: Option<Modifiers>,
     },
 
     /// The state of the keyboard modifiers keys changed.

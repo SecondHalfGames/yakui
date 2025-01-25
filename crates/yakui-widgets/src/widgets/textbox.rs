@@ -468,6 +468,8 @@ impl Widget for TextBoxWidget {
                 modifiers,
                 ..
             } => {
+                println!("Key: {key:?} {down:?} + {modifiers:?}");
+
                 let fonts = ctx.dom.get_global_or_init(Fonts::default);
                 fonts.with_system(|font_system| {
                     if let Some(editor) = self.cosmic_editor.get_mut() {

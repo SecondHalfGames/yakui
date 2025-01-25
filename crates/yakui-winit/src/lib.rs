@@ -150,7 +150,11 @@ impl YakuiWinit {
                         ElementState::Released => false,
                     };
 
-                    state.handle_event(Event::KeyChanged { key, down: pressed })
+                    state.handle_event(Event::KeyChanged {
+                        key,
+                        down: pressed,
+                        modifiers: None,
+                    })
                 } else {
                     false
                 }

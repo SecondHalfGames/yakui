@@ -5,9 +5,9 @@ use sdl2::mouse::MouseButton as SdlMouseButton;
 use sdl2::video::Window;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, UVec2, Vec2};
-use yakui_core::input::MouseButton;
+use yakui_core::input::{Modifiers, MouseButton};
 
-use self::keys::from_sdl_scancode;
+use self::keys::{from_sdl_modifiers, from_sdl_scancode};
 
 pub struct YakuiSdl2 {
     init: Option<InitState>,
@@ -110,17 +110,29 @@ impl YakuiSdl2 {
                 false
             }
 
-            SdlEvent::KeyDown { scancode, .. } => {
+            SdlEvent::KeyDown {
+                scancode, keymod, ..
+            } => {
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
-                    state.handle_event(Event::KeyChanged { key, down: true })
+                    state.handle_event(Event::KeyChanged {
+                        key,
+                        down: true,
+                        modifiers: Some(from_sdl_modifiers(*keymod)),
+                    })
                 } else {
                     false
                 }
             }
 
-            SdlEvent::KeyUp { scancode, .. } => {
+            SdlEvent::KeyUp {
+                scancode, keymod, ..
+            } => {
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
-                    state.handle_event(Event::KeyChanged { key, down: false })
+                    state.handle_event(Event::KeyChanged {
+                        key,
+                        down: false,
+                        modifiers: Some(from_sdl_modifiers(*keymod)),
+                    })
                 } else {
                     false
                 }

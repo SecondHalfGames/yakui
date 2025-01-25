@@ -182,7 +182,11 @@ impl InputState {
                 response
             }
             Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
-            Event::KeyChanged { key, down } => self.keyboard_key_changed(dom, layout, *key, *down),
+            Event::KeyChanged {
+                key,
+                down,
+                modifiers,
+            } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
             _ => EventResponse::Bubble,
@@ -278,6 +282,7 @@ impl InputState {
         layout: &LayoutDom,
         key: KeyCode,
         down: bool,
+        modifiers: Option<Modifiers>,
     ) -> EventResponse {
         let selected = self.selection.get();
         if let Some(id) = selected {
@@ -295,7 +300,7 @@ impl InputState {
                 let event = WidgetEvent::KeyChanged {
                     key,
                     down,
-                    modifiers: self.modifiers.get(),
+                    modifiers: modifiers.unwrap_or(self.modifiers.get()),
                 };
                 return self.fire_event(dom, layout, id, &mut node, &event);
             }
