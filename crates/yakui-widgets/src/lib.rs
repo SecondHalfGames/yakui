@@ -9,6 +9,7 @@ mod ignore_debug;
 
 pub mod util;
 
+pub mod clipboard;
 pub mod colors;
 pub mod font;
 pub mod shapes;

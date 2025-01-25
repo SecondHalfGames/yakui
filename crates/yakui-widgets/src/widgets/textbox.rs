@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::mem;
 
-use cosmic_text::Edit;
+use cosmic_text::{Edit, Selection};
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::input::{KeyCode, Modifiers, MouseButton};
@@ -9,6 +9,7 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::clipboard::ClipboardHolder;
 use crate::font::Fonts;
 use crate::shapes::{self, RoundedRectangle};
 use crate::style::{TextAlignment, TextStyle};
@@ -471,9 +472,28 @@ impl Widget for TextBoxWidget {
                 let fonts = ctx.dom.get_global_or_init(Fonts::default);
                 fonts.with_system(|font_system| {
                     if let Some(editor) = self.cosmic_editor.get_mut() {
+                        enum SelectMove {
+                            Deselect,
+                            Left,
+                            Right,
+                        }
+
+                        let mut select_move = None;
+                        let original_bounds = editor.selection_bounds().unwrap_or_else(|| {
+                            let cursor = editor.cursor();
+                            (cursor, cursor)
+                        });
+                        let res;
+
                         match key {
                             KeyCode::ArrowLeft => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Left);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     if modifiers.ctrl() {
                                         editor.action(
                                             font_system,
@@ -488,11 +508,18 @@ impl Widget for TextBoxWidget {
                                         );
                                     }
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::ArrowRight => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Right);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     if modifiers.ctrl() {
                                         editor.action(
                                             font_system,
@@ -507,47 +534,76 @@ impl Widget for TextBoxWidget {
                                         );
                                     }
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::ArrowUp => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Left);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::Up),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::ArrowDown => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Right);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::Down),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::PageUp => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Left);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::PageUp),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::PageDown => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Right);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::PageDown),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::Backspace => {
@@ -555,7 +611,8 @@ impl Widget for TextBoxWidget {
                                     editor.action(font_system, cosmic_text::Action::Backspace);
                                     self.text_changed_by_cosmic.set(true);
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::Delete => {
@@ -563,27 +620,42 @@ impl Widget for TextBoxWidget {
                                     editor.action(font_system, cosmic_text::Action::Delete);
                                     self.text_changed_by_cosmic.set(true);
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::Home => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Left);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::Home),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::End => {
                                 if *down {
+                                    if modifiers.shift() {
+                                        select_move = Some(SelectMove::Right);
+                                    } else {
+                                        select_move = Some(SelectMove::Deselect);
+                                    }
+
                                     editor.action(
                                         font_system,
                                         cosmic_text::Action::Motion(cosmic_text::Motion::End),
                                     );
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::Enter | KeyCode::NumpadEnter => {
@@ -601,7 +673,8 @@ impl Widget for TextBoxWidget {
                                         self.text_changed_by_cosmic.set(true);
                                     }
                                 }
-                                EventResponse::Sink
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::Escape => {
@@ -611,7 +684,7 @@ impl Widget for TextBoxWidget {
                                         ctx.input.set_selection(None);
                                     }
                                 }
-                                EventResponse::Sink
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::KeyA if *down && main_modifier(modifiers) => {
@@ -621,21 +694,65 @@ impl Widget for TextBoxWidget {
                                     editor.set_cursor(end);
                                 }
 
-                                EventResponse::Sink
+                                res = EventResponse::Sink;
+                            }
+
+                            KeyCode::KeyX if *down && main_modifier(modifiers) => {
+                                let clipboard =
+                                    ctx.dom.get_global_or_init(ClipboardHolder::default);
+
+                                if let Some(text) = editor.copy_selection() {
+                                    clipboard.copy(&text);
+                                }
+                                editor.delete_selection();
+                                self.text_changed_by_cosmic.set(true);
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::KeyC if *down && main_modifier(modifiers) => {
-                                println!("TODO: Copy!");
-                                EventResponse::Sink
+                                let clipboard =
+                                    ctx.dom.get_global_or_init(ClipboardHolder::default);
+
+                                if let Some(text) = editor.copy_selection() {
+                                    clipboard.copy(&text);
+                                }
+
+                                res = EventResponse::Sink;
                             }
 
                             KeyCode::KeyV if *down && main_modifier(modifiers) => {
-                                println!("TODO: Paste!");
-                                EventResponse::Sink
+                                let clipboard =
+                                    ctx.dom.get_global_or_init(ClipboardHolder::default);
+
+                                if let Some(text) = clipboard.paste() {
+                                    editor.insert_string(&text, None);
+                                    self.text_changed_by_cosmic.set(true);
+                                }
+
+                                res = EventResponse::Sink;
                             }
 
-                            _ => EventResponse::Sink,
+                            _ => res = EventResponse::Sink,
                         }
+
+                        match select_move {
+                            Some(SelectMove::Deselect) => {
+                                editor.set_selection(Selection::None);
+                            }
+
+                            Some(SelectMove::Left) => {
+                                editor.set_selection(Selection::Normal(original_bounds.1));
+                            }
+
+                            Some(SelectMove::Right) => {
+                                editor.set_selection(Selection::Normal(original_bounds.0));
+                            }
+
+                            None => {}
+                        }
+
+                        res
                     } else {
                         EventResponse::Bubble
                     }
