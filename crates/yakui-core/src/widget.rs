@@ -1,6 +1,7 @@
 //! Defines traits for building widgets.
 
 use std::any::{type_name, Any, TypeId};
+use std::collections::VecDeque;
 use std::fmt;
 
 use glam::Vec2;
@@ -9,8 +10,9 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
-use crate::input::{InputState, NavDirection};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
+use crate::navigation::NavDirection;
 use crate::paint::PaintDom;
 use crate::{Flow, WidgetId};
 
@@ -65,10 +67,52 @@ pub struct EventContext<'dom> {
 
 /// Information available to a widget when it is being queried for navigation.
 #[allow(missing_docs)]
+#[derive(Clone, Copy)]
 pub struct NavigateContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
     pub input: &'dom InputState,
+}
+
+impl<'dom> NavigateContext<'dom> {
+    /// Query for navigation to the given widget or one of its descendents.
+    pub fn try_navigate(&self, widget: WidgetId, dir: NavDirection) -> Option<WidgetId> {
+        self.dom.enter(widget);
+        let node = self.dom.get(widget).unwrap();
+
+        println!(
+            "Enter Navigate {dir:?} on {widget:?} ({})",
+            node.widget.type_name()
+        );
+
+        let res = node.widget.navigate(*self, dir);
+
+        println!(
+            "Result of Navigate {dir:?} on {widget:?} ({}): {res:?}",
+            node.widget.type_name()
+        );
+
+        self.dom.exit(widget);
+
+        res
+    }
+
+    /// Tells whether `descendent` is a descendent of `parent`.
+    pub fn contains(&self, parent: WidgetId, descendent: WidgetId) -> bool {
+        let mut queue = VecDeque::new();
+        queue.push_back(parent);
+
+        while let Some(current) = queue.pop_front() {
+            if current == descendent {
+                return true;
+            }
+
+            let node = self.dom.get(current).unwrap();
+            queue.extend(node.children.iter().copied());
+        }
+
+        false
+    }
 }
 
 /// A yakui widget. Implement this trait to create a custom widget if composing
@@ -168,7 +212,86 @@ pub trait Widget: 'static + fmt::Debug {
     /// given direction.
     #[allow(unused)]
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
-        None
+        let node_id = ctx.dom.current();
+        let node = ctx.dom.get_current();
+
+        let selection = ctx.input.selection()?;
+        let mut current_index = None;
+
+        for (index, &child) in node.children.iter().enumerate() {
+            if ctx.contains(child, selection) {
+                current_index = Some(index);
+                break;
+            }
+        }
+
+        if let Some(index) = current_index {
+            // The navigation is originating from inside this widget. This
+            // widget should find the next focusable child, or return None.
+
+            match dir {
+                NavDirection::Next => {
+                    for &child in node.children.iter().skip(index + 1) {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Next) {
+                            return Some(id);
+                        }
+                    }
+                }
+
+                NavDirection::Previous => {
+                    if let Some(prev_index) = index.checked_sub(1) {
+                        let skip = node.children.len() - prev_index - 1;
+                        for &child in node.children.iter().rev().skip(skip) {
+                            if let Some(id) = ctx.try_navigate(child, NavDirection::Previous) {
+                                return Some(id);
+                            }
+                        }
+                    }
+                }
+
+                _ => {
+                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
+                }
+            }
+
+            None
+        } else {
+            // The navigation is originating from outside this widget. This code
+            // should pick the widget that's nearest to the given navigation
+            // direction that's focusable.
+
+            if selection != node_id && self.event_interest().contains(EventInterest::FOCUS) {
+                // This widget is directly focusable, so focus it!
+                return Some(node_id);
+            }
+
+            match dir {
+                NavDirection::Next => {
+                    for &child in &node.children {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Next) {
+                            return Some(id);
+                        }
+                    }
+
+                    None
+                }
+
+                NavDirection::Previous => {
+                    for &child in node.children.iter().rev() {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Previous) {
+                            return Some(id);
+                        }
+                    }
+
+                    None
+                }
+
+                _ => {
+                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
+                    None
+                }
+            }
+        }
     }
 }
 
@@ -194,6 +317,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
+
+    /// See [`Widget::navigate`].
+    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId>;
 }
 
 impl<T> ErasedWidget for T
@@ -228,6 +354,10 @@ where
 
     fn type_name(&self) -> &'static str {
         type_name::<T>()
+    }
+
+    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
+        <T as Widget>::navigate(self, ctx, dir)
     }
 }
 

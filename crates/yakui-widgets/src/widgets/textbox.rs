@@ -5,6 +5,7 @@ use cosmic_text::{Edit, Selection};
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::input::{KeyCode, Modifiers, MouseButton};
+use yakui_core::navigation::NavDirection;
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
@@ -359,7 +360,10 @@ impl Widget for TextBoxWidget {
     }
 
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD | EventInterest::MOUSE_MOVE
+        EventInterest::MOUSE_INSIDE
+            | EventInterest::FOCUS
+            | EventInterest::FOCUSED_KEYBOARD
+            | EventInterest::MOUSE_MOVE
     }
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -486,6 +490,18 @@ impl Widget for TextBoxWidget {
                         let res;
 
                         match key {
+                            KeyCode::Tab => {
+                                if *down {
+                                    if modifiers.shift() {
+                                        ctx.input.navigate(NavDirection::Previous);
+                                    } else {
+                                        ctx.input.navigate(NavDirection::Next);
+                                    }
+                                }
+
+                                res = EventResponse::Sink;
+                            }
+
                             KeyCode::ArrowLeft => {
                                 if *down {
                                     if modifiers.shift() {

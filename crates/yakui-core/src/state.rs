@@ -106,7 +106,7 @@ impl Yakui {
         self.layout.sync_removals(&self.dom.removed_nodes());
         self.layout
             .calculate_all(&self.dom, &self.input, &self.paint);
-        self.input.finish();
+        self.input.finish(&self.dom, &self.layout);
     }
 
     /// Calculates the geometry needed to render the current state and gives
