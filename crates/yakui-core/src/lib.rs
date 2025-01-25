@@ -10,7 +10,6 @@
 mod mopmopa;
 
 mod id;
-mod navigation;
 mod response;
 mod state;
 mod types;
@@ -21,6 +20,7 @@ pub mod event;
 pub mod geometry;
 pub mod input;
 pub mod layout;
+pub mod navigation;
 pub mod paint;
 pub mod widget;
 

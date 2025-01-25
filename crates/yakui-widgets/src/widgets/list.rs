@@ -1,8 +1,6 @@
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
-use yakui_core::{
-    CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response, WidgetId,
-};
+use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
 
 use crate::auto_builders;
 use crate::util::widget_children;

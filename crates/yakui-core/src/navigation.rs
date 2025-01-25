@@ -1,10 +1,30 @@
+//! Types and utilities for handling UI navigation with mice, keyboards, and
+//! gamepads.
+
 use crate::dom::Dom;
-use crate::input::{InputState, NavDirection};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::widget::NavigateContext;
 use crate::WidgetId;
 
-pub fn navigate(
+/// Possible directions that a user can navigate in when using a gamepad or
+/// keyboard in a UI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(missing_docs)]
+pub enum NavDirection {
+    /// The next widget in the layout, used when the user presses tab.
+    Next,
+
+    /// The previous widget in the layout, used if the user presses shift+tab.
+    Previous,
+
+    Down,
+    Up,
+    Left,
+    Right,
+}
+
+pub(crate) fn navigate(
     dom: &Dom,
     layout: &LayoutDom,
     input: &InputState,

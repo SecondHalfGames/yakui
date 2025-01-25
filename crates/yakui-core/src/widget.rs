@@ -10,8 +10,9 @@ use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
 use crate::geometry::{Constraints, FlexFit};
-use crate::input::{InputState, NavDirection};
+use crate::input::InputState;
 use crate::layout::LayoutDom;
+use crate::navigation::NavDirection;
 use crate::paint::PaintDom;
 use crate::{Flow, WidgetId};
 
@@ -78,7 +79,19 @@ impl<'dom> NavigateContext<'dom> {
     pub fn try_navigate(&self, widget: WidgetId, dir: NavDirection) -> Option<WidgetId> {
         self.dom.enter(widget);
         let node = self.dom.get(widget).unwrap();
+
+        println!(
+            "Enter Navigate {dir:?} on {widget:?} ({})",
+            node.widget.type_name()
+        );
+
         let res = node.widget.navigate(*self, dir);
+
+        println!(
+            "Result of Navigate {dir:?} on {widget:?} ({}): {res:?}",
+            node.widget.type_name()
+        );
+
         self.dom.exit(widget);
 
         res
@@ -202,71 +215,82 @@ pub trait Widget: 'static + fmt::Debug {
         let node_id = ctx.dom.current();
         let node = ctx.dom.get_current();
 
-        println!("Navigate {dir:?} on {node_id:?} ({})", type_name::<Self>());
+        let selection = ctx.input.selection()?;
+        let mut current_index = None;
 
-        if dir == NavDirection::HereFromPrev {
-            if self.event_interest().contains(EventInterest::FOCUS) {
-                return Some(node_id);
+        for (index, &child) in node.children.iter().enumerate() {
+            if ctx.contains(child, selection) {
+                current_index = Some(index);
+                break;
             }
+        }
 
-            for &child in &node.children {
-                if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromPrev) {
-                    return Some(id);
+        if let Some(index) = current_index {
+            // The navigation is originating from inside this widget. This
+            // widget should find the next focusable child, or return None.
+
+            match dir {
+                NavDirection::Next => {
+                    for &child in node.children.iter().skip(index + 1) {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Next) {
+                            return Some(id);
+                        }
+                    }
                 }
-            }
 
-            None
-        } else if dir == NavDirection::HereFromNext {
-            if self.event_interest().contains(EventInterest::FOCUS) {
-                return Some(node_id);
-            }
+                NavDirection::Previous => {
+                    if let Some(prev_index) = index.checked_sub(1) {
+                        let skip = node.children.len() - prev_index - 1;
+                        for &child in node.children.iter().rev().skip(skip) {
+                            if let Some(id) = ctx.try_navigate(child, NavDirection::Previous) {
+                                return Some(id);
+                            }
+                        }
+                    }
+                }
 
-            for &child in node.children.iter().rev() {
-                if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromNext) {
-                    return Some(id);
+                _ => {
+                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
                 }
             }
 
             None
         } else {
-            let selection = ctx.input.selection()?;
-            let mut current_index = None;
+            // The navigation is originating from outside this widget. This code
+            // should pick the widget that's nearest to the given navigation
+            // direction that's focusable.
 
-            for (index, &child) in node.children.iter().enumerate() {
-                if ctx.contains(child, selection) {
-                    current_index = Some(index);
-                    break;
-                }
+            if selection != node_id && self.event_interest().contains(EventInterest::FOCUS) {
+                // This widget is directly focusable, so focus it!
+                return Some(node_id);
             }
 
-            if let Some(index) = current_index {
-                match dir {
-                    NavDirection::Next => {
-                        for &child in node.children.iter().skip(index + 1) {
-                            if let Some(id) = ctx.try_navigate(child, NavDirection::HereFromPrev) {
-                                return Some(id);
-                            }
+            match dir {
+                NavDirection::Next => {
+                    for &child in &node.children {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Next) {
+                            return Some(id);
                         }
                     }
 
-                    NavDirection::Previous => {
-                        if let Some(prev_index) = index.checked_sub(1) {
-                            let skip = node.children.len() - prev_index - 1;
-                            for &child in node.children.iter().rev().skip(skip) {
-                                if let Some(id) =
-                                    ctx.try_navigate(child, NavDirection::HereFromNext)
-                                {
-                                    return Some(id);
-                                }
-                            }
+                    None
+                }
+
+                NavDirection::Previous => {
+                    for &child in node.children.iter().rev() {
+                        if let Some(id) = ctx.try_navigate(child, NavDirection::Previous) {
+                            return Some(id);
                         }
                     }
 
-                    _ => {}
+                    None
+                }
+
+                _ => {
+                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
+                    None
                 }
             }
-
-            None
         }
     }
 }
