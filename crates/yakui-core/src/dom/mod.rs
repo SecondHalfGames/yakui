@@ -3,6 +3,7 @@
 
 mod debug;
 mod dummy;
+mod dynamic_scope;
 mod root;
 
 use std::any::{type_name, TypeId};
@@ -20,6 +21,7 @@ use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
 
 use self::dummy::DummyWidget;
+use self::dynamic_scope::DynamicScope;
 use self::root::RootWidget;
 
 /// The DOM that contains the tree of active widgets.
@@ -34,6 +36,7 @@ struct DomInner {
     root: WidgetId,
     globals: RefCell<AnyMap>,
     pending_focus_request: RefCell<Option<WidgetId>>,
+    dynamic_scope: DynamicScope,
 }
 
 /// A node in the [`Dom`].
@@ -47,6 +50,9 @@ pub struct DomNode {
 
     /// All of this node's children.
     pub children: Vec<WidgetId>,
+
+    /// Which set of dynamically scoped variables this node is bound to.
+    pub dynamic_scope_index: Option<usize>,
 
     /// Used when building the tree. The index of the next child if a new child
     /// starts being built.
@@ -70,6 +76,8 @@ impl Dom {
     /// Start the build phase for the DOM and bind it to the current thread.
     pub fn start(&self) {
         log::debug!("Dom::start()");
+
+        self.inner.dynamic_scope.clear();
 
         let mut nodes = self.inner.nodes.borrow_mut();
         let root = nodes.get_mut(self.inner.root.index()).unwrap();
@@ -209,6 +217,7 @@ impl Dom {
             let node = nodes.get_mut(id.index()).unwrap();
             let widget = replace(&mut node.widget, Box::new(DummyWidget));
 
+            node.dynamic_scope_index = self.inner.dynamic_scope.current_scope();
             node.next_child = 0;
             (id, widget)
         };
@@ -251,6 +260,11 @@ impl Dom {
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
         trim_children(&mut nodes, &mut removed_nodes, id);
     }
+
+    /// Returns access to the DOM's dynamic scope container.
+    pub fn dynamic_scope(&self) -> &DynamicScope {
+        &self.inner.dynamic_scope
+    }
 }
 
 impl DomInner {
@@ -261,6 +275,7 @@ impl DomInner {
             parent: None,
             children: Vec::new(),
             next_child: 0,
+            dynamic_scope_index: None,
         });
 
         Self {
@@ -270,6 +285,7 @@ impl DomInner {
             stack: RefCell::new(Vec::new()),
             root: WidgetId::new(root),
             pending_focus_request: RefCell::new(None),
+            dynamic_scope: DynamicScope::new(),
         }
     }
 }
@@ -286,6 +302,7 @@ fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
             parent: Some(parent_id),
             children: Vec::new(),
             next_child: 0,
+            dynamic_scope_index: None,
         });
 
         let id = WidgetId::new(index);

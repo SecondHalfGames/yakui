@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use yakui_core::context;
 use yakui_core::widget::Widget;
 use yakui_core::Response;
@@ -22,6 +24,12 @@ where
 {
     let dom = context::dom();
     dom.do_widget::<T>(props)
+}
+
+pub fn read_scope<T: 'static>() -> Option<Rc<T>> {
+    let dom = context::dom();
+    let current = dom.get_current().dynamic_scope_index?;
+    dom.dynamic_scope().get(current)
 }
 
 #[macro_export]
