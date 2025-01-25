@@ -65,6 +65,7 @@ pub struct EventContext<'dom> {
 
 /// Information available to a widget when it is being queried for navigation.
 #[allow(missing_docs)]
+#[derive(Clone, Copy)]
 pub struct NavigateContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
@@ -168,6 +169,19 @@ pub trait Widget: 'static + fmt::Debug {
     /// given direction.
     #[allow(unused)]
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
+        if dir != NavDirection::Here {
+            return None;
+        }
+
+        let node = ctx.dom.get_current();
+        for &child in &node.children {
+            let child = ctx.dom.get(child).unwrap();
+
+            if let Some(id) = child.widget.navigate(ctx, dir) {
+                return Some(id);
+            }
+        }
+
         None
     }
 }
@@ -194,6 +208,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
+
+    /// See [`Widget::navigate`].
+    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId>;
 }
 
 impl<T> ErasedWidget for T
@@ -228,6 +245,10 @@ where
 
     fn type_name(&self) -> &'static str {
         type_name::<T>()
+    }
+
+    fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
+        <T as Widget>::navigate(self, ctx, dir)
     }
 }
 

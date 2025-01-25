@@ -10,6 +10,7 @@
 mod mopmopa;
 
 mod id;
+mod navigation;
 mod response;
 mod state;
 mod types;

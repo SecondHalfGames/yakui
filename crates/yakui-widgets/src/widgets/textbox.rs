@@ -4,7 +4,7 @@ use std::mem;
 use cosmic_text::{Edit, Selection};
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::input::{KeyCode, Modifiers, MouseButton};
+use yakui_core::input::{KeyCode, Modifiers, MouseButton, NavDirection};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
@@ -486,6 +486,16 @@ impl Widget for TextBoxWidget {
                         let res;
 
                         match key {
+                            KeyCode::Tab => {
+                                if modifiers.shift() {
+                                    ctx.input.navigate(NavDirection::Previous);
+                                } else {
+                                    ctx.input.navigate(NavDirection::Next);
+                                }
+
+                                res = EventResponse::Sink;
+                            }
+
                             KeyCode::ArrowLeft => {
                                 if *down {
                                     if modifiers.shift() {

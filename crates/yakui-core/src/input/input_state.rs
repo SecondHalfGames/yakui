@@ -8,10 +8,11 @@ use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
+use crate::navigation::navigate;
 use crate::widget::EventContext;
 
 use super::mouse::MouseButton;
-use super::{KeyCode, Modifiers};
+use super::{KeyCode, Modifiers, NavDirection};
 
 /// Holds yakui's input state, like cursor position, hovered, and selected
 /// widgets.
@@ -31,6 +32,9 @@ pub struct InputState {
 
     /// The widget that was selected last frame.
     last_selection: Cell<Option<WidgetId>>,
+
+    /// If there's a pending navigation event, it's stored here!
+    pending_navigation: Cell<Option<NavDirection>>,
 
     /// If set, text input should be active.
     text_input_enabled: Cell<bool>,
@@ -112,8 +116,9 @@ impl InputState {
                 mouse_entered_and_sunk: Vec::new(),
                 mouse_down_in: HashMap::new(),
             }),
-            last_selection: Cell::new(None),
             selection: Cell::new(None),
+            last_selection: Cell::new(None),
+            pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
         }
     }
@@ -125,8 +130,17 @@ impl InputState {
     }
 
     /// Finish applying input events for this frame.
-    pub fn finish(&self) {
+    pub fn finish(&self, dom: &Dom, layout: &LayoutDom) {
         self.settle_buttons();
+        self.handle_navigation(dom, layout);
+    }
+
+    fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
+        if let Some(dir) = self.pending_navigation.take() {
+            if let Some(new_focus) = navigate(dom, layout, self, dir) {
+                dom.request_focus(new_focus);
+            }
+        }
     }
 
     /// Enables text input. Should be called every update from a widget that
@@ -149,6 +163,11 @@ impl InputState {
     /// Set the currently selected widget.
     pub fn set_selection(&self, id: Option<WidgetId>) {
         self.selection.set(id);
+    }
+
+    /// Attempt to navigate in a direction within the UI.
+    pub fn navigate(&self, dir: NavDirection) {
+        self.pending_navigation.set(Some(dir));
     }
 
     pub(crate) fn handle_event(
