@@ -80,14 +80,14 @@ impl<'dom> NavigateContext<'dom> {
         self.dom.enter(widget);
         let node = self.dom.get(widget).unwrap();
 
-        println!(
+        log::trace!(
             "Enter Navigate {dir:?} on {widget:?} ({})",
             node.widget.type_name()
         );
 
         let res = node.widget.navigate(*self, dir);
 
-        println!(
+        log::trace!(
             "Result of Navigate {dir:?} on {widget:?} ({}): {res:?}",
             node.widget.type_name()
         );
