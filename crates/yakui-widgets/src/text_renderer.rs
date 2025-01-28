@@ -166,6 +166,7 @@ impl InnerAtlas {
         }))
     }
 
+    #[allow(dead_code)] // we currrently never remove textures
     fn clear(&mut self, paint: &mut PaintDom) {
         self.glyph_rects.clear();
         self.next_pos = UVec2::ZERO;

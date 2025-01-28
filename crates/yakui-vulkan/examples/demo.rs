@@ -47,8 +47,10 @@ fn main() {
             vulkan_test.device_memory_properties,
             vulkan_test.device_properties,
         );
-        let mut options = yakui_vulkan::Options::default();
-        options.render_pass = vulkan_test.render_pass;
+        let options = yakui_vulkan::Options {
+            render_pass: vulkan_test.render_pass,
+            ..Default::default()
+        };
         let mut yakui_vulkan = YakuiVulkan::new(&mut yak, &vulkan_context, options);
         // Prepare for one frame in flight
         yakui_vulkan.transfers_submitted();
@@ -69,7 +71,8 @@ fn main() {
     let mut winit_initializing = true;
 
     event_loop.set_control_flow(ControlFlow::Poll);
-    _ = event_loop.run(|event, event_loop| match event {
+    #[allow(deprecated)] // winit!! :shakes-fist:
+    let _ = event_loop.run(|event, event_loop| match event {
         Event::WindowEvent {
             event:
                 WindowEvent::CloseRequested
@@ -262,10 +265,9 @@ impl VulkanTest {
     /// Vulkan Broadly lifted from: https://github.com/ash-rs/ash/blob/0.37.2/examples/src/lib.rs
     pub fn new(window_width: u32, window_height: u32, window: &winit::window::Window) -> Self {
         use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-        use std::ffi::CStr;
 
         let entry = unsafe { ash::Entry::load().expect("failed to load Vulkan") };
-        let app_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"Yakui Vulkan Test\0") };
+        let app_name = c"Yakui Vulkan Test";
 
         let appinfo = vk::ApplicationInfo::default()
             .application_name(app_name)
@@ -718,6 +720,7 @@ fn init_winit(
 
     let event_loop = EventLoop::new().unwrap();
 
+    #[allow(deprecated)]
     let window = event_loop
         .create_window(
             Window::default_attributes()

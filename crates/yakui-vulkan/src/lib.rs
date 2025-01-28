@@ -12,7 +12,7 @@ pub use ash::vk;
 use buffer::Buffer;
 use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
-use std::{collections::HashMap, ffi::CStr, io::Cursor};
+use std::{collections::HashMap, io::Cursor};
 pub use vulkan_context::VulkanContext;
 use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
@@ -189,7 +189,7 @@ impl YakuiVulkan {
                 .unwrap()
         };
 
-        let shader_entry_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"main\0") };
+        let shader_entry_name = c"main";
         let shader_stage_create_infos = [
             vk::PipelineShaderStageCreateInfo {
                 module: vertex_shader_module,
