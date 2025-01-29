@@ -40,14 +40,10 @@ pub fn run<T: ExampleBody>(mut yak: Yakui, mut state: ExampleState, title: Strin
                     break 'main_loop;
                 }
 
-                Event::Window { win_event, .. } => match win_event {
-                    WindowEvent::Resized(x, y) => {
-                        graphics.resize(UVec2::new(x as u32, y as u32));
-                    }
-
-                    _ => {}
-                },
-
+                Event::Window {
+                    win_event: WindowEvent::Resized(x, y),
+                    ..
+                } => graphics.resize(UVec2::new(x as u32, y as u32)),
                 _ => {}
             }
         }

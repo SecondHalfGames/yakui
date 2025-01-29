@@ -45,7 +45,7 @@ impl ClipboardHolder {
         let inner = self.inner.as_ref().map(|inner| inner.borrow_mut());
 
         match inner {
-            Some(mut clipboard) => match callback(&mut *clipboard) {
+            Some(mut clipboard) => match callback(&mut clipboard) {
                 Ok(v) => Some(v),
                 Err(err) => {
                     log::error!("Failed to operate on clipboard: {err:?}");

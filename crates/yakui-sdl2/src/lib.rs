@@ -5,7 +5,7 @@ use sdl2::mouse::MouseButton as SdlMouseButton;
 use sdl2::video::Window;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, UVec2, Vec2};
-use yakui_core::input::{Modifiers, MouseButton};
+use yakui_core::input::MouseButton;
 
 use self::keys::{from_sdl_modifiers, from_sdl_scancode};
 

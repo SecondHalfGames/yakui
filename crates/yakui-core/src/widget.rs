@@ -31,7 +31,7 @@ pub struct LayoutContext<'dom> {
     pub paint: &'dom PaintDom,
 }
 
-impl<'dom> LayoutContext<'dom> {
+impl LayoutContext<'_> {
     /// Calculate the layout for the given widget with the given constraints.
     ///
     /// This method currently must only be called once per widget per layout
@@ -50,7 +50,7 @@ pub struct PaintContext<'dom> {
     pub paint: &'dom mut PaintDom,
 }
 
-impl<'dom> PaintContext<'dom> {
+impl PaintContext<'_> {
     /// Paint the given widget.
     pub fn paint(&mut self, widget: WidgetId) {
         self.paint.paint(self.dom, self.layout, widget);
@@ -74,7 +74,7 @@ pub struct NavigateContext<'dom> {
     pub input: &'dom InputState,
 }
 
-impl<'dom> NavigateContext<'dom> {
+impl NavigateContext<'_> {
     /// Query for navigation to the given widget or one of its descendents.
     pub fn try_navigate(&self, widget: WidgetId, dir: NavDirection) -> Option<WidgetId> {
         self.dom.enter(widget);

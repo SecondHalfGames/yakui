@@ -24,6 +24,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
     let mut graphics = Graphics::new(&window, 4).await;
 
     event_loop.set_control_flow(ControlFlow::Poll);
+    #[allow(deprecated)] // winit!! :shake fist:
     event_loop
         .run(move |event, event_loop| match event {
             Event::AboutToWait => {
@@ -46,9 +47,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             }
 
             Event::WindowEvent { event, .. } => {
-                if graphics.handle_window_event(&mut yak, &event, event_loop) {
-                    return;
-                }
+                graphics.handle_window_event(&mut yak, &event, event_loop);
             }
             _ => (),
         })
@@ -57,6 +56,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 
 fn main() {
     let event_loop = EventLoop::new().unwrap();
+    #[allow(deprecated)]
     let window = event_loop
         .create_window(winit::window::Window::default_attributes())
         .unwrap();

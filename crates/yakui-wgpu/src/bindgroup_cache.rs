@@ -56,6 +56,7 @@ impl TextureBindgroupCache {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn bindgroup(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
