@@ -20,6 +20,7 @@ impl MaxWidth {
         Self { max_width }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthResponse> {
         widget_children::<MaxWidthWidget, F>(children, self)
     }

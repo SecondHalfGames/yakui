@@ -10,6 +10,7 @@ use std::any::{type_name, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;
+use std::panic::Location;
 use std::rc::Rc;
 
 use anymap::AnyMap;
@@ -57,6 +58,10 @@ pub struct DomNode {
     /// Used when building the tree. The index of the next child if a new child
     /// starts being built.
     next_child: usize,
+
+    /// The callsite that called this Widget. Mark functions that create multiple widgets with `#[track_caller]` if you want them to be 'treated' as a single widget.
+    /// I.e. all the widgets under that function will share the same callsite (aka that which called said function).
+    callsite: &'static Location<'static>,
 }
 
 impl Dom {
@@ -194,6 +199,7 @@ impl Dom {
 
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
+    #[track_caller]
     pub fn do_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         let response = self.begin_widget::<T>(props);
         self.end_widget::<T>(response.id);
@@ -203,10 +209,11 @@ impl Dom {
     /// Begin building a widget with the given type and props.
     ///
     /// After calling this method, children can be added to this widget.
+    #[track_caller]
     pub fn begin_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
-        let (id, mut widget) = {
+        let (id, mut widget, callsite) = {
             let mut nodes = self.inner.nodes.borrow_mut();
             let id = next_widget(&mut nodes, self.current());
             self.inner.stack.borrow_mut().push(id);
@@ -219,16 +226,24 @@ impl Dom {
 
             node.dynamic_scope_index = self.inner.dynamic_scope.current_scope();
             node.next_child = 0;
-            (id, widget)
+            (id, widget, node.callsite)
         };
 
         // Potentially recreate the widget, then update it.
         let response = {
-            if widget.as_ref().type_id() != TypeId::of::<T>() {
+            let is_type_different = widget.as_ref().type_id() != TypeId::of::<T>();
+            let is_callsite_different = callsite != Location::caller();
+
+            if is_type_different {
                 widget = Box::new(T::new());
             }
 
             let widget = widget.downcast_mut::<T>().unwrap();
+            // If the Type is different, it'd already be recreated. Let's avoid calling T::new twice.
+            if is_callsite_different && !is_type_different {
+                *widget = T::new();
+            }
+
             widget.update(props)
         };
 
@@ -237,6 +252,7 @@ impl Dom {
             let mut nodes = self.inner.nodes.borrow_mut();
             let node = nodes.get_mut(id.index()).unwrap();
             node.widget = widget;
+            node.callsite = Location::caller();
         }
 
         Response::new(id, response)
@@ -276,6 +292,7 @@ impl DomInner {
             children: Vec::new(),
             next_child: 0,
             dynamic_scope_index: None,
+            callsite: Location::caller(),
         });
 
         Self {
@@ -290,6 +307,7 @@ impl DomInner {
     }
 }
 
+#[track_caller]
 fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
     let parent = nodes.get_mut(parent_id.index()).unwrap();
     if parent.next_child < parent.children.len() {
@@ -303,6 +321,7 @@ fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
             children: Vec::new(),
             next_child: 0,
             dynamic_scope_index: None,
+            callsite: Location::caller(),
         });
 
         let id = WidgetId::new(index);

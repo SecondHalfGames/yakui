@@ -68,6 +68,7 @@ impl Text {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<TextResponse> {
         widget::<TextWidget>(self)
     }

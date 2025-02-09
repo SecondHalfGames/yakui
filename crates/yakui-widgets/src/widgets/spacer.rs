@@ -20,6 +20,7 @@ impl Spacer {
         Self { flex: flex.max(1) }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<SpacerResponse> {
         widget::<SpacerWidget>(self)
     }

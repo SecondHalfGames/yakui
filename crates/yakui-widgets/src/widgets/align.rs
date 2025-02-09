@@ -49,6 +49,7 @@ impl Align {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<AlignResponse> {
         widget_children::<AlignWidget, F>(children, self)
     }

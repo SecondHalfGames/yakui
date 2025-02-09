@@ -30,10 +30,12 @@ impl Circle {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<CircleResponse> {
         widget::<CircleWidget>(self)
     }
 
+    #[track_caller]
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CircleResponse> {
         widget_children::<CircleWidget, F>(children, self)
     }

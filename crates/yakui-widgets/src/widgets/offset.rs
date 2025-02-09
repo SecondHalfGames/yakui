@@ -18,6 +18,7 @@ impl Offset {
         Self { offset }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetResponse> {
         widget_children::<OffsetWidget, F>(children, self)
     }
