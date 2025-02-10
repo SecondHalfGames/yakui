@@ -234,15 +234,11 @@ impl Dom {
             let is_type_different = widget.as_ref().type_id() != TypeId::of::<T>();
             let is_callsite_different = callsite != Location::caller();
 
-            if is_type_different {
+            if is_callsite_different || is_type_different {
                 widget = Box::new(T::new());
             }
 
             let widget = widget.downcast_mut::<T>().unwrap();
-            // If the Type is different, it'd already be recreated. Let's avoid calling T::new twice.
-            if is_callsite_different && !is_type_different {
-                *widget = T::new();
-            }
 
             widget.update(props)
         };
