@@ -24,6 +24,7 @@ impl UnconstrainedBox {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxResponse> {
         widget_children::<UnconstrainedBoxWidget, F>(children, self)
     }

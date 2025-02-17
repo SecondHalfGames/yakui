@@ -63,6 +63,7 @@ impl List {
         Self::new(Direction::Right)
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ListResponse> {
         widget_children::<ListWidget, F>(children, self)
     }

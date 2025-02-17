@@ -43,10 +43,12 @@ impl CutOut {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<CutOutResponse> {
         widget::<CutOutWidget>(self)
     }
 
+    #[track_caller]
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CutOutResponse> {
         widget_children::<CutOutWidget, F>(children, self)
     }

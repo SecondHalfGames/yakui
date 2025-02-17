@@ -20,6 +20,7 @@ impl Layer {
         Self {}
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerResponse> {
         widget_children::<LayerWidget, F>(children, self)
     }

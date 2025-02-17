@@ -61,6 +61,7 @@ impl Pad {
         Vec2::new(self.left, self.top)
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<PadResponse> {
         widget_children::<PadWidget, F>(children, self)
     }

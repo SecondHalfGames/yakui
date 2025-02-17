@@ -25,6 +25,7 @@ impl Reflow {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowResponse> {
         widget_children::<ReflowWidget, F>(children, self)
     }

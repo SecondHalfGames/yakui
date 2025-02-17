@@ -43,6 +43,7 @@ impl Flexible {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<FlexibleResponse> {
         widget_children::<FlexibleWidget, F>(children, self)
     }

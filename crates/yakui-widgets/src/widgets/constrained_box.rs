@@ -20,6 +20,7 @@ impl ConstrainedBox {
         Self { constraints }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ConstrainedBoxResponse> {
         widget_children::<ConstrainedBoxWidget, F>(children, self)
     }

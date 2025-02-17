@@ -83,6 +83,7 @@ impl TextBox {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<TextBoxResponse> {
         widget::<TextBoxWidget>(self)
     }

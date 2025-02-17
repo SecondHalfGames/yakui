@@ -107,6 +107,7 @@ impl Button {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<ButtonResponse> {
         widget::<ButtonWidget>(self)
     }

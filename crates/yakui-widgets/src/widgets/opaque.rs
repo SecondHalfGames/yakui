@@ -18,6 +18,7 @@ impl Opaque {
         Self {}
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<OpaqueResponse> {
         widget_children::<OpaqueWidget, F>(children, self)
     }
