@@ -50,6 +50,8 @@ impl Widget for ConstrainedBoxWidget {
     }
 
     fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        ctx.layout.enable_clipping(ctx.dom);
+
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         let constraints = Constraints {
