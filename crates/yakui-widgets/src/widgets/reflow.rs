@@ -64,6 +64,9 @@ impl Widget for ReflowWidget {
     }
 
     fn layout(&self, mut ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
+        ctx.layout.new_layer(ctx.dom);
+        ctx.layout.escape_clipping(ctx.dom);
+
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {

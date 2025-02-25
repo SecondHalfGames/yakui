@@ -36,7 +36,7 @@ pub struct PaintDom {
     limits: Option<PaintLimits>,
 
     layers: PaintLayers,
-    clip_stack: Vec<Rect>,
+    current_clip: Rect,
 }
 
 impl PaintDom {
@@ -51,7 +51,7 @@ impl PaintDom {
             limits: None,
 
             layers: PaintLayers::new(),
-            clip_stack: Vec::new(),
+            current_clip: Rect::ZERO,
         }
     }
 
@@ -68,7 +68,6 @@ impl PaintDom {
     /// Prepares the PaintDom to be updated for the frame.
     pub fn start(&mut self) {
         self.texture_edits.clear();
-        self.clip_stack.clear();
     }
 
     /// Returns the size of the surface that is being painted onto.
@@ -97,9 +96,11 @@ impl PaintDom {
         profiling::scope!("PaintDom::paint");
 
         let layout_node = layout.get(id).unwrap();
-        if layout_node.clipping_enabled {
-            self.push_clip(layout_node.rect);
-        }
+        self.current_clip = Rect::from_pos_size(
+            layout_node.clip.pos() * self.scale_factor,
+            layout_node.clip.size() * self.scale_factor,
+        );
+
         if layout_node.new_layer {
             self.layers.push();
         }
@@ -116,9 +117,6 @@ impl PaintDom {
 
         dom.exit(id);
 
-        if layout_node.clipping_enabled {
-            self.pop_clip();
-        }
         if layout_node.new_layer {
             self.layers.pop();
         }
@@ -198,12 +196,11 @@ impl PaintDom {
             .current_mut()
             .expect("an active layer is required to call add_mesh");
 
-        let current_clip = self.clip_stack.last().copied();
         let call = match layer.calls.last_mut() {
             Some(call)
                 if call.texture == texture_id
                     && call.pipeline == mesh.pipeline
-                    && call.clip == current_clip =>
+                    && call.clip == Some(self.current_clip) =>
             {
                 call
             }
@@ -211,7 +208,7 @@ impl PaintDom {
                 let mut call = PaintCall::new();
                 call.texture = texture_id;
                 call.pipeline = mesh.pipeline;
-                call.clip = current_clip;
+                call.clip = Some(self.current_clip);
 
                 layer.calls.push(call);
                 layer.calls.last_mut().unwrap()
@@ -243,28 +240,5 @@ impl PaintDom {
             vertex
         });
         call.vertices.extend(vertices);
-    }
-
-    /// Use the given region as the clipping rect for all following paint calls.
-    fn push_clip(&mut self, region: Rect) {
-        let mut unscaled = Rect::from_pos_size(
-            region.pos() * self.scale_factor,
-            region.size() * self.scale_factor,
-        );
-
-        if let Some(previous) = self.clip_stack.last() {
-            unscaled = unscaled.constrain(*previous);
-        }
-
-        self.clip_stack.push(unscaled);
-    }
-
-    /// Pop the most recent clip region, restoring the previous clipping rect.
-    fn pop_clip(&mut self) {
-        let top = self.clip_stack.pop();
-        debug_assert!(
-            top.is_some(),
-            "cannot call pop_clip without a corresponding push_clip call"
-        );
     }
 }
