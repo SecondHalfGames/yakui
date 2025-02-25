@@ -1,5 +1,9 @@
 //! Defines yakui's layout protocol and Layout DOM.
 
+mod clipping;
+
+pub use self::clipping::*;
+
 use std::collections::VecDeque;
 
 use glam::Vec2;
@@ -18,12 +22,13 @@ use crate::widget::LayoutContext;
 #[derive(Debug)]
 pub struct LayoutDom {
     nodes: Arena<LayoutDomNode>,
-    clip_stack: Vec<WidgetId>,
 
     unscaled_viewport: Rect,
     scale_factor: f32,
 
     pub(crate) interest_mouse: MouseInterest,
+
+    clip_logic_overrides: Arena<ClipLogic>,
 }
 
 /// A node in a [`LayoutDom`].
@@ -32,15 +37,12 @@ pub struct LayoutDomNode {
     /// The bounding rectangle of the node in logical pixels.
     pub rect: Rect,
 
-    /// This node will clip its descendants to its bounding rectangle.
-    pub clipping_enabled: bool,
+    /// The clipping rectangle of the node in logical pixels.
+    pub clip: Rect,
 
     /// This node is the beginning of a new layer, and all of its descendants
     /// should be hit tested and painted with higher priority.
     pub new_layer: bool,
-
-    /// This node is clipped to the region defined by the given node.
-    pub clipped_by: Option<WidgetId>,
 
     /// What events the widget reported interest in.
     pub event_interest: EventInterest,
@@ -51,12 +53,12 @@ impl LayoutDom {
     pub fn new() -> Self {
         Self {
             nodes: Arena::new(),
-            clip_stack: Vec::new(),
 
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
 
             interest_mouse: MouseInterest::new(),
+            clip_logic_overrides: Arena::new(),
         }
     }
 
@@ -119,13 +121,14 @@ impl LayoutDom {
         profiling::scope!("LayoutDom::calculate_all");
         log::debug!("LayoutDom::calculate_all()");
 
-        self.clip_stack.clear();
         self.interest_mouse.clear();
+        self.clip_logic_overrides.clear();
 
         let constraints = Constraints::tight(self.viewport().size());
 
         self.calculate(dom, input, paint, dom.root(), constraints);
         self.resolve_positions(dom);
+        self.resolve_clipping(dom);
     }
 
     /// Calculate the layout of a specific widget.
@@ -170,40 +173,37 @@ impl LayoutDom {
             self.interest_mouse.pop_layer();
         }
 
-        // If the widget called enable_clipping() during layout, it will be on
-        // top of the clip stack at this point.
-        let clipping_enabled = self.clip_stack.last() == Some(&id);
-
-        // If this node enabled clipping, the next node under that is the node
-        // that clips this one.
-        let clipped_by = if clipping_enabled {
-            self.clip_stack.iter().nth_back(2).copied()
-        } else {
-            self.clip_stack.last().copied()
-        };
-
         self.nodes.insert_at(
             id.index(),
             LayoutDomNode {
                 rect: Rect::from_pos_size(Vec2::ZERO, size),
-                clipping_enabled,
+                clip: Rect::ZERO,
                 new_layer,
-                clipped_by,
                 event_interest,
             },
         );
-
-        if clipping_enabled {
-            self.clip_stack.pop();
-        }
 
         dom.exit(id);
         size
     }
 
+    /// Sets the clipping logic for the currently active widget.
+    pub fn set_clip_logic(&mut self, dom: &Dom, logic: ClipLogic) {
+        self.clip_logic_overrides
+            .insert_at(dom.current().index(), logic);
+    }
+
     /// Enables clipping for the currently active widget.
     pub fn enable_clipping(&mut self, dom: &Dom) {
-        self.clip_stack.push(dom.current());
+        self.set_clip_logic(
+            dom,
+            ClipLogic::Constrain(AbstractClipRect::ParentClip, AbstractClipRect::LayoutRect),
+        );
+    }
+
+    /// Escapes clipping from the current clipping rect for the currently active widget.
+    pub fn escape_clipping(&mut self, dom: &Dom) {
+        self.set_clip_logic(dom, ClipLogic::Override(AbstractClipRect::Viewport));
     }
 
     /// Put this widget and its children into a new layer.
@@ -232,6 +232,61 @@ impl LayoutDom {
 
                 queue.extend(node.children.iter().map(|&id| (id, layout_node.rect.pos())));
             }
+        }
+    }
+
+    fn resolve_clipping(&mut self, dom: &Dom) {
+        let viewport = self.viewport();
+
+        let mut queue = VecDeque::new();
+
+        queue.push_back((dom.root(), viewport, viewport, Vec2::ZERO));
+
+        while let Some((id, parent_clip, parent_rect, mut offset)) = queue.pop_front() {
+            let Some(layout_node) = self.nodes.get_mut(id.index()) else {
+                continue;
+            };
+            let node = dom.get(id).unwrap();
+
+            let logic = self
+                .clip_logic_overrides
+                .get(id.index())
+                .copied()
+                .unwrap_or(ClipLogic::Pass);
+
+            let layout_rect = layout_node.rect;
+            let mut new_layout_rect =
+                Rect::from_pos_size(layout_rect.pos() + offset, layout_rect.size());
+
+            // We need to do this before the clipping rect resolution.
+            // We might change the layout rect here, and that might change what the clipping should be.
+            if let Some(rect) = logic.resolve_layout(ClipResolutionArgs {
+                parent_clip,
+                parent_rect,
+                layout_rect,
+                viewport,
+                offset,
+            }) {
+                offset += rect.pos() - layout_rect.pos();
+                new_layout_rect = rect;
+            }
+
+            let clip_rect = logic.resolve_clip(ClipResolutionArgs {
+                parent_clip,
+                parent_rect,
+                layout_rect,
+                viewport,
+                offset,
+            });
+
+            layout_node.clip = clip_rect;
+            layout_node.rect = new_layout_rect;
+
+            queue.extend(
+                node.children
+                    .iter()
+                    .map(|&id| (id, layout_node.clip, layout_node.rect, offset)),
+            );
         }
     }
 }
