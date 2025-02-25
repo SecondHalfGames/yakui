@@ -553,12 +553,7 @@ fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Widge
             continue;
         };
 
-        let mut rect = layout_node.rect;
-        let mut node = layout_node;
-        while let Some(parent) = node.clipped_by {
-            node = layout.get(parent).unwrap();
-            rect = rect.constrain(node.rect);
-        }
+        let rect = layout_node.clip.constrain(layout_node.rect);
 
         if rect.contains_point(coords) {
             output.push(id);
