@@ -22,6 +22,7 @@ impl<T: 'static> State<T> {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<StateResponse<T>> {
         util::widget::<StateWidget<T>>(self)
     }

@@ -24,6 +24,7 @@ impl Scrollable {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ScrollableResponse> {
         widget_children::<ScrollableWidget, F>(children, self)
     }

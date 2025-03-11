@@ -42,10 +42,12 @@ impl RenderText {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<RenderTextResponse> {
         Self::show_with_scroll(self, None)
     }
 
+    #[track_caller]
     pub fn show_with_scroll(
         self,
         scroll: Option<cosmic_text::Scroll>,

@@ -13,6 +13,7 @@ impl<T: 'static> Scope<T> {
         Self { value }
     }
 
+    #[track_caller]
     pub fn show(self, children: impl FnOnce()) -> Response<ScopeResponse> {
         let dom = context::dom();
         let res = dom.begin_widget::<ScopeWidget>(());

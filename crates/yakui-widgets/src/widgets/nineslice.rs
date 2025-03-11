@@ -34,6 +34,7 @@ impl NineSlice {
         }
     }
 
+    #[track_caller]
     pub fn show(self, children: impl FnOnce()) -> Response<()> {
         let scaled_margins = {
             let mut m = self.margins;
