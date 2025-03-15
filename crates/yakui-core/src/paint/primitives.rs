@@ -78,7 +78,7 @@ impl Vertex {
 /// The graphics pipeline that a draw call should be executed with.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Pipeline {
-    /// Pipline for drawing most geometry: vertices and an optional color
+    /// Pipeline for drawing most geometry: vertices and an optional color
     /// texture.
     #[default]
     Main,

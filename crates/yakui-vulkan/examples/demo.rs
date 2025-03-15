@@ -51,7 +51,8 @@ fn main() {
             render_pass: vulkan_test.render_pass,
             ..Default::default()
         };
-        let mut yakui_vulkan = YakuiVulkan::new(&mut yak, &vulkan_context, options);
+        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, options);
+        yakui_vulkan.set_paint_limits(&vulkan_context, &mut yak);
         // Prepare for one frame in flight
         yakui_vulkan.transfers_submitted();
         let gui_state = GuiState {

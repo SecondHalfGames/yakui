@@ -34,6 +34,7 @@ impl Checkbox {
         Self { checked }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<CheckboxResponse> {
         crate::util::widget::<CheckboxWidget>(self)
     }

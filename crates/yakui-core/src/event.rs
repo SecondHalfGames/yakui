@@ -121,11 +121,11 @@ bitflags::bitflags! {
     /// A bitfield of events that a widget can register to be notified about.
     #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone, Copy, Default)]
     pub struct EventInterest: u8 {
-        /// Notify this widget of mouse events occuring within its layout
+        /// Notify this widget of mouse events occurring within its layout
         /// rectangle.
         const MOUSE_INSIDE = 1;
 
-        /// Notify this widget of mouse events occuring outside its layout
+        /// Notify this widget of mouse events occurring outside its layout
         /// rectangle.
         const MOUSE_OUTSIDE = 2;
 

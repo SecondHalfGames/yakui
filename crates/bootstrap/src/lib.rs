@@ -14,7 +14,7 @@ use yakui::paint::TextureFilter;
 
 pub use crate::common::*;
 
-/// Boostrap and start a new app, using the given function as the body of the
+/// Bootstrap and start a new app, using the given function as the body of the
 /// function, which runs every frame.
 pub fn start(body: impl ExampleBody) {
     #[cfg(feature = "profile")]

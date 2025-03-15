@@ -40,6 +40,7 @@ impl Panel {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelResponse> {
         widget_children::<PanelWidget, F>(children, self)
     }

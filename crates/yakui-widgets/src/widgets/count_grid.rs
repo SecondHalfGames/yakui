@@ -82,6 +82,7 @@ impl CountGrid {
     /// 2 3
     /// 4 5
     /// ```
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<CountGridResponse> {
         widget_children::<CountGridWidget, F>(children, self)
     }

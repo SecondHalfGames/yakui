@@ -43,6 +43,7 @@ impl Divider {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<DividerResponse> {
         crate::util::widget::<DividerWidget>(self)
     }
