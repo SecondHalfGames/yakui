@@ -134,17 +134,7 @@ impl YakuiVulkan {
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(
-        state: &mut yakui_core::Yakui,
-        vulkan_context: &VulkanContext,
-        options: Options,
-    ) -> Self {
-        state.set_paint_limit(PaintLimits {
-            max_texture_size_1d: vulkan_context.properties.limits.max_image_dimension1_d,
-            max_texture_size_2d: vulkan_context.properties.limits.max_image_dimension2_d,
-            max_texture_size_3d: vulkan_context.properties.limits.max_image_dimension3_d,
-        });
-
+    pub fn new(vulkan_context: &VulkanContext, options: Options) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
 
@@ -379,6 +369,16 @@ impl YakuiVulkan {
     /// with a call to `transfers_finished` must not be executing.
     pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
         self.uploads.phase_executed(vulkan_context);
+    }
+
+    /// Establish limits for yakui's painting logic from the Vulkan context
+    /// limits.
+    pub fn set_paint_limits(&self, vulkan_context: &VulkanContext, state: &mut yakui_core::Yakui) {
+        state.set_paint_limit(PaintLimits {
+            max_texture_size_1d: vulkan_context.properties.limits.max_image_dimension1_d,
+            max_texture_size_2d: vulkan_context.properties.limits.max_image_dimension2_d,
+            max_texture_size_3d: vulkan_context.properties.limits.max_image_dimension3_d,
+        });
     }
 
     /// Paint the yakui GUI using the provided [`VulkanContext`]
