@@ -1,7 +1,7 @@
 ---
 source: crates/yakui-widgets/tests/snapshot.rs
+assertion_line: 310
 expression: view
-snapshot_kind: text
 ---
 - AlignWidget pos(0, 0) size(1000, 1000)
   - ConstrainedBoxWidget pos(0, 0) size(800, 800)
@@ -9,4 +9,4 @@ snapshot_kind: text
       - RoundRectWidget pos(0, 0) size(800, 800)
         - PadWidget pos(0, 0) size(800, 800)
           - AlignWidget pos(20, 10) size(760, 780)
-            - RenderTextWidget pos(20, 364.5) size(760, 71)
+            - RenderTextWidget pos(276, 364.5) size(248, 71)
