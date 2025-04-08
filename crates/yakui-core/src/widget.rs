@@ -1,6 +1,6 @@
 //! Defines traits for building widgets.
 
-use std::any::{type_name, Any, TypeId};
+use std::any::{type_name, Any};
 use std::collections::VecDeque;
 use std::fmt;
 
@@ -360,5 +360,3 @@ where
         <T as Widget>::navigate(self, ctx, dir)
     }
 }
-
-mopmopafy!(ErasedWidget);
