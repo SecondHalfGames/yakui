@@ -6,6 +6,7 @@ mod dummy;
 mod dynamic_scope;
 mod root;
 
+use core::any::Any;
 use std::any::{type_name, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
@@ -238,7 +239,9 @@ impl Dom {
                 widget = Box::new(T::new());
             }
 
-            let widget = widget.downcast_mut::<T>().unwrap();
+            let widget = (widget.as_mut() as &mut dyn Any)
+                .downcast_mut::<T>()
+                .unwrap();
 
             widget.update(props)
         };
