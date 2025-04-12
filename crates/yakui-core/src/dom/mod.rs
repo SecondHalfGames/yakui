@@ -238,7 +238,7 @@ impl Dom {
                 widget = Box::new(T::new());
             }
 
-            let widget = widget.downcast_mut::<T>().unwrap();
+            let widget = widget.as_any_mut().downcast_mut::<T>().unwrap();
 
             widget.update(props)
         };
