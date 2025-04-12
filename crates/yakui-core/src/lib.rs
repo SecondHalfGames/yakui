@@ -6,9 +6,6 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-#[macro_use]
-mod mopmopa;
-
 mod id;
 mod response;
 mod state;

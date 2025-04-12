@@ -1,6 +1,6 @@
 //! Defines traits for building widgets.
 
-use std::any::{type_name, Any, TypeId};
+use std::any::{type_name, Any};
 use std::collections::VecDeque;
 use std::fmt;
 
@@ -361,4 +361,14 @@ where
     }
 }
 
-mopmopafy!(ErasedWidget);
+impl dyn ErasedWidget {
+    /// Casts a dyn [`ErasedWidget`] into a dyn [`Any`]
+    pub fn as_any(&self) -> &dyn Any {
+        self as &dyn Any
+    }
+
+    /// Casts a mutable dyn [`ErasedWidget`] into a mutable dyn [`Any`]
+    pub fn as_any_mut(&mut self) -> &mut dyn Any {
+        self as &mut dyn Any
+    }
+}
