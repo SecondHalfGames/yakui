@@ -533,6 +533,8 @@ impl InputState {
     }
 }
 
+/// Calculate the set of widgets that are under the given point, sorted by
+/// relative height, highest to lowest.
 #[profiling::function]
 fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<WidgetId>) {
     for (id, _interest) in layout.interest_mouse.iter() {
