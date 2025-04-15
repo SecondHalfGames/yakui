@@ -65,6 +65,9 @@ pub enum WidgetEvent {
     MouseScroll {
         /// How much the wheel scrolled in logical pixels.
         delta: Vec2,
+
+        /// The current state of the keyboard modifier keys.
+        modifiers: Modifiers,
     },
 
     /// A mouse button changed state while the cursor was inside the widget's

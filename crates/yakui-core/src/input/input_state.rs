@@ -411,7 +411,10 @@ impl InputState {
 
         for &id in &intersections.mouse_hit {
             if let Some(mut node) = dom.get_mut(id) {
-                let event = WidgetEvent::MouseScroll { delta };
+                let event = WidgetEvent::MouseScroll {
+                    delta,
+                    modifiers: self.modifiers.get(),
+                };
                 let response = self.fire_event(dom, layout, id, &mut node, &event);
 
                 if response == EventResponse::Sink {
