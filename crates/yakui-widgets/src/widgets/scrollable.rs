@@ -117,7 +117,7 @@ impl Widget for ScrollableWidget {
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match *event {
-            WidgetEvent::MouseScroll { delta } => {
+            WidgetEvent::MouseScroll { delta, .. } => {
                 let pos = self.scroll_position.get();
                 self.scroll_position.set(pos + delta);
                 EventResponse::Sink
