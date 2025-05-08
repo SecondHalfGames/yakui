@@ -62,11 +62,11 @@ pub struct RenderTextWidget {
     buffer: RefCell<Option<cosmic_text::Buffer>>,
     line_offsets: RefCell<Vec<f32>>,
     size: Cell<Option<Vec2>>,
-    last_text: RefCell<String>,
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
     scale_factor: Cell<Option<f32>>,
     last_scroll: Cell<Option<cosmic_text::Scroll>>,
     scroll: Option<cosmic_text::Scroll>,
+    relayout: Cell<bool>,
 }
 
 impl Widget for RenderTextWidget {
@@ -79,15 +79,19 @@ impl Widget for RenderTextWidget {
             buffer: RefCell::default(),
             line_offsets: RefCell::default(),
             size: Cell::default(),
-            last_text: RefCell::new(String::new()),
             max_size: Cell::default(),
             scale_factor: Cell::default(),
             last_scroll: Cell::default(),
             scroll: None,
+            relayout: Cell::new(false),
         }
     }
 
     fn update(&mut self, (props, scroll): Self::Props<'_>) -> Self::Response {
+        if props.text != self.props.text || props.style.attrs != self.props.style.attrs {
+            self.relayout.set(true);
+        }
+
         self.props = props;
         self.scroll = scroll;
 
@@ -112,6 +116,8 @@ impl Widget for RenderTextWidget {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
         fonts.with_system(|font_system| {
+            let relayout = self.relayout.take();
+
             let mut buffer_ref = self.buffer.borrow_mut();
             let buffer = buffer_ref.get_or_insert_with(|| {
                 cosmic_text::Buffer::new(
@@ -122,6 +128,7 @@ impl Widget for RenderTextWidget {
 
             if self.scale_factor.get() != Some(ctx.layout.scale_factor())
                 || self.max_size.get() != Some(max_size)
+                || relayout
             {
                 buffer.set_metrics_and_size(
                     font_system,
@@ -142,15 +149,13 @@ impl Widget for RenderTextWidget {
                 self.last_scroll.set(self.scroll);
             }
 
-            if self.last_text.borrow().as_str() != self.props.text.as_str() {
+            if relayout {
                 buffer.set_text(
                     font_system,
                     &self.props.text,
                     self.props.style.attrs.as_attrs(),
                     cosmic_text::Shaping::Advanced,
                 );
-
-                self.last_text.replace(self.props.text.clone());
             }
 
             buffer.shape_until_scroll(font_system, true);
