@@ -44,8 +44,7 @@ pub struct YakuiWgpu {
 pub struct SurfaceInfo<'a> {
     pub format: wgpu::TextureFormat,
     pub sample_count: u32,
-    pub color_attachment: &'a wgpu::TextureView,
-    pub resolve_target: Option<&'a wgpu::TextureView>,
+    pub color_attachment: wgpu::RenderPassColorAttachment<'a>,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
