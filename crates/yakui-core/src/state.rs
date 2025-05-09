@@ -1,10 +1,12 @@
+use core::ops::{Deref, DerefMut};
+
 use crate::dom::Dom;
 use crate::event::{Event, EventResponse};
 use crate::geometry::{Rect, Vec2};
 use crate::id::ManagedTextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
-use crate::paint::{PaintDom, PaintLimits, Texture};
+use crate::paint::{PaintDom, PaintLimits, Texture, Textures};
 use crate::{context, WidgetId};
 
 /// The entrypoint for yakui.
@@ -58,7 +60,17 @@ impl Yakui {
         self.paint.add_texture(texture)
     }
 
-    /// Set the size of the surface the yakui is being rendered onto.
+    /// Returns access to the PaintDom's texture storage.
+    pub fn textures(&self) -> impl Deref<Target = Textures> + '_ {
+        self.paint.textures()
+    }
+
+    /// Returns mutable access to the PaintDom's texture storage.
+    pub fn textures_mut(&self) -> impl DerefMut<Target = Textures> + '_ {
+        self.paint.textures_mut()
+    }
+
+    /// Set the size of the primary surface.
     pub fn set_surface_size(&mut self, size: Vec2) {
         self.paint.set_surface_size(size);
     }
@@ -120,9 +132,9 @@ impl Yakui {
     /// Calculates the geometry needed to render the current state and gives
     /// access to the [`PaintDom`], which holds information about how to paint
     /// widgets.
-    pub fn paint(&mut self) -> &PaintDom {
+    pub fn paint(&mut self) -> &mut PaintDom {
         self.paint.paint_all(&self.dom, &self.layout);
-        &self.paint
+        &mut self.paint
     }
 
     /// Returns access to the state's DOM.

@@ -78,19 +78,24 @@ impl LayoutDom {
         self.nodes.get_mut(id.index())
     }
 
-    /// Set the viewport of the DOM in unscaled units.
-    pub fn set_unscaled_viewport(&mut self, view: Rect) {
-        self.unscaled_viewport = view;
+    /// Get the viewport in unscaled units.
+    pub fn unscaled_viewport(&self) -> Rect {
+        self.unscaled_viewport
     }
 
-    /// Set the scale factor to use for layout.
-    pub fn set_scale_factor(&mut self, scale: f32) {
-        self.scale_factor = scale;
+    /// Set the viewport in unscaled units.
+    pub fn set_unscaled_viewport(&mut self, view: Rect) {
+        self.unscaled_viewport = view;
     }
 
     /// Get the currently active scale factor.
     pub fn scale_factor(&self) -> f32 {
         self.scale_factor
+    }
+
+    /// Set the currently active scale factor.
+    pub fn set_scale_factor(&mut self, scale: f32) {
+        self.scale_factor = scale;
     }
 
     /// Get the viewport in scaled units.
@@ -99,11 +104,6 @@ impl LayoutDom {
             self.unscaled_viewport.pos() / self.scale_factor,
             self.unscaled_viewport.size() / self.scale_factor,
         )
-    }
-
-    /// Get the viewport in unscaled units.
-    pub fn unscaled_viewport(&self) -> Rect {
-        self.unscaled_viewport
     }
 
     /// Tells how many nodes are currently in the `LayoutDom`.

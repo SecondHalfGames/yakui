@@ -5,7 +5,8 @@ use yakui_core as yakui;
 
 use crate::{buffer::Buffer, descriptors::Descriptors, vulkan_context::VulkanContext};
 
-pub(crate) const NO_TEXTURE_ID: u32 = u32::MAX;
+/// Special ID used to indicate the lack of texture used.
+pub const NO_TEXTURE_ID: u32 = u32::MAX;
 
 /// A container around a Vulkan created texture
 pub struct VulkanTexture {
