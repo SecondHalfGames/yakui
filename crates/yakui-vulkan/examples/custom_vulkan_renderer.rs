@@ -1,5 +1,12 @@
+use std::time::Instant;
+
 use ash::vk;
-use yakui::geometry::{UVec2, Vec2};
+use bytemuck::bytes_of;
+use thunderdome::{Arena, Index};
+use yakui::paint::{PaintCall, UserPaintCallId};
+use yakui::util::widget;
+use yakui::widget::Widget;
+use yakui::{Color, Rect, UVec2, Vec2};
 use yakui_vulkan::*;
 
 use winit::{
@@ -7,25 +14,263 @@ use winit::{
     event_loop::ControlFlow,
     keyboard::{KeyCode, PhysicalKey},
 };
-use yakui::{image, Rect};
 
-const MONKEY_PNG: &[u8] = include_bytes!("../../bootstrap/assets/monkey.png");
-const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
-
-#[derive(Debug, Clone)]
-struct GuiState {
-    monkey: yakui::ManagedTextureId,
-    dog: yakui::TextureId,
-    which_image: WhichImage,
+#[derive(Debug)]
+struct MyCustomRenderer {
+    objects: Arena<MyCustomRenderedObject>,
+    initial_time: Instant,
 }
 
-#[derive(Debug, Clone)]
-enum WhichImage {
-    Monkey,
-    Dog,
+impl MyCustomRenderer {
+    pub fn add(&mut self, object: MyCustomRenderedObject) -> UserPaintCallId {
+        self.objects.insert(object).to_bits()
+    }
+
+    pub fn clear(&mut self) {
+        self.objects.clear();
+    }
+
+    pub fn new() -> Self {
+        Self {
+            objects: Arena::new(),
+            initial_time: Instant::now(),
+        }
+    }
 }
 
-/// Simple test to make sure Vulkan backend renders properly.
+#[derive(Debug, Clone, Copy)]
+struct MyCustomRenderedObject {
+    color: Color,
+}
+
+impl MyCustomRenderedObject {
+    pub fn show(self) -> yakui::Response<()> {
+        widget::<MyCustomRenderedWidget>(self)
+    }
+}
+
+#[derive(Debug)]
+struct MyCustomRenderedWidget {
+    props: MyCustomRenderedObject,
+}
+
+impl Widget for MyCustomRenderedWidget {
+    type Props<'a> = MyCustomRenderedObject;
+
+    type Response = ();
+
+    fn new() -> Self {
+        Self {
+            props: MyCustomRenderedObject {
+                color: Color::CLEAR,
+            },
+        }
+    }
+
+    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
+        self.props = props
+    }
+
+    fn layout(
+        &self,
+        ctx: yakui::widget::LayoutContext<'_>,
+        _constraints: yakui::Constraints,
+    ) -> yakui::Vec2 {
+        ctx.layout.enable_clipping(ctx.dom);
+
+        yakui::Vec2::new(80., 80.)
+    }
+
+    fn paint(&self, ctx: yakui::widget::PaintContext<'_>) {
+        let id = ctx
+            .paint
+            .globals
+            .get_mut(MyCustomRenderer::new)
+            .add(self.props);
+
+        ctx.paint.add_user_call(id);
+    }
+}
+
+unsafe fn my_custom_paint(
+    yakui_vulkan: &mut YakuiVulkan,
+    paint: &mut yakui_core::paint::PaintDom,
+    vulkan_context: &VulkanContext,
+    cmd: vk::CommandBuffer,
+    resolution: vk::Extent2D,
+) {
+    // --- yakui ---
+    // If there's nothing to paint, well... don't paint!
+    let layers = &paint.layers;
+    if layers.iter().all(|layer| layer.calls.is_empty()) {
+        return;
+    }
+
+    // If the surface has a size of zero, well... don't paint either!
+    if paint.surface_size().x == 0.0 || paint.surface_size().y == 0.0 {
+        return;
+    }
+
+    let mut vertices: Vec<Vertex> = Default::default();
+    let mut indices: Vec<u32> = Default::default();
+    let mut draw_calls: Vec<(Rect, DrawCall)> = Default::default();
+    // --- yakui ---
+
+    let renderer = paint.globals.get_mut(MyCustomRenderer::new);
+
+    let mut custom_draws = Arena::new();
+    let elapsed = Instant::now()
+        .duration_since(renderer.initial_time)
+        .as_secs_f32();
+
+    for (clip, call) in layers.iter().flat_map(|layer| &layer.calls) {
+        match call {
+            PaintCall::Internal(call) => {
+                draw_calls.push(yakui_vulkan.build_draw_call(
+                    &mut vertices,
+                    &mut indices,
+                    *clip,
+                    call,
+                ));
+            }
+            PaintCall::User(id) => {
+                let min = clip.pos();
+                let max = clip.max();
+
+                let x1y1 = min;
+                let x1y2 = Vec2::new(min.x, max.y);
+                let x2y1 = Vec2::new(max.x, min.y);
+                let x2y2 = max;
+
+                let index = Index::from_bits(*id).unwrap();
+                let object = renderer.objects.get(index).unwrap();
+                let mut color = object.color.to_linear();
+
+                color.x = (color.x + elapsed).sin().abs();
+                color.y = (color.y + elapsed).cos().abs();
+
+                let my_indices = [0, 1, 2, 1, 3, 2];
+
+                let base = vertices.len() as u32;
+                let index_offset = indices.len() as u32;
+                let index_count = my_indices.len() as u32;
+
+                for i in my_indices {
+                    indices.push(i as u32 + base);
+                }
+
+                for pos in [x1y1, x1y2, x2y1, x2y2] {
+                    vertices.push(Vertex {
+                        position: paint.info.transform_vertex(pos, false),
+                        texcoord: Vec2::default(),
+                        color,
+                    });
+                }
+
+                draw_calls.push((*clip, DrawCall::User(*id)));
+                custom_draws.insert_at(index, (index_offset, index_count));
+            }
+        }
+    }
+
+    renderer.clear();
+
+    // --- yakui ---
+    unsafe {
+        yakui_vulkan.index_buffer.write(vulkan_context, 0, &indices);
+        yakui_vulkan
+            .vertex_buffer
+            .write(vulkan_context, 0, &vertices);
+    }
+
+    let device = vulkan_context.device;
+    let surface_size = UVec2::new(resolution.width, resolution.height);
+    // --- yakui ---
+
+    unsafe {
+        // --- yakui ---
+        device.cmd_bind_pipeline(
+            cmd,
+            vk::PipelineBindPoint::GRAPHICS,
+            yakui_vulkan.graphics_pipeline,
+        );
+        let default_scissor = [resolution.into()];
+        device.cmd_set_scissor(cmd, 0, &default_scissor);
+
+        device.cmd_bind_vertex_buffers(cmd, 0, &[yakui_vulkan.vertex_buffer.handle], &[0]);
+        device.cmd_bind_index_buffer(
+            cmd,
+            yakui_vulkan.index_buffer.handle,
+            0,
+            vk::IndexType::UINT32,
+        );
+        device.cmd_bind_descriptor_sets(
+            cmd,
+            vk::PipelineBindPoint::GRAPHICS,
+            yakui_vulkan.pipeline_layout,
+            0,
+            std::slice::from_ref(&yakui_vulkan.descriptors.set),
+            &[],
+        );
+
+        let mut last_clip = None;
+
+        for (clip, draw_call) in draw_calls {
+            if Some(clip) != last_clip {
+                last_clip = Some(clip);
+
+                // TODO - do this when processing draw calls
+                let pos = clip.pos().as_uvec2();
+                let size = clip.size().as_uvec2();
+
+                let max = (pos + size).min(surface_size);
+                let size = UVec2::new(max.x.saturating_sub(pos.x), max.y.saturating_sub(pos.y));
+
+                // If the scissor rect isn't valid, we can skip this
+                // entire draw call.
+                if pos.x > surface_size.x || pos.y > surface_size.y || size.x == 0 || size.y == 0 {
+                    continue;
+                }
+
+                let scissors = [vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: pos.x as _,
+                        y: pos.y as _,
+                    },
+                    extent: vk::Extent2D {
+                        width: size.x,
+                        height: size.y,
+                    },
+                }];
+                // If there's a clip, update the scissor
+                device.cmd_set_scissor(cmd, 0, &scissors);
+            }
+            // --- yakui ---
+
+            match draw_call {
+                DrawCall::Yakui(draw_call) => {
+                    yakui_vulkan.draw_yakui(vulkan_context, cmd, draw_call);
+                }
+                DrawCall::User(id) => {
+                    device.cmd_push_constants(
+                        cmd,
+                        yakui_vulkan.pipeline_layout,
+                        vk::ShaderStageFlags::FRAGMENT,
+                        0,
+                        bytes_of(&PushConstant::new(NO_TEXTURE_ID, Workflow::Main)),
+                    );
+
+                    let (index_offset, index_count) =
+                        custom_draws.remove(Index::from_bits(id).unwrap()).unwrap();
+
+                    device.cmd_draw_indexed(cmd, index_count, 1, index_offset, 0, 1);
+                }
+            }
+        }
+    }
+}
+
+/// Simple test to make sure Vulkan backend renders properly with a custom renderer.
 fn main() {
     use winit::dpi::PhysicalSize;
 
@@ -40,7 +285,7 @@ fn main() {
         [width as f32, height as f32].into(),
     ));
 
-    let (mut yakui_vulkan, mut gui_state) = {
+    let mut yakui_vulkan = {
         let vulkan_context = VulkanContext::new(
             &vulkan_test.device,
             vulkan_test.present_queue,
@@ -55,18 +300,7 @@ fn main() {
         yakui_vulkan.set_paint_limits(&vulkan_context, &mut yak);
         // Prepare for one frame in flight
         yakui_vulkan.transfers_submitted();
-        let gui_state = GuiState {
-            monkey: yak.add_texture(create_yakui_texture(
-                MONKEY_PNG,
-                yakui::paint::TextureFilter::Linear,
-            )),
-            dog: yakui_vulkan.create_user_texture(
-                &vulkan_context,
-                create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
-            ),
-            which_image: WhichImage::Monkey,
-        };
-        (yakui_vulkan, gui_state)
+        yakui_vulkan
     };
 
     let mut winit_initializing = true;
@@ -102,7 +336,7 @@ fn main() {
             );
 
             yak.start();
-            gui(&gui_state);
+            gui();
             yak.finish();
 
             let paint = yak.paint();
@@ -114,13 +348,15 @@ fn main() {
             }
             vulkan_test.render_begin(index);
             unsafe {
-                yakui_vulkan.paint(
+                my_custom_paint(
+                    &mut yakui_vulkan,
                     paint,
                     &vulkan_context,
                     vulkan_test.draw_command_buffer,
                     vulkan_test.swapchain_info.surface_resolution,
                 );
             }
+
             vulkan_test.render_end(index);
             yakui_vulkan.transfers_submitted();
         }
@@ -144,24 +380,6 @@ fn main() {
             event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
             ..
         } => yak.set_scale_factor(scale_factor as _),
-        Event::WindowEvent {
-            event:
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            state: ElementState::Released,
-                            physical_key: PhysicalKey::Code(KeyCode::KeyA),
-                            ..
-                        },
-                    ..
-                },
-            ..
-        } => {
-            gui_state.which_image = match &gui_state.which_image {
-                WhichImage::Monkey => WhichImage::Dog,
-                WhichImage::Dog => WhichImage::Monkey,
-            }
-        }
         _ => (),
     });
 
@@ -170,52 +388,8 @@ fn main() {
     }
 }
 
-fn create_vulkan_texture_info(
-    compressed_image_bytes: &[u8],
-    filter: vk::Filter,
-) -> VulkanTextureCreateInfo<Vec<u8>> {
-    let image = image::load_from_memory(compressed_image_bytes)
-        .unwrap()
-        .into_rgba8();
-    let resolution = vk::Extent2D {
-        width: image.width(),
-        height: image.height(),
-    };
-
-    VulkanTextureCreateInfo::new(
-        image.into_raw(),
-        vk::Format::R8G8B8A8_UNORM,
-        resolution,
-        filter,
-        filter,
-        vk::SamplerAddressMode::CLAMP_TO_EDGE,
-    )
-}
-
-fn create_yakui_texture(
-    compressed_image_bytes: &[u8],
-    filter: yakui::paint::TextureFilter,
-) -> yakui::paint::Texture {
-    let image = image::load_from_memory(compressed_image_bytes)
-        .unwrap()
-        .into_rgba8();
-    let size = UVec2::new(image.width(), image.height());
-
-    let mut texture = yakui::paint::Texture::new(
-        yakui::paint::TextureFormat::Rgba8Srgb,
-        size,
-        image.into_raw(),
-    );
-    texture.mag_filter = filter;
-    texture
-}
-
-fn gui(gui_state: &GuiState) {
-    use yakui::{column, label, row, text, widgets::Text, Color};
-    let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
-        WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
-        WhichImage::Dog => ("dog haha good boy", gui_state.dog),
-    };
+fn gui() {
+    use yakui::{column, label, row, widgets::Text, Color};
     column(|| {
         row(|| {
             label("Hello, world!");
@@ -225,9 +399,26 @@ fn gui(gui_state: &GuiState) {
             text.show();
         });
 
-        text(96.0, format!("look it is a {animal}"));
-
-        image(texture, Vec2::new(400.0, 400.0));
+        row(|| {
+            MyCustomRenderedObject { color: Color::RED }.show();
+            MyCustomRenderedObject {
+                color: Color::GREEN,
+            }
+            .show();
+            MyCustomRenderedObject { color: Color::BLUE }.show();
+            MyCustomRenderedObject {
+                color: Color::YELLOW,
+            }
+            .show();
+            MyCustomRenderedObject {
+                color: Color::WHITE,
+            }
+            .show();
+            MyCustomRenderedObject {
+                color: Color::FUCHSIA,
+            }
+            .show();
+        });
     });
 }
 

@@ -102,8 +102,14 @@ impl Graphics {
         let surface = SurfaceInfo {
             format: self.format,
             sample_count: 1,
-            color_attachment: &view,
-            resolve_target: None,
+            color_attachment: wgpu::RenderPassColorAttachment {
+                view: &view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            },
         };
         let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, surface);
 
