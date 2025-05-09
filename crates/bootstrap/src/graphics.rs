@@ -135,9 +135,9 @@ impl Graphics {
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: surface.color_attachment,
+                    view: surface.color_attachment.view,
                     depth_slice: None,
-                    resolve_target: surface.resolve_target,
+                    resolve_target: surface.color_attachment.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(bg),
                         store: wgpu::StoreOp::Store,
