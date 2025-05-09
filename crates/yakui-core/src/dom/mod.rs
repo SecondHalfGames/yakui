@@ -13,13 +13,13 @@ use std::mem::replace;
 use std::panic::Location;
 use std::rc::Rc;
 
-use anymap::AnyMap;
 use thunderdome::Arena;
 
 use crate::id::WidgetId;
 use crate::input::InputState;
 use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
+use crate::Globals;
 
 use self::dummy::DummyWidget;
 use self::dynamic_scope::DynamicScope;
@@ -35,7 +35,7 @@ struct DomInner {
     stack: RefCell<Vec<WidgetId>>,
     removed_nodes: RefCell<Vec<WidgetId>>,
     root: WidgetId,
-    globals: RefCell<AnyMap>,
+    globals: RefCell<Globals>,
     pending_focus_request: RefCell<Option<WidgetId>>,
     dynamic_scope: DynamicScope,
 }
@@ -194,7 +194,7 @@ impl Dom {
         F: FnOnce() -> T,
     {
         let mut globals = self.inner.globals.borrow_mut();
-        globals.entry::<T>().or_insert_with(init).clone()
+        globals.get(init)
     }
 
     /// Convenience method for calling [`Dom::begin_widget`] immediately
@@ -292,7 +292,7 @@ impl DomInner {
         });
 
         Self {
-            globals: RefCell::new(AnyMap::new()),
+            globals: RefCell::new(Globals::new()),
             nodes: RefCell::new(nodes),
             removed_nodes: RefCell::new(Vec::new()),
             stack: RefCell::new(Vec::new()),
