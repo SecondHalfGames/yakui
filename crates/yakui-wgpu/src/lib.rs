@@ -17,8 +17,11 @@ use bytemuck::{Pod, Zeroable};
 use glam::UVec2;
 use thunderdome::{Arena, Index};
 use yakui_core::geometry::{Rect, Vec2, Vec4};
-use yakui_core::paint::{PaintDom, PaintLimits, Pipeline, Texture, TextureChange, TextureFormat};
-use yakui_core::{ManagedTextureId, TextureId};
+use yakui_core::paint::{
+    PaintCall, PaintDom, PaintLimits, Pipeline, Texture, TextureChange, TextureFormat,
+    UserPaintCallId, Vertex as YakuiVertex, YakuiPaintCall,
+};
+use yakui_core::{ManagedTextureId, TextureId, Yakui};
 
 use self::bindgroup_cache::TextureBindgroupCache;
 use self::bindgroup_cache::TextureBindgroupCacheEntry;
@@ -26,10 +29,22 @@ use self::pipeline_cache::PipelineCache;
 use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
 
+pub struct YakuiDrawCall {
+    pub index_range: Range<u32>,
+    pub bind_group_entry: Option<TextureBindgroupCacheEntry>,
+    pub pipeline: Pipeline,
+}
+
+pub enum DrawCall {
+    Yakui(YakuiDrawCall),
+    User(UserPaintCallId),
+}
+
 pub struct YakuiWgpu {
-    limits: PaintLimits,
-    main_pipeline: PipelineCache,
-    text_pipeline: PipelineCache,
+    pub limits: PaintLimits,
+
+    pub main_pipeline: PipelineCache,
+    pub text_pipeline: PipelineCache,
 
     premul_pipeline: wgpu::RenderPipeline,
     premul_bind_group_layout: wgpu::BindGroupLayout,
@@ -37,11 +52,10 @@ pub struct YakuiWgpu {
     samplers: Samplers,
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
-    texture_bindgroup_cache: TextureBindgroupCache,
+    pub texture_bindgroup_cache: TextureBindgroupCache,
 
-    vertices: Buffer,
-    indices: Buffer,
-    commands: Vec<DrawCommand>,
+    pub vertices: Buffer,
+    pub indices: Buffer,
 }
 
 #[derive(Debug, Clone)]
@@ -51,12 +65,22 @@ pub struct SurfaceInfo<'a> {
     pub color_attachment: wgpu::RenderPassColorAttachment<'a>,
 }
 
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
-struct Vertex {
-    pos: Vec2,
-    texcoord: Vec2,
-    color: Vec4,
+#[derive(Debug, Clone, Copy, Zeroable, Pod)]
+pub struct Vertex {
+    pub position: Vec2,
+    pub texcoord: Vec2,
+    pub color: Vec4,
+}
+
+impl From<&YakuiVertex> for Vertex {
+    fn from(y: &YakuiVertex) -> Self {
+        Self {
+            position: y.position,
+            texcoord: y.texcoord,
+            color: y.color,
+        }
+    }
 }
 
 impl Vertex {
@@ -64,9 +88,9 @@ impl Vertex {
         array_stride: size_of::<Self>() as u64,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &wgpu::vertex_attr_array![
-            0 => Float32x2,
-            1 => Float32x2,
-            2 => Float32x4,
+        0 => Float32x2,
+        1 => Float32x2,
+        2 => Float32x4,
         ],
     };
 }
@@ -217,8 +241,11 @@ impl YakuiWgpu {
             texture_bindgroup_cache: TextureBindgroupCache::new(layout, default_bindgroup),
             vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
             indices: Buffer::new(wgpu::BufferUsages::INDEX),
-            commands: Vec::new(),
         }
+    }
+
+    pub fn set_paint_limits(&self, state: &mut Yakui) {
+        state.set_paint_limit(self.limits);
     }
 
     /// Creates a `TextureId` from an existing wgpu texture that then be used by
@@ -263,7 +290,7 @@ impl YakuiWgpu {
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
     pub fn paint(
         &mut self,
-        state: &mut yakui_core::Yakui,
+        state: &mut Yakui,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         surface: SurfaceInfo<'_>,
@@ -279,7 +306,7 @@ impl YakuiWgpu {
 
     pub fn paint_with_encoder(
         &mut self,
-        state: &mut yakui_core::Yakui,
+        state: &mut Yakui,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
@@ -287,186 +314,108 @@ impl YakuiWgpu {
     ) {
         profiling::scope!("yakui-wgpu paint_with_encoder");
 
-        state.set_paint_limit(self.limits);
-        let paint = state.paint();
-
-        self.update_textures(device, paint, queue);
-
-        let layers = paint.layers();
-        if layers.iter().all(|layer| layer.calls.is_empty()) {
-            return;
-        }
-
-        self.update_buffers(device, paint);
-
-        let vertices = self.vertices.upload(device, queue);
-        let indices = self.indices.upload(device, queue);
-        let commands = &self.commands;
-
-        if paint.surface_size() == Vec2::ZERO {
-            return;
-        }
-
-        {
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("yakui Render Pass"),
-                color_attachments: &[Some(surface.color_attachment)],
-                ..Default::default()
-            });
-
-            render_pass.set_vertex_buffer(0, vertices.slice(..));
-            render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
-
-            let mut last_clip = None;
-
-            let main_pipeline = self.main_pipeline.get(
-                device,
-                surface.format,
-                surface.sample_count,
-                make_main_pipeline,
-            );
-
-            let text_pipeline = self.text_pipeline.get(
-                device,
-                surface.format,
-                surface.sample_count,
-                make_text_pipeline,
-            );
-
-            for command in commands {
-                match command.pipeline {
-                    Pipeline::Main => render_pass.set_pipeline(main_pipeline),
-                    Pipeline::Text => render_pass.set_pipeline(text_pipeline),
-                }
-
-                if command.clip != last_clip {
-                    last_clip = command.clip;
-
-                    let surface = paint.surface_size().as_uvec2();
-
-                    match command.clip {
-                        Some(rect) => {
-                            let pos = rect.pos().as_uvec2();
-                            let size = rect.size().as_uvec2();
-
-                            let max = (pos + size).min(surface);
-                            let size = UVec2::new(
-                                max.x.saturating_sub(pos.x),
-                                max.y.saturating_sub(pos.y),
-                            );
-
-                            // If the scissor rect isn't valid, we can skip this
-                            // entire draw call.
-                            if pos.x > surface.x || pos.y > surface.y || size.x == 0 || size.y == 0
-                            {
-                                continue;
-                            }
-
-                            render_pass.set_scissor_rect(pos.x, pos.y, size.x, size.y);
-                        }
-                        None => {
-                            render_pass.set_scissor_rect(0, 0, surface.x, surface.y);
-                        }
-                    }
-                }
-
-                let bindgroup = command
-                    .bind_group_entry
-                    .map(|entry| self.texture_bindgroup_cache.get(&entry))
-                    .unwrap_or(&self.texture_bindgroup_cache.default);
-
-                render_pass.set_bind_group(0, bindgroup, &[]);
-                render_pass.draw_indexed(command.index_range.clone(), 0, 0..1);
-            }
-        }
+        crate::paint(self, state, device, queue, encoder, surface)
     }
 
-    fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
-        profiling::scope!("update_buffers");
+    pub fn build_draw_call(
+        &mut self,
+        device: &wgpu::Device,
+        clip: Rect,
+        call: &YakuiPaintCall,
+    ) -> (Rect, DrawCall) {
+        let vertices = call.vertices.iter().map(Vertex::from);
 
-        self.vertices.clear();
-        self.indices.clear();
-        self.commands.clear();
-        self.texture_bindgroup_cache.clear();
+        let base = self.vertices.len() as u32;
+        let indices = call.indices.iter().map(|&index| base + index as u32);
 
-        let commands = paint
-            .layers()
-            .iter()
-            .flat_map(|layer| &layer.calls)
-            .map(|call| {
-                let vertices = call.vertices.iter().map(|vertex| Vertex {
-                    pos: vertex.position,
-                    texcoord: vertex.texcoord,
-                    color: vertex.color,
-                });
+        let start = self.indices.len() as u32;
+        let end = start + indices.len() as u32;
 
-                let base = self.vertices.len() as u32;
-                let indices = call.indices.iter().map(|&index| base + index as u32);
+        self.vertices.extend(vertices);
+        self.indices.extend(indices);
 
-                let start = self.indices.len() as u32;
-                let end = start + indices.len() as u32;
-
-                self.vertices.extend(vertices);
-                self.indices.extend(indices);
-
-                let bind_group_entry = call
-                    .texture
-                    .and_then(|id| match id {
-                        TextureId::Managed(managed) => {
-                            let texture = self.managed_textures.get(&managed)?;
-                            Some((
-                                id,
-                                &texture.view,
-                                texture.min_filter,
-                                texture.mag_filter,
-                                wgpu::MipmapFilterMode::Nearest,
-                                texture.address_mode,
-                            ))
-                        }
-                        TextureId::User(bits) => {
-                            let index = Index::from_bits(bits)?;
-                            let texture = self.textures.get(index)?;
-                            Some((
-                                id,
-                                &texture.view,
-                                texture.min_filter,
-                                texture.mag_filter,
-                                texture.mipmap_filter,
-                                texture.address_mode,
-                            ))
-                        }
-                    })
-                    .map(
-                        |(id, view, min_filter, mag_filter, mipmap_filter, address_mode)| {
-                            let entry = TextureBindgroupCacheEntry {
-                                id,
-                                min_filter,
-                                mag_filter,
-                                mipmap_filter,
-                                address_mode,
-                            };
-                            self.texture_bindgroup_cache.update(
-                                device,
-                                entry,
-                                view,
-                                &self.samplers,
-                            );
-                            entry
-                        },
-                    );
-
-                DrawCommand {
-                    index_range: start..end,
-                    bind_group_entry,
-                    pipeline: call.pipeline,
-                    clip: call.clip,
+        let bind_group_entry = call
+            .texture
+            .and_then(|id| match id {
+                TextureId::Managed(managed) => {
+                    let texture = self.managed_textures.get(&managed)?;
+                    Some((
+                        id,
+                        &texture.view,
+                        texture.min_filter,
+                        texture.mag_filter,
+                        wgpu::MipmapFilterMode::Nearest,
+                        texture.address_mode,
+                    ))
                 }
-            });
+                TextureId::User(bits) => {
+                    let index = Index::from_bits(bits)?;
+                    let texture = self.textures.get(index)?;
+                    Some((
+                        id,
+                        &texture.view,
+                        texture.min_filter,
+                        texture.mag_filter,
+                        texture.mipmap_filter,
+                        texture.address_mode,
+                    ))
+                }
+            })
+            .map(
+                |(id, view, min_filter, mag_filter, mipmap_filter, address_mode)| {
+                    let entry = TextureBindgroupCacheEntry {
+                        id,
+                        min_filter,
+                        mag_filter,
+                        mipmap_filter,
+                        address_mode,
+                    };
+                    self.texture_bindgroup_cache
+                        .update(device, entry, view, &self.samplers);
 
-        self.commands.extend(commands);
+                    entry
+                },
+            );
+
+        (
+            clip,
+            DrawCall::Yakui(YakuiDrawCall {
+                index_range: start..end,
+                bind_group_entry,
+                pipeline: call.pipeline,
+            }),
+        )
     }
 
-    fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
+    pub fn draw_yakui(
+        texture_bindgroup_cache: &TextureBindgroupCache,
+        render_pass: &mut wgpu::RenderPass,
+        main_pipeline: &wgpu::RenderPipeline,
+        text_pipeline: &wgpu::RenderPipeline,
+        call: YakuiDrawCall,
+    ) {
+        profiling::scope!("yakui-wgpu draw_yakui");
+
+        match call.pipeline {
+            Pipeline::Main => render_pass.set_pipeline(main_pipeline),
+            Pipeline::Text => render_pass.set_pipeline(text_pipeline),
+        }
+
+        let bindgroup = call
+            .bind_group_entry
+            .map(|entry| texture_bindgroup_cache.get(&entry))
+            .unwrap_or(&texture_bindgroup_cache.default);
+
+        render_pass.set_bind_group(0, bindgroup, &[]);
+        render_pass.draw_indexed(call.index_range.clone(), 0, 0..1);
+    }
+
+    pub fn update_textures(
+        &mut self,
+        device: &wgpu::Device,
+        paint: &PaintDom,
+        queue: &wgpu::Queue,
+    ) {
         profiling::scope!("update_textures");
 
         for (id, texture) in paint.textures() {
@@ -519,13 +468,6 @@ impl YakuiWgpu {
             }
         }
     }
-}
-
-struct DrawCommand {
-    index_range: Range<u32>,
-    bind_group_entry: Option<TextureBindgroupCacheEntry>,
-    pipeline: Pipeline,
-    clip: Option<Rect>,
 }
 
 fn make_main_pipeline(
@@ -624,4 +566,139 @@ fn make_text_pipeline(
         multiview_mask: None,
         cache: None,
     })
+}
+
+pub fn main_pipeline<'a>(
+    main_pipeline: &'a mut PipelineCache,
+    device: &wgpu::Device,
+    surface: &SurfaceInfo<'_>,
+) -> &'a wgpu::RenderPipeline {
+    main_pipeline.get(
+        device,
+        surface.format,
+        surface.sample_count,
+        make_main_pipeline,
+    )
+}
+
+pub fn text_pipeline<'a>(
+    text_pipeline: &'a mut PipelineCache,
+    device: &wgpu::Device,
+    surface: &SurfaceInfo<'_>,
+) -> &'a wgpu::RenderPipeline {
+    text_pipeline.get(
+        device,
+        surface.format,
+        surface.sample_count,
+        make_text_pipeline,
+    )
+}
+
+pub fn paint(
+    yakui_wgpu: &mut YakuiWgpu,
+    state: &mut Yakui,
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    encoder: &mut wgpu::CommandEncoder,
+    surface: SurfaceInfo<'_>,
+) {
+    // --- yakui ---
+    yakui_wgpu.set_paint_limits(state);
+    let paint = state.paint();
+
+    yakui_wgpu.update_textures(device, paint, queue);
+
+    // If there's nothing to paint, well... don't paint!
+    let layers = &paint.layers;
+    if layers.iter().all(|layer| layer.calls.is_empty()) {
+        return;
+    }
+
+    // If the surface has a size of zero, well... don't paint either!
+    if paint.surface_size().x == 0.0 || paint.surface_size().y == 0.0 {
+        return;
+    }
+
+    yakui_wgpu.vertices.clear();
+    yakui_wgpu.indices.clear();
+    yakui_wgpu.texture_bindgroup_cache.clear();
+
+    let mut draw_calls = Vec::with_capacity(layers.len());
+    // --- yakui ---
+
+    for (clip, call) in layers.iter().flat_map(|layer| &layer.calls) {
+        match call {
+            PaintCall::Internal(call) => {
+                draw_calls.push(yakui_wgpu.build_draw_call(device, *clip, call));
+            }
+            PaintCall::User(_) => {
+                panic!("yakui does not handle User PaintCall's by default. Please set up your own rendering logic instead.");
+            }
+        }
+    }
+
+    // --- yakui ---
+    let vertices = yakui_wgpu.vertices.upload(device, queue);
+    let indices = yakui_wgpu.indices.upload(device, queue);
+    // --- yakui ---
+
+    {
+        // --- yakui ---
+        let main_pipeline = main_pipeline(&mut yakui_wgpu.main_pipeline, device, &surface);
+        let text_pipeline = text_pipeline(&mut yakui_wgpu.text_pipeline, device, &surface);
+
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("yakui Render Pass"),
+            color_attachments: &[Some(surface.color_attachment)],
+            ..Default::default()
+        });
+
+        render_pass.set_vertex_buffer(0, vertices.slice(..));
+        render_pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
+
+        let surface = paint.surface_size().as_uvec2();
+        render_pass.set_viewport(0.0, 0.0, surface.x as f32, surface.y as f32, 0.0, 1.0);
+
+        let mut last_clip = None;
+        // --- yakui ---
+
+        for (clip, draw_call) in draw_calls {
+            // --- yakui ---
+            if Some(clip) != last_clip {
+                last_clip = Some(clip);
+
+                let surface = paint.surface_size().as_uvec2();
+
+                let pos = clip.pos().as_uvec2();
+                let size = clip.size().as_uvec2();
+
+                let max = (pos + size).min(surface);
+                let size = UVec2::new(max.x.saturating_sub(pos.x), max.y.saturating_sub(pos.y));
+
+                // If the scissor rect isn't valid, we can skip this
+                // entire draw call.
+                if pos.x > surface.x || pos.y > surface.y || size.x == 0 || size.y == 0 {
+                    continue;
+                }
+
+                render_pass.set_scissor_rect(pos.x, pos.y, size.x, size.y);
+            }
+            // --- yakui ---
+
+            match draw_call {
+                DrawCall::Yakui(call) => {
+                    YakuiWgpu::draw_yakui(
+                        &yakui_wgpu.texture_bindgroup_cache,
+                        &mut render_pass,
+                        main_pipeline,
+                        text_pipeline,
+                        call,
+                    );
+                }
+                DrawCall::User(_) => {
+                    panic!("yakui does not handle User PaintCall's by default. Please set up your own rendering logic instead.");
+                }
+            }
+        }
+    }
 }
