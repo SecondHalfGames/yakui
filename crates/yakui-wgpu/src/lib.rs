@@ -48,8 +48,7 @@ pub struct YakuiWgpu {
 pub struct SurfaceInfo<'a> {
     pub format: wgpu::TextureFormat,
     pub sample_count: u32,
-    pub color_attachment: &'a wgpu::TextureView,
-    pub resolve_target: Option<&'a wgpu::TextureView>,
+    pub color_attachment: wgpu::RenderPassColorAttachment<'a>,
 }
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
@@ -311,15 +310,7 @@ impl YakuiWgpu {
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("yakui Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: surface.color_attachment,
-                    depth_slice: None,
-                    resolve_target: surface.resolve_target,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
+                color_attachments: &[Some(surface.color_attachment)],
                 ..Default::default()
             });
 
