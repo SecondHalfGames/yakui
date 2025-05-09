@@ -8,7 +8,7 @@ use winit::{
     event_loop::ControlFlow,
     keyboard::{KeyCode, PhysicalKey},
 };
-use yakui::image;
+use yakui::{image, Rect};
 
 const MONKEY_PNG: &[u8] = include_bytes!("../../bootstrap/assets/monkey.png");
 const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
@@ -26,7 +26,7 @@ enum WhichImage {
     Dog,
 }
 
-/// Simple smoke test to make sure render screen properly pixel Vulkan.
+/// Simple test to make sure Vulkan backend renders properly.
 fn main() {
     use winit::dpi::PhysicalSize;
 
@@ -36,7 +36,7 @@ fn main() {
 
     let mut yak = yakui::Yakui::new();
     yak.set_surface_size([width as f32, height as f32].into());
-    yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+    yak.set_unscaled_viewport(Rect::from_pos_size(
         Default::default(),
         [width as f32, height as f32].into(),
     ));
@@ -135,7 +135,7 @@ fn main() {
                 let PhysicalSize { width, height } = size;
                 vulkan_test.resized(width, height);
                 yak.set_surface_size([width as f32, height as f32].into());
-                yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+                yak.set_unscaled_viewport(Rect::from_pos_size(
                     Default::default(),
                     [width as f32, height as f32].into(),
                 ));
