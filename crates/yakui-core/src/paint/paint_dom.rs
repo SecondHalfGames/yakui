@@ -1,3 +1,4 @@
+use core::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -6,13 +7,15 @@ use glam::Vec2;
 use parking_lot::RwLock;
 use thunderdome::Arena;
 
+use crate::Globals;
 use crate::dom::Dom;
 use crate::geometry::Rect;
 use crate::id::{ManagedTextureId, WidgetId};
 use crate::layout::LayoutDom;
-use crate::paint::{PaintCall, Pipeline};
+use crate::paint::{PaintCall, Pipeline, YakuiPaintCall};
 use crate::widget::PaintContext;
 
+use super::UserPaintCallId;
 use super::layers::PaintLayers;
 use super::primitives::{PaintMesh, Vertex};
 use super::texture::{Texture, TextureChange};
@@ -28,17 +31,51 @@ pub struct PaintLimits {
     pub max_texture_size_3d: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
+/// Contains misc info about the surface to be painted onto.
+pub struct PaintInfo {
+    surface_size: Vec2,
+    unscaled_viewport: Rect,
+    scale_factor: f32,
+}
+
+impl PaintInfo {
+    /// Transforms the vertex position from unit in logical pixels to a normalized position for rendering.
+    pub fn transform_vertex(&self, pos: Vec2, pipeline: Pipeline) -> Vec2 {
+        transform_vertex(pos, self.scale_factor, self.surface_size, pipeline)
+    }
+}
+
+impl Default for PaintInfo {
+    fn default() -> Self {
+        Self {
+            surface_size: Vec2::ONE,
+            unscaled_viewport: Rect::ONE,
+            scale_factor: 1.0,
+        }
+    }
+}
+
 /// Contains all information about how to paint the current set of widgets.
 #[derive(Debug)]
 pub struct PaintDom {
     textures: Arc<RwLock<Textures>>,
-    surface_size: Vec2,
-    unscaled_viewport: Rect,
-    scale_factor: f32,
     limits: Option<PaintLimits>,
 
-    layers: PaintLayers,
+    /// Contains misc info about the surface to be painted onto.
+    pub info: PaintInfo,
+
+    /// Stores the list of layers that should be used to draw the UI.
+    pub layers: PaintLayers,
+
+    /// Stores paint-persistent states.
+    /// For things like custom renderers, for example.
+    pub globals: RefCell<Globals>,
+
     current_clip: Rect,
+
+    #[cfg(debug_assertions)]
+    painted_already: bool,
 }
 
 /// Stores textures for one or more `PaintDom` instances.
@@ -102,13 +139,16 @@ impl PaintDom {
     pub fn new() -> Self {
         Self {
             textures: Default::default(),
-            surface_size: Vec2::ONE,
-            unscaled_viewport: Rect::ONE,
-            scale_factor: 1.0,
             limits: None,
 
+            info: PaintInfo::default(),
             layers: PaintLayers::new(),
+            globals: RefCell::new(Globals::new()),
+
             current_clip: Rect::ZERO,
+
+            #[cfg(debug_assertions)]
+            painted_already: false,
         }
     }
 
@@ -133,24 +173,40 @@ impl PaintDom {
     /// Prepares the PaintDom to be updated for the frame.
     pub fn start(&mut self) {
         self.textures_mut().texture_edits.clear();
+        #[cfg(debug_assertions)]
+        {
+            self.painted_already = false;
+        }
     }
 
-    /// Returns the size of the surface that is being painted onto.
+    /// Get the size of the surface that is being painted onto.
     pub fn surface_size(&self) -> Vec2 {
-        self.surface_size
+        self.info.surface_size
     }
 
-    /// Set the size of the surface that yakui is being rendered on.
+    /// Set the size of the surface that is being painted onto.
     pub(crate) fn set_surface_size(&mut self, size: Vec2) {
-        self.surface_size = size;
+        self.info.surface_size = size;
     }
 
+    /// Get the viewport in unscaled units.
+    pub fn unscaled_viewport(&self) -> Rect {
+        self.info.unscaled_viewport
+    }
+
+    /// Set the viewport in unscaled units.
     pub(crate) fn set_unscaled_viewport(&mut self, viewport: Rect) {
-        self.unscaled_viewport = viewport;
+        self.info.unscaled_viewport = viewport;
     }
 
+    /// Get the currently active scale factor.
+    pub fn scale_factor(&self) -> f32 {
+        self.info.scale_factor
+    }
+
+    /// Set the currently active scale factor.
     pub(crate) fn set_scale_factor(&mut self, scale_factor: f32) {
-        self.scale_factor = scale_factor;
+        self.info.scale_factor = scale_factor;
     }
 
     /// Paint a specific widget. This function is usually called as part of an
@@ -168,8 +224,8 @@ impl PaintDom {
         let previous_clip = self.current_clip;
 
         self.current_clip = Rect::from_pos_size(
-            (layout_node.clip.pos() * self.scale_factor).round(),
-            (layout_node.clip.size() * self.scale_factor).round(),
+            (layout_node.clip.pos() * self.scale_factor()).round(),
+            (layout_node.clip.size() * self.scale_factor()).round(),
         )
         .constrain(layout.unscaled_viewport());
 
@@ -204,6 +260,16 @@ impl PaintDom {
 
         self.layers.clear();
         self.paint(dom, layout, dom.root());
+
+        #[cfg(debug_assertions)]
+        {
+            debug_assert!(
+                !self.painted_already,
+                "PaintDom::paint_all() should only be called once per frame"
+            );
+
+            self.painted_already = true;
+        }
     }
 
     /// Add a texture to the Paint DOM, returning an ID that can be used to
@@ -232,11 +298,6 @@ impl PaintDom {
         self.textures.write()
     }
 
-    /// Returns a list of layers that should be used to draw the UI.
-    pub fn layers(&self) -> &PaintLayers {
-        &self.layers
-    }
-
     /// Add a mesh to be painted.
     pub fn add_mesh<V, I>(&mut self, mesh: PaintMesh<V, I>)
     where
@@ -253,21 +314,27 @@ impl PaintDom {
             .expect("an active layer is required to call add_mesh");
 
         let call = match layer.calls.last_mut() {
-            Some(call)
+            Some((clip, PaintCall::Internal(call)))
                 if call.texture == texture_id
                     && call.pipeline == mesh.pipeline
-                    && call.clip == Some(self.current_clip) =>
+                    && *clip == self.current_clip =>
             {
                 call
             }
             _ => {
-                let mut call = PaintCall::new();
+                let mut call = YakuiPaintCall::new();
                 call.texture = texture_id;
                 call.pipeline = mesh.pipeline;
-                call.clip = Some(self.current_clip);
 
-                layer.calls.push(call);
-                layer.calls.last_mut().unwrap()
+                layer
+                    .calls
+                    .push((self.current_clip, PaintCall::Internal(call)));
+
+                let Some((_, PaintCall::Internal(inserted))) = layer.calls.last_mut() else {
+                    panic!()
+                };
+
+                inserted
             }
         };
 
@@ -278,20 +345,43 @@ impl PaintDom {
         call.indices.extend(indices);
 
         let vertices = mesh.vertices.into_iter().map(|mut vertex| {
-            // The function [`paint_text`](yakui_widgets::widgets::render_text::paint_text) already gives us everything in physical unit.
-            // We don't need to convert it again.
-            // (Note: Subpixel alignment is accounted for in the text atlas.)
-            let mut pos = if mesh.pipeline == Pipeline::Text {
-                vertex.position
-            } else {
-                vertex.position * self.scale_factor
-            };
+            vertex.position = self.info.transform_vertex(vertex.position, mesh.pipeline);
 
-            pos /= self.surface_size;
-
-            vertex.position = pos;
             vertex
         });
         call.vertices.extend(vertices);
     }
+
+    /// Adds a user-managed paint call to be painted.
+    /// This expects the user to handle the paint call on their own, yakui just records the ID given to be checked against by the user later.
+    pub fn add_user_call(&mut self, call_id: UserPaintCallId) {
+        profiling::scope!("PaintDom::add_user_call");
+
+        let layer = self
+            .layers
+            .current_mut()
+            .expect("an active layer is required to call add_user_call");
+
+        layer
+            .calls
+            .push((self.current_clip, PaintCall::User(call_id)));
+    }
+}
+
+fn transform_vertex(
+    mut pos: Vec2,
+    scale_factor: f32,
+    surface_size: Vec2,
+    pipeline: Pipeline,
+) -> Vec2 {
+    // The function [`paint_text`](yakui_widgets::widgets::render_text::paint_text) already gives us everything in physical unit.
+    // We don't need to convert it again.
+    // (Note: Subpixel alignment is accounted for in the text atlas.)
+    if pipeline != Pipeline::Text {
+        pos *= scale_factor;
+    }
+
+    pos /= surface_size;
+
+    pos
 }

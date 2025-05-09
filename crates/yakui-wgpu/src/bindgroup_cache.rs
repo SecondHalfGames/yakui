@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use yakui_core::TextureId;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
-pub(crate) struct TextureBindgroupCacheEntry {
+pub struct TextureBindgroupCacheEntry {
     pub id: TextureId,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
@@ -11,7 +11,7 @@ pub(crate) struct TextureBindgroupCacheEntry {
     pub address_mode: wgpu::AddressMode,
 }
 
-pub(crate) struct TextureBindgroupCache {
+pub struct TextureBindgroupCache {
     cache: HashMap<TextureBindgroupCacheEntry, wgpu::BindGroup>,
     layout: wgpu::BindGroupLayout,
     pub default: wgpu::BindGroup,
@@ -30,7 +30,7 @@ impl TextureBindgroupCache {
         self.cache.clear();
     }
 
-    pub fn update(
+    pub(crate) fn update(
         &mut self,
         device: &wgpu::Device,
         entry: TextureBindgroupCacheEntry,
