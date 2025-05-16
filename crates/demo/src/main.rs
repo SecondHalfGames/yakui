@@ -36,7 +36,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             }
 
             Event::WindowEvent {
-                event: WindowEvent::RedrawRequested { .. },
+                event: WindowEvent::RedrawRequested,
                 ..
             } => {
                 yak.start();
