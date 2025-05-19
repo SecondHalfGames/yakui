@@ -2,6 +2,7 @@
 name = "demo"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,14 +12,14 @@ yakui-wgpu = { path = "../yakui-wgpu" }
 yakui-winit = { path = "../yakui-winit" }
 yakui-app = { path = "../yakui-app" }
 
-env_logger = "0.10.0"
-log = "0.4.17"
-pollster = "0.3.0"
+env_logger.workspace = true
+log.workspace = true
+pollster.workspace = true
 wgpu = { workspace = true, features = ["webgl"] }
-winit = "0.30.0"
+winit.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-console_log = "0.2.1"
+console_log = "1.0.0"
 console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2.84"
 wasm-bindgen-futures = "0.4.34"

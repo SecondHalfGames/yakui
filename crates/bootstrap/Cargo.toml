@@ -14,13 +14,13 @@ yakui-winit = { path = "../yakui-winit" }
 yakui-sdl3 = { path = "../yakui-sdl3" }
 
 anyhow = "1.0.58"
-env_logger = "0.10.0"
-image = { version = "0.24.2", default-features = false, features = ["png"] }
-log = "0.4.17"
-pollster = "0.3.0"
+env_logger.workspace = true
+image = { workspace = true, default-features = false, features = ["png"] }
+log.workspace = true
+pollster.workspace = true
 profiling = "1.0.6"
-tracy-client = { version = "0.15.1", optional = true }
+tracy-client = { version = "0.18.0", optional = true }
 
-winit = "0.30.0"
-sdl3 = { version = "0.14.0", features = ["build-from-source", "raw-window-handle"] }
+winit.workspace = true
+sdl3 = { workspace = true, features = ["build-from-source", "raw-window-handle"] }
 wgpu.workspace = true

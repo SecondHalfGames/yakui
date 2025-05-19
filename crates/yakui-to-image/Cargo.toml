@@ -12,5 +12,5 @@ yakui-core = { path = "../yakui-core" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 
 wgpu.workspace = true
-image = { version = "0.24.4", default-features = false, features = ["png"] }
-pollster = "0.3.0"
+image = { workspace = true, default-features = false, features = ["png"] }
+pollster.workspace = true

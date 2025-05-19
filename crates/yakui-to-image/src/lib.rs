@@ -16,9 +16,7 @@ pub fn paint_and_save_to<P: AsRef<Path>>(state: &mut yakui_core::Yakui, path: P)
 
     let image = paint(state);
     let mut file = BufWriter::new(File::create(path).unwrap());
-    image
-        .write_to(&mut file, image::ImageOutputFormat::Png)
-        .unwrap();
+    image.write_to(&mut file, image::ImageFormat::Png).unwrap();
     file.flush().unwrap();
 }
 

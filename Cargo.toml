@@ -4,4 +4,12 @@ members = ["crates/*"]
 default-members = ["crates/*"]
 
 [workspace.dependencies]
+ash = { version = "0.38", default-features = false, features = ["std"] }
+sdl3 = "0.14.0"
+env_logger = "0.11.8"
+glam = "0.30.0"
+log = "0.4.17"
+pollster = "0.4.0"
 wgpu = "25.0.0"
+winit = "0.30.0"
+image = { version = "0.25.6", default-features = false }

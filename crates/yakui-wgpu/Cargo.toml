@@ -12,7 +12,7 @@ edition = "2021"
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
 wgpu.workspace = true
-glam = { version = "0.30", features = ["bytemuck"] }
+glam = { workspace = true, features = ["bytemuck"] }
 bytemuck = { version = "1.12.1", features = ["derive"] }
 thunderdome = "0.6.0"
 profiling = "1.0.6"
