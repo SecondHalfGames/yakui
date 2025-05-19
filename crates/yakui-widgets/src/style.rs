@@ -18,7 +18,7 @@ impl Default for TextStyle {
             align: TextAlignment::Start,
             attrs: cosmic_text::AttrsOwned {
                 family_owned: cosmic_text::FamilyOwned::SansSerif,
-                ..cosmic_text::AttrsOwned::new(cosmic_text::Attrs::new())
+                ..cosmic_text::AttrsOwned::new(&cosmic_text::Attrs::new())
             },
         }
     }
