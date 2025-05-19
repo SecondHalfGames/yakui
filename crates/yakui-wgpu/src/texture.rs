@@ -45,7 +45,7 @@ impl GpuManagedTexture {
         });
 
         queue.write_texture(
-            wgpu::ImageCopyTexture {
+            wgpu::TexelCopyTextureInfo {
                 texture: &gpu_texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
@@ -89,7 +89,7 @@ impl GpuManagedTexture {
         };
 
         queue.write_texture(
-            wgpu::ImageCopyTexture {
+            wgpu::TexelCopyTextureInfo {
                 texture: &self.gpu_texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
@@ -102,19 +102,19 @@ impl GpuManagedTexture {
     }
 }
 
-fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::ImageDataLayout {
+fn data_layout(format: TextureFormat, size: UVec2) -> wgpu::TexelCopyBufferLayout {
     match format {
-        TextureFormat::Rgba8Srgb => wgpu::ImageDataLayout {
+        TextureFormat::Rgba8Srgb => wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(4 * size.x),
             rows_per_image: Some(size.y),
         },
-        TextureFormat::Rgba8SrgbPremultiplied => wgpu::ImageDataLayout {
+        TextureFormat::Rgba8SrgbPremultiplied => wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(4 * size.x),
             rows_per_image: Some(size.y),
         },
-        TextureFormat::R8 => wgpu::ImageDataLayout {
+        TextureFormat::R8 => wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(size.x),
             rows_per_image: Some(size.y),

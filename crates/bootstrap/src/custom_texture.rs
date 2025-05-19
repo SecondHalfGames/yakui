@@ -33,14 +33,14 @@ pub fn generate(device: &wgpu::Device, queue: &wgpu::Queue) -> wgpu::TextureView
     });
 
     queue.write_texture(
-        wgpu::ImageCopyTexture {
+        wgpu::TexelCopyTextureInfo {
             texture: &texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
             aspect: wgpu::TextureAspect::All,
         },
         &data,
-        wgpu::ImageDataLayout {
+        wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(BYTES_PER_ROW as u32),
             rows_per_image: None,

@@ -4,4 +4,4 @@ members = ["crates/*"]
 default-members = ["crates/*"]
 
 [workspace.dependencies]
-wgpu = "23.0.1"
+wgpu = "25.0.0"

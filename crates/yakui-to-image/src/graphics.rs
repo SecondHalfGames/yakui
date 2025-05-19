@@ -23,15 +23,7 @@ impl Graphics {
             .unwrap();
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    memory_hints: Default::default(),
-                    label: None,
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .unwrap();
 
@@ -114,15 +106,15 @@ impl Graphics {
             });
 
         encoder.copy_texture_to_buffer(
-            wgpu::ImageCopyTexture {
+            wgpu::TexelCopyTextureInfo {
                 texture: &texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            wgpu::ImageCopyBuffer {
+            wgpu::TexelCopyBufferInfo {
                 buffer: &buffer,
-                layout: wgpu::ImageDataLayout {
+                layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(buffer_size.padded_bytes_per_row),
                     rows_per_image: Some(size.height),
@@ -133,13 +125,15 @@ impl Graphics {
 
         let copy = encoder.finish();
 
-        self.queue.submit([clear, paint_yak, copy]);
+        let submit_index = self.queue.submit([clear, paint_yak, copy]);
         let buffer_slice = buffer.slice(..);
         buffer_slice.map_async(wgpu::MapMode::Read, |res| {
             res.unwrap();
         });
 
-        self.device.poll(wgpu::Maintain::Wait);
+        self.device
+            .poll(wgpu::PollType::WaitForSubmissionIndex(submit_index))
+            .unwrap();
 
         let padded_data = buffer_slice.get_mapped_range().to_vec();
         let mut data = Vec::new();
