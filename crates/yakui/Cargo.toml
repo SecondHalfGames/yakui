@@ -18,3 +18,4 @@ yakui-widgets = { path = "../yakui-widgets", version = "0.3.0", default-features
 [dev-dependencies]
 bootstrap = { path = "../bootstrap" }
 lyon_tessellation = "1.0.11"
+smol_str = "0.2.2"
