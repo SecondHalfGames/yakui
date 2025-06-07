@@ -17,7 +17,7 @@ use crate::{
 pub fn run<T: ExampleBody>(yak: Yakui, state: ExampleState, title: String, body: T) {
     // Normal winit setup for an EventLoop and Window.
     let event_loop = EventLoop::new().unwrap();
-    let window_attribute = Window::default_attributes().with_title(title);
+    let window_attribute = WindowAttributes::default().with_title(title);
 
     // Set up some default state that we'll modify later.
     let mut app = App {
@@ -43,7 +43,7 @@ struct App<T: ExampleBody> {
     attributes: WindowAttributes,
     start: Instant,
 
-    window: Option<Window>,
+    window: Option<Box<dyn Window>>,
     graphics: Option<Graphics>,
     yak_window: Option<YakuiWinit>,
 
@@ -51,17 +51,16 @@ struct App<T: ExampleBody> {
 }
 
 impl<T: ExampleBody> ApplicationHandler for App<T> {
-    // This is a common indicator that you can create a window.
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+    fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
         let window = event_loop.create_window(self.attributes.clone()).unwrap();
         window.set_ime_allowed(true);
 
-        let size = window.inner_size();
+        let size = window.surface_size();
         let size = UVec2::new(size.width, size.height);
         let sample_count = get_sample_count();
 
         let mut graphics = pollster::block_on(Graphics::new(&window, size, sample_count));
-        let mut yak_window = yakui_winit::YakuiWinit::new(&window);
+        let mut yak_window = yakui_winit::YakuiWinit::new(&*window);
 
         // By default, yakui_winit will measure the system's scale factor and pass
         // it to yakui.
@@ -100,7 +99,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
 
     fn window_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
+        event_loop: &dyn ActiveEventLoop,
         _window_id: WindowId,
         event: WindowEvent,
     ) {
@@ -153,16 +152,16 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
                 self.window.as_ref().unwrap().request_redraw();
             }
 
-            WindowEvent::MouseInput { state, button, .. } => {
+            WindowEvent::PointerButton { state, button, .. } => {
                 // This print is a handy way to show which mouse events are
                 // handled by yakui, and which ones will make it to the
                 // underlying application.
-                if button == winit::event::MouseButton::Left {
+                if button.mouse_button() == winit::event::MouseButton::Left {
                     println!("Left mouse button {state:?}");
                 }
             }
 
-            WindowEvent::Resized(size) => {
+            WindowEvent::SurfaceResized(size) => {
                 let inset = get_inset_override();
                 if let Some(inset) = inset {
                     let size = Vec2::new(size.width as f32, size.height as f32);

@@ -95,7 +95,7 @@ pub fn from_winit_modifiers(winit_mods: winit::keyboard::ModifiersState) -> Modi
     if winit_mods.alt_key() {
         mods |= Modifiers::ALT;
     }
-    if winit_mods.super_key() {
+    if winit_mods.meta_key() {
         mods |= Modifiers::META;
     }
     mods

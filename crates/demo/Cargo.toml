@@ -14,7 +14,6 @@ yakui-app = { path = "../yakui-app" }
 
 env_logger.workspace = true
 log.workspace = true
-pollster.workspace = true
 wgpu = { workspace = true, features = ["webgl"] }
 winit.workspace = true
 
@@ -22,5 +21,4 @@ winit.workspace = true
 console_log = "1.0.0"
 console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2.84"
-wasm-bindgen-futures = "0.4.34"
 web-sys = "0.3.61"

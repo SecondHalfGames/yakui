@@ -3,14 +3,42 @@ use yakui::geometry::{UVec2, Vec2};
 use yakui_vulkan::*;
 
 use winit::{
-    event::{ElementState, Event, KeyEvent, WindowEvent},
-    event_loop::ControlFlow,
+    event::{ElementState, KeyEvent, WindowEvent},
     keyboard::{KeyCode, PhysicalKey},
 };
 use yakui::image;
 
 const MONKEY_PNG: &[u8] = include_bytes!("../../bootstrap/assets/monkey.png");
 const DOG_JPG: &[u8] = include_bytes!("../assets/dog.jpg");
+
+struct DemoApp;
+
+impl App for DemoApp {
+    fn render(&mut self, gui_state: &GuiState) {
+        use yakui::{column, label, row, text, widgets::Text, Color};
+        let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
+            WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
+            WhichImage::Dog => ("dog haha good boy", gui_state.dog),
+        };
+        column(|| {
+            row(|| {
+                label("Hello, world!");
+
+                let mut text = Text::new(48.0, "colored text!");
+                text.style.color = Color::RED;
+                text.show();
+            });
+
+            text(96.0, format!("look it is a {animal}"));
+
+            image(texture, Vec2::new(400.0, 400.0));
+        });
+    }
+}
+
+trait App {
+    fn render(&mut self, gui_state: &GuiState);
+}
 
 #[derive(Debug, Clone)]
 struct GuiState {
@@ -25,149 +53,230 @@ enum WhichImage {
     Dog,
 }
 
-/// Simple smoke test to make sure render screen properly pixel Vulkan.
-fn main() {
-    use winit::dpi::PhysicalSize;
+struct AppHandler<T: App> {
+    width: u32,
+    height: u32,
 
-    let (width, height) = (500, 500);
-    let (event_loop, window) = init_winit(width, height);
-    let mut vulkan_test = VulkanTest::new(width, height, &window);
+    app: T,
+    yak: yakui::Yakui,
 
-    let mut yak = yakui::Yakui::new();
-    yak.set_surface_size([width as f32, height as f32].into());
-    yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
-        Default::default(),
-        [width as f32, height as f32].into(),
-    ));
+    context: Option<AppContext>,
 
-    let (mut yakui_vulkan, mut gui_state) = {
-        let vulkan_context = VulkanContext::new(
-            &vulkan_test.device,
-            vulkan_test.present_queue,
-            vulkan_test.device_memory_properties,
-            vulkan_test.device_properties,
-        );
-        let options = yakui_vulkan::Options {
-            render_pass: vulkan_test.render_pass,
-            ..Default::default()
-        };
-        let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, options);
-        yakui_vulkan.set_paint_limits(&vulkan_context, &mut yak);
-        // Prepare for one frame in flight
-        yakui_vulkan.transfers_submitted();
-        let gui_state = GuiState {
-            monkey: yak.add_texture(create_yakui_texture(
-                MONKEY_PNG,
-                yakui::paint::TextureFilter::Linear,
-            )),
-            dog: yakui_vulkan.create_user_texture(
-                &vulkan_context,
-                create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
-            ),
-            which_image: WhichImage::Monkey,
-        };
-        (yakui_vulkan, gui_state)
-    };
+    // https://github.com/rust-windowing/winit/issues/3406
+    #[cfg(target_os = "ios")]
+    redraw_requested: bool,
+}
 
-    let mut winit_initializing = true;
+struct AppContext {
+    window: Box<dyn winit::window::Window>,
+    vulkan_test: VulkanTest,
+    yakui_vulkan: VulkanContext<'a>,
+    gui_state: GuiState,
+}
 
-    event_loop.set_control_flow(ControlFlow::Poll);
-    #[allow(deprecated)] // winit!! :shakes-fist:
-    let _ = event_loop.run(|event, event_loop| match event {
-        Event::WindowEvent {
-            event:
-                WindowEvent::CloseRequested
-                | WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            state: ElementState::Pressed,
-                            physical_key: PhysicalKey::Code(KeyCode::Escape),
-                            ..
-                        },
-                    ..
-                },
-            ..
-        } => event_loop.exit(),
+impl<T: App> AppHandler<T> {
+    fn new(app: T) -> Self {
+        let (width, height) = (500, 500);
 
-        Event::NewEvents(cause) => {
-            winit_initializing = cause == winit::event::StartCause::Init;
+        let mut yak = yakui::Yakui::new();
+        yak.set_surface_size([width as f32, height as f32].into());
+        yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+            Default::default(),
+            [width as f32, height as f32].into(),
+        ));
+
+        Self {
+            width: width,
+            height: height,
+
+            app: app,
+            yak: yak,
+
+            context: None,
+
+            #[cfg(target_os = "ios")]
+            redraw_requested: false,
+        }
+    }
+}
+
+impl<T: App> winit::application::ApplicationHandler for AppHandler<T> {
+    fn can_create_surfaces(&mut self, event_loop: &dyn winit::event_loop::ActiveEventLoop) {
+        if self.context.is_some() {
+            return;
         }
 
-        Event::AboutToWait => {
+        let window = event_loop
+            .create_window(
+                winit::window::WindowAttributes::default()
+                    .with_title("Yakui Vulkan - Test")
+                    .with_surface_size(winit::dpi::LogicalSize::new(
+                        f64::from(self.width),
+                        f64::from(self.height),
+                    )),
+            )
+            .unwrap();
+
+        let mut vulkan_test = VulkanTest::new(self.width, self.height, &*window);
+        let (mut yakui_vulkan, mut gui_state) = {
             let vulkan_context = VulkanContext::new(
                 &vulkan_test.device,
                 vulkan_test.present_queue,
                 vulkan_test.device_memory_properties,
                 vulkan_test.device_properties,
             );
-
-            yak.start();
-            gui(&gui_state);
-            yak.finish();
-
-            let paint = yak.paint();
-
-            let index = vulkan_test.cmd_begin();
-            unsafe {
-                yakui_vulkan.transfers_finished(&vulkan_context);
-                yakui_vulkan.transfer(paint, &vulkan_context, vulkan_test.draw_command_buffer);
-            }
-            vulkan_test.render_begin(index);
-            unsafe {
-                yakui_vulkan.paint(
-                    paint,
-                    &vulkan_context,
-                    vulkan_test.draw_command_buffer,
-                    vulkan_test.swapchain_info.surface_resolution,
-                );
-            }
-            vulkan_test.render_end(index);
+            let options = yakui_vulkan::Options {
+                render_pass: vulkan_test.render_pass,
+                ..Default::default()
+            };
+            let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, options);
+            yakui_vulkan.set_paint_limits(&vulkan_context, &mut self.yak);
+            // Prepare for one frame in flight
             yakui_vulkan.transfers_submitted();
-        }
-        Event::WindowEvent {
-            event: WindowEvent::Resized(size),
-            ..
-        } => {
-            if winit_initializing {
-                println!("Ignoring resize during init!");
-            } else {
-                let PhysicalSize { width, height } = size;
-                vulkan_test.resized(width, height);
-                yak.set_surface_size([width as f32, height as f32].into());
-                yak.set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
-                    Default::default(),
-                    [width as f32, height as f32].into(),
-                ));
-            }
-        }
-        Event::WindowEvent {
-            event: WindowEvent::ScaleFactorChanged { scale_factor, .. },
-            ..
-        } => yak.set_scale_factor(scale_factor as _),
-        Event::WindowEvent {
-            event:
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            state: ElementState::Released,
-                            physical_key: PhysicalKey::Code(KeyCode::KeyA),
-                            ..
-                        },
-                    ..
-                },
-            ..
-        } => {
-            gui_state.which_image = match &gui_state.which_image {
-                WhichImage::Monkey => WhichImage::Dog,
-                WhichImage::Dog => WhichImage::Monkey,
-            }
-        }
-        _ => (),
-    });
+            let gui_state = GuiState {
+                monkey: self.yak.add_texture(create_yakui_texture(
+                    MONKEY_PNG,
+                    yakui::paint::TextureFilter::Linear,
+                )),
+                dog: yakui_vulkan.create_user_texture(
+                    &vulkan_context,
+                    create_vulkan_texture_info(DOG_JPG, vk::Filter::LINEAR),
+                ),
+                which_image: WhichImage::Monkey,
+            };
+            (yakui_vulkan, gui_state)
+        };
 
-    unsafe {
-        yakui_vulkan.cleanup(&vulkan_test.device);
+        self.context = Some(AppContext {
+            window: window,
+            vulkan_test: vulkan_test,
+            yakui_vulkan: yakui_vulkan,
+            gui_state: gui_state,
+        });
     }
+
+    fn destroy_surfaces(&mut self, _event_loop: &dyn winit::event_loop::ActiveEventLoop) {
+        if let Some(context) = self.context.take() {
+            unsafe {
+                context.yakui_vulkan.cleanup(&context.vulkan_test.device);
+            }
+        }
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &dyn winit::event_loop::ActiveEventLoop,
+        _window_id: winit::window::WindowId,
+        event: WindowEvent,
+    ) {
+        let context = match self.context.as_mut() {
+            Some(context) => context,
+            None => return,
+        };
+
+        match event {
+            WindowEvent::RedrawRequested => {
+                // Render
+                let vulkan_context = VulkanContext::new(
+                    &context.vulkan_test.device,
+                    context.vulkan_test.present_queue,
+                    context.vulkan_test.device_memory_properties,
+                    context.vulkan_test.device_properties,
+                );
+
+                self.yak.start();
+                self.app.render(&context.gui_state);
+                self.yak.finish();
+
+                let paint = self.yak.paint();
+
+                let index = context.vulkan_test.cmd_begin();
+                unsafe {
+                    context.yakui_vulkan.transfers_finished(&vulkan_context);
+                    context.yakui_vulkan.transfer(
+                        paint,
+                        &vulkan_context,
+                        context.vulkan_test.draw_command_buffer,
+                    );
+                }
+                context.vulkan_test.render_begin(index);
+                unsafe {
+                    context.yakui_vulkan.paint(
+                        paint,
+                        &vulkan_context,
+                        context.vulkan_test.draw_command_buffer,
+                        context.vulkan_test.swapchain_info.surface_resolution,
+                    );
+                }
+                context.vulkan_test.render_end(index);
+                context.yakui_vulkan.transfers_submitted();
+
+                // Request Redraw
+                context.window.request_redraw();
+
+                #[cfg(target_os = "ios")]
+                {
+                    self.redraw_requested = true;
+                }
+            }
+            WindowEvent::SurfaceResized(size) => {
+                context.vulkan_test.resized(size.width, size.height);
+                self.yak
+                    .set_surface_size([size.width as f32, size.height as f32].into());
+                self.yak
+                    .set_unscaled_viewport(yakui_core::geometry::Rect::from_pos_size(
+                        Default::default(),
+                        [self.width as f32, self.height as f32].into(),
+                    ));
+            }
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                self.yak.set_scale_factor(scale_factor as f32)
+            }
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        state: ElementState::Released,
+                        physical_key: PhysicalKey::Code(KeyCode::KeyA),
+                        ..
+                    },
+                ..
+            } => {
+                context.gui_state.which_image = match &context.gui_state.which_image {
+                    WhichImage::Monkey => WhichImage::Dog,
+                    WhichImage::Dog => WhichImage::Monkey,
+                }
+            }
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        state: ElementState::Pressed,
+                        physical_key: PhysicalKey::Code(KeyCode::Escape),
+                        ..
+                    },
+                ..
+            } => event_loop.exit(),
+            _ => (),
+        }
+    }
+
+    fn about_to_wait(&mut self, _event_loop: &dyn winit::event_loop::ActiveEventLoop) {
+        #[cfg(target_os = "ios")]
+        if self.redraw_requested {
+            if let Some(context) = self.context.as_ref() {
+                context.window.request_redraw();
+            }
+            self.redraw_requested = false;
+        }
+    }
+}
+
+/// Simple smoke test to make sure render screen properly pixel Vulkan.
+fn main() {
+    winit::event_loop::EventLoop::new()
+        .unwrap()
+        .run_app(AppHandler::new(DemoApp))
+        .unwrap();
 }
 
 fn create_vulkan_texture_info(
@@ -210,27 +319,6 @@ fn create_yakui_texture(
     texture
 }
 
-fn gui(gui_state: &GuiState) {
-    use yakui::{column, label, row, text, widgets::Text, Color};
-    let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
-        WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
-        WhichImage::Dog => ("dog haha good boy", gui_state.dog),
-    };
-    column(|| {
-        row(|| {
-            label("Hello, world!");
-
-            let mut text = Text::new(48.0, "colored text!");
-            text.style.color = Color::RED;
-            text.show();
-        });
-
-        text(96.0, format!("look it is a {animal}"));
-
-        image(texture, Vec2::new(400.0, 400.0));
-    });
-}
-
 struct VulkanTest {
     _entry: ash::Entry,
     device: ash::Device,
@@ -264,7 +352,7 @@ struct VulkanTest {
 impl VulkanTest {
     /// Bring up all the Vulkan pomp and ceremony required to render things.
     /// Vulkan Broadly lifted from: https://github.com/ash-rs/ash/blob/0.37.2/examples/src/lib.rs
-    pub fn new(window_width: u32, window_height: u32, window: &winit::window::Window) -> Self {
+    pub fn new(window_width: u32, window_height: u32, window: &dyn winit::window::Window) -> Self {
         use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 
         let entry = unsafe { ash::Entry::load().expect("failed to load Vulkan") };
@@ -711,28 +799,6 @@ impl VulkanTest {
             }
         };
     }
-}
-
-fn init_winit(
-    window_width: u32,
-    window_height: u32,
-) -> (winit::event_loop::EventLoop<()>, winit::window::Window) {
-    use winit::{event_loop::EventLoop, window::Window};
-
-    let event_loop = EventLoop::new().unwrap();
-
-    #[allow(deprecated)]
-    let window = event_loop
-        .create_window(
-            Window::default_attributes()
-                .with_title("Yakui Vulkan - Test")
-                .with_inner_size(winit::dpi::LogicalSize::new(
-                    f64::from(window_width),
-                    f64::from(window_height),
-                )),
-        )
-        .unwrap();
-    (event_loop, window)
 }
 
 fn create_swapchain(

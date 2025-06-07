@@ -24,8 +24,8 @@ struct InitState {
 
 impl YakuiWinit {
     #[allow(clippy::new_without_default)]
-    pub fn new(window: &Window) -> Self {
-        let size = window.inner_size();
+    pub fn new(window: &dyn Window) -> Self {
+        let size = window.surface_size();
         let scale = window.scale_factor() as f32;
 
         Self {
@@ -70,7 +70,7 @@ impl YakuiWinit {
         }
 
         match event {
-            WindowEvent::Resized(size) => {
+            WindowEvent::SurfaceResized(size) => {
                 let size = Vec2::new(size.width as f32, size.height as f32);
                 state.set_surface_size(size);
 
@@ -87,18 +87,33 @@ impl YakuiWinit {
 
                 false
             }
-            WindowEvent::CursorMoved { position, .. } => {
+
+            WindowEvent::PointerEntered {
+                position,
+                primary: true,
+                ..
+            } => {
                 let pos = Vec2::new(position.x as f32, position.y as f32);
                 state.handle_event(Event::CursorMoved(Some(pos)))
             }
-            WindowEvent::CursorLeft { .. } => state.handle_event(Event::CursorMoved(None)),
+            WindowEvent::PointerMoved {
+                position,
+                primary: true,
+                ..
+            } => {
+                let pos = Vec2::new(position.x as f32, position.y as f32);
+                state.handle_event(Event::CursorMoved(Some(pos)))
+            }
+            WindowEvent::PointerLeft { primary: true, .. } => {
+                state.handle_event(Event::CursorMoved(None))
+            }
 
-            WindowEvent::MouseInput {
+            WindowEvent::PointerButton {
                 button,
                 state: button_state,
                 ..
             } => {
-                let button = match button {
+                let button = match button.mouse_button() {
                     WinitMouseButton::Left => MouseButton::One,
                     WinitMouseButton::Right => MouseButton::Two,
                     WinitMouseButton::Middle => MouseButton::Three,
