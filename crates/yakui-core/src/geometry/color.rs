@@ -92,6 +92,11 @@ impl Color {
     pub fn lerp(&self, other: &Color, ratio: f32) -> Self {
         Self::from_linear(self.to_linear().lerp(other.to_linear(), ratio))
     }
+
+    /// Turn the color into an array.
+    pub fn to_array(&self) -> [u8; 4] {
+        [self.r, self.g, self.b, self.a]
+    }
 }
 
 macro_rules! builtin_colors {
