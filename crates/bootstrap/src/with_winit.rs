@@ -138,15 +138,17 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
                 // The example graphics abstraction calls yak.paint() to get
                 // access to the underlying PaintDom, which holds all the state
                 // about how to paint widgets.
-                self.graphics.as_mut().unwrap().paint(&mut self.yak, {
-                    let bg = yakui::colors::BACKGROUND_1.to_linear();
-                    wgpu::Color {
-                        r: bg.x.into(),
-                        g: bg.y.into(),
-                        b: bg.z.into(),
-                        a: 1.0,
-                    }
-                });
+                if let Some(graphics) = self.graphics.as_mut() {
+                    graphics.paint(&mut self.yak, {
+                        let bg = yakui::colors::BACKGROUND_1.to_linear();
+                        wgpu::Color {
+                            r: bg.x.into(),
+                            g: bg.y.into(),
+                            b: bg.z.into(),
+                            a: 1.0,
+                        }
+                    });
+                }
 
                 profiling::finish_frame!();
 
@@ -178,6 +180,8 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
             }
 
             WindowEvent::CloseRequested => {
+                self.graphics = None;
+
                 event_loop.exit();
             }
 
