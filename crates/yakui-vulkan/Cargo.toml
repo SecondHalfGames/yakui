@@ -20,4 +20,4 @@ ash = { version = "0.38", default-features = false, features = ["loaded"] }
 ash-window = "0.13"
 image = { workspace = true, default-features = false, features = ["jpeg", "png"] }
 raw-window-handle = "0.6.0"
-winit = "0.30.0"
+winit.workspace = true

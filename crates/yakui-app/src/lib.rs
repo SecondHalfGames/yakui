@@ -2,9 +2,25 @@
 
 mod multisampling;
 
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::Arc;
+
+use futures::future::FutureExt;
+
 use winit::{dpi::PhysicalSize, event::WindowEvent, event_loop::ActiveEventLoop, window::Window};
 
 use multisampling::Multisampling;
+
+pub struct YakuiApp {
+    pub window: Arc<dyn Window>,
+    winit: yakui_winit::YakuiWinit,
+
+    graphics: GraphicsState,
+
+    /// Tracks whether winit is still initializing
+    pub is_init: bool,
+}
 
 /// A helper for setting up rendering with winit and wgpu
 pub struct Graphics {
@@ -18,15 +34,97 @@ pub struct Graphics {
     sample_count: u32,
     multisampling: Multisampling,
 
-    window: yakui_winit::YakuiWinit,
     pub renderer: yakui_wgpu::YakuiWgpu,
-    /// Tracks whether winit is still initializing
-    pub is_init: bool,
+}
+
+enum GraphicsState {
+    Pending(Pin<Box<dyn Future<Output = Graphics>>>),
+    Ready(Graphics),
+}
+
+impl YakuiApp {
+    pub fn new(window: Box<dyn Window>, sample_count: u32) -> Self {
+        let window = Arc::from(window);
+
+        // yakui_winit processes winit events and applies them to our yakui
+        // state.
+        let winit = yakui_winit::YakuiWinit::new(&*window);
+
+        let graphics =
+            GraphicsState::Pending(Box::pin(Graphics::new(window.clone(), sample_count)));
+
+        Self {
+            window,
+            winit,
+
+            graphics,
+
+            is_init: true,
+        }
+    }
+
+    pub fn winit_mut(&mut self) -> &mut yakui_winit::YakuiWinit {
+        &mut self.winit
+    }
+
+    pub fn graphics_mut(&mut self) -> Option<&mut Graphics> {
+        // Check if Graphics is ready.
+        if let GraphicsState::Pending(task) = &mut self.graphics {
+            if let Some(graphics) = task.now_or_never() {
+                self.graphics = GraphicsState::Ready(graphics);
+            }
+        }
+
+        // Return Graphics if ready.
+        match &mut self.graphics {
+            GraphicsState::Ready(graphics) => Some(graphics),
+            _ => None,
+        }
+    }
+
+    pub fn handle_window_event(
+        &mut self,
+        yak: &mut yakui::Yakui,
+        event: &WindowEvent,
+        event_loop: &dyn ActiveEventLoop,
+    ) -> bool {
+        // yakui_winit will return whether it handled an event. This means that
+        // yakui believes it should handle that event exclusively, like if a
+        // button in the UI was clicked.
+        if self.winit.handle_window_event(yak, event) {
+            return true;
+        }
+
+        match event {
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
+            }
+
+            WindowEvent::SurfaceResized(size) => {
+                // Ignore any resize events that happen during Winit's
+                // initialization in order to avoid racing the wgpu swapchain
+                // and causing issues.
+                //
+                // https://github.com/rust-windowing/winit/issues/2094
+                if self.is_init {
+                    return false;
+                }
+
+                if let Some(graphics) = self.graphics_mut() {
+                    graphics.resize(*size);
+                }
+            }
+
+            _ => (),
+        }
+
+        false
+    }
 }
 
 impl Graphics {
-    pub async fn new(window: &Window, sample_count: u32) -> Self {
-        let mut size = window.inner_size();
+    pub async fn new(window: Arc<dyn Window>, sample_count: u32) -> Self {
+        let mut size = window.surface_size();
 
         // FIXME: On web, we're receiving (0, 0) as the initial size of the
         // window, which makes wgpu upset. If we hit that case, let's just make
@@ -85,10 +183,6 @@ impl Graphics {
         // wgpu.
         let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue);
 
-        // yakui_winit processes winit events and applies them to our yakui
-        // state.
-        let window = yakui_winit::YakuiWinit::new(window);
-
         Self {
             device,
             queue,
@@ -101,17 +195,11 @@ impl Graphics {
             multisampling: Multisampling::new(),
 
             renderer,
-            window,
-            is_init: true,
         }
     }
 
     pub fn renderer_mut(&mut self) -> &mut yakui_wgpu::YakuiWgpu {
         &mut self.renderer
-    }
-
-    pub fn window_mut(&mut self) -> &mut yakui_winit::YakuiWinit {
-        &mut self.window
     }
 
     pub fn surface_format(&self) -> wgpu::TextureFormat {
@@ -173,42 +261,5 @@ impl Graphics {
 
         self.queue.submit([clear, paint_yak]);
         output.present();
-    }
-
-    pub fn handle_window_event(
-        &mut self,
-        yak: &mut yakui::Yakui,
-        event: &WindowEvent,
-        event_loop: &ActiveEventLoop,
-    ) -> bool {
-        // yakui_winit will return whether it handled an event. This means that
-        // yakui believes it should handle that event exclusively, like if a
-        // button in the UI was clicked.
-        if self.window.handle_window_event(yak, event) {
-            return true;
-        }
-
-        match event {
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
-            }
-
-            WindowEvent::Resized(size) => {
-                // Ignore any resize events that happen during Winit's
-                // initialization in order to avoid racing the wgpu swapchain
-                // and causing issues.
-                //
-                // https://github.com/rust-windowing/winit/issues/2094
-                if self.is_init {
-                    return false;
-                }
-
-                self.resize(*size);
-            }
-
-            _ => (),
-        }
-
-        false
     }
 }
