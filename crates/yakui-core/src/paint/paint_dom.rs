@@ -175,6 +175,7 @@ impl PaintDom {
         let context = PaintContext {
             dom,
             layout,
+            clip: self.current_clip,
             paint: self,
         };
         let node = dom.get(id).unwrap();
