@@ -6,13 +6,15 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-wgpu.workspace = true
+bytemuck = { workspace = true, features = ["derive"] }
 glam = { workspace = true, features = ["bytemuck"] }
-bytemuck = { version = "1.12.1", features = ["derive"] }
-thunderdome = "0.6.0"
-profiling = "1.0.6"
+thunderdome.workspace = true
+
+wgpu.workspace = true
+
+profiling.workspace = true

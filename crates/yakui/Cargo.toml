@@ -8,7 +8,6 @@ edition = "2021"
 
 [features]
 default = ["default-fonts"]
-
 default-fonts = ["yakui-widgets/default-fonts"]
 
 [dependencies]
