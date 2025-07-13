@@ -9,7 +9,7 @@ use glam::Vec2;
 use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
-use crate::geometry::{Constraints, FlexFit};
+use crate::geometry::{Constraints, FlexFit, Rect};
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::navigation::NavDirection;
@@ -48,6 +48,7 @@ pub struct PaintContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
     pub paint: &'dom mut PaintDom,
+    pub clip: Rect,
 }
 
 impl PaintContext<'_> {
