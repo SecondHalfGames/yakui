@@ -4,12 +4,24 @@ members = ["crates/*"]
 default-members = ["crates/*"]
 
 [workspace.dependencies]
-ash = { version = "0.38", default-features = false, features = ["std"] }
-sdl3 = "0.14.0"
 env_logger = "0.11.8"
-glam = "0.30.0"
 log = "0.4.17"
+bytemuck = "1.12.1"
+glam = "0.30.0"
 pollster = "0.4.0"
-wgpu = "25.0.0"
-winit = "0.30.0"
+thunderdome = "0.6.0"
+smallvec = "1.9.0"
 image = { version = "0.25.6", default-features = false }
+anyhow = "1.0.58"
+insta = "1.15.0"
+
+wgpu = "25.0.0"
+ash = { version = "0.38.0", default-features = false, features = ["std"] }
+ash-window = "0.13.0"
+
+sdl3 = "0.14.0"
+winit = { version = "0.30.0", default-features = false }
+raw-window-handle = "0.6.0"
+
+profiling = "1.0.17"
+tracy-client = "0.18.0"

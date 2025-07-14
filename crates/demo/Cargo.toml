@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 yakui = { path = "../yakui" }
 yakui-wgpu = { path = "../yakui-wgpu" }
@@ -15,7 +13,9 @@ yakui-app = { path = "../yakui-app" }
 env_logger.workspace = true
 log.workspace = true
 pollster.workspace = true
+
 wgpu = { workspace = true, features = ["webgl"] }
+
 winit.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

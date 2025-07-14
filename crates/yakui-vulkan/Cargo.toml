@@ -9,15 +9,18 @@ edition = "2021"
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-ash = { version = "0.38", default-features = false, features = ["std"] }
-bytemuck = "1.13.0"
-thunderdome = "0.6.0"
+bytemuck.workspace = true
+thunderdome.workspace = true
+
+ash.workspace = true
 
 [dev-dependencies]
 yakui = { path = "../yakui", version = "0.3.0" }
 
-ash = { version = "0.38", default-features = false, features = ["loaded"] }
-ash-window = "0.13"
-image = { workspace = true, default-features = false, features = ["jpeg", "png"] }
-raw-window-handle = "0.6.0"
-winit = "0.30.0"
+image = { workspace = true, features = ["jpeg", "png"] }
+
+ash = { workspace = true, features = ["loaded"] }
+ash-window.workspace = true
+
+winit.workspace = true
+raw-window-handle.workspace = true
