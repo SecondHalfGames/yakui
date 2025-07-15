@@ -157,6 +157,7 @@ impl Graphics {
                 label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: surface.color_attachment,
+                    depth_slice: None,
                     resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(bg),
