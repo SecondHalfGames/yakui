@@ -342,7 +342,7 @@ impl UploadPhase {
         if self
             .buffers
             .last()
-            .map_or(true, |(buffer, fill)| fill + data.len() > buffer.capacity())
+            .is_none_or(|(buffer, fill)| fill + data.len() > buffer.capacity())
         {
             self.buffers.push((
                 Buffer::with_capacity(

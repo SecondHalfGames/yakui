@@ -15,14 +15,14 @@ default-fonts = []
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-log = "0.4.25"
+cosmic-text = { version = "0.14.2", default-features = false, features = [
+    "std",
+    "swash",
+] }
 sys-locale = "0.3.1"
-thunderdome = "0.6.0"
 
-[dependencies.cosmic-text]
-version = "0.14.2"
-default-features = false
-features = ["std", "swash"]
+log.workspace = true
+thunderdome.workspace = true
 
 [target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))'.dependencies]
 arboard = "3.4.1"
@@ -30,5 +30,3 @@ arboard = "3.4.1"
 [dev-dependencies]
 yakui = { path = "../yakui" }
 yakui-test = { path = "../yakui-test" }
-
-insta = "1.15.0"

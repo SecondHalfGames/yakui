@@ -17,7 +17,7 @@ pub use crate::common::*;
 /// Bootstrap and start a new app, using the given function as the body of the
 /// function, which runs every frame.
 pub fn start(body: impl ExampleBody) {
-    #[cfg(feature = "profile")]
+    #[cfg(feature = "tracy-client")]
     let _client = tracy_client::Client::start();
 
     init_logging();

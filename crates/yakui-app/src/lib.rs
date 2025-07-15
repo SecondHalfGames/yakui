@@ -127,8 +127,8 @@ impl Graphics {
         }
     }
 
-    #[cfg_attr(feature = "profiling", profiling::function)]
-    pub fn paint(&mut self, yak: &mut yakui_core::Yakui, bg: wgpu::Color) {
+    #[profiling::function]
+    pub fn paint(&mut self, yak: &mut yakui::Yakui, bg: wgpu::Color) {
         let output = match self.surface.get_current_texture() {
             Ok(output) => output,
             Err(_) => return,
