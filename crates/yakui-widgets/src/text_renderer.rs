@@ -57,7 +57,7 @@ impl InnerAtlas {
     }
 
     fn ensure_texture(&mut self, paint: &mut PaintDom) -> Option<ManagedTextureId> {
-        let texture_size = paint.limits()?.max_texture_size_2d;
+        let texture_size = paint.limits()?.max_texture_size_2d.min(4096);
 
         if self.texture.is_none() {
             let mut texture = Texture::new(
