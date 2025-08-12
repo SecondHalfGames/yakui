@@ -127,6 +127,11 @@ impl Yakui {
         &self.layout
     }
 
+    /// Returns access to the state's Paint DOM.
+    pub fn paint_dom(&self) -> &PaintDom {
+        &self.paint
+    }
+
     /// Sets the paint limits, should be called once by rendering backends.
     pub fn set_paint_limit(&mut self, limits: PaintLimits) {
         self.paint.set_limit(limits)
