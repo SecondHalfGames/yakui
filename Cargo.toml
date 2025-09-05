@@ -23,5 +23,5 @@ sdl3 = "0.14.0"
 winit = { version = "0.30.0", default-features = false }
 raw-window-handle = "0.6.0"
 
-profiling = "1.0.17"
+profiling = "1.0.16"
 tracy-client = "0.18.0"
