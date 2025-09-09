@@ -15,6 +15,6 @@ yakui-wgpu = { path = "../yakui-wgpu", version = "0.3.0" }
 
 wgpu.workspace = true
 
-winit = { workspace = true }
+winit = { workspace = true, features = ["rwh_06"] }
 
 profiling.workspace = true
