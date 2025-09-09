@@ -50,6 +50,7 @@ impl Slider {
 
 #[derive(Debug)]
 pub struct SliderResponse {
+    pub confirmed: bool,
     pub value: Option<f64>,
 }
 
@@ -57,6 +58,7 @@ pub struct SliderResponse {
 pub struct SliderWidget {
     props: Slider,
     rect: Cell<Option<Rect>>,
+    dragging: bool,
 }
 
 impl Widget for SliderWidget {
@@ -67,6 +69,7 @@ impl Widget for SliderWidget {
         Self {
             props: Slider::new(0.0, 0.0, 1.0),
             rect: Cell::new(None),
+            dragging: false,
         }
     }
 
@@ -77,6 +80,9 @@ impl Widget for SliderWidget {
         let res = draggable(|| {
             colored_circle(KNOB_COLOR, KNOB_SIZE);
         });
+
+        let confirmed = self.dragging && res.dragging.is_none();
+        self.dragging = res.dragging.is_some();
 
         let mut value = self.props.value;
 
@@ -94,9 +100,15 @@ impl Widget for SliderWidget {
         }
 
         if value != self.props.value {
-            SliderResponse { value: Some(value) }
+            SliderResponse {
+                value: Some(value),
+                confirmed,
+            }
         } else {
-            SliderResponse { value: None }
+            SliderResponse {
+                value: None,
+                confirmed,
+            }
         }
     }
 
