@@ -20,11 +20,19 @@ pub fn dom() -> Ref<'static, Dom> {
     borrow(&CURRENT_DOM)
 }
 
-pub(crate) fn bind_dom(dom: &Dom) {
+/// Binds a DOM on the current thread.
+///
+/// # Panics
+/// Panics if there is already a DOM being updated on this thread.
+pub fn bind_dom(dom: &Dom) {
     bind(&CURRENT_DOM, dom.clone());
 }
 
-pub(crate) fn unbind_dom() {
+/// Unbinds the DOM on the current thread.
+///
+/// # Panics
+/// Panics if there is no DOM currently being updated on this thread.
+pub fn unbind_dom() {
     unbind(&CURRENT_DOM);
 }
 
