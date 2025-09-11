@@ -34,7 +34,7 @@ impl BorderRadius {
     }
 
     pub fn new(top_left: f32, top_right: f32, bottom_left: f32, bottom_right: f32) -> Self {
-        Self::from((top_left, top_right, bottom_left, bottom_right))
+        Self { top_left, top_right, bottom_left, bottom_right }
     }
 
     pub fn top(radius: f32) -> Self {
