@@ -93,7 +93,7 @@ impl Button {
 
         let hover_style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3.adjust(1.2),
-            border: Some(Border::new(Color::WHITE.adjust(0.8), 1.0)),
+            border: Some(Border::new(Color::WHITE.adjust(0.75), 1.0)),
             ..Default::default()
         };
 
