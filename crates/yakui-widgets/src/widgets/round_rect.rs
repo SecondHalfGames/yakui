@@ -38,50 +38,6 @@ impl RoundRect {
         self
     }
 
-    pub fn top_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left = radius;
-        self.radius.top_right = radius;
-        self
-    }
-
-    pub fn bottom_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_left = radius;
-        self.radius.bottom_right = radius;
-        self
-    }
-
-    pub fn left_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left = radius;
-        self.radius.bottom_left = radius;
-        self
-    }
-
-    pub fn right_radius(mut self, radius: f32) -> Self {
-        self.radius.top_right = radius;
-        self.radius.bottom_right = radius;
-        self
-    }
-
-    pub fn top_left_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left = radius;
-        self
-    }
-
-    pub fn top_right_radius(mut self, radius: f32) -> Self {
-        self.radius.top_right = radius;
-        self
-    }
-
-    pub fn bottom_left_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_left = radius;
-        self
-    }
-
-    pub fn bottom_right_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_right = radius;
-        self
-    }
-
     #[track_caller]
     pub fn show(self) -> Response<RoundRectResponse> {
         widget::<RoundRectWidget>(self)
@@ -130,9 +86,8 @@ impl Widget for RoundRectWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, 0.0);
+        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
         rect.color = self.props.color;
-        rect.radius = self.props.radius;
 
         rect.add(ctx.paint);
 

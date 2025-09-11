@@ -113,30 +113,6 @@ impl Button {
         self
     }
 
-    pub fn top_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_left = radius;
-        self.border_radius.top_right = radius;
-        self
-    }
-
-    pub fn bottom_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.bottom_left = radius;
-        self.border_radius.bottom_right = radius;
-        self
-    }
-
-    pub fn left_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_left = radius;
-        self.border_radius.bottom_left = radius;
-        self
-    }
-
-    pub fn right_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_right = radius;
-        self.border_radius.bottom_right = radius;
-        self
-    }
-
     #[track_caller]
     pub fn show(self) -> Response<ButtonResponse> {
         widget::<ButtonWidget>(self)
@@ -192,8 +168,7 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let mut container = RoundRect::new(0.0);
-        container.radius = self.props.border_radius;
+        let mut container = RoundRect::new(self.props.border_radius);
         container.color = color;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
