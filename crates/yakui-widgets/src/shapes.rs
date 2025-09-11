@@ -4,7 +4,7 @@ use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 use yakui_core::TextureId;
 
-use crate::border_radius::BorderRadius;
+use crate::border::{Border, BorderRadius};
 
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
@@ -169,6 +169,7 @@ pub struct RoundedRectangle {
     pub color: Color,
     pub texture: Option<(TextureId, Rect)>,
     pub radius: BorderRadius,
+    pub border: Option<Border>,
 }
 
 impl RoundedRectangle {
@@ -178,6 +179,7 @@ impl RoundedRectangle {
             color: Color::WHITE,
             texture: None,
             radius: radius.into(),
+            border: None,
         }
     }
 
@@ -339,8 +341,33 @@ impl RoundedRectangle {
             3.0 * TAU / 4.0,
         );
 
+        if let Some(border) = &self.border {
+            self.draw_border(output, border);
+        }
+
         let mut mesh = PaintMesh::new(vertices, indices);
         mesh.texture = self.texture;
         output.add_mesh(mesh);
+    }
+
+    // Just draws a larger rectangle behind the main one... probably has issues with opacity?
+    fn draw_border(&self, output: &mut PaintDom, border: &Border) {
+        let width = border.width;
+
+        let outer_rect = Rect::from_pos_size(
+            self.rect.pos() - Vec2::new(width, width),
+            self.rect.size() + Vec2::new(width * 2.0, width * 2.0),
+        );
+
+        let outer_radius = BorderRadius {
+            top_left: self.radius.top_left + width,
+            top_right: self.radius.top_right + width,
+            bottom_left: self.radius.bottom_left + width,
+            bottom_right: self.radius.bottom_right + width,
+        };
+
+        let mut outer_shape = RoundedRectangle::new(outer_rect, outer_radius);
+        outer_shape.color = border.color;
+        outer_shape.add(output);
     }
 }

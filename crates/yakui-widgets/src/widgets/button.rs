@@ -6,7 +6,7 @@ use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
-use crate::border_radius::BorderRadius;
+use crate::border::BorderRadius;
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
