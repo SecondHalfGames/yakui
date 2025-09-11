@@ -113,17 +113,6 @@ impl Button {
         self
     }
 
-    pub fn border_radii(
-        mut self,
-        top_left: f32,
-        top_right: f32,
-        bottom_left: f32,
-        bottom_right: f32,
-    ) -> Self {
-        self.border_radius = BorderRadius::from((top_left, top_right, bottom_left, bottom_right));
-        self
-    }
-
     pub fn top_border_radius(mut self, radius: f32) -> Self {
         self.border_radius.top_left = radius;
         self.border_radius.top_right = radius;
