@@ -253,49 +253,42 @@ impl RoundedRectangle {
             ),
         );
 
-        // Middle
-        let top_height = top_left.max(top_right);
-        let bottom_height = bottom_left.max(bottom_right);
+        // Left
         rectangle(
-            Vec2::new(rect.pos().x, rect.pos().y + top_height),
-            Vec2::new(rect.max().x, rect.max().y - bottom_height),
+            Vec2::new(rect.pos().x, rect.pos().y + top_left),
+            Vec2::new(
+                rect.pos().x + bottom_left.max(top_left),
+                rect.max().y - bottom_left,
+            ),
         );
 
-        // Left gap
-        if top_left < top_height {
-            rectangle(
-                Vec2::new(rect.pos().x, rect.pos().y + top_left),
-                Vec2::new(rect.pos().x + top_left, rect.pos().y + top_height),
-            );
-        }
+        // Center
+        rectangle(
+            Vec2::new(
+                rect.pos().x + bottom_left.max(top_left),
+                rect.pos().y + top_left.max(top_right),
+            ),
+            Vec2::new(
+                rect.max().x - bottom_right.max(top_right),
+                rect.max().y - bottom_left.max(bottom_right),
+            ),
+        );
 
-        // Right gap
-        if top_right < top_height {
-            rectangle(
-                Vec2::new(rect.max().x - top_right, rect.pos().y + top_right),
-                Vec2::new(rect.max().x, rect.pos().y + top_height),
-            );
-        }
-
-        // Bottom left gap
-        if bottom_left < bottom_height {
-            rectangle(
-                Vec2::new(rect.pos().x, rect.max().y - bottom_height),
-                Vec2::new(rect.pos().x + bottom_left, rect.max().y - bottom_left),
-            );
-        }
-
-        // Bottom right gap
-        if bottom_right < bottom_height {
-            rectangle(
-                Vec2::new(rect.max().x - bottom_right, rect.max().y - bottom_height),
-                Vec2::new(rect.max().x, rect.max().y - bottom_right),
-            );
-        }
+        // Right
+        rectangle(
+            Vec2::new(
+                rect.max().x - bottom_right.max(top_right),
+                rect.pos().y + top_right,
+            ),
+            Vec2::new(rect.max().x, rect.max().y - bottom_right),
+        );
 
         // Bottom
         rectangle(
-            Vec2::new(rect.pos().x + bottom_left, rect.max().y - bottom_height),
+            Vec2::new(
+                rect.pos().x + bottom_left,
+                rect.max().y - bottom_left.max(bottom_right),
+            ),
             Vec2::new(rect.max().x - bottom_right, rect.max().y),
         );
 
