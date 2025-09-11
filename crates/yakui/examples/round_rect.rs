@@ -1,6 +1,7 @@
 use yakui::{center, column, row, spacer, text, Color, Vec2};
 
 use bootstrap::ExampleState;
+use yakui_widgets::border_radius::BorderRadius;
 
 pub fn run(state: &mut ExampleState) {
     center(|| {
@@ -33,7 +34,7 @@ pub fn run(state: &mut ExampleState) {
             spacer(1);
 
             row(|| {
-                let mut rect = yakui::widgets::RoundRect::new(0.0).top_radius(15.0);
+                let mut rect = yakui::widgets::RoundRect::new(BorderRadius::top(15.0));
                 rect.min_size = Vec2::new(100.0, 60.0);
                 rect.color = Color::RED;
                 rect.show_children(|| {
@@ -44,7 +45,7 @@ pub fn run(state: &mut ExampleState) {
 
                 spacer(1);
 
-                let mut rect = yakui::widgets::RoundRect::new(0.0).right_radius(15.0);
+                let mut rect = yakui::widgets::RoundRect::new(BorderRadius::right(15.0));
                 rect.min_size = Vec2::new(100.0, 60.0);
                 rect.color = Color::GREEN;
                 rect.show_children(|| {
@@ -57,9 +58,10 @@ pub fn run(state: &mut ExampleState) {
             spacer(1);
 
             row(|| {
-                let mut rect = yakui::widgets::RoundRect::new(0.0)
-                    .radius(10.0)
-                    .top_left_radius(30.0);
+                let mut radius = BorderRadius::uniform(10.0);
+                radius.top_left = 30.0;
+
+                let mut rect = yakui::widgets::RoundRect::new(radius);
                 rect.min_size = Vec2::new(100.0, 60.0);
                 rect.color = Color::rgb(255, 0, 255);
                 rect.show_children(|| {
