@@ -2,6 +2,7 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::border_radius::BorderRadius;
 use crate::util::{widget, widget_children};
 use crate::{auto_builders, shapes};
 
@@ -15,76 +16,69 @@ Responds with [RoundRectResponse].
 pub struct RoundRect {
     pub color: Color,
     pub min_size: Vec2,
-    pub top_left_radius: f32,
-    pub top_right_radius: f32,
-    pub bottom_left_radius: f32,
-    pub bottom_right_radius: f32,
+    pub radius: BorderRadius,
 }
 
 auto_builders!(RoundRect {
     color: Color,
     min_size: Vec2,
-    top_left_radius: f32,
-    top_right_radius: f32,
-    bottom_left_radius: f32,
-    bottom_right_radius: f32,
 });
 
 impl RoundRect {
-    pub fn new(radius: f32) -> Self {
+    pub fn new<T: Into<BorderRadius>>(radius: T) -> Self {
         Self {
             color: Color::WHITE,
             min_size: Vec2::ZERO,
-            top_left_radius: radius,
-            top_right_radius: radius,
-            bottom_left_radius: radius,
-            bottom_right_radius: radius,
+            radius: radius.into(),
         }
     }
 
-    pub fn radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.top_right_radius = radius;
-        self.bottom_left_radius = radius;
-        self.bottom_right_radius = radius;
-        self
-    }
-
-    pub fn radii(
-        mut self,
-        top_left: f32,
-        top_right: f32,
-        bottom_left: f32,
-        bottom_right: f32,
-    ) -> Self {
-        self.top_left_radius = top_left;
-        self.top_right_radius = top_right;
-        self.bottom_left_radius = bottom_left;
-        self.bottom_right_radius = bottom_right;
+    pub fn radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
+        self.radius = radius.into();
         self
     }
 
     pub fn top_radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.top_right_radius = radius;
+        self.radius.top_left_radius = radius;
+        self.radius.top_right_radius = radius;
         self
     }
 
     pub fn bottom_radius(mut self, radius: f32) -> Self {
-        self.bottom_left_radius = radius;
-        self.bottom_right_radius = radius;
+        self.radius.bottom_left_radius = radius;
+        self.radius.bottom_right_radius = radius;
         self
     }
 
     pub fn left_radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.bottom_left_radius = radius;
+        self.radius.top_left_radius = radius;
+        self.radius.bottom_left_radius = radius;
         self
     }
 
     pub fn right_radius(mut self, radius: f32) -> Self {
-        self.top_right_radius = radius;
-        self.bottom_right_radius = radius;
+        self.radius.top_right_radius = radius;
+        self.radius.bottom_right_radius = radius;
+        self
+    }
+
+    pub fn top_left_radius(mut self, radius: f32) -> Self {
+        self.radius.top_left_radius = radius;
+        self
+    }
+
+    pub fn top_right_radius(mut self, radius: f32) -> Self {
+        self.radius.top_right_radius = radius;
+        self
+    }
+
+    pub fn bottom_left_radius(mut self, radius: f32) -> Self {
+        self.radius.bottom_left_radius = radius;
+        self
+    }
+
+    pub fn bottom_right_radius(mut self, radius: f32) -> Self {
+        self.radius.bottom_right_radius = radius;
         self
     }
 
@@ -138,11 +132,7 @@ impl Widget for RoundRectWidget {
 
         let mut rect = shapes::RoundedRectangle::new(layout_node.rect, 0.0);
         rect.color = self.props.color;
-
-        rect.top_left_radius = self.props.top_left_radius;
-        rect.top_right_radius = self.props.top_right_radius;
-        rect.bottom_left_radius = self.props.bottom_left_radius;
-        rect.bottom_right_radius = self.props.bottom_right_radius;
+        rect.radius = self.props.radius;
 
         rect.add(ctx.paint);
 

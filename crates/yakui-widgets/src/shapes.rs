@@ -4,6 +4,8 @@ use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 use yakui_core::TextureId;
 
+use crate::border_radius::BorderRadius;
+
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
         // Top
@@ -166,32 +168,26 @@ pub struct RoundedRectangle {
     pub rect: Rect,
     pub color: Color,
     pub texture: Option<(TextureId, Rect)>,
-    pub top_left_radius: f32,
-    pub top_right_radius: f32,
-    pub bottom_left_radius: f32,
-    pub bottom_right_radius: f32,
+    pub radius: BorderRadius,
 }
 
 impl RoundedRectangle {
-    pub fn new(rect: Rect, radius: f32) -> Self {
+    pub fn new<T: Into<BorderRadius>>(rect: Rect, radius: T) -> Self {
         Self {
             rect,
             color: Color::WHITE,
             texture: None,
-            top_left_radius: radius,
-            top_right_radius: radius,
-            bottom_left_radius: radius,
-            bottom_right_radius: radius,
+            radius: radius.into(),
         }
     }
 
     pub fn add(&self, output: &mut PaintDom) {
         let rect = self.rect;
         let (top_left_radius, top_right_radius, bottom_left_radius, bottom_right_radius) = (
-            self.top_left_radius,
-            self.top_right_radius,
-            self.bottom_left_radius,
-            self.bottom_right_radius,
+            self.radius.top_left_radius,
+            self.radius.top_right_radius,
+            self.radius.bottom_left_radius,
+            self.radius.bottom_right_radius,
         );
 
         // We are not prepared to let a corner's radius be bigger than a side's

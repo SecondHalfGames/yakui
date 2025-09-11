@@ -20,7 +20,7 @@ pub fn run(state: &mut ExampleState) {
 
                 spacer(1);
 
-                let mut rect = yakui::widgets::RoundRect::new(0.0).radii(20.0, 5.0, 20.0, 5.0);
+                let mut rect = yakui::widgets::RoundRect::new((20.0, 5.0, 20.0, 5.0));
                 rect.min_size = Vec2::new(100.0, 60.0);
                 rect.color = Color::YELLOW;
                 rect.show_children(|| {
@@ -71,12 +71,8 @@ pub fn run(state: &mut ExampleState) {
                 spacer(1);
 
                 let animated_radius = 5.0 + 15.0 * (state.time * 2.0).sin().abs();
-                let mut rect = yakui::widgets::RoundRect::new(0.0).radii(
-                    animated_radius,
-                    5.0,
-                    animated_radius,
-                    5.0,
-                );
+                let mut rect =
+                    yakui::widgets::RoundRect::new((animated_radius, 5.0, animated_radius, 5.0));
                 rect.min_size = Vec2::new(100.0, 60.0);
                 rect.color = Color::BLUE;
                 rect.show_children(|| {

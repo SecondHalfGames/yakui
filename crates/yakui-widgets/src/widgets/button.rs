@@ -6,12 +6,14 @@ use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
+use crate::border_radius::BorderRadius;
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
 use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
+use crate::shapes;
 
 /**
 A button containing some text.
@@ -32,10 +34,7 @@ pub struct Button {
     pub text: Cow<'static, str>,
     pub alignment: Alignment,
     pub padding: Pad,
-    pub top_left_radius: f32,
-    pub top_right_radius: f32,
-    pub bottom_left_radius: f32,
-    pub bottom_right_radius: f32,
+    pub border_radius: BorderRadius,
     pub style: DynamicButtonStyle,
     pub hover_style: DynamicButtonStyle,
     pub down_style: DynamicButtonStyle,
@@ -45,10 +44,6 @@ auto_builders!(Button {
     text: Cow<'static, str>,
     alignment: Alignment,
     padding: Pad,
-    top_left_radius: f32,
-    top_right_radius: f32,
-    bottom_left_radius: f32,
-    bottom_right_radius: f32,
     style: DynamicButtonStyle,
     hover_style: DynamicButtonStyle,
     down_style: DynamicButtonStyle,
@@ -79,10 +74,7 @@ impl Button {
             text: text.into(),
             alignment: Alignment::CENTER,
             padding: Pad::ZERO,
-            top_left_radius: 0.0,
-            top_right_radius: 0.0,
-            bottom_left_radius: 0.0,
-            bottom_right_radius: 0.0,
+            border_radius: BorderRadius::default(),
             style: DynamicButtonStyle::default(),
             hover_style: DynamicButtonStyle::default(),
             down_style: DynamicButtonStyle::default(),
@@ -109,21 +101,15 @@ impl Button {
             text: text.into(),
             alignment: Alignment::CENTER,
             padding: Pad::balanced(20.0, 10.0),
-            top_left_radius: 6.0,
-            top_right_radius: 6.0,
-            bottom_left_radius: 6.0,
-            bottom_right_radius: 6.0,
+            border_radius: 6.0.into(),
             style,
             hover_style,
             down_style,
         }
     }
 
-    pub fn border_radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.top_right_radius = radius;
-        self.bottom_left_radius = radius;
-        self.bottom_right_radius = radius;
+    pub fn border_radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
+        self.border_radius = radius.into();
         self
     }
 
@@ -134,34 +120,31 @@ impl Button {
         bottom_left: f32,
         bottom_right: f32,
     ) -> Self {
-        self.top_left_radius = top_left;
-        self.top_right_radius = top_right;
-        self.bottom_left_radius = bottom_left;
-        self.bottom_right_radius = bottom_right;
+        self.border_radius = BorderRadius::from((top_left, top_right, bottom_left, bottom_right));
         self
     }
 
     pub fn top_border_radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.top_right_radius = radius;
+        self.border_radius.top_left_radius = radius;
+        self.border_radius.top_right_radius = radius;
         self
     }
 
     pub fn bottom_border_radius(mut self, radius: f32) -> Self {
-        self.bottom_left_radius = radius;
-        self.bottom_right_radius = radius;
+        self.border_radius.bottom_left_radius = radius;
+        self.border_radius.bottom_right_radius = radius;
         self
     }
 
     pub fn left_border_radius(mut self, radius: f32) -> Self {
-        self.top_left_radius = radius;
-        self.bottom_left_radius = radius;
+        self.border_radius.top_left_radius = radius;
+        self.border_radius.bottom_left_radius = radius;
         self
     }
 
     pub fn right_border_radius(mut self, radius: f32) -> Self {
-        self.top_right_radius = radius;
-        self.bottom_right_radius = radius;
+        self.border_radius.top_right_radius = radius;
+        self.border_radius.bottom_right_radius = radius;
         self
     }
 
@@ -221,10 +204,7 @@ impl Widget for ButtonWidget {
         };
 
         let mut container = RoundRect::new(0.0);
-        container.top_left_radius = self.props.top_left_radius;
-        container.top_right_radius = self.props.top_right_radius;
-        container.bottom_left_radius = self.props.bottom_left_radius;
-        container.bottom_right_radius = self.props.bottom_right_radius;
+        container.radius = self.props.border_radius;
         container.color = color;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
