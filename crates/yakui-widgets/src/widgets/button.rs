@@ -125,26 +125,26 @@ impl Button {
     }
 
     pub fn top_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_left_radius = radius;
-        self.border_radius.top_right_radius = radius;
+        self.border_radius.top_left = radius;
+        self.border_radius.top_right = radius;
         self
     }
 
     pub fn bottom_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.bottom_left_radius = radius;
-        self.border_radius.bottom_right_radius = radius;
+        self.border_radius.bottom_left = radius;
+        self.border_radius.bottom_right = radius;
         self
     }
 
     pub fn left_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_left_radius = radius;
-        self.border_radius.bottom_left_radius = radius;
+        self.border_radius.top_left = radius;
+        self.border_radius.bottom_left = radius;
         self
     }
 
     pub fn right_border_radius(mut self, radius: f32) -> Self {
-        self.border_radius.top_right_radius = radius;
-        self.border_radius.bottom_right_radius = radius;
+        self.border_radius.top_right = radius;
+        self.border_radius.bottom_right = radius;
         self
     }
 

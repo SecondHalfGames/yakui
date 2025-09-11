@@ -184,10 +184,10 @@ impl RoundedRectangle {
     pub fn add(&self, output: &mut PaintDom) {
         let rect = self.rect;
         let (top_left_radius, top_right_radius, bottom_left_radius, bottom_right_radius) = (
-            self.radius.top_left_radius,
-            self.radius.top_right_radius,
-            self.radius.bottom_left_radius,
-            self.radius.bottom_right_radius,
+            self.radius.top_left,
+            self.radius.top_right,
+            self.radius.bottom_left,
+            self.radius.bottom_right,
         );
 
         // We are not prepared to let a corner's radius be bigger than a side's

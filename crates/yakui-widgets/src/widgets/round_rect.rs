@@ -39,46 +39,46 @@ impl RoundRect {
     }
 
     pub fn top_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left_radius = radius;
-        self.radius.top_right_radius = radius;
+        self.radius.top_left = radius;
+        self.radius.top_right = radius;
         self
     }
 
     pub fn bottom_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_left_radius = radius;
-        self.radius.bottom_right_radius = radius;
+        self.radius.bottom_left = radius;
+        self.radius.bottom_right = radius;
         self
     }
 
     pub fn left_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left_radius = radius;
-        self.radius.bottom_left_radius = radius;
+        self.radius.top_left = radius;
+        self.radius.bottom_left = radius;
         self
     }
 
     pub fn right_radius(mut self, radius: f32) -> Self {
-        self.radius.top_right_radius = radius;
-        self.radius.bottom_right_radius = radius;
+        self.radius.top_right = radius;
+        self.radius.bottom_right = radius;
         self
     }
 
     pub fn top_left_radius(mut self, radius: f32) -> Self {
-        self.radius.top_left_radius = radius;
+        self.radius.top_left = radius;
         self
     }
 
     pub fn top_right_radius(mut self, radius: f32) -> Self {
-        self.radius.top_right_radius = radius;
+        self.radius.top_right = radius;
         self
     }
 
     pub fn bottom_left_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_left_radius = radius;
+        self.radius.bottom_left = radius;
         self
     }
 
     pub fn bottom_right_radius(mut self, radius: f32) -> Self {
-        self.radius.bottom_right_radius = radius;
+        self.radius.bottom_right = radius;
         self
     }
 
