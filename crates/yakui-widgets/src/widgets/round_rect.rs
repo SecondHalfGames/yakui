@@ -13,24 +13,79 @@ Responds with [RoundRectResponse].
 #[derive(Debug, Clone)]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
-    pub radius: f32,
     pub color: Color,
     pub min_size: Vec2,
+    pub top_left_radius: f32,
+    pub top_right_radius: f32,
+    pub bottom_left_radius: f32,
+    pub bottom_right_radius: f32,
 }
 
 auto_builders!(RoundRect {
-    radius: f32,
     color: Color,
     min_size: Vec2,
+    top_left_radius: f32,
+    top_right_radius: f32,
+    bottom_left_radius: f32,
+    bottom_right_radius: f32,
 });
 
 impl RoundRect {
     pub fn new(radius: f32) -> Self {
         Self {
-            radius,
             color: Color::WHITE,
             min_size: Vec2::ZERO,
+            top_left_radius: radius,
+            top_right_radius: radius,
+            bottom_left_radius: radius,
+            bottom_right_radius: radius,
         }
+    }
+
+    pub fn radius(mut self, radius: f32) -> Self {
+        self.top_left_radius = radius;
+        self.top_right_radius = radius;
+        self.bottom_left_radius = radius;
+        self.bottom_right_radius = radius;
+        self
+    }
+
+    pub fn radii(
+        mut self,
+        top_left: f32,
+        top_right: f32,
+        bottom_left: f32,
+        bottom_right: f32,
+    ) -> Self {
+        self.top_left_radius = top_left;
+        self.top_right_radius = top_right;
+        self.bottom_left_radius = bottom_left;
+        self.bottom_right_radius = bottom_right;
+        self
+    }
+
+    pub fn top_radius(mut self, radius: f32) -> Self {
+        self.top_left_radius = radius;
+        self.top_right_radius = radius;
+        self
+    }
+
+    pub fn bottom_radius(mut self, radius: f32) -> Self {
+        self.bottom_left_radius = radius;
+        self.bottom_right_radius = radius;
+        self
+    }
+
+    pub fn left_radius(mut self, radius: f32) -> Self {
+        self.top_left_radius = radius;
+        self.bottom_left_radius = radius;
+        self
+    }
+
+    pub fn right_radius(mut self, radius: f32) -> Self {
+        self.top_right_radius = radius;
+        self.bottom_right_radius = radius;
+        self
     }
 
     #[track_caller]
@@ -81,8 +136,14 @@ impl Widget for RoundRectWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
+        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, 0.0);
         rect.color = self.props.color;
+
+        rect.top_left_radius = self.props.top_left_radius;
+        rect.top_right_radius = self.props.top_right_radius;
+        rect.bottom_left_radius = self.props.bottom_left_radius;
+        rect.bottom_right_radius = self.props.bottom_right_radius;
+
         rect.add(ctx.paint);
 
         for &child in &node.children {
