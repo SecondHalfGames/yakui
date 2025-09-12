@@ -6,12 +6,14 @@ use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
+use crate::border_radius::BorderRadius;
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
 use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
+use crate::shapes;
 
 /**
 A button containing some text.
@@ -32,7 +34,7 @@ pub struct Button {
     pub text: Cow<'static, str>,
     pub alignment: Alignment,
     pub padding: Pad,
-    pub border_radius: f32,
+    pub border_radius: BorderRadius,
     pub style: DynamicButtonStyle,
     pub hover_style: DynamicButtonStyle,
     pub down_style: DynamicButtonStyle,
@@ -42,7 +44,6 @@ auto_builders!(Button {
     text: Cow<'static, str>,
     alignment: Alignment,
     padding: Pad,
-    border_radius: f32,
     style: DynamicButtonStyle,
     hover_style: DynamicButtonStyle,
     down_style: DynamicButtonStyle,
@@ -73,7 +74,7 @@ impl Button {
             text: text.into(),
             alignment: Alignment::CENTER,
             padding: Pad::ZERO,
-            border_radius: 0.0,
+            border_radius: BorderRadius::default(),
             style: DynamicButtonStyle::default(),
             hover_style: DynamicButtonStyle::default(),
             down_style: DynamicButtonStyle::default(),
@@ -100,11 +101,16 @@ impl Button {
             text: text.into(),
             alignment: Alignment::CENTER,
             padding: Pad::balanced(20.0, 10.0),
-            border_radius: 6.0,
+            border_radius: 6.0.into(),
             style,
             hover_style,
             down_style,
         }
+    }
+
+    pub fn border_radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
+        self.border_radius = radius.into();
+        self
     }
 
     #[track_caller]

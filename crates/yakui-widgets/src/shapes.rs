@@ -4,6 +4,8 @@ use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 use yakui_core::TextureId;
 
+use crate::border_radius::BorderRadius;
+
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
         // Top
@@ -164,33 +166,41 @@ const RECT_INDEX: [u16; 6] = [
 
 pub struct RoundedRectangle {
     pub rect: Rect,
-    pub radius: f32,
     pub color: Color,
     pub texture: Option<(TextureId, Rect)>,
+    pub radius: BorderRadius,
 }
 
 impl RoundedRectangle {
-    pub fn new(rect: Rect, radius: f32) -> Self {
+    pub fn new<T: Into<BorderRadius>>(rect: Rect, radius: T) -> Self {
         Self {
             rect,
-            radius,
             color: Color::WHITE,
             texture: None,
+            radius: radius.into(),
         }
     }
 
     pub fn add(&self, output: &mut PaintDom) {
         let rect = self.rect;
+        let BorderRadius {
+            top_left,
+            top_right,
+            bottom_left,
+            bottom_right,
+        } = self.radius;
 
         // We are not prepared to let a corner's radius be bigger than a side's
         // half-length.
-        let radius = self
-            .radius
-            .min(rect.size().x / 2.0)
-            .min(rect.size().y / 2.0);
+        let max_radius = (rect.size().x / 2.0).min(rect.size().y / 2.0);
+
+        let top_left = top_left.min(max_radius);
+        let top_right = top_right.min(max_radius);
+        let bottom_left = bottom_left.min(max_radius);
+        let bottom_right = bottom_right.min(max_radius);
 
         // Fallback to a rectangle if the radius is too small.
-        if radius < 1.0 {
+        if top_left < 1.0 && top_right < 1.0 && bottom_left < 1.0 && bottom_right < 1.0 {
             let mut p = PaintRect::new(rect);
             p.texture = self.texture;
             p.color = self.color;
@@ -199,7 +209,8 @@ impl RoundedRectangle {
 
         let color = self.color.to_linear();
 
-        let slices = f32::ceil(TAU / 8.0 / f32::acos(1.0 - 0.2 / radius)) as u32;
+        let max_radius = top_left.max(top_right).max(bottom_left).max(bottom_right);
+        let slices = f32::ceil(TAU / 8.0 / f32::acos(1.0 - 0.2 / max_radius)) as u32;
 
         // 3 rectangles and 4 corners
         let mut vertices = Vec::with_capacity(4 * 3 + (slices + 2) as usize * 4);
@@ -233,20 +244,59 @@ impl RoundedRectangle {
             indices.extend(rect_indices);
         };
 
+        // Top
         rectangle(
-            Vec2::new(rect.pos().x + radius, rect.pos().y),
-            Vec2::new(rect.max().x - radius, rect.pos().y + radius),
-        );
-        rectangle(
-            Vec2::new(rect.pos().x, rect.pos().y + radius),
-            Vec2::new(rect.max().x, rect.max().y - radius),
-        );
-        rectangle(
-            Vec2::new(rect.pos().x + radius, rect.max().y - radius),
-            Vec2::new(rect.max().x - radius, rect.max().y),
+            Vec2::new(rect.pos().x + top_left, rect.pos().y),
+            Vec2::new(
+                rect.max().x - top_right,
+                rect.pos().y + top_left.max(top_right),
+            ),
         );
 
-        let mut corner = |center: Vec2, start_angle: f32| {
+        // Left
+        rectangle(
+            Vec2::new(rect.pos().x, rect.pos().y + top_left),
+            Vec2::new(
+                rect.pos().x + bottom_left.max(top_left),
+                rect.max().y - bottom_left,
+            ),
+        );
+
+        // Center
+        rectangle(
+            Vec2::new(
+                rect.pos().x + bottom_left.max(top_left),
+                rect.pos().y + top_left.max(top_right),
+            ),
+            Vec2::new(
+                rect.max().x - bottom_right.max(top_right),
+                rect.max().y - bottom_left.max(bottom_right),
+            ),
+        );
+
+        // Right
+        rectangle(
+            Vec2::new(
+                rect.max().x - bottom_right.max(top_right),
+                rect.pos().y + top_right,
+            ),
+            Vec2::new(rect.max().x, rect.max().y - bottom_right),
+        );
+
+        // Bottom
+        rectangle(
+            Vec2::new(
+                rect.pos().x + bottom_left,
+                rect.max().y - bottom_left.max(bottom_right),
+            ),
+            Vec2::new(rect.max().x - bottom_right, rect.max().y),
+        );
+
+        let mut corner = |center: Vec2, radius: f32, start_angle: f32| {
+            if radius < 1.0 {
+                return;
+            }
+
             let center_vertex = vertices.len();
             vertices.push(create_vertex(center));
 
@@ -268,17 +318,24 @@ impl RoundedRectangle {
             }
         };
 
-        corner(Vec2::new(rect.max().x - radius, rect.pos().y + radius), 0.0);
         corner(
-            Vec2::new(rect.pos().x + radius, rect.pos().y + radius),
+            Vec2::new(rect.max().x - top_right, rect.pos().y + top_right),
+            top_right,
+            0.0,
+        );
+        corner(
+            Vec2::new(rect.pos().x + top_left, rect.pos().y + top_left),
+            top_left,
             TAU / 4.0,
         );
         corner(
-            Vec2::new(rect.pos().x + radius, rect.max().y - radius),
+            Vec2::new(rect.pos().x + bottom_left, rect.max().y - bottom_left),
+            bottom_left,
             TAU / 2.0,
         );
         corner(
-            Vec2::new(rect.max().x - radius, rect.max().y - radius),
+            Vec2::new(rect.max().x - bottom_right, rect.max().y - bottom_right),
+            bottom_right,
             3.0 * TAU / 4.0,
         );
 
