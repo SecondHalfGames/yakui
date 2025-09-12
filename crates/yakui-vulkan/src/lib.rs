@@ -8,17 +8,19 @@ mod vulkan_context;
 mod vulkan_texture;
 
 use ash::util::read_spv;
-pub use ash::vk;
 use buffer::Buffer;
 use bytemuck::{bytes_of, Pod, Zeroable};
-pub use descriptors::Descriptors;
 use std::{collections::HashMap, io::Cursor};
+use vulkan_texture::UploadQueue;
+use yakui_core::geometry::{Rect, UVec2};
+use yakui_core::paint::{PaintCall, PaintLimits, Vertex as YakuiVertex};
+use yakui_core::ManagedTextureId;
+
+pub use ash::vk;
+pub use descriptors::Descriptors;
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
+pub use vulkan_texture::NO_TEXTURE_ID;
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
-use yakui_core::geometry::UVec2;
-use yakui_core::paint::PaintLimits;
-use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
@@ -31,13 +33,13 @@ use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
 /// Make sure to call [`YakuiVulkan::cleanup()`].
 pub struct YakuiVulkan {
     /// The pipeline layout used to draw
-    pipeline_layout: vk::PipelineLayout,
+    pub pipeline_layout: vk::PipelineLayout,
     /// The graphics pipeline used to draw
-    graphics_pipeline: vk::Pipeline,
+    pub graphics_pipeline: vk::Pipeline,
     /// A single index buffer, shared between all draw calls
-    index_buffer: Buffer<u32>,
+    pub index_buffer: Buffer<u32>,
     /// A single vertex buffer, shared between all draw calls
-    vertex_buffer: Buffer<Vertex>,
+    pub vertex_buffer: Buffer<Vertex>,
     /// Have we synced the first textures from yakui?
     initial_textures_synced: bool,
     /// Textures owned by yakui
@@ -45,7 +47,7 @@ pub struct YakuiVulkan {
     /// Textures owned by the user
     user_textures: thunderdome::Arena<VulkanTexture>,
     /// A wrapper around descriptor set functionality
-    descriptors: Descriptors,
+    pub descriptors: Descriptors,
     uploads: UploadQueue,
 }
 
@@ -62,18 +64,26 @@ pub struct Options {
 
 #[derive(Clone, Copy, Debug)]
 /// A single draw call to render a yakui mesh
-struct DrawCall {
+pub struct YakuiDrawCall {
     index_offset: u32,
     index_count: u32,
-    clip: Option<yakui_core::geometry::Rect>,
     texture_id: u32,
     workflow: Workflow,
 }
 
+/// A single draw call to either render a yakui mesh, or identify a user issued draw call
+pub enum DrawCall {
+    /// Yakui's own draw call.
+    Yakui(YakuiDrawCall),
+    /// User's own draw call.
+    User(yakui_core::paint::UserPaintCallId),
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
+#[allow(missing_docs)]
 /// Push constant used to determine texture and workflow
-struct PushConstant {
+pub struct PushConstant {
     texture_id: u32,
     workflow: Workflow,
 }
@@ -81,6 +91,7 @@ struct PushConstant {
 unsafe impl Zeroable for PushConstant {}
 unsafe impl Pod for PushConstant {}
 
+#[allow(missing_docs)]
 impl PushConstant {
     pub fn new(texture_id: u32, workflow: Workflow) -> Self {
         Self {
@@ -92,8 +103,9 @@ impl PushConstant {
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug)]
+#[allow(missing_docs)]
 /// The workflow to use in the shader
-enum Workflow {
+pub enum Workflow {
     Main,
     Text,
 }
@@ -112,10 +124,11 @@ impl From<yakui_core::paint::Pipeline> for Workflow {
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Debug)]
-struct Vertex {
-    position: yakui_core::geometry::Vec2,
-    texcoord: yakui_core::geometry::Vec2,
-    color: yakui_core::geometry::Vec4,
+#[allow(missing_docs)]
+pub struct Vertex {
+    pub position: yakui_core::geometry::Vec2,
+    pub texcoord: yakui_core::geometry::Vec2,
+    pub color: yakui_core::geometry::Vec4,
 }
 
 impl From<&YakuiVertex> for Vertex {
@@ -381,132 +394,16 @@ impl YakuiVulkan {
         });
     }
 
-    /// Paint the yakui GUI using the provided [`VulkanContext`]
-    ///
-    /// ## Safety
-    /// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
-    /// - `cmd` must be in rendering state, with viewport and scissor dynamic states set.
+    /// See: [crate::paint].
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn paint(
         &mut self,
-        paint: &yakui_core::paint::PaintDom,
+        paint: &mut yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
         cmd: vk::CommandBuffer,
         resolution: vk::Extent2D,
     ) {
-        // If there's nothing to paint, well.. don't paint!
-        let layers = paint.layers();
-        if layers.iter().all(|layer| layer.calls.is_empty()) {
-            return;
-        }
-
-        let draw_calls = self.build_draw_calls(vulkan_context, paint);
-
-        self.render(vulkan_context, resolution, cmd, &draw_calls);
-    }
-
-    /// Render the draw calls we've built up
-    fn render(
-        &self,
-        vulkan_context: &VulkanContext,
-        resolution: vk::Extent2D,
-        command_buffer: vk::CommandBuffer,
-        draw_calls: &[DrawCall],
-    ) {
-        let device = vulkan_context.device;
-
-        let surface_size = UVec2::new(resolution.width, resolution.height);
-
-        unsafe {
-            device.cmd_bind_pipeline(
-                command_buffer,
-                vk::PipelineBindPoint::GRAPHICS,
-                self.graphics_pipeline,
-            );
-            let default_scissor = [resolution.into()];
-
-            device.cmd_bind_vertex_buffers(command_buffer, 0, &[self.vertex_buffer.handle], &[0]);
-            device.cmd_bind_index_buffer(
-                command_buffer,
-                self.index_buffer.handle,
-                0,
-                vk::IndexType::UINT32,
-            );
-            device.cmd_bind_descriptor_sets(
-                command_buffer,
-                vk::PipelineBindPoint::GRAPHICS,
-                self.pipeline_layout,
-                0,
-                std::slice::from_ref(&self.descriptors.set),
-                &[],
-            );
-            let mut last_clip = None;
-            for draw_call in draw_calls {
-                if draw_call.clip != last_clip {
-                    last_clip = draw_call.clip;
-
-                    // TODO - do this when processing draw calls
-                    match draw_call.clip {
-                        Some(rect) => {
-                            let pos = rect.pos().as_uvec2();
-                            let size = rect.size().as_uvec2();
-
-                            let max = (pos + size).min(surface_size);
-                            let size = UVec2::new(
-                                max.x.saturating_sub(pos.x),
-                                max.y.saturating_sub(pos.y),
-                            );
-
-                            // If the scissor rect isn't valid, we can skip this
-                            // entire draw call.
-                            if pos.x > surface_size.x
-                                || pos.y > surface_size.y
-                                || size.x == 0
-                                || size.y == 0
-                            {
-                                continue;
-                            }
-
-                            let scissors = [vk::Rect2D {
-                                offset: vk::Offset2D {
-                                    x: pos.x as _,
-                                    y: pos.y as _,
-                                },
-                                extent: vk::Extent2D {
-                                    width: size.x,
-                                    height: size.y,
-                                },
-                            }];
-                            // If there's a clip, update the scissor
-                            device.cmd_set_scissor(command_buffer, 0, &scissors);
-                        }
-                        None => {
-                            // Otherwise, return the scissor back to its default state
-                            device.cmd_set_scissor(command_buffer, 0, &default_scissor);
-                        }
-                    }
-                }
-
-                // Instead of using different pipelines for text and non-text rendering, we just
-                // pass the "workflow" down through a push constant and branch in the shader.
-                device.cmd_push_constants(
-                    command_buffer,
-                    self.pipeline_layout,
-                    vk::ShaderStageFlags::FRAGMENT,
-                    0,
-                    bytes_of(&PushConstant::new(draw_call.texture_id, draw_call.workflow)),
-                );
-
-                // Draw the mesh with the indexes we were provided
-                device.cmd_draw_indexed(
-                    command_buffer,
-                    draw_call.index_count,
-                    1,
-                    draw_call.index_offset,
-                    0,
-                    1,
-                );
-            }
-        }
+        crate::paint(self, paint, vulkan_context, cmd, resolution)
     }
 
     /// Create and add a "user managed" texture to this [`YakuiVulkan`] instance. Returns a [`yakui_core::TextureId`] that can be used
@@ -628,59 +525,203 @@ impl YakuiVulkan {
         }
     }
 
-    fn build_draw_calls(
+    /// Build a [`DrawCall`] from a [`yakui_core::paint::YakuiPaintCall`].
+    pub fn build_draw_call(
         &mut self,
-        vulkan_context: &VulkanContext,
-        paint: &yakui_core::paint::PaintDom,
-    ) -> Vec<DrawCall> {
-        let mut vertices: Vec<Vertex> = Default::default();
-        let mut indices: Vec<u32> = Default::default();
-        let mut draw_calls: Vec<DrawCall> = Default::default();
+        vertices: &mut Vec<Vertex>,
+        indices: &mut Vec<u32>,
+        clip: Rect,
+        call: &yakui_core::paint::YakuiPaintCall,
+    ) -> (Rect, DrawCall) {
+        let base = vertices.len() as u32;
+        let index_offset = indices.len() as u32;
+        let index_count = call.indices.len() as u32;
 
-        let calls = paint.layers().iter().flat_map(|layer| &layer.calls);
+        for index in &call.indices {
+            indices.push(*index as u32 + base);
+        }
+        for vertex in &call.vertices {
+            vertices.push(vertex.into())
+        }
 
-        for call in calls {
-            let base = vertices.len() as u32;
-            let index_offset = indices.len() as u32;
-            let index_count = call.indices.len() as u32;
+        let texture_id = call
+            .texture
+            .and_then(|id| match id {
+                yakui_core::TextureId::Managed(managed) => {
+                    let texture = self.yakui_managed_textures.get(&managed)?;
+                    Some(texture.id)
+                }
+                yakui_core::TextureId::User(bits) => {
+                    let texture = self
+                        .user_textures
+                        .get(thunderdome::Index::from_bits(bits)?)?;
+                    Some(texture.id)
+                }
+            })
+            .unwrap_or(NO_TEXTURE_ID);
 
-            for index in &call.indices {
-                indices.push(*index as u32 + base);
-            }
-            for vertex in &call.vertices {
-                vertices.push(vertex.into())
-            }
-
-            let texture_id = call
-                .texture
-                .and_then(|id| match id {
-                    yakui_core::TextureId::Managed(managed) => {
-                        let texture = self.yakui_managed_textures.get(&managed)?;
-                        Some(texture.id)
-                    }
-                    yakui_core::TextureId::User(bits) => {
-                        let texture = self
-                            .user_textures
-                            .get(thunderdome::Index::from_bits(bits)?)?;
-                        Some(texture.id)
-                    }
-                })
-                .unwrap_or(NO_TEXTURE_ID);
-
-            draw_calls.push(DrawCall {
+        (
+            clip,
+            DrawCall::Yakui(YakuiDrawCall {
                 index_offset,
                 index_count,
-                clip: call.clip,
                 texture_id,
                 workflow: call.pipeline.into(),
-            });
-        }
+            }),
+        )
+    }
+
+    /// Execute one single yakui draw call.
+    pub fn draw_yakui(
+        &self,
+        vulkan_context: &VulkanContext,
+        cmd: vk::CommandBuffer,
+        draw_call: YakuiDrawCall,
+    ) {
+        let device = vulkan_context.device;
 
         unsafe {
-            self.index_buffer.write(vulkan_context, 0, &indices);
-            self.vertex_buffer.write(vulkan_context, 0, &vertices);
-        }
+            // Instead of using different pipelines for text and non-text rendering, we just
+            // pass the "workflow" down through a push constant and branch in the shader.
+            device.cmd_push_constants(
+                cmd,
+                self.pipeline_layout,
+                vk::ShaderStageFlags::FRAGMENT,
+                0,
+                bytes_of(&PushConstant::new(draw_call.texture_id, draw_call.workflow)),
+            );
 
-        draw_calls
+            // Draw the mesh with the indexes we were provided
+            device.cmd_draw_indexed(cmd, draw_call.index_count, 1, draw_call.index_offset, 0, 1);
+        }
+    }
+}
+
+/// Paint the yakui GUI using the provided [`VulkanContext`]
+///
+/// ## Safety
+/// - `vulkan_context` must be the same as the one used to create this [`YakuiVulkan`] instance
+/// - `cmd` must be in rendering state, with viewport and scissor dynamic states set.
+pub unsafe fn paint(
+    yakui_vulkan: &mut YakuiVulkan,
+    paint: &mut yakui_core::paint::PaintDom,
+    vulkan_context: &VulkanContext,
+    cmd: vk::CommandBuffer,
+    resolution: vk::Extent2D,
+) {
+    // --- yakui ---
+    // If there's nothing to paint, well... don't paint!
+    let layers = &paint.layers;
+    if layers.iter().all(|layer| layer.calls.is_empty()) {
+        return;
+    }
+
+    // If the surface has a size of zero, well... don't paint either!
+    if paint.surface_size().x == 0.0 || paint.surface_size().y == 0.0 {
+        return;
+    }
+
+    let mut vertices: Vec<Vertex> = Default::default();
+    let mut indices: Vec<u32> = Default::default();
+    let mut draw_calls: Vec<(Rect, DrawCall)> = Default::default();
+    // --- yakui ---
+
+    for (clip, call) in layers.iter().flat_map(|layer| &layer.calls) {
+        match call {
+            PaintCall::Internal(call) => {
+                draw_calls.push(yakui_vulkan.build_draw_call(
+                    &mut vertices,
+                    &mut indices,
+                    *clip,
+                    call,
+                ));
+            }
+            PaintCall::User(_) => {
+                panic!("yakui does not handle User PaintCall's by default. Please set up your own rendering logic instead.");
+            }
+        }
+    }
+
+    // --- yakui ---
+    unsafe {
+        yakui_vulkan.index_buffer.write(vulkan_context, 0, &indices);
+        yakui_vulkan
+            .vertex_buffer
+            .write(vulkan_context, 0, &vertices);
+    }
+
+    let device = vulkan_context.device;
+    let surface_size = UVec2::new(resolution.width, resolution.height);
+    // --- yakui ---
+
+    unsafe {
+        // --- yakui ---
+        device.cmd_bind_pipeline(
+            cmd,
+            vk::PipelineBindPoint::GRAPHICS,
+            yakui_vulkan.graphics_pipeline,
+        );
+        let default_scissor = [resolution.into()];
+        device.cmd_set_scissor(cmd, 0, &default_scissor);
+
+        device.cmd_bind_vertex_buffers(cmd, 0, &[yakui_vulkan.vertex_buffer.handle], &[0]);
+        device.cmd_bind_index_buffer(
+            cmd,
+            yakui_vulkan.index_buffer.handle,
+            0,
+            vk::IndexType::UINT32,
+        );
+        device.cmd_bind_descriptor_sets(
+            cmd,
+            vk::PipelineBindPoint::GRAPHICS,
+            yakui_vulkan.pipeline_layout,
+            0,
+            std::slice::from_ref(&yakui_vulkan.descriptors.set),
+            &[],
+        );
+
+        let mut last_clip = None;
+
+        for (clip, draw_call) in draw_calls {
+            if Some(clip) != last_clip {
+                last_clip = Some(clip);
+
+                // TODO - do this when processing draw calls
+                let pos = clip.pos().as_uvec2();
+                let size = clip.size().as_uvec2();
+
+                let max = (pos + size).min(surface_size);
+                let size = UVec2::new(max.x.saturating_sub(pos.x), max.y.saturating_sub(pos.y));
+
+                // If the scissor rect isn't valid, we can skip this
+                // entire draw call.
+                if pos.x > surface_size.x || pos.y > surface_size.y || size.x == 0 || size.y == 0 {
+                    continue;
+                }
+
+                let scissors = [vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: pos.x as _,
+                        y: pos.y as _,
+                    },
+                    extent: vk::Extent2D {
+                        width: size.x,
+                        height: size.y,
+                    },
+                }];
+                // If there's a clip, update the scissor
+                device.cmd_set_scissor(cmd, 0, &scissors);
+            }
+            // --- yakui ---
+
+            match draw_call {
+                DrawCall::Yakui(draw_call) => {
+                    yakui_vulkan.draw_yakui(vulkan_context, cmd, draw_call);
+                }
+                DrawCall::User(_) => {
+                    panic!("yakui does not handle User PaintCall's by default. Please set up your own rendering logic instead.");
+                }
+            }
+        }
     }
 }

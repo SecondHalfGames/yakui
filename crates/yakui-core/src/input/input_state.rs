@@ -155,6 +155,14 @@ impl InputState {
         self.text_input_enabled.get()
     }
 
+    /// Returns the mouse position, or [`None`] if it's outside the window.
+    pub fn mouse_pos(&self, layout: &LayoutDom) -> Option<Vec2> {
+        self.mouse
+            .borrow()
+            .position
+            .map(|pos| pos / layout.scale_factor())
+    }
+
     /// Return the currently selected widget, if there is one.
     pub fn selection(&self) -> Option<WidgetId> {
         self.selection.get()
@@ -252,8 +260,6 @@ impl InputState {
 
     /// Signal that the mouse has moved.
     fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
-        let pos = pos.map(|pos| pos - layout.unscaled_viewport().pos());
-
         {
             let mut mouse = self.mouse.borrow_mut();
             mouse.position = pos;
@@ -545,12 +551,7 @@ fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Widge
             continue;
         };
 
-        let mut rect = layout_node.rect;
-        let mut node = layout_node;
-        while let Some(parent) = node.clipped_by {
-            node = layout.get(parent).unwrap();
-            rect = rect.constrain(node.rect);
-        }
+        let rect = layout_node.clip.constrain(layout_node.rect);
 
         if rect.contains_point(coords) {
             output.push(id);
