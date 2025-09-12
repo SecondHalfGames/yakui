@@ -97,9 +97,9 @@ impl PaintDom {
 
         let layout_node = layout.get(id).unwrap();
         self.current_clip = Rect::from_pos_size(
-            layout_node.clip.pos() * self.scale_factor,
-            layout_node.clip.size() * self.scale_factor,
-        );
+            (layout_node.clip.pos() * self.scale_factor).round(),
+            (layout_node.clip.size() * self.scale_factor).round(),
+        )
 
         if layout_node.new_layer {
             self.layers.push();
