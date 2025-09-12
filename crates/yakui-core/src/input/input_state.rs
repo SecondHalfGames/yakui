@@ -155,6 +155,14 @@ impl InputState {
         self.text_input_enabled.get()
     }
 
+    /// Returns the mouse position, or [`None`] if it's outside the window.
+    pub fn mouse_pos(&self, layout: &LayoutDom) -> Option<Vec2> {
+        self.mouse
+            .borrow()
+            .position
+            .map(|pos| pos / layout.scale_factor())
+    }
+
     /// Return the currently selected widget, if there is one.
     pub fn selection(&self) -> Option<WidgetId> {
         self.selection.get()
