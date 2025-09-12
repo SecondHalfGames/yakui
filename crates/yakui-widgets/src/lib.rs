@@ -18,7 +18,7 @@ pub mod util;
 )]
 pub mod clipboard;
 
-pub mod border_radius;
+pub mod border;
 pub mod colors;
 pub mod font;
 pub mod shapes;

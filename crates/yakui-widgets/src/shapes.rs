@@ -4,7 +4,7 @@ use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 use yakui_core::TextureId;
 
-use crate::border_radius::BorderRadius;
+use crate::border::{Border, BorderRadius};
 
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
     static POSITIONS: [[f32; 2]; 12] = [
@@ -169,6 +169,7 @@ pub struct RoundedRectangle {
     pub color: Color,
     pub texture: Option<(TextureId, Rect)>,
     pub radius: BorderRadius,
+    pub border: Option<Border>,
 }
 
 impl RoundedRectangle {
@@ -178,17 +179,39 @@ impl RoundedRectangle {
             color: Color::WHITE,
             texture: None,
             radius: radius.into(),
+            border: None,
         }
     }
 
     pub fn add(&self, output: &mut PaintDom) {
-        let rect = self.rect;
+        // Draw border background first if there's a border
+        if let Some(border) = &self.border {
+            self.draw_border(output, border);
+        }
+
+        let (rect, radius) = if let Some(border) = &self.border {
+            let border_width = border.width;
+            let inner_rect = Rect::from_pos_size(
+                self.rect.pos() + Vec2::new(border_width, border_width),
+                self.rect.size() - Vec2::new(border_width * 2.0, border_width * 2.0),
+            );
+            let inner_radius = BorderRadius {
+                top_left: (self.radius.top_left - border_width).max(0.0),
+                top_right: (self.radius.top_right - border_width).max(0.0),
+                bottom_left: (self.radius.bottom_left - border_width).max(0.0),
+                bottom_right: (self.radius.bottom_right - border_width).max(0.0),
+            };
+            (inner_rect, inner_radius)
+        } else {
+            (self.rect, self.radius)
+        };
+
         let BorderRadius {
             top_left,
             top_right,
             bottom_left,
             bottom_right,
-        } = self.radius;
+        } = radius;
 
         // We are not prepared to let a corner's radius be bigger than a side's
         // half-length.
@@ -339,8 +362,19 @@ impl RoundedRectangle {
             3.0 * TAU / 4.0,
         );
 
+        if let Some(border) = &self.border {
+            self.draw_border(output, border);
+        }
+
         let mut mesh = PaintMesh::new(vertices, indices);
         mesh.texture = self.texture;
         output.add_mesh(mesh);
+    }
+
+    // Just draws a larger rectangle behind the main one... probably has issues with opacity?
+    fn draw_border(&self, output: &mut PaintDom, border: &Border) {
+        let mut border_shape = RoundedRectangle::new(self.rect, self.radius);
+        border_shape.color = border.color;
+        border_shape.add(output);
     }
 }
