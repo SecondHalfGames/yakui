@@ -221,7 +221,7 @@ impl LayoutDom {
     fn resolve_positions(&mut self, dom: &Dom) {
         let mut queue = VecDeque::new();
 
-        queue.push_back((dom.root(), Vec2::ZERO));
+        queue.push_back((dom.root(), self.viewport().pos()));
 
         while let Some((id, parent_pos)) = queue.pop_front() {
             if let Some(layout_node) = self.nodes.get_mut(id.index()) {
