@@ -101,6 +101,8 @@ impl Widget for RenderTextWidget {
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+        ctx.layout.enable_clipping(ctx.dom);
+
         let max_width = constraints
             .max
             .x
