@@ -170,7 +170,6 @@ impl Widget for RenderTextWidget {
                 .map(|layout| layout.line_w)
                 .max_by(|a, b| a.total_cmp(b))
                 .unwrap_or_default()
-                .ceil()
                 .max(constraints.min.x * ctx.layout.scale_factor());
 
             for run in buffer.layout_runs() {
@@ -190,7 +189,10 @@ impl Widget for RenderTextWidget {
                     .sum::<f32>()
                     .ceil();
 
-                (Vec2::new(widest_line, size_y) / ctx.layout.scale_factor()).round()
+                Vec2::new(
+                    widest_line / ctx.layout.scale_factor(),
+                    (size_y / ctx.layout.scale_factor()).ceil(),
+                )
             };
 
             let size = constraints.constrain(size);
