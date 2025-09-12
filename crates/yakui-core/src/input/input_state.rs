@@ -260,8 +260,6 @@ impl InputState {
 
     /// Signal that the mouse has moved.
     fn mouse_moved(&self, dom: &Dom, layout: &LayoutDom, pos: Option<Vec2>) {
-        let pos = pos.map(|pos| pos - layout.unscaled_viewport().pos());
-
         {
             let mut mouse = self.mouse.borrow_mut();
             mouse.position = pos;

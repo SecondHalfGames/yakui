@@ -100,6 +100,7 @@ impl PaintDom {
             (layout_node.clip.pos() * self.scale_factor).round(),
             (layout_node.clip.size() * self.scale_factor).round(),
         )
+        .constrain(layout.unscaled_viewport());
 
         if layout_node.new_layer {
             self.layers.push();
@@ -224,7 +225,6 @@ impl PaintDom {
 
         let vertices = mesh.vertices.into_iter().map(|mut vertex| {
             let mut pos = vertex.position * self.scale_factor;
-            pos += self.unscaled_viewport.pos();
 
             // Currently, we only round the vertices of geometry fed to the text
             // pipeline because rounding all geometry causes hairline cracks in
