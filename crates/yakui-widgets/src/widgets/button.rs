@@ -6,14 +6,13 @@ use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
 use yakui_core::{Alignment, Response};
 
-use crate::border_radius::BorderRadius;
+use crate::border::{Border, BorderRadius};
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
 use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
-use crate::shapes;
 
 /**
 A button containing some text.
@@ -54,6 +53,7 @@ auto_builders!(Button {
 pub struct DynamicButtonStyle {
     pub text: TextStyle,
     pub fill: Color,
+    pub border: Option<Border>,
 }
 
 impl Default for DynamicButtonStyle {
@@ -64,6 +64,7 @@ impl Default for DynamicButtonStyle {
         Self {
             text,
             fill: Color::GRAY,
+            border: None,
         }
     }
 }
@@ -84,16 +85,21 @@ impl Button {
     pub fn styled(text: impl Into<Cow<'static, str>>) -> Self {
         let style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3,
-            ..Default::default()
+            text: TextStyle::label()
+                .color(Color::WHITE.adjust(0.6))
+                .align(TextAlignment::Center),
+            border: Some(Border::new(colors::BACKGROUND_1, 1.0)),
         };
 
         let hover_style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3.adjust(1.2),
+            border: Some(Border::new(Color::WHITE.adjust(0.75), 1.0)),
             ..Default::default()
         };
 
         let down_style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3.adjust(0.8),
+            border: Some(Border::new(Color::WHITE, 1.0)),
             ..Default::default()
         };
 
@@ -150,16 +156,19 @@ impl Widget for ButtonWidget {
         self.props = props;
 
         let mut color = self.props.style.fill;
+        let mut border = self.props.style.border;
         let mut text_style = self.props.style.text.clone();
 
         if self.mouse_down {
             let style = &self.props.down_style;
             color = style.fill;
             text_style = style.text.clone();
+            border = style.border;
         } else if self.hovering {
             let style = &self.props.hover_style;
             color = style.fill;
             text_style = style.text.clone();
+            border = style.border;
         }
 
         let align = match text_style.align {
@@ -170,6 +179,7 @@ impl Widget for ButtonWidget {
 
         let mut container = RoundRect::new(self.props.border_radius);
         container.color = color;
+        container.border = border;
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
