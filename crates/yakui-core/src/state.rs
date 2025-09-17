@@ -71,6 +71,11 @@ impl Yakui {
         self.paint.set_unscaled_viewport(view);
     }
 
+    /// Retrieve the scale factor currently used by yakui.
+    pub fn scale_factor(&self) -> f32 {
+        self.layout.scale_factor()
+    }
+
     /// Manually sets the scale factor used for laying out widgets.
     ///
     /// Platform integrations will usually do this automatically. If you'd like
