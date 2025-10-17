@@ -133,7 +133,10 @@ impl Graphics {
         });
 
         self.device
-            .poll(wgpu::PollType::WaitForSubmissionIndex(submit_index))
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submit_index),
+                timeout: None,
+            })
             .unwrap();
 
         let padded_data = buffer_slice.get_mapped_range().to_vec();
