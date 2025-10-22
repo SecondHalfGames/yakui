@@ -2,7 +2,7 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::border_radius::BorderRadius;
+use crate::border::{Border, BorderRadius};
 use crate::util::{widget, widget_children};
 use crate::{auto_builders, shapes};
 
@@ -15,6 +15,7 @@ Responds with [RoundRectResponse].
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
     pub color: Color,
+    pub border: Option<Border>,
     pub min_size: Vec2,
     pub radius: BorderRadius,
 }
@@ -22,6 +23,7 @@ pub struct RoundRect {
 auto_builders!(RoundRect {
     color: Color,
     min_size: Vec2,
+    border: Option<Border>,
 });
 
 impl RoundRect {
@@ -30,6 +32,7 @@ impl RoundRect {
             color: Color::WHITE,
             min_size: Vec2::ZERO,
             radius: radius.into(),
+            border: None,
         }
     }
 
@@ -88,7 +91,7 @@ impl Widget for RoundRectWidget {
 
         let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
         rect.color = self.props.color;
-
+        rect.border = self.props.border;
         rect.add(ctx.paint);
 
         for &child in &node.children {

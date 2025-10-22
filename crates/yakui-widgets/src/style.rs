@@ -1,5 +1,7 @@
 use yakui_core::geometry::Color;
 
+use crate::auto_builders;
+
 #[derive(Debug, Clone)]
 pub struct TextStyle {
     pub font_size: f32,
@@ -8,6 +10,12 @@ pub struct TextStyle {
     pub align: TextAlignment,
     pub attrs: cosmic_text::AttrsOwned,
 }
+
+auto_builders!(TextStyle {
+    color: Color,
+    font_size: f32,
+    align: TextAlignment,
+});
 
 impl Default for TextStyle {
     fn default() -> Self {
