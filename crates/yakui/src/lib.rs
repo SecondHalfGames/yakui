@@ -6,7 +6,7 @@ pub use yakui_core::*;
 #[doc(no_inline)]
 pub use yakui_widgets::widgets;
 
-pub use yakui_widgets::border_radius::*;
+pub use yakui_widgets::border::*;
 pub use yakui_widgets::colors;
 pub use yakui_widgets::cosmic_text;
 pub use yakui_widgets::font;
