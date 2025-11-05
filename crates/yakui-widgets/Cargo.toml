@@ -11,6 +11,7 @@ default = ["default-fonts"]
 
 # Include built-in fonts.
 default-fonts = []
+system-fonts = ["cosmic-text/fontconfig"]
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
