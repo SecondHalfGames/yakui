@@ -4,8 +4,8 @@ assertion_line: 337
 expression: view
 ---
 - ListWidget pos(0, 0) size(1000, 1000)
-  - ButtonWidget pos(0, 0) size(73.26367, 37)
-    - RoundRectWidget pos(0, 0) size(73.26367, 37)
-      - PadWidget pos(0, 0) size(73.26367, 37)
-        - AlignWidget pos(20, 10) size(33.26367, 17)
-          - RenderTextWidget pos(20, 10) size(33.26367, 17)
+  - ButtonWidget pos(0, 0) size(74, 37)
+    - RoundRectWidget pos(0, 0) size(74, 37)
+      - PadWidget pos(0, 0) size(74, 37)
+        - AlignWidget pos(20, 10) size(34, 17)
+          - RenderTextWidget pos(20, 10) size(34, 17)

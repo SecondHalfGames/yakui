@@ -35,11 +35,11 @@ impl Yakui {
 
         context::bind_dom(&self.dom);
 
-        let response = self.input.handle_event(&self.dom, &self.layout, &event);
-
-        if let Event::ViewportChanged(viewport) = event {
-            self.layout.set_unscaled_viewport(viewport);
+        if let Event::ViewportChanged(viewport) = &event {
+            self.layout.set_unscaled_viewport(*viewport);
         }
+
+        let response = self.input.handle_event(&self.dom, &self.layout, event);
 
         context::unbind_dom();
         response == EventResponse::Sink
@@ -146,5 +146,10 @@ impl Yakui {
     /// focused textbox.
     pub fn text_input_enabled(&self) -> bool {
         self.input.text_input_enabled()
+    }
+
+    /// Gets the text cursor, if any.
+    pub fn get_text_cursor(&self) -> Option<Rect> {
+        self.input.get_text_cursor()
     }
 }
