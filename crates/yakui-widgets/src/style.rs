@@ -2,7 +2,7 @@ use yakui_core::geometry::Color;
 
 use crate::auto_builders;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextStyle {
     pub font_size: f32,
     pub line_height_override: Option<f32>,
@@ -12,9 +12,11 @@ pub struct TextStyle {
 }
 
 auto_builders!(TextStyle {
-    color: Color,
     font_size: f32,
+    line_height_override: Option<f32>,
+    color: Color,
     align: TextAlignment,
+    attrs: cosmic_text::AttrsOwned,
 });
 
 impl Default for TextStyle {
@@ -40,7 +42,7 @@ impl TextStyle {
     }
 
     pub fn line_height(&self) -> f32 {
-        self.line_height_override.unwrap_or(self.font_size * 1.175)
+        self.line_height_override.unwrap_or(self.font_size * 1.2)
     }
 
     pub fn to_metrics(&self, scale_factor: f32) -> cosmic_text::Metrics {
@@ -58,12 +60,12 @@ pub enum TextAlignment {
     End,
 }
 
-impl From<TextAlignment> for cosmic_text::Align {
+impl From<TextAlignment> for Option<cosmic_text::Align> {
     fn from(value: TextAlignment) -> Self {
         match value {
-            TextAlignment::Start => cosmic_text::Align::Left,
-            TextAlignment::Center => cosmic_text::Align::Center,
-            TextAlignment::End => cosmic_text::Align::Right,
+            TextAlignment::Start => None,
+            TextAlignment::Center => Some(cosmic_text::Align::Center),
+            TextAlignment::End => Some(cosmic_text::Align::End),
         }
     }
 }
