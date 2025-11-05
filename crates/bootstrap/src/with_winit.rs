@@ -104,12 +104,11 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
         _window_id: WindowId,
         event: WindowEvent,
     ) {
-        if self
-            .yak_window
-            .as_mut()
-            .unwrap()
-            .handle_window_event(&mut self.yak, &event)
-        {
+        if self.yak_window.as_mut().unwrap().handle_window_event(
+            &mut self.yak,
+            &event,
+            self.window.as_ref().unwrap(),
+        ) {
             return;
         }
 

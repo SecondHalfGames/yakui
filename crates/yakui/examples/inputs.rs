@@ -16,7 +16,7 @@ pub fn run() {
             let res = checkbox(checked.get());
             checked.set(res.checked);
 
-            let res = textbox(name.borrow().clone());
+            let res = textbox(name.borrow().as_str());
             if let Some(new_text) = res.into_inner().text {
                 name.set(new_text);
             }
