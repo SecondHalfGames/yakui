@@ -4,6 +4,6 @@ assertion_line: 264
 expression: view
 ---
 - AlignWidget pos(0, 0) size(1000, 1000)
-  - TextWidget pos(376.25, 464.5) size(247.5, 71)
-    - PadWidget pos(376.25, 464.5) size(247.5, 71)
-      - RenderTextWidget pos(376.25, 464.5) size(247.5, 71)
+  - TextWidget pos(376, 464) size(248, 72)
+    - PadWidget pos(376, 464) size(248, 72)
+      - RenderTextWidget pos(376, 464) size(248, 72)
