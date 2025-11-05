@@ -2,7 +2,7 @@
 
 mod keys;
 
-use winit::dpi::PhysicalSize;
+use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, MouseButton as WinitMouseButton, MouseScrollDelta, WindowEvent};
 use winit::window::Window;
 use yakui_core::event::Event;
@@ -55,6 +55,7 @@ impl YakuiWinit {
         &mut self,
         state: &mut yakui_core::Yakui,
         event: &WindowEvent,
+        window: &Window,
     ) -> bool {
         if let Some(init) = self.init.take() {
             let size = Vec2::new(init.size.width as f32, init.size.height as f32);
@@ -67,6 +68,13 @@ impl YakuiWinit {
             if self.auto_scale {
                 state.set_scale_factor(init.scale);
             }
+        }
+
+        if let Some(cursor) = state.get_text_cursor() {
+            window.set_ime_cursor_area(
+                PhysicalPosition::new(cursor.pos().x, cursor.pos().y),
+                PhysicalSize::new(cursor.size().x, cursor.size().y),
+            );
         }
 
         match event {
@@ -158,6 +166,11 @@ impl YakuiWinit {
                 } else {
                     false
                 }
+            }
+
+            WindowEvent::Ime(winit::event::Ime::Preedit(text, position)) => {
+                state.handle_event(Event::TextPreedit(text.clone(), *position));
+                true
             }
 
             WindowEvent::Ime(winit::event::Ime::Commit(text)) => {
