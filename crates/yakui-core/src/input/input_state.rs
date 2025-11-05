@@ -202,15 +202,15 @@ impl InputState {
         &self,
         dom: &Dom,
         layout: &LayoutDom,
-        event: &Event,
+        event: Event,
     ) -> EventResponse {
         match event {
             Event::CursorMoved(pos) => {
-                self.mouse_moved(dom, layout, *pos);
+                self.mouse_moved(dom, layout, pos);
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
-                let response = self.mouse_button_changed(dom, layout, *button, *down);
+                let response = self.mouse_button_changed(dom, layout, button, down);
 
                 // If no widgets elected to handle mouse button one going down,
                 // we can should clear our selection.
@@ -220,7 +220,7 @@ impl InputState {
                 // should figure out how to detect that case, like clicking an
                 // Opaque widget.
                 if response == EventResponse::Bubble {
-                    if *button == MouseButton::One && *down {
+                    if button == MouseButton::One && down {
                         self.set_selection(None);
                         self.notify_selection(dom, layout);
                     }
@@ -228,14 +228,15 @@ impl InputState {
 
                 response
             }
-            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
+            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, delta),
             Event::KeyChanged {
                 key,
                 down,
                 modifiers,
-            } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
+            } => self.keyboard_key_changed(dom, layout, key, down, modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
-            Event::TextInput(c) => self.text_input(dom, layout, *c),
+            Event::TextInput(c) => self.text_input(dom, layout, c),
+            Event::TextPreedit(text, position) => self.text_preedit(dom, layout, text, position),
             _ => EventResponse::Bubble,
         }
     }
@@ -356,8 +357,36 @@ impl InputState {
         EventResponse::Bubble
     }
 
-    fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
-        self.modifiers.set(*modifiers);
+    fn modifiers_changed(&self, modifiers: Modifiers) -> EventResponse {
+        self.modifiers.set(modifiers);
+        EventResponse::Bubble
+    }
+
+    fn text_preedit(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        text: String,
+        position: Option<(usize, usize)>,
+    ) -> EventResponse {
+        let selected = self.selection.get();
+        if let Some(id) = selected {
+            let Some(layout_node) = layout.get(id) else {
+                return EventResponse::Bubble;
+            };
+
+            if layout_node
+                .event_interest
+                .contains(EventInterest::FOCUSED_KEYBOARD)
+            {
+                // Panic safety: if this node is in the layout DOM, it must be
+                // in the DOM.
+                let mut node = dom.get_mut(id).unwrap();
+                let event = WidgetEvent::TextPreedit(text, position);
+                return self.fire_event(dom, layout, id, &mut node, &event);
+            }
+        }
+
         EventResponse::Bubble
     }
 

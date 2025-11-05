@@ -168,6 +168,11 @@ impl YakuiWinit {
                 }
             }
 
+            WindowEvent::Ime(winit::event::Ime::Preedit(text, position)) => {
+                state.handle_event(Event::TextPreedit(text.clone(), *position));
+                true
+            }
+
             WindowEvent::Ime(winit::event::Ime::Commit(text)) => {
                 for c in text.chars() {
                     state.handle_event(Event::TextInput(c));

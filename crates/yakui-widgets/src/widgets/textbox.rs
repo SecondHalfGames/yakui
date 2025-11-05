@@ -243,6 +243,10 @@ pub struct TextBoxWidget {
     lost_focus: bool,
     drag: DragState,
 
+    preedit_text: String,
+    preedit_cursor: Option<cosmic_text::Cursor>,
+    preedit_cursor_end: Option<cosmic_text::Cursor>,
+
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     /// Whether the Cosmic Text editor context has changed the text since the
     /// previous update. Edits from the user take precedence over edits from the
@@ -280,6 +284,10 @@ impl Widget for TextBoxWidget {
             activated: false,
             lost_focus: false,
             drag: DragState::None,
+
+            preedit_text: String::new(),
+            preedit_cursor: None,
+            preedit_cursor_end: None,
 
             cosmic_editor: RefCell::new(None),
             text_changed_by_cosmic: Cell::default(),
@@ -528,6 +536,24 @@ impl Widget for TextBoxWidget {
                         cursor_rect.color = self.props.cursor_color;
                         cursor_rect.add(ctx.paint);
                     }
+
+                    if let Some((preedit_cursor, preedit_cursor_end)) =
+                        self.preedit_cursor.zip(self.preedit_cursor_end)
+                    {
+                        for ((x, y), (w, h)) in cosmic_text_util::highlight(
+                            buffer,
+                            Some((preedit_cursor, preedit_cursor_end)),
+                        ) {
+                            let mut preedit_rect =
+                                PaintRect::new(cursor_bound.constrain(Rect::from_pos_size(
+                                    text_rect.pos() + Vec2::new(x, y + h) * inv_scale_factor
+                                        - Vec2::new(0.0, 3.0),
+                                    Vec2::new(w * inv_scale_factor, 3.0),
+                                )));
+                            preedit_rect.color = self.props.style.color;
+                            preedit_rect.add(ctx.paint);
+                        }
+                    }
                 });
             }
         }
@@ -687,6 +713,10 @@ impl Widget for TextBoxWidget {
                 modifiers,
                 ..
             } => {
+                if self.preedit_cursor.is_some() {
+                    return EventResponse::Bubble;
+                }
+
                 enum Select {
                     DeselectNoAffinity,
                     DeselectPrevAffinity,
@@ -1021,6 +1051,54 @@ impl Widget for TextBoxWidget {
                 }
 
                 res
+            }
+            WidgetEvent::TextPreedit(text, position) => {
+                if let Some(editor) = self.cosmic_editor.get_mut() {
+                    if text.is_empty() && !self.preedit_text.is_empty() {
+                        self.preedit_text = String::new();
+                        let preedit_cursor = self.preedit_cursor.take().unwrap();
+
+                        if let Some(preedit_cursor_end) = self.preedit_cursor_end.take() {
+                            if preedit_cursor < preedit_cursor_end {
+                                editor.delete_range(preedit_cursor, preedit_cursor_end);
+                            }
+                        }
+                        editor.set_cursor(preedit_cursor);
+
+                        self.text_changed_by_cosmic.set(true);
+                    } else if !text.is_empty() && *text != self.preedit_text {
+                        if self.preedit_cursor.is_none() {
+                            self.preedit_cursor = Some(editor.cursor());
+                        }
+
+                        let preedit_cursor = self.preedit_cursor.unwrap();
+
+                        editor.set_selection(cosmic_text::Selection::None);
+                        if let Some(preedit_cursor_end) = self.preedit_cursor_end {
+                            if preedit_cursor < preedit_cursor_end {
+                                editor.delete_range(preedit_cursor, preedit_cursor_end);
+                                editor.set_cursor(preedit_cursor);
+                            }
+                        }
+                        editor.insert_string(text, None);
+                        self.preedit_cursor_end = Some(editor.cursor());
+
+                        self.preedit_text = text.clone();
+
+                        self.text_changed_by_cosmic.set(true);
+                    }
+
+                    if let Some(cursor) = self.preedit_cursor {
+                        if let &Some((_start, end)) = position {
+                            editor.set_cursor(cosmic_text::Cursor {
+                                index: cursor.index + end,
+                                ..cursor
+                            });
+                        }
+                    }
+                }
+
+                EventResponse::Sink
             }
             WidgetEvent::TextInput(c, modifiers) => {
                 if c.is_control() {

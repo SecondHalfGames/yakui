@@ -135,6 +135,21 @@ impl YakuiSdl3 {
                 false
             }
 
+            SdlEvent::TextEditing {
+                text,
+                start,
+                length,
+                ..
+            } => {
+                let byte_lens = text.chars().map(|v| v.len_utf8()).collect::<Vec<_>>();
+                let start = *start as usize;
+                let end = start + *length as usize;
+                let start = byte_lens[..start].iter().sum();
+                let end = byte_lens[..end].iter().sum();
+
+                state.handle_event(Event::TextPreedit(text.clone(), Some((start, end))))
+            }
+
             SdlEvent::KeyDown {
                 scancode, keymod, ..
             } => {
