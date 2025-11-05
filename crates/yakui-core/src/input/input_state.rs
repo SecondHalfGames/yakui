@@ -6,6 +6,7 @@ use smallvec::SmallVec;
 
 use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
+use crate::geometry::Rect;
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 use crate::navigation::{navigate, NavDirection};
@@ -38,6 +39,9 @@ pub struct InputState {
 
     /// If set, text input should be active.
     text_input_enabled: Cell<bool>,
+
+    /// If there's a text input active with a cursor, this will be set and forwarded to the window.
+    text_cursor: Cell<Option<Rect>>,
 }
 
 #[derive(Debug)]
@@ -120,12 +124,14 @@ impl InputState {
             last_selection: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
+            text_cursor: Cell::new(None),
         }
     }
 
     /// Begin a new frame for input handling.
     pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
         self.text_input_enabled.set(false);
+        self.text_cursor.set(None);
         self.notify_selection(dom, layout);
     }
 
@@ -155,6 +161,20 @@ impl InputState {
         self.text_input_enabled.get()
     }
 
+    /// Sets the text cursor. Should be called every update from an active text input.
+    ///
+    /// Should be in physical pixels.
+    pub fn set_text_cursor(&self, cursor: Rect) {
+        self.text_cursor.set(Some(cursor));
+    }
+
+    /// Gets the text cursor, if any.
+    ///
+    /// Should be in physical pixels.
+    pub fn get_text_cursor(&self) -> Option<Rect> {
+        self.text_cursor.get()
+    }
+
     /// Returns the mouse position, or [`None`] if it's outside the window.
     pub fn mouse_pos(&self, layout: &LayoutDom) -> Option<Vec2> {
         self.mouse
@@ -182,33 +202,33 @@ impl InputState {
         &self,
         dom: &Dom,
         layout: &LayoutDom,
-        event: &Event,
+        event: Event,
     ) -> EventResponse {
         let res = match event {
             Event::CursorMoved(pos) => {
-                self.mouse_moved(dom, layout, *pos);
+                self.mouse_moved(dom, layout, pos);
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
                 // Left clicking clears selection, unless the widget handling the event sets the
                 // same selection again
-                if button == &MouseButton::One && *down {
+                if button == MouseButton::One && down {
                     self.selection.set(None);
                 }
-                let response = self.mouse_button_changed(dom, layout, *button, *down);
 
-                response
+                self.mouse_button_changed(dom, layout, button, down)
             }
-            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
+            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, delta),
             Event::KeyChanged {
                 key,
                 down,
                 modifiers,
-            } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
+            } => self.keyboard_key_changed(dom, layout, key, down, modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
-            Event::TextInput(c) => self.text_input(dom, layout, *c),
+            Event::TextInput(c) => self.text_input(dom, layout, c),
+            Event::TextPreedit(text, position) => self.text_preedit(dom, layout, text, position),
             Event::RequestFocus(id) => {
-                self.set_selection(*id);
+                self.set_selection(id);
                 EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
@@ -336,8 +356,36 @@ impl InputState {
         EventResponse::Bubble
     }
 
-    fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
-        self.modifiers.set(*modifiers);
+    fn modifiers_changed(&self, modifiers: Modifiers) -> EventResponse {
+        self.modifiers.set(modifiers);
+        EventResponse::Bubble
+    }
+
+    fn text_preedit(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        text: String,
+        position: Option<(usize, usize)>,
+    ) -> EventResponse {
+        let selected = self.selection.get();
+        if let Some(id) = selected {
+            let Some(layout_node) = layout.get(id) else {
+                return EventResponse::Bubble;
+            };
+
+            if layout_node
+                .event_interest
+                .contains(EventInterest::FOCUSED_KEYBOARD)
+            {
+                // Panic safety: if this node is in the layout DOM, it must be
+                // in the DOM.
+                let mut node = dom.get_mut(id).unwrap();
+                let event = WidgetEvent::TextPreedit(text, position);
+                return self.fire_event(dom, layout, id, &mut node, &event);
+            }
+        }
+
         EventResponse::Bubble
     }
 

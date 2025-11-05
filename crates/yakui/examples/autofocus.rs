@@ -8,12 +8,12 @@ pub fn run(state: &mut ExampleState) {
     let autofocus = use_state(|| false);
 
     center(|| {
-        let box1 = TextBox::new(text.borrow().clone())
+        let box1 = TextBox::new()
             .style(TextStyle::label().font_size(60.0))
             .padding(Pad::all(50.0))
             .placeholder("placeholder");
 
-        let response = box1.show();
+        let response = box1.show(text.borrow().as_str());
 
         if !autofocus.get() {
             autofocus.set(true);

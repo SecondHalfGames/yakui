@@ -5,6 +5,7 @@ use yakui_core::Response;
 
 use crate::style::TextStyle;
 use crate::util::widget;
+use crate::widgets::RenderTextResponse;
 use crate::{auto_builders, pad};
 
 use super::{Pad, RenderText};
@@ -33,11 +34,19 @@ pub struct Text {
     pub text: Cow<'static, str>,
     pub style: TextStyle,
     pub padding: Pad,
+    /// The text normally fills up the entire available space if it doesn't go from left to right,
+    /// marking it as inline would force it to calculate the text width instead.
+    ///
+    /// See also: [`inline` in RenderText][super::RenderText]
+    pub inline: bool,
+    pub min_width: f32,
 }
 
 auto_builders!(Text {
     style: TextStyle,
     padding: Pad,
+    inline: bool,
+    min_width: f32,
 });
 
 impl Text {
@@ -46,6 +55,8 @@ impl Text {
             text: text.into(),
             style: TextStyle::label().font_size(font_size),
             padding: Pad::ZERO,
+            inline: false,
+            min_width: 0.0,
         }
     }
 
@@ -54,6 +65,8 @@ impl Text {
             text: text.into(),
             style,
             padding: Pad::ZERO,
+            inline: false,
+            min_width: 0.0,
         }
     }
 
@@ -62,6 +75,8 @@ impl Text {
             text,
             style: TextStyle::label(),
             padding: Pad::all(8.0),
+            inline: false,
+            min_width: 0.0,
         }
     }
 
@@ -76,7 +91,9 @@ pub struct TextWidget {
     props: Text,
 }
 
-pub type TextResponse = ();
+pub struct TextResponse {
+    pub render_text: RenderTextResponse,
+}
 
 impl Widget for TextWidget {
     type Props<'a> = Text;
@@ -91,11 +108,18 @@ impl Widget for TextWidget {
     fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
-        let mut render = RenderText::new(self.props.text.clone());
-        render.style = self.props.style.clone();
-
+        let mut render_text = None;
         pad(self.props.padding, || {
-            render.show();
+            render_text = Some(
+                RenderText::with_style(self.props.text.clone(), self.props.style.clone())
+                    .inline(self.props.inline)
+                    .min_width(self.props.min_width)
+                    .show()
+                    .into_inner(),
+            );
         });
+        TextResponse {
+            render_text: render_text.unwrap(),
+        }
     }
 }
