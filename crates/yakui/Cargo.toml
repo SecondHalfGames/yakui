@@ -15,5 +15,6 @@ yakui-core = { path = "../yakui-core", version = "0.3.0" }
 yakui-widgets = { path = "../yakui-widgets", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
+yakui-widgets = { path = "../yakui-widgets", features = ["system-fonts"] }
 bootstrap = { path = "../bootstrap" }
 lyon_tessellation = "1.0.11"

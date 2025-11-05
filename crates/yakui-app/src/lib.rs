@@ -181,11 +181,12 @@ impl Graphics {
         yak: &mut yakui::Yakui,
         event: &WindowEvent,
         event_loop: &ActiveEventLoop,
+        window: &Window,
     ) -> bool {
         // yakui_winit will return whether it handled an event. This means that
         // yakui believes it should handle that event exclusively, like if a
         // button in the UI was clicked.
-        if self.window.handle_window_event(yak, event) {
+        if self.window.handle_window_event(yak, event, window) {
             return true;
         }
 
