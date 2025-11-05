@@ -6,6 +6,7 @@ use smallvec::SmallVec;
 
 use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
+use crate::geometry::Rect;
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 use crate::navigation::{navigate, NavDirection};
@@ -38,6 +39,9 @@ pub struct InputState {
 
     /// If set, text input should be active.
     text_input_enabled: Cell<bool>,
+
+    /// If there's a text input active with a cursor, this will be set and forwarded to the window.
+    text_cursor: Cell<Option<Rect>>,
 }
 
 #[derive(Debug)]
@@ -120,12 +124,14 @@ impl InputState {
             last_selection: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
+            text_cursor: Cell::new(None),
         }
     }
 
     /// Begin a new frame for input handling.
     pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
         self.text_input_enabled.set(false);
+        self.text_cursor.set(None);
         self.notify_selection(dom, layout);
     }
 
@@ -153,6 +159,20 @@ impl InputState {
     /// focused textbox.
     pub fn text_input_enabled(&self) -> bool {
         self.text_input_enabled.get()
+    }
+
+    /// Sets the text cursor. Should be called every update from an active text input.
+    ///
+    /// Should be in physical pixels.
+    pub fn set_text_cursor(&self, cursor: Rect) {
+        self.text_cursor.set(Some(cursor));
+    }
+
+    /// Gets the text cursor, if any.
+    ///
+    /// Should be in physical pixels.
+    pub fn get_text_cursor(&self) -> Option<Rect> {
+        self.text_cursor.get()
     }
 
     /// Returns the mouse position, or [`None`] if it's outside the window.

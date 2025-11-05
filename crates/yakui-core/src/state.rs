@@ -147,4 +147,9 @@ impl Yakui {
     pub fn text_input_enabled(&self) -> bool {
         self.input.text_input_enabled()
     }
+
+    /// Gets the text cursor, if any.
+    pub fn get_text_cursor(&self) -> Option<Rect> {
+        self.input.get_text_cursor()
+    }
 }
