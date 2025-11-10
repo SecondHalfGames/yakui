@@ -177,6 +177,7 @@ impl InnerAtlas {
     }
 }
 
+#[inline]
 fn blit(pos: UVec2, src_size: UVec2, src: &[u8], dst_size: UVec2, dst: &mut [u8]) {
     debug_assert!(dst_size.x >= src_size.x);
     debug_assert!(dst_size.y >= src_size.y);
