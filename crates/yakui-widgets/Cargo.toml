@@ -15,7 +15,7 @@ default-fonts = []
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-cosmic-text = { version = "0.14.2", default-features = false, features = [
+cosmic-text = { version = "0.15.0", default-features = false, features = [
     "std",
     "swash",
 ] }
