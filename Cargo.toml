@@ -19,7 +19,7 @@ wgpu = "27.0.1"
 ash = { version = "0.38.0", default-features = false, features = ["std"] }
 ash-window = "0.13.0"
 
-sdl3 = "0.14.0"
+sdl3 = "0.16.2"
 winit = { version = "0.30.0", default-features = false }
 raw-window-handle = "0.6.0"
 
