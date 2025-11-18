@@ -269,6 +269,7 @@ impl Widget for TextBoxWidget {
                             &self.props.text,
                             &self.props.style.attrs.as_attrs(),
                             cosmic_text::Shaping::Advanced,
+                            None,
                         );
                     });
 
