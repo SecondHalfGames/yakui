@@ -48,6 +48,10 @@ impl Fonts {
         f(&mut inner.font_system)
     }
 
+    pub fn load_system_fonts(&self) {
+        self.with_system(|f| f.db_mut().load_system_fonts());
+    }
+
     pub fn load_font_source(
         &self,
         source: cosmic_text::fontdb::Source,

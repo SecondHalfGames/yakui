@@ -44,15 +44,16 @@ impl RenderText {
 
     #[track_caller]
     pub fn show(self) -> Response<RenderTextResponse> {
-        Self::show_with_scroll(self, None)
+        Self::show_with_scroll(self, None, None)
     }
 
     #[track_caller]
     pub fn show_with_scroll(
         self,
         scroll: Option<cosmic_text::Scroll>,
+        cursor: Option<cosmic_text::Cursor>,
     ) -> Response<RenderTextResponse> {
-        widget::<RenderTextWidget>((self, scroll))
+        widget::<RenderTextWidget>((self, scroll, cursor))
     }
 }
 
@@ -66,11 +67,17 @@ pub struct RenderTextWidget {
     scale_factor: Cell<Option<f32>>,
     last_scroll: Cell<Option<cosmic_text::Scroll>>,
     scroll: Option<cosmic_text::Scroll>,
-    relayout: Cell<bool>,
+    cursor: Option<cosmic_text::Cursor>,
+    widest_line: Cell<f32>,
+    text_changed: Cell<bool>,
 }
 
 impl Widget for RenderTextWidget {
-    type Props<'a> = (RenderText, Option<cosmic_text::Scroll>);
+    type Props<'a> = (
+        RenderText,
+        Option<cosmic_text::Scroll>,
+        Option<cosmic_text::Cursor>,
+    );
     type Response = RenderTextResponse;
 
     fn new() -> Self {
@@ -83,17 +90,20 @@ impl Widget for RenderTextWidget {
             scale_factor: Cell::default(),
             last_scroll: Cell::default(),
             scroll: None,
-            relayout: Cell::new(false),
+            cursor: None,
+            widest_line: Cell::default(),
+            text_changed: Cell::new(true),
         }
     }
 
-    fn update(&mut self, (props, scroll): Self::Props<'_>) -> Self::Response {
+    fn update(&mut self, (props, scroll, cursor): Self::Props<'_>) -> Self::Response {
         if props.text != self.props.text || props.style.attrs != self.props.style.attrs {
-            self.relayout.set(true);
+            self.text_changed.set(true);
         }
 
         self.props = props;
         self.scroll = scroll;
+        self.cursor = cursor;
 
         Self::Response {
             size: self.size.get(),
@@ -118,7 +128,10 @@ impl Widget for RenderTextWidget {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
         fonts.with_system(|font_system| {
-            let relayout = self.relayout.take();
+            let text_changed = self.text_changed.take();
+            let relayout = text_changed
+                || self.max_size.get() != Some(max_size)
+                || self.scale_factor.get() != Some(ctx.layout.scale_factor());
 
             let mut buffer_ref = self.buffer.borrow_mut();
             let buffer = buffer_ref.get_or_insert_with(|| {
@@ -128,30 +141,15 @@ impl Widget for RenderTextWidget {
                 )
             });
 
-            if self.scale_factor.get() != Some(ctx.layout.scale_factor())
-                || self.max_size.get() != Some(max_size)
-                || relayout
-            {
-                buffer.set_metrics_and_size(
-                    font_system,
-                    self.props.style.to_metrics(ctx.layout.scale_factor()),
-                    max_width,
-                    max_height,
-                );
-
+            if relayout {
                 self.max_size.set(Some(max_size));
                 self.scale_factor.set(Some(ctx.layout.scale_factor()));
-            }
 
-            if self.last_scroll.get() != self.scroll {
-                if let Some(scroll) = self.scroll {
-                    buffer.set_scroll(scroll);
-                }
+                buffer.set_metrics(
+                    font_system,
+                    self.props.style.to_metrics(ctx.layout.scale_factor()),
+                );
 
-                self.last_scroll.set(self.scroll);
-            }
-
-            if relayout {
                 buffer.set_text(
                     font_system,
                     &self.props.text,
@@ -159,53 +157,73 @@ impl Widget for RenderTextWidget {
                     cosmic_text::Shaping::Advanced,
                     None,
                 );
+
+                let scroll = buffer.scroll();
+                buffer.set_scroll(cosmic_text::Scroll::default());
+                buffer.set_size(font_system, max_width, None);
+                let widest_line = buffer
+                    .layout_runs()
+                    .map(|layout| {
+                        if layout.rtl {
+                            max_width.unwrap_or(layout.line_w)
+                        } else {
+                            layout.line_w
+                        }
+                    })
+                    .max_by(|a, b| a.total_cmp(b))
+                    .unwrap_or_default()
+                    .max(constraints.min.x * ctx.layout.scale_factor());
+                buffer.set_size(font_system, max_width, max_height);
+                buffer.set_scroll(scroll);
+
+                self.widest_line.set(widest_line);
             }
 
-            buffer.shape_until_scroll(font_system, true);
+            if relayout || self.last_scroll.get() != self.scroll {
+                if let Some(scroll) = self.scroll {
+                    buffer.set_scroll(scroll);
+                    buffer.shape_until_scroll(font_system, text_changed);
+                }
+                self.last_scroll.set(self.scroll);
 
-            let mut line_offsets = self.line_offsets.borrow_mut();
-            line_offsets.clear();
+                let mut line_offsets = self.line_offsets.borrow_mut();
+                line_offsets.clear();
 
-            let widest_line = buffer
-                .layout_runs()
-                .map(|layout| layout.line_w)
-                .max_by(|a, b| a.total_cmp(b))
-                .unwrap_or_default()
-                .max(constraints.min.x * ctx.layout.scale_factor());
+                let widest_line = self.widest_line.get();
+                for run in buffer.layout_runs() {
+                    let offset = match self.props.style.align {
+                        TextAlignment::Start => 0.0,
+                        TextAlignment::Center => (widest_line - run.line_w) / 2.0,
+                        TextAlignment::End => widest_line - run.line_w,
+                    };
 
-            for run in buffer.layout_runs() {
-                let offset = match self.props.style.align {
-                    TextAlignment::Start => 0.0,
-                    TextAlignment::Center => (widest_line - run.line_w) / 2.0,
-                    TextAlignment::End => widest_line - run.line_w,
+                    line_offsets.push(offset / ctx.layout.scale_factor());
+                }
+
+                let size = {
+                    let size_y = buffer
+                        .layout_runs()
+                        .map(|layout| layout.line_height)
+                        .sum::<f32>()
+                        .ceil();
+
+                    Vec2::new(
+                        widest_line / ctx.layout.scale_factor(),
+                        (size_y / ctx.layout.scale_factor()).ceil(),
+                    )
                 };
 
-                line_offsets.push(offset / ctx.layout.scale_factor());
+                let size = constraints.constrain(size);
+                self.size.set(Some(size));
             }
 
-            let size = {
-                let size_y = buffer
-                    .layout_runs()
-                    .map(|layout| layout.line_height)
-                    .sum::<f32>()
-                    .ceil();
-
-                Vec2::new(
-                    widest_line / ctx.layout.scale_factor(),
-                    (size_y / ctx.layout.scale_factor()).ceil(),
-                )
-            };
-
-            let size = constraints.constrain(size);
-            self.size.set(Some(size));
-
-            size
+            self.size.get().unwrap()
         })
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
-        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
+        let node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let buffer_ref = self.buffer.borrow();
         let Some(buffer) = buffer_ref.as_ref() else {
@@ -218,16 +236,15 @@ impl Widget for RenderTextWidget {
 
             for (layout, x_offset) in buffer.layout_runs().zip(line_offsets.iter().copied()) {
                 for glyph in layout.glyphs {
-                    if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, glyph) {
-                        paint_text(
-                            &mut ctx,
-                            self.props.style.color,
-                            glyph,
-                            render,
-                            layout_node.rect.pos() + Vec2::new(x_offset, 0.0),
-                            layout.line_y,
-                        )
-                    }
+                    let render = text_global.get_glyph_render(ctx.paint, font_system, glyph);
+                    paint_text(
+                        &mut ctx,
+                        &layout,
+                        glyph,
+                        render,
+                        node.rect.pos() + Vec2::new(x_offset, 0.0),
+                        self.props.style.color,
+                    );
                 }
             }
         });
@@ -236,11 +253,11 @@ impl Widget for RenderTextWidget {
 
 fn paint_text(
     ctx: &mut PaintContext<'_>,
-    color: Color,
+    layout: &cosmic_text::LayoutRun,
     glyph: &cosmic_text::LayoutGlyph,
     render: GlyphRender,
-    layout_pos: Vec2,
-    line_y: f32,
+    widget_pos: Vec2,
+    color: Color,
 ) {
     let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
 
@@ -250,8 +267,11 @@ fn paint_text(
     let pos = Vec2::new(physical.x as f32, physical.y as f32);
 
     let mut rect = PaintRect::new(Rect::from_pos_size(
-        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y) * inv_scale_factor
-            + layout_pos,
+        Vec2::new(
+            pos.x + render.offset.x,
+            pos.y - render.offset.y + layout.line_y,
+        ) * inv_scale_factor
+            + widget_pos,
         Vec2::new(size.x, size.y) * inv_scale_factor,
     ));
 

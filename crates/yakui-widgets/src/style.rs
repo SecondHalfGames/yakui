@@ -40,7 +40,7 @@ impl TextStyle {
     }
 
     pub fn line_height(&self) -> f32 {
-        self.line_height_override.unwrap_or(self.font_size * 1.175)
+        self.line_height_override.unwrap_or(self.font_size * 1.2)
     }
 
     pub fn to_metrics(&self, scale_factor: f32) -> cosmic_text::Metrics {
