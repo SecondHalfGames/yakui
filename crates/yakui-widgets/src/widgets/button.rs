@@ -69,6 +69,15 @@ impl Default for DynamicButtonStyle {
     }
 }
 
+impl DynamicButtonStyle {
+    pub fn text_style<F: FnOnce(TextStyle) -> TextStyle>(self, f: F) -> Self {
+        Self {
+            text: f(self.text),
+            ..self
+        }
+    }
+}
+
 impl Button {
     pub fn unstyled(text: impl Into<Cow<'static, str>>) -> Self {
         Self {
@@ -183,7 +192,9 @@ impl Widget for ButtonWidget {
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
-                    RenderText::with_style(self.props.text.clone(), text_style).show();
+                    RenderText::with_style(self.props.text.clone(), text_style)
+                        .inline(true)
+                        .show();
                 });
             });
         });

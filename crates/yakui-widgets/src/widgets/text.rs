@@ -33,22 +33,28 @@ pub struct Text {
     pub text: Cow<'static, str>,
     pub style: TextStyle,
     pub padding: Pad,
+    /// The text normally fills up the entire available space if it doesn't go from left to right,
+    /// marking it as inline would force it to calculate the text width instead.
+    ///
+    /// See also: [`inline` in RenderText][super::RenderText]
+    pub inline: bool,
+    pub min_width: f32,
 }
 
 auto_builders!(Text {
-    style: TextStyle,
     padding: Pad,
+    inline: bool,
+    min_width: f32,
 });
 
 impl Text {
     pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
-        let mut style = TextStyle::label();
-        style.font_size = font_size;
-
         Self {
             text: text.into(),
-            style,
+            style: TextStyle::label().font_size(font_size),
             padding: Pad::ZERO,
+            inline: false,
+            min_width: 0.0,
         }
     }
 
@@ -57,6 +63,8 @@ impl Text {
             text: text.into(),
             style,
             padding: Pad::ZERO,
+            inline: false,
+            min_width: 0.0,
         }
     }
 
@@ -65,6 +73,15 @@ impl Text {
             text,
             style: TextStyle::label(),
             padding: Pad::all(8.0),
+            inline: false,
+            min_width: 0.0,
+        }
+    }
+
+    pub fn style<F: FnOnce(TextStyle) -> TextStyle>(self, f: F) -> Self {
+        Self {
+            style: f(self.style),
+            ..self
         }
     }
 
@@ -94,11 +111,11 @@ impl Widget for TextWidget {
     fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
         self.props = props;
 
-        let mut render = RenderText::new(self.props.text.clone());
-        render.style = self.props.style.clone();
-
         pad(self.props.padding, || {
-            render.show();
+            RenderText::with_style(self.props.text.clone(), self.props.style.clone())
+                .inline(self.props.inline)
+                .min_width(self.props.min_width)
+                .show();
         });
     }
 }
