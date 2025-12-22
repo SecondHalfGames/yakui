@@ -107,7 +107,7 @@ impl Yakui {
     pub fn finish(&mut self) {
         context::unbind_dom();
 
-        self.dom.finish(&self.input);
+        self.dom.finish();
         self.layout.sync_removals(&self.dom.removed_nodes());
         self.layout
             .calculate_all(&self.dom, &self.input, &self.paint);
