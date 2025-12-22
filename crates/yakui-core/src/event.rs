@@ -1,6 +1,6 @@
 //! Defines the events that can be sent to yakui and handled by widgets.
 
-use glam::Vec2;
+use {crate::WidgetId, glam::Vec2};
 
 use crate::geometry::Rect;
 use crate::input::{KeyCode, Modifiers, MouseButton};
@@ -47,6 +47,9 @@ pub enum Event {
 
     /// A Unicode codepoint was typed in the window.
     TextInput(char),
+
+    /// Request focus of a specific widget, or clear focus if `None`.
+    RequestFocus(Option<WidgetId>),
 }
 
 /// An event that can be handled by an individual widget.

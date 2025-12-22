@@ -207,6 +207,10 @@ impl InputState {
             } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
+            Event::RequestFocus(id) => {
+                self.set_selection(*id);
+                EventResponse::Bubble
+            }
             _ => EventResponse::Bubble,
         };
 
