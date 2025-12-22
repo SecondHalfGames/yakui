@@ -133,6 +133,12 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
 
                     // Finish building the UI and compute this frame's layout.
                     self.yak.finish();
+
+                    // Run any deferred commands that were queued up during UI
+                    // building.
+                    for command in self.state.commands.drain(..) {
+                        command(&mut self.yak);
+                    }
                 }
 
                 // The example graphics abstraction calls yak.paint() to get

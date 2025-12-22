@@ -55,6 +55,7 @@ fn run(body: impl ExampleBody) {
         monkey_blurred,
         brown_inlay,
         custom: None,
+        commands: Vec::new(),
     };
 
     let backend = get_backend();

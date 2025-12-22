@@ -26,6 +26,9 @@ pub struct ExampleState {
     /// the renderer. This image is generated in `custom_texture.rs` and
     /// uploaded with wgpu directly.
     pub custom: Option<TextureId>,
+
+    /// Deferred commands to run on the yakui state after the current frame
+    pub commands: Vec<Box<dyn FnOnce(&mut yakui::Yakui) + 'static>>,
 }
 
 pub trait ExampleBody: 'static {

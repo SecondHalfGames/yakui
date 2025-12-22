@@ -56,6 +56,9 @@ pub fn run<T: ExampleBody>(mut yak: Yakui, mut state: ExampleState, title: Strin
             yak.start();
             body.run(&mut state);
             yak.finish();
+            for command in state.commands.drain(..) {
+                command(&mut yak);
+            }
         }
 
         yak_window.update(&window, &mut yak);
