@@ -88,7 +88,7 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
             custom_texture::generate(&graphics.device, &graphics.queue),
             wgpu::FilterMode::Nearest,
             wgpu::FilterMode::Nearest,
-            wgpu::FilterMode::Nearest,
+            wgpu::MipmapFilterMode::Nearest,
             wgpu::AddressMode::ClampToEdge,
         );
         self.state.custom = Some(custom);
