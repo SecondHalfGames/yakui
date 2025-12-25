@@ -43,6 +43,8 @@ pub fn run() {
                 row_st_d_ve_textbox("b");
             }
         };
+
+        textbox("hi");
     });
 }
 
