@@ -38,6 +38,13 @@ fn run(body: impl ExampleBody) {
 
     // Preload some textures for the examples to use.
     let monkey = yak.add_texture(load_texture(MONKEY_PNG, TextureFilter::Linear));
+    let monkey_transparent = yak.add_texture({
+        let mut texture = load_texture(MONKEY_PNG, TextureFilter::Linear);
+        for pixel in texture.data_mut().chunks_exact_mut(4) {
+            pixel[3] = 64;
+        }
+        texture
+    });
     let monkey_blurred = yak.add_texture(load_texture(MONKEY_BLURRED_PNG, TextureFilter::Linear));
     let brown_inlay = yak.add_texture(load_texture(BROWN_INLAY_PNG, TextureFilter::Nearest));
 
@@ -52,6 +59,7 @@ fn run(body: impl ExampleBody) {
     let state = ExampleState {
         time: 0.0,
         monkey,
+        monkey_transparent,
         monkey_blurred,
         brown_inlay,
         custom: None,
