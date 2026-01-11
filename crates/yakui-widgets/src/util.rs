@@ -44,8 +44,8 @@ macro_rules! auto_builders {
     ) => {
         impl $struct {
             $(
-                pub fn $name(self, $name: $type) -> Self {
-                    Self { $name, ..self }
+                pub fn $name<T: Into<$type>>(self, $name: T) -> Self {
+                    Self { $name: $name.into(), ..self }
                 }
             )*
         }
