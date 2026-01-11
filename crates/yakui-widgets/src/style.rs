@@ -12,9 +12,11 @@ pub struct TextStyle {
 }
 
 auto_builders!(TextStyle {
-    color: Color,
     font_size: f32,
+    line_height_override: Option<f32>,
+    color: Color,
     align: TextAlignment,
+    attrs: cosmic_text::AttrsOwned,
 });
 
 impl Default for TextStyle {
