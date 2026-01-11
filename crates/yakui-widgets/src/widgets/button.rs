@@ -65,11 +65,8 @@ auto_builders!(DynamicButtonStyle {
 
 impl Default for DynamicButtonStyle {
     fn default() -> Self {
-        let mut text = TextStyle::label();
-        text.align = TextAlignment::Center;
-
         Self {
-            text,
+            text: TextStyle::label().align(TextAlignment::Center),
             fill: Color::GRAY,
             border: None,
         }
@@ -179,9 +176,9 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let mut container = RoundRect::new(self.props.border_radius);
-        container.color = color;
-        container.border = border;
+        let container = RoundRect::new(self.props.border_radius)
+            .border(border)
+            .color(color);
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
