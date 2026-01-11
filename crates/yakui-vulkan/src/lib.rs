@@ -604,7 +604,7 @@ impl YakuiVulkan {
                 TextureChange::Removed => {
                     if let Some(removed) = self.yakui_managed_textures.remove(&id) {
                         unsafe {
-                            self.uploads.dispose(removed);
+                            // self.uploads.dispose(removed);
                         }
                     }
                 }
@@ -612,7 +612,7 @@ impl YakuiVulkan {
                 TextureChange::Modified => {
                     if let Some(old) = self.yakui_managed_textures.remove(&id) {
                         unsafe {
-                            self.uploads.dispose(old);
+                            // self.uploads.dispose(old);
                         }
                     }
                     let new = paint.texture(id).unwrap();
