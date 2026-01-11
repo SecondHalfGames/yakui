@@ -15,8 +15,8 @@ Responds with [RoundRectResponse].
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
     pub color: Color,
-    pub border: Option<Border>,
     pub min_size: Vec2,
+    pub border: Option<Border>,
     pub radius: BorderRadius,
 }
 
@@ -24,6 +24,7 @@ auto_builders!(RoundRect {
     color: Color,
     min_size: Vec2,
     border: Option<Border>,
+    radius: BorderRadius,
 });
 
 impl RoundRect {
@@ -34,11 +35,6 @@ impl RoundRect {
             radius: radius.into(),
             border: None,
         }
-    }
-
-    pub fn radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
-        self.radius = radius.into();
-        self
     }
 
     #[track_caller]

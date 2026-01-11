@@ -2,6 +2,7 @@ use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -15,6 +16,11 @@ pub struct UnconstrainedBox {
     pub constrain_x: bool,
     pub constrain_y: bool,
 }
+
+auto_builders!(UnconstrainedBox {
+    constrain_x: bool,
+    constrain_y: bool,
+});
 
 impl UnconstrainedBox {
     pub fn new() -> Self {

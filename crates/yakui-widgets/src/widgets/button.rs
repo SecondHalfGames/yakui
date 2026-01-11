@@ -43,6 +43,7 @@ auto_builders!(Button {
     text: Cow<'static, str>,
     alignment: Alignment,
     padding: Pad,
+    border_radius: BorderRadius,
     style: DynamicButtonStyle,
     hover_style: DynamicButtonStyle,
     down_style: DynamicButtonStyle,
@@ -55,6 +56,12 @@ pub struct DynamicButtonStyle {
     pub fill: Color,
     pub border: Option<Border>,
 }
+
+auto_builders!(DynamicButtonStyle {
+    text: TextStyle,
+    fill: Color,
+    border: Option<Border>,
+});
 
 impl Default for DynamicButtonStyle {
     fn default() -> Self {
@@ -112,11 +119,6 @@ impl Button {
             hover_style,
             down_style,
         }
-    }
-
-    pub fn border_radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
-        self.border_radius = radius.into();
-        self
     }
 
     #[track_caller]
