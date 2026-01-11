@@ -13,7 +13,6 @@ use crate::widgets::Pad;
 use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
-use crate::shapes;
 
 /**
 A button containing some text.
