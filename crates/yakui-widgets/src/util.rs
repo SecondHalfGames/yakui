@@ -38,7 +38,8 @@ pub fn read_scope<T: 'static>() -> Option<Rc<T>> {
 macro_rules! auto_builders {
     (
         $struct:ident {
-            $( $name:ident: $type:ty, )*
+            $( $name:ident: $type:ty ),*
+            $(,)?
         }
     ) => {
         impl $struct {
