@@ -34,9 +34,7 @@ pub fn run() {
 fn frame(children: impl FnOnce()) {
     center(|| {
         Pad::all(16.0).show(|| {
-            let mut col = List::column();
-            col.item_spacing = 8.0;
-            col.show(children);
+            List::column().item_spacing(8.0).show(children);
         });
     });
 }

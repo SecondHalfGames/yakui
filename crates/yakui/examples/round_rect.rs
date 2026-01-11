@@ -36,11 +36,10 @@ fn create_round_rect(index: usize, state: &ExampleState) {
         1 => (BorderRadius::from((20.0, 5.0, 20.0, 5.0)), Color::YELLOW),
         2 => (BorderRadius::top(15.0), Color::RED),
         3 => (BorderRadius::right(15.0), Color::GREEN),
-        4 => {
-            let mut radius = BorderRadius::uniform(10.0);
-            radius.top_left = 30.0;
-            (radius, Color::rgb(255, 0, 255))
-        }
+        4 => (
+            BorderRadius::uniform(10.0).top_left(30.0),
+            Color::rgb(255, 0, 255),
+        ),
         5 => {
             let animated_radius = 15.0 * (state.time * 2.0).sin().abs();
             (
@@ -131,19 +130,19 @@ fn create_round_rect(index: usize, state: &ExampleState) {
         _ => (BorderRadius::uniform(0.0), Color::WHITE),
     };
 
-    let mut rect = yakui::widgets::RoundRect::new(radius);
-    rect.min_size = Vec2::new(80.0, 50.0);
-    rect.color = color;
-    rect.border = Some(Border::new(Color::CYAN, (index as f32).min(10.0)));
-    rect.show_children(|| {
-        yakui::constrained(yakui::Constraints::tight(Vec2::new(80.0, 50.0)), || {
-            yakui::pad(yakui::widgets::Pad::all(4.0), || {
-                center(|| {
-                    text(12.0, format!("{}", index));
+    yakui::widgets::RoundRect::new(radius)
+        .min_size(Vec2::new(80.0, 50.0))
+        .color(color)
+        .border(Border::new(Color::CYAN, (index as f32).min(10.0)))
+        .show_children(|| {
+            yakui::constrained(yakui::Constraints::tight(Vec2::new(80.0, 50.0)), || {
+                yakui::pad(yakui::widgets::Pad::all(4.0), || {
+                    center(|| {
+                        text(12.0, format!("{}", index));
+                    });
                 });
             });
         });
-    });
 }
 
 fn main() {

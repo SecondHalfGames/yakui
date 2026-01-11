@@ -9,14 +9,14 @@ pub fn run() {
         TextAlignment::End,
     ];
 
-    let mut list = List::row();
-    list.cross_axis_alignment = CrossAxisAlignment::End;
-    list.item_spacing = 16.0;
-    list.show(|| {
-        for &alignment in ALIGNMENTS {
-            menu_button(alignment);
-        }
-    });
+    List::row()
+        .cross_axis_alignment(CrossAxisAlignment::End)
+        .item_spacing(16.0)
+        .show(|| {
+            for &alignment in ALIGNMENTS {
+                menu_button(alignment);
+            }
+        });
 }
 
 fn menu_button(alignment: TextAlignment) {
