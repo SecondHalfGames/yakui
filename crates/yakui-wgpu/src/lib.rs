@@ -30,6 +30,10 @@ pub struct YakuiWgpu {
     limits: PaintLimits,
     main_pipeline: PipelineCache,
     text_pipeline: PipelineCache,
+
+    premul_pipeline: wgpu::RenderPipeline,
+    premul_bind_group_layout: wgpu::BindGroupLayout,
+
     samplers: Samplers,
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
@@ -116,9 +120,80 @@ impl YakuiWgpu {
 
         let samplers = Samplers::new(device);
 
+        let premul_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("yakui Premultiply Texture Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                        count: None,
+                    },
+                ],
+            });
+
+        let premul_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("yakui Premultiply Texture Pipeline Layout"),
+                bind_group_layouts: &[&premul_bind_group_layout],
+                immediate_size: 0,
+            });
+
+        let premul_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Main Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/premul.wgsl").into()),
+        });
+
+        let premul_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("yakui Premultiply Texture Pipeline"),
+            layout: Some(&premul_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &premul_shader,
+                entry_point: None,
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &premul_shader,
+                entry_point: None,
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                ..Default::default()
+            },
+            multiview_mask: None,
+            cache: None,
+        });
+
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
-        let default_texture = GpuManagedTexture::new(device, queue, &default_texture_data);
+        let default_texture = GpuManagedTexture::new(
+            device,
+            queue,
+            &default_texture_data,
+            &premul_pipeline,
+            &premul_bind_group_layout,
+            &samplers,
+        );
         let default_bindgroup = bindgroup_cache::bindgroup(
             device,
             &layout,
@@ -135,6 +210,8 @@ impl YakuiWgpu {
             main_pipeline,
             text_pipeline,
             samplers,
+            premul_pipeline,
+            premul_bind_group_layout,
             textures: Arena::new(),
             managed_textures: HashMap::new(),
 
@@ -402,17 +479,33 @@ impl YakuiWgpu {
         profiling::scope!("update_textures");
 
         for (id, texture) in paint.textures() {
-            self.managed_textures
-                .entry(id)
-                .or_insert_with(|| GpuManagedTexture::new(device, queue, texture));
+            self.managed_textures.entry(id).or_insert_with(|| {
+                GpuManagedTexture::new(
+                    device,
+                    queue,
+                    texture,
+                    &self.premul_pipeline,
+                    &self.premul_bind_group_layout,
+                    &self.samplers,
+                )
+            });
         }
 
         for (id, change) in paint.texture_edits() {
             match change {
                 TextureChange::Added => {
                     let texture = paint.texture(id).unwrap();
-                    self.managed_textures
-                        .insert(id, GpuManagedTexture::new(device, queue, texture));
+                    self.managed_textures.insert(
+                        id,
+                        GpuManagedTexture::new(
+                            device,
+                            queue,
+                            texture,
+                            &self.premul_pipeline,
+                            &self.premul_bind_group_layout,
+                            &self.samplers,
+                        ),
+                    );
                 }
 
                 TextureChange::Removed => {
@@ -422,7 +515,14 @@ impl YakuiWgpu {
                 TextureChange::Modified => {
                     if let Some(existing) = self.managed_textures.get_mut(&id) {
                         let texture = paint.texture(id).unwrap();
-                        existing.update(device, queue, texture);
+                        existing.update(
+                            device,
+                            queue,
+                            texture,
+                            &self.premul_pipeline,
+                            &self.premul_bind_group_layout,
+                            &self.samplers,
+                        );
                     }
                 }
             }
