@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use crate::samplers::Samplers;
 
 use {std::sync::Arc, yakui_core::paint::AddressMode};
 
@@ -24,9 +24,14 @@ pub(crate) struct GpuTexture {
 }
 
 impl GpuManagedTexture {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) -> Self {
-        let texture = premultiply_alpha(texture);
-
+    pub fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture: &Texture,
+        premul_pipeline: &wgpu::RenderPipeline,
+        premul_bind_group_layout: &wgpu::BindGroupLayout,
+        samplers: &Samplers,
+    ) -> Self {
         let size = wgpu::Extent3d {
             width: texture.size().x,
             height: texture.size().y,
@@ -44,17 +49,30 @@ impl GpuManagedTexture {
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
         });
 
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &gpu_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            texture.data(),
-            data_layout(texture.format(), texture.size()),
-            size,
-        );
+        if matches!(texture.format(), TextureFormat::Rgba8Srgb) {
+            premultiply_alpha(
+                device,
+                queue,
+                texture,
+                &gpu_texture,
+                size,
+                premul_pipeline,
+                premul_bind_group_layout,
+                samplers,
+            );
+        } else {
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &gpu_texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                texture.data(),
+                data_layout(texture.format(), texture.size()),
+                size,
+            );
+        }
 
         let gpu_view = gpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -74,13 +92,26 @@ impl GpuManagedTexture {
     }
 
     // Update the GpuTexture from a yakui Texture.
-    pub fn update(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, texture: &Texture) {
+    pub fn update(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture: &Texture,
+        premul_pipeline: &wgpu::RenderPipeline,
+        premul_bind_group_layout: &wgpu::BindGroupLayout,
+        samplers: &Samplers,
+    ) {
         if self.size != texture.size() || self.format != texture.format() {
-            *self = Self::new(device, queue, texture);
+            *self = Self::new(
+                device,
+                queue,
+                texture,
+                premul_pipeline,
+                premul_bind_group_layout,
+                samplers,
+            );
             return;
         }
-
-        let texture = premultiply_alpha(texture);
 
         let size = wgpu::Extent3d {
             width: texture.size().x,
@@ -88,17 +119,30 @@ impl GpuManagedTexture {
             depth_or_array_layers: 1,
         };
 
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &self.gpu_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            texture.data(),
-            data_layout(texture.format(), texture.size()),
-            size,
-        );
+        if matches!(texture.format(), TextureFormat::Rgba8Srgb) {
+            premultiply_alpha(
+                device,
+                queue,
+                texture,
+                &self.gpu_texture,
+                size,
+                premul_pipeline,
+                premul_bind_group_layout,
+                samplers,
+            );
+        } else {
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &self.gpu_texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                texture.data(),
+                data_layout(texture.format(), texture.size()),
+                size,
+            );
+        }
     }
 }
 
@@ -144,24 +188,112 @@ fn wgpu_address_mode(address_mode: AddressMode) -> wgpu::AddressMode {
     }
 }
 
-fn premultiply_alpha(texture: &Texture) -> Cow<'_, Texture> {
-    fn premul(a: u8, b: u8) -> u8 {
-        (((a as u32) * (b as u32) + 255) >> 8) as u8
+#[allow(clippy::too_many_arguments)]
+fn premultiply_alpha(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    texture: &Texture,
+    gpu_texture: &wgpu::Texture,
+    size: wgpu::Extent3d,
+    premul_pipeline: &wgpu::RenderPipeline,
+    premul_bind_group_layout: &wgpu::BindGroupLayout,
+    samplers: &Samplers,
+) {
+    let source_texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Premultiply Source Texture"),
+        size,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu_format(texture.format()),
+        view_formats: &[],
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+    });
+
+    let destination_texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Premultiply Destination Texture"),
+        size,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu_format(texture.format()),
+        view_formats: &[],
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+    });
+
+    queue.write_texture(
+        wgpu::TexelCopyTextureInfo {
+            texture: &source_texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        texture.data(),
+        data_layout(texture.format(), texture.size()),
+        size,
+    );
+
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Premultiply Texture Bind Group"),
+        layout: premul_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(
+                    &source_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                ),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(samplers.get(
+                    wgpu::FilterMode::Nearest,
+                    wgpu::FilterMode::Nearest,
+                    wgpu::MipmapFilterMode::Nearest,
+                    wgpu::AddressMode::ClampToEdge,
+                )),
+            },
+        ],
+    });
+
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("Premultiply Texture Encoder"),
+    });
+    {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("yakui Premultiply Texture Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &destination_texture.create_view(&wgpu::TextureViewDescriptor::default()),
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    // SAFETY: we'll be reading every pixel of the source texture and we don't care the content of the newly created destination texture.
+                    // however, if the source texture is corrupt, then this will be too.
+                    load: wgpu::LoadOp::DontCare(unsafe { wgpu::LoadOpDontCare::enabled() }),
+                    store: wgpu::StoreOp::default(),
+                },
+            })],
+            ..Default::default()
+        });
+
+        render_pass.set_bind_group(0, &bind_group, &[]);
+        render_pass.set_pipeline(premul_pipeline);
+        render_pass.draw(0..3, 0..1);
     }
+    encoder.copy_texture_to_texture(
+        wgpu::TexelCopyTextureInfo {
+            texture: &destination_texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyTextureInfo {
+            texture: gpu_texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        size,
+    );
 
-    match texture.format() {
-        TextureFormat::Rgba8Srgb => {
-            let mut texture = texture.clone();
-
-            for pixel in texture.data_mut().chunks_exact_mut(4) {
-                pixel[0] = premul(pixel[0], pixel[3]);
-                pixel[1] = premul(pixel[1], pixel[3]);
-                pixel[2] = premul(pixel[2], pixel[3]);
-            }
-
-            Cow::Owned(texture)
-        }
-        TextureFormat::Rgba8SrgbPremultiplied => Cow::Borrowed(texture),
-        TextureFormat::R8 => Cow::Borrowed(texture),
-    }
+    queue.submit([encoder.finish()]);
 }
