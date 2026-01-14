@@ -13,40 +13,39 @@ pub fn run() {
         expanded(|| {
             let panel = Panel::side();
             panel.show(|| {
-                let mut column = List::column();
-                column.cross_axis_alignment = CrossAxisAlignment::Start;
-
-                column.show(|| {
-                    row(|| {
-                        expanded(|| {
-                            label("Label Label");
+                List::column()
+                    .cross_axis_alignment(CrossAxisAlignment::Start)
+                    .show(|| {
+                        row(|| {
+                            expanded(|| {
+                                label("Label Label");
+                            });
+                            button("Button!");
                         });
-                        button("Button!");
-                    });
 
-                    row(|| {
-                        label("More labels!");
-                        button("Buttons!!!");
-                    });
+                        row(|| {
+                            label("More labels!");
+                            button("Buttons!!!");
+                        });
 
-                    row(|| {
-                        label("Input");
-                        expanded(|| {
-                            let name = use_state(|| String::from("Hello"));
+                        row(|| {
+                            label("Input");
+                            expanded(|| {
+                                let name = use_state(|| String::from("Hello"));
 
-                            let res = textbox(name.borrow().clone());
-                            if let Some(new_text) = res.into_inner().text {
-                                name.set(new_text);
-                            }
+                                let res = textbox(name.borrow().clone());
+                                if let Some(new_text) = res.into_inner().text {
+                                    name.set(new_text);
+                                }
+                            });
+                        });
+
+                        row(|| {
+                            expanded(|| {
+                                button("Wide Button!");
+                            });
                         });
                     });
-
-                    row(|| {
-                        expanded(|| {
-                            button("Wide Button!");
-                        });
-                    });
-                });
             });
         });
     });

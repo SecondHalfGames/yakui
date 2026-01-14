@@ -38,13 +38,14 @@ pub fn read_scope<T: 'static>() -> Option<Rc<T>> {
 macro_rules! auto_builders {
     (
         $struct:ident {
-            $( $name:ident: $type:ty, )*
+            $( $name:ident: $type:ty ),*
+            $(,)?
         }
     ) => {
         impl $struct {
             $(
-                pub fn $name(self, $name: $type) -> Self {
-                    Self { $name, ..self }
+                pub fn $name<T: Into<$type>>(self, $name: T) -> Self {
+                    Self { $name: $name.into(), ..self }
                 }
             )*
         }

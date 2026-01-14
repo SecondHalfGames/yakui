@@ -104,15 +104,15 @@ impl Widget for CutOutWidget {
                 layout_node.rect.size() / ctx.layout.viewport().size(),
             );
 
-            let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
-            rect.color = self.props.image_color;
-            rect.texture = Some((image, texture_rect));
-            rect.add(ctx.paint);
+            RoundedRectangle::new(layout_node.rect, self.props.radius)
+                .color(self.props.image_color)
+                .texture((image, texture_rect))
+                .add(ctx.paint);
         }
 
-        let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
-        rect.color = self.props.overlay_color;
-        rect.add(ctx.paint);
+        RoundedRectangle::new(layout_node.rect, self.props.radius)
+            .color(self.props.overlay_color)
+            .add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

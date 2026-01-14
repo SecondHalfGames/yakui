@@ -43,6 +43,7 @@ auto_builders!(Button {
     text: Cow<'static, str>,
     alignment: Alignment,
     padding: Pad,
+    border_radius: BorderRadius,
     style: DynamicButtonStyle,
     hover_style: DynamicButtonStyle,
     down_style: DynamicButtonStyle,
@@ -56,13 +57,16 @@ pub struct DynamicButtonStyle {
     pub border: Option<Border>,
 }
 
+auto_builders!(DynamicButtonStyle {
+    text: TextStyle,
+    fill: Color,
+    border: Option<Border>,
+});
+
 impl Default for DynamicButtonStyle {
     fn default() -> Self {
-        let mut text = TextStyle::label();
-        text.align = TextAlignment::Center;
-
         Self {
-            text,
+            text: TextStyle::label().align(TextAlignment::Center),
             fill: Color::GRAY,
             border: None,
         }
@@ -112,11 +116,6 @@ impl Button {
             hover_style,
             down_style,
         }
-    }
-
-    pub fn border_radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
-        self.border_radius = radius.into();
-        self
     }
 
     #[track_caller]
@@ -177,9 +176,9 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let mut container = RoundRect::new(self.props.border_radius);
-        container.color = color;
-        container.border = border;
+        let container = RoundRect::new(self.props.border_radius)
+            .border(border)
+            .color(color);
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
