@@ -228,7 +228,7 @@ impl LayoutDom {
                 let node = dom.get(id).unwrap();
                 layout_node
                     .rect
-                    .set_pos(layout_node.rect.pos() + parent_pos);
+                    .set_pos((layout_node.rect.pos() + parent_pos).round());
 
                 queue.extend(node.children.iter().map(|&id| (id, layout_node.rect.pos())));
             }
