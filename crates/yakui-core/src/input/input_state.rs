@@ -138,7 +138,7 @@ impl InputState {
     fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
         if let Some(dir) = self.pending_navigation.take() {
             if let Some(new_focus) = navigate(dom, layout, self, dir) {
-                dom.request_focus(new_focus);
+                self.set_selection(Some(new_focus));
             }
         }
     }
@@ -184,27 +184,18 @@ impl InputState {
         layout: &LayoutDom,
         event: &Event,
     ) -> EventResponse {
-        match event {
+        let res = match event {
             Event::CursorMoved(pos) => {
                 self.mouse_moved(dom, layout, *pos);
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
-                let response = self.mouse_button_changed(dom, layout, *button, *down);
-
-                // If no widgets elected to handle mouse button one going down,
-                // we can should clear our selection.
-                //
-                // FIXME: Currently, this gets sunk by widgets that sink events
-                // but don't do anything to the selection state with them. We
-                // should figure out how to detect that case, like clicking an
-                // Opaque widget.
-                if response == EventResponse::Bubble {
-                    if *button == MouseButton::One && *down {
-                        self.set_selection(None);
-                        self.notify_selection(dom, layout);
-                    }
+                // Left clicking clears selection, unless the widget handling the event sets the
+                // same selection again
+                if button == &MouseButton::One && *down {
+                    self.selection.set(None);
                 }
+                let response = self.mouse_button_changed(dom, layout, *button, *down);
 
                 response
             }
@@ -216,8 +207,17 @@ impl InputState {
             } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
+            Event::RequestFocus(id) => {
+                self.set_selection(*id);
+                EventResponse::Bubble
+            }
             _ => EventResponse::Bubble,
-        }
+        };
+
+        // Any input events can change selection, notify of changes immediately
+        self.notify_selection(dom, layout);
+
+        res
     }
 
     fn notify_selection(&self, dom: &Dom, layout: &LayoutDom) {
