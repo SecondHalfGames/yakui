@@ -11,14 +11,18 @@ default = ["default-fonts"]
 
 # Include built-in fonts.
 default-fonts = []
+system-fonts = ["cosmic-text/fontconfig"]
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-cosmic-text = { version = "0.15.0", default-features = false, features = [
+cosmic-text = { version = "0.16.0", default-features = false, features = [
     "std",
     "swash",
 ] }
+# see yakui_widgets::widgets::textbox::cosmic_text_util
+unicode-segmentation = { version = "1.10.1" }
+
 sys-locale = "0.3.1"
 
 log.workspace = true
