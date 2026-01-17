@@ -96,6 +96,10 @@ impl PaintDom {
         profiling::scope!("PaintDom::paint");
 
         let layout_node = layout.get(id).unwrap();
+        if !layout_node.clip.intersects(&layout_node.rect) {
+            return;
+        }
+
         self.current_clip = Rect::from_pos_size(
             (layout_node.clip.pos() * self.scale_factor).round(),
             (layout_node.clip.size() * self.scale_factor).round(),
