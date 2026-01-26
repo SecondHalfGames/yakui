@@ -1,7 +1,7 @@
 use yakui::{center, column, row, spacer, text, Color, Vec2};
 
 use bootstrap::ExampleState;
-use yakui_widgets::border_radius::BorderRadius;
+use yakui_widgets::border::{Border, BorderRadius};
 
 pub fn run(state: &mut ExampleState) {
     center(|| {
@@ -134,6 +134,7 @@ fn create_round_rect(index: usize, state: &ExampleState) {
     let mut rect = yakui::widgets::RoundRect::new(radius);
     rect.min_size = Vec2::new(80.0, 50.0);
     rect.color = color;
+    rect.border = Some(Border::new(Color::CYAN, (index as f32).min(10.0)));
     rect.show_children(|| {
         yakui::constrained(yakui::Constraints::tight(Vec2::new(80.0, 50.0)), || {
             yakui::pad(yakui::widgets::Pad::all(4.0), || {

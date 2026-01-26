@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 /// Defines box constraints used for layout.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Constraints {
     /// The minimum size that is allowed by these constraints.
     pub min: Vec2,

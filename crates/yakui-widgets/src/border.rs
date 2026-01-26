@@ -1,3 +1,23 @@
+use yakui_core::geometry::Color;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Border {
+    pub color: Color,
+    pub width: f32,
+}
+
+impl Border {
+    pub fn new(color: Color, width: f32) -> Self {
+        Self { color, width }
+    }
+}
+
+impl From<Color> for Border {
+    fn from(color: Color) -> Self {
+        Self { color, width: 1.0 }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct BorderRadius {
     pub top_left: f32,
