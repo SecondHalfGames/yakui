@@ -9,7 +9,6 @@ edition = "2021"
 [features]
 
 [dependencies]
-anymap = "0.12.1"
 bitflags = "2.4.2"
 fast-srgb8 = "1.0.0"
 keyboard-types = { version = "0.8.0", default-features = false }

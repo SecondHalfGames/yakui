@@ -13,9 +13,9 @@ use std::mem::replace;
 use std::panic::Location;
 use std::rc::Rc;
 
-use anymap::AnyMap;
 use thunderdome::Arena;
 
+use crate::anymap::AnyMap;
 use crate::id::WidgetId;
 use crate::input::InputState;
 use crate::response::Response;
