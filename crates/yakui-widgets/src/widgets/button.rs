@@ -183,7 +183,9 @@ impl Widget for ButtonWidget {
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
-                    RenderText::with_style(self.props.text.clone(), text_style).show();
+                    RenderText::with_style(self.props.text.clone(), text_style)
+                        .inline(true)
+                        .show();
                 });
             });
         });

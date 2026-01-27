@@ -1,5 +1,12 @@
+use core::cell::Cell;
+use std::sync::Arc;
+
+use yakui::cosmic_text::fontdb;
+use yakui::font::Fonts;
 use yakui::paint::{Texture, TextureFilter, TextureFormat};
-use yakui::{ManagedTextureId, TextureId, UVec2};
+use yakui::util::widget;
+use yakui::widget::Widget;
+use yakui::{ManagedTextureId, TextureId, UVec2, Vec2};
 
 pub const OPENMOJI: &[u8] = include_bytes!("../assets/OpenMoji-color-glyf_colr_0.ttf");
 
@@ -108,4 +115,44 @@ pub fn get_backend() -> BootstrapBackend {
             ),
         })
         .unwrap_or(BootstrapBackend::Winit)
+}
+
+#[derive(Debug)]
+struct LoadCommonFontsWidget {
+    loaded: Cell<bool>,
+}
+
+impl Widget for LoadCommonFontsWidget {
+    type Props<'a> = ();
+
+    type Response = ();
+
+    fn new() -> Self {
+        Self {
+            loaded: Cell::default(),
+        }
+    }
+
+    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+
+    fn layout(
+        &self,
+        ctx: yakui::widget::LayoutContext<'_>,
+        _constraints: yakui::Constraints,
+    ) -> yakui::Vec2 {
+        if !self.loaded.get() {
+            let fonts = ctx.dom.get_global_or_init(Fonts::default);
+
+            fonts.load_system_fonts();
+            fonts.load_font_source(fontdb::Source::Binary(Arc::from(&OPENMOJI)));
+
+            self.loaded.set(true);
+        }
+
+        Vec2::ZERO
+    }
+}
+
+pub fn load_common_fonts() {
+    widget::<LoadCommonFontsWidget>(());
 }
