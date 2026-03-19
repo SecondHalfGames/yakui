@@ -1,4 +1,5 @@
 use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
+use wgpu::CurrentSurfaceTexture;
 
 use yakui::UVec2;
 
@@ -109,8 +110,10 @@ impl Graphics {
     #[profiling::function]
     pub fn paint(&mut self, yak: &mut yakui::Yakui, bg: wgpu::Color) {
         let output = match self.surface.get_current_texture() {
-            Ok(output) => output,
-            Err(_) => return,
+            CurrentSurfaceTexture::Success(output) | CurrentSurfaceTexture::Suboptimal(output) => {
+                output
+            }
+            _ => return,
         };
 
         let view = output
