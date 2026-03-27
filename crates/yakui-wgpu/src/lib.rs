@@ -147,7 +147,7 @@ impl YakuiWgpu {
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("yakui Premultiply Texture Pipeline Layout"),
                 bind_group_layouts: &[&premul_bind_group_layout],
-                immediate_size: 0,
+                push_constant_ranges: &[],
             });
 
         let premul_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -180,7 +180,7 @@ impl YakuiWgpu {
                 count: 1,
                 ..Default::default()
             },
-            multiview_mask: None,
+            multiview: None,
             cache: None,
         });
 

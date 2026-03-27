@@ -248,7 +248,7 @@ fn premultiply_alpha(
                 resource: wgpu::BindingResource::Sampler(samplers.get(
                     wgpu::FilterMode::Nearest,
                     wgpu::FilterMode::Nearest,
-                    wgpu::MipmapFilterMode::Nearest,
+                    wgpu::FilterMode::Nearest,
                     wgpu::AddressMode::ClampToEdge,
                 )),
             },
@@ -268,7 +268,7 @@ fn premultiply_alpha(
                 ops: wgpu::Operations {
                     // SAFETY: we'll be reading every pixel of the source texture and we don't care the content of the newly created destination texture.
                     // however, if the source texture is corrupt, then this will be too.
-                    load: wgpu::LoadOp::DontCare(unsafe { wgpu::LoadOpDontCare::enabled() }),
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: wgpu::StoreOp::default(),
                 },
             })],
