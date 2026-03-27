@@ -85,7 +85,8 @@ impl Widget for ImageWidget {
 
             ImageFit::Fit => {
                 if let Some(TextureId::Managed(id)) = self.props.image {
-                    if let Some(texture) = ctx.paint.texture(id) {
+                    let textures = ctx.paint.textures();
+                    if let Some(texture) = textures.get(id) {
                         let real_size = texture.size().as_vec2();
                         let aspect_ratio = real_size.x / real_size.y;
 

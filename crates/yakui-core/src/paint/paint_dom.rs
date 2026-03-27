@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use glam::Vec2;
+use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use thunderdome::Arena;
 
 use crate::dom::Dom;
@@ -28,8 +31,7 @@ pub struct PaintLimits {
 /// Contains all information about how to paint the current set of widgets.
 #[derive(Debug)]
 pub struct PaintDom {
-    textures: Arena<Texture>,
-    texture_edits: HashMap<ManagedTextureId, TextureChange>,
+    textures: Arc<RwLock<Textures>>,
     surface_size: Vec2,
     unscaled_viewport: Rect,
     scale_factor: f32,
@@ -39,12 +41,67 @@ pub struct PaintDom {
     clip_stack: Vec<Rect>,
 }
 
+/// Stores textures for one or more `PaintDom` instances.
+#[derive(Debug, Default)]
+pub struct Textures {
+    storage: Arena<Texture>,
+    texture_edits: HashMap<ManagedTextureId, TextureChange>,
+}
+
+impl Textures {
+    /// Add a texture to the Paint DOM, returning an ID that can be used to
+    /// reference it later.
+    pub fn add(&mut self, texture: Texture) -> ManagedTextureId {
+        let texture = self.storage.insert(texture);
+
+        let id = ManagedTextureId::new(texture);
+        self.texture_edits.insert(id, TextureChange::Added);
+        id
+    }
+
+    /// Remove a texture from the Paint DOM.
+    pub fn remove(&mut self, id: ManagedTextureId) {
+        self.storage.remove(id.index());
+        self.texture_edits.insert(id, TextureChange::Removed);
+    }
+
+    /// Retrieve a texture by its ID, if it exists.
+    pub fn get(&self, id: ManagedTextureId) -> Option<&Texture> {
+        self.storage.get(id.index())
+    }
+
+    /// Retrieves a mutable reference to a texture by its ID.
+    pub fn get_mut(&mut self, id: ManagedTextureId) -> Option<&mut Texture> {
+        self.storage.get_mut(id.index())
+    }
+
+    /// Mark a texture as modified so that changes can be detected.
+    pub fn mark_modified(&mut self, id: ManagedTextureId) {
+        self.texture_edits.insert(id, TextureChange::Modified);
+    }
+
+    /// Returns an iterator over all textures known to the Paint DOM.
+    pub fn iter(&self) -> impl Iterator<Item = (ManagedTextureId, &Texture)> {
+        self.storage
+            .iter()
+            .map(|(index, texture)| (ManagedTextureId::new(index), texture))
+    }
+
+    /// Iterates over the list of changes that happened to yakui-managed
+    /// textures this frame.
+    ///
+    /// This is useful for renderers that need to upload or remove GPU resources
+    /// related to textures.
+    pub fn edits(&self) -> impl Iterator<Item = (ManagedTextureId, TextureChange)> + '_ {
+        self.texture_edits.iter().map(|(&id, &edit)| (id, edit))
+    }
+}
+
 impl PaintDom {
     /// Create a new, empty Paint DOM.
     pub fn new() -> Self {
         Self {
-            textures: Arena::new(),
-            texture_edits: HashMap::new(),
+            textures: Default::default(),
             surface_size: Vec2::ONE,
             unscaled_viewport: Rect::ONE,
             scale_factor: 1.0,
@@ -52,6 +109,14 @@ impl PaintDom {
 
             layers: PaintLayers::new(),
             clip_stack: Vec::new(),
+        }
+    }
+
+    /// Create a new `PaintDom` that shares resources with this existing one.
+    pub fn fork(&self) -> Self {
+        Self {
+            textures: self.textures.clone(),
+            ..Self::new()
         }
     }
 
@@ -67,7 +132,7 @@ impl PaintDom {
 
     /// Prepares the PaintDom to be updated for the frame.
     pub fn start(&mut self) {
-        self.texture_edits.clear();
+        self.textures_mut().texture_edits.clear();
         self.clip_stack.clear();
     }
 
@@ -136,46 +201,27 @@ impl PaintDom {
     /// Add a texture to the Paint DOM, returning an ID that can be used to
     /// reference it later.
     pub fn add_texture(&mut self, texture: Texture) -> ManagedTextureId {
-        let id = ManagedTextureId::new(self.textures.insert(texture));
-        self.texture_edits.insert(id, TextureChange::Added);
-        id
+        self.textures.write().add(texture)
     }
 
     /// Remove a texture from the Paint DOM.
     pub fn remove_texture(&mut self, id: ManagedTextureId) {
-        self.textures.remove(id.index());
-        self.texture_edits.insert(id, TextureChange::Removed);
-    }
-
-    /// Retrieve a texture by its ID, if it exists.
-    pub fn texture(&self, id: ManagedTextureId) -> Option<&Texture> {
-        self.textures.get(id.index())
-    }
-
-    /// Retrieves a mutable reference to a texture by its ID.
-    pub fn texture_mut(&mut self, id: ManagedTextureId) -> Option<&mut Texture> {
-        self.textures.get_mut(id.index())
+        self.textures.write().remove(id)
     }
 
     /// Mark a texture as modified so that changes can be detected.
     pub fn mark_texture_modified(&mut self, id: ManagedTextureId) {
-        self.texture_edits.insert(id, TextureChange::Modified);
+        self.textures.write().mark_modified(id);
     }
 
-    /// Returns an iterator over all textures known to the Paint DOM.
-    pub fn textures(&self) -> impl Iterator<Item = (ManagedTextureId, &Texture)> {
-        self.textures
-            .iter()
-            .map(|(index, texture)| (ManagedTextureId::new(index), texture))
+    /// Returns access to the PaintDom's texture storage.
+    pub fn textures(&self) -> impl Deref<Target = Textures> + '_ {
+        self.textures.read()
     }
 
-    /// Iterates over the list of changes that happened to yakui-managed
-    /// textures this frame.
-    ///
-    /// This is useful for renderers that need to upload or remove GPU resources
-    /// related to textures.
-    pub fn texture_edits(&self) -> impl Iterator<Item = (ManagedTextureId, TextureChange)> + '_ {
-        self.texture_edits.iter().map(|(&id, &edit)| (id, edit))
+    /// Returns mutable access to the PaintDom's texture storage.
+    pub fn textures_mut(&self) -> impl DerefMut<Target = Textures> + '_ {
+        self.textures.write()
     }
 
     /// Returns a list of layers that should be used to draw the UI.
