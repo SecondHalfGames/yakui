@@ -23,7 +23,7 @@ impl Kind {
     fn texture_format(self) -> TextureFormat {
         match self {
             Kind::Mask => TextureFormat::R8,
-            Kind::Color => TextureFormat::Rgba8SrgbPremultiplied,
+            Kind::Color => TextureFormat::Rgba8Srgb,
         }
     }
 }
@@ -36,11 +36,18 @@ pub struct GlyphRender {
     pub texture: ManagedTextureId,
 }
 
+enum AtlasResult {
+    TextureCreationFailed,
+    Cached(GlyphRender),
+    Inserted(GlyphRender),
+    WrongAtlasType(cosmic_text::SwashImage),
+}
+
 #[derive(Debug)]
-pub struct InnerAtlas {
-    pub(crate) kind: Kind,
-    pub texture: Option<ManagedTextureId>,
-    pub glyph_rects: HashMap<cosmic_text::CacheKey, (URect, Vec2)>,
+struct InnerAtlas {
+    kind: Kind,
+    texture: Option<ManagedTextureId>,
+    glyph_rects: HashMap<cosmic_text::CacheKey, (URect, Vec2)>,
     next_pos: UVec2,
     max_height: u32,
 }
@@ -78,45 +85,39 @@ impl InnerAtlas {
         paint: &mut PaintDom,
         font_system: &mut cosmic_text::FontSystem,
         cache: &mut cosmic_text::SwashCache,
-        glyph: &cosmic_text::LayoutGlyph,
-        image: Option<cosmic_text::SwashImage>,
-    ) -> Result<Option<GlyphRender>, Option<cosmic_text::SwashImage>> {
+        glyph: &cosmic_text::PhysicalGlyph,
+        available_image: Option<cosmic_text::SwashImage>,
+    ) -> AtlasResult {
         let Some(texture_id) = self.ensure_texture(paint) else {
-            return Ok(None);
+            return AtlasResult::TextureCreationFailed;
         };
-
         let texture_size = paint.texture_mut(texture_id).unwrap().size();
 
-        let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
-        if let Some((rect, offset)) = self.glyph_rects.get(&physical_glyph.cache_key).cloned() {
-            return Ok(Some(GlyphRender {
+        if let Some((rect, offset)) = self.glyph_rects.get(&glyph.cache_key).cloned() {
+            return AtlasResult::Cached(GlyphRender {
                 kind: self.kind,
                 rect,
                 offset,
                 tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
                 texture: self.texture.unwrap(),
-            }));
+            });
         }
 
-        if glyph.color_opt.is_some() {
-            panic!("glyph should not have color_opt! yakui uses its own color.");
-        }
-
-        let Some(image) =
-            image.or_else(|| cache.get_image_uncached(font_system, physical_glyph.cache_key))
-        else {
-            return Err(None);
-        };
+        let image = available_image.unwrap_or_else(|| {
+            cache
+                .get_image_uncached(font_system, glyph.cache_key)
+                .unwrap()
+        });
 
         match image.content {
             cosmic_text::SwashContent::Mask => {
                 if self.kind != Kind::Mask {
-                    return Err(Some(image));
+                    return AtlasResult::WrongAtlasType(image);
                 }
             }
             cosmic_text::SwashContent::Color => {
                 if self.kind != Kind::Color {
-                    return Err(Some(image));
+                    return AtlasResult::WrongAtlasType(image);
                 }
             }
             cosmic_text::SwashContent::SubpixelMask => {
@@ -154,30 +155,25 @@ impl InnerAtlas {
         let rect = URect::from_pos_size(pos, glyph_size);
         let offset = Vec2::new(image.placement.left as f32, image.placement.top as f32);
 
-        self.glyph_rects
-            .insert(physical_glyph.cache_key, (rect, offset));
+        self.glyph_rects.insert(glyph.cache_key, (rect, offset));
 
-        Ok(Some(GlyphRender {
+        AtlasResult::Inserted(GlyphRender {
             kind: self.kind,
             rect,
             offset,
             tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
             texture: self.texture.unwrap(),
-        }))
+        })
     }
 
-    #[allow(dead_code)] // we currently never remove textures
-    fn clear(&mut self, paint: &mut PaintDom) {
+    fn clear(&mut self) {
         self.glyph_rects.clear();
         self.next_pos = UVec2::ZERO;
         self.max_height = 0;
-
-        if let Some(id) = self.texture.take() {
-            paint.remove_texture(id);
-        }
     }
 }
 
+#[inline]
 fn blit(pos: UVec2, src_size: UVec2, src: &[u8], dst_size: UVec2, dst: &mut [u8]) {
     debug_assert!(dst_size.x >= src_size.x);
     debug_assert!(dst_size.y >= src_size.y);
@@ -198,8 +194,10 @@ fn blit(pos: UVec2, src_size: UVec2, src: &[u8], dst_size: UVec2, dst: &mut [u8]
 /// An atlas containing a cache of rasterized glyphs that can be rendered.
 #[derive(Debug)]
 pub struct TextAtlas {
-    pub(crate) color_atlas: InnerAtlas,
-    pub(crate) mask_atlas: InnerAtlas,
+    color_atlas: InnerAtlas,
+    mask_atlas: InnerAtlas,
+    swash: cosmic_text::SwashCache,
+    glyph_kind_cache: HashMap<cosmic_text::CacheKey, Kind>,
 }
 
 impl TextAtlas {
@@ -211,70 +209,137 @@ impl TextAtlas {
         Self {
             color_atlas,
             mask_atlas,
+            swash: cosmic_text::SwashCache::new(),
+            glyph_kind_cache: HashMap::new(),
         }
     }
-}
 
-#[derive(Debug)]
-pub struct InnerState {
-    pub atlas: TextAtlas,
-    pub swash: cosmic_text::SwashCache,
-}
-
-impl InnerState {
     pub fn get_or_insert(
         &mut self,
         paint: &mut PaintDom,
         font_system: &mut cosmic_text::FontSystem,
         glyph: &cosmic_text::LayoutGlyph,
-    ) -> Option<GlyphRender> {
-        let a =
-            self.atlas
-                .mask_atlas
-                .get_or_insert(paint, font_system, &mut self.swash, glyph, None);
+    ) -> GlyphRender {
+        if glyph.color_opt.is_some() {
+            panic!("Glyph should not have color_opt! yakui uses its own color.");
+        }
+        let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
 
-        match a {
-            Ok(glyph) => glyph,
-            Err(image) => {
-                let b = self.atlas.color_atlas.get_or_insert(
+        if let Some(kind) = self.glyph_kind_cache.get(&physical_glyph.cache_key) {
+            let result = match kind {
+                Kind::Mask => self.mask_atlas.get_or_insert(
                     paint,
                     font_system,
                     &mut self.swash,
-                    glyph,
-                    image,
-                );
+                    &physical_glyph,
+                    None,
+                ),
+                Kind::Color => self.color_atlas.get_or_insert(
+                    paint,
+                    font_system,
+                    &mut self.swash,
+                    &physical_glyph,
+                    None,
+                ),
+            };
 
-                b.ok()?
+            match result {
+                AtlasResult::TextureCreationFailed => {
+                    panic!("Failed to create texture for text atlas.")
+                }
+                AtlasResult::Cached(glyph_render) => glyph_render,
+                // mismatch of `kind`
+                AtlasResult::Inserted(..) | AtlasResult::WrongAtlasType(..) => {
+                    panic!("Font changed during runtime and TextAtlas cache wasn't reset.");
+                }
+            }
+        } else {
+            match self.mask_atlas.get_or_insert(
+                paint,
+                font_system,
+                &mut self.swash,
+                &physical_glyph,
+                None,
+            ) {
+                AtlasResult::TextureCreationFailed => {
+                    panic!("Failed to create texture for text atlas.")
+                }
+                AtlasResult::Cached(glyph_render) | AtlasResult::Inserted(glyph_render) => {
+                    self.glyph_kind_cache
+                        .insert(physical_glyph.cache_key, glyph_render.kind);
+                    glyph_render
+                }
+                AtlasResult::WrongAtlasType(image) => match image.content {
+                    cosmic_text::SwashContent::Mask => unreachable!(),
+                    cosmic_text::SwashContent::Color => {
+                        match self.color_atlas.get_or_insert(
+                            paint,
+                            font_system,
+                            &mut self.swash,
+                            &physical_glyph,
+                            Some(image),
+                        ) {
+                            AtlasResult::Cached(glyph_render)
+                            | AtlasResult::Inserted(glyph_render) => {
+                                self.glyph_kind_cache
+                                    .insert(physical_glyph.cache_key, glyph_render.kind);
+                                glyph_render
+                            }
+                            _ => panic!("Cannot cache glyph."),
+                        }
+                    }
+                    cosmic_text::SwashContent::SubpixelMask => {
+                        panic!("yakui does not support SubpixelMask glyph content!")
+                    }
+                },
             }
         }
     }
 }
 
+#[derive(Debug)]
+struct InnerTextState {
+    atlas: TextAtlas,
+}
+
+impl InnerTextState {
+    fn fonts_changed(&mut self) {
+        self.atlas.mask_atlas.clear();
+        self.atlas.color_atlas.clear();
+        self.atlas.glyph_kind_cache.clear();
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TextGlobalState {
-    pub inner: Rc<RefCell<InnerState>>,
+    inner: Rc<RefCell<InnerTextState>>,
 }
 
 impl TextGlobalState {
-    pub fn get_or_insert(
+    /// This function should be called whenever there's a change to the fonts loaded.
+    pub fn fonts_changed(&self) {
+        self.inner.borrow_mut().fonts_changed()
+    }
+
+    pub fn get_glyph_render(
         &self,
         paint: &mut PaintDom,
         font_system: &mut cosmic_text::FontSystem,
         glyph: &cosmic_text::LayoutGlyph,
-    ) -> Option<GlyphRender> {
+    ) -> GlyphRender {
         self.inner
             .borrow_mut()
+            .atlas
             .get_or_insert(paint, font_system, glyph)
     }
 
     pub fn new() -> Self {
-        let state = InnerState {
-            swash: cosmic_text::SwashCache::new(),
+        let inner = InnerTextState {
             atlas: TextAtlas::new(),
         };
 
         Self {
-            inner: Rc::new(RefCell::new(state)),
+            inner: Rc::new(RefCell::new(inner)),
         }
     }
 }
