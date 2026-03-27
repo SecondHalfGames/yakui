@@ -1,8 +1,8 @@
 use yakui_core::{
+    ManagedTextureId, Response,
     geometry::{Rect, Vec2, Vec4},
     paint::{PaintMesh, Vertex},
     widget::{PaintContext, Widget},
-    ManagedTextureId, Response,
 };
 
 use crate::{auto_builders, shorthand::pad, util::widget_children, widgets::pad::Pad};
@@ -88,7 +88,9 @@ impl Widget for NineSliceWidget {
 
         let rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
 
-        let texture = ctx.paint.texture(texture).unwrap();
+        let textures = ctx.paint.textures();
+
+        let texture = textures.get(texture).unwrap();
         let texture_size = texture.size().as_vec2();
 
         let top_left = rect.pos();
@@ -130,6 +132,8 @@ impl Widget for NineSliceWidget {
             props.texture.into(),
             Rect::from_pos_size(Vec2::ZERO, texture_size),
         ));
+        drop(textures);
+
         ctx.paint.add_mesh(mesh);
 
         let node = ctx.dom.get_current();

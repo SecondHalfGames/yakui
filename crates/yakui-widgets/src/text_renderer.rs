@@ -2,9 +2,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use yakui_core::ManagedTextureId;
 use yakui_core::geometry::{Rect, URect, UVec2, Vec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFilter, TextureFormat};
-use yakui_core::ManagedTextureId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
@@ -85,7 +85,7 @@ impl InnerAtlas {
             return Ok(None);
         };
 
-        let texture_size = paint.texture_mut(texture_id).unwrap().size();
+        let texture_size = { paint.textures().get(texture_id).unwrap().size() };
 
         let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
         if let Some((rect, offset)) = self.glyph_rects.get(&physical_glyph.cache_key).cloned() {
@@ -142,13 +142,18 @@ impl InnerAtlas {
 
         let num_channels = self.kind.num_channels() as u32;
         let scale = UVec2::new(num_channels, 1);
-        blit(
-            pos * scale,
-            glyph_size * scale,
-            &image.data,
-            texture_size * scale,
-            paint.texture_mut(self.texture.unwrap()).unwrap().data_mut(),
-        );
+        {
+            let mut textures = paint.textures_mut();
+            let texture = textures.get_mut(self.texture.unwrap()).unwrap();
+
+            blit(
+                pos * scale,
+                glyph_size * scale,
+                &image.data,
+                texture_size * scale,
+                texture.data_mut(),
+            );
+        }
         paint.mark_texture_modified(self.texture.unwrap());
 
         let rect = URect::from_pos_size(pos, glyph_size);
