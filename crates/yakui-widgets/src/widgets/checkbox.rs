@@ -86,8 +86,7 @@ impl Widget for CheckboxWidget {
         check_rect.set_pos(check_rect.pos() + padding / 2.0);
         check_rect.set_size(check_rect.size() - padding);
 
-        let mut bg = RoundedRectangle::new(layout_node.rect, 6.0);
-        bg.color = colors::BACKGROUND_3;
+        let bg = RoundedRectangle::new(layout_node.rect, 6.0).color(colors::BACKGROUND_3);
         bg.add(ctx.paint);
 
         if self.props.checked {

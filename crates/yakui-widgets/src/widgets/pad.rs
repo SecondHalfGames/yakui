@@ -2,6 +2,7 @@ use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -9,7 +10,7 @@ Applies padding around a single child widget.
 
 Responds with [PadResponse].
 */
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Pad {
     pub left: f32,
@@ -18,8 +19,19 @@ pub struct Pad {
     pub bottom: f32,
 }
 
+auto_builders!(Pad {
+    left: f32,
+    right: f32,
+    top: f32,
+    bottom: f32,
+});
+
 impl Pad {
     pub const ZERO: Pad = Pad::all(0.0);
+
+    pub const fn none() -> Self {
+        Self::ZERO
+    }
 
     pub const fn all(value: f32) -> Self {
         Self {

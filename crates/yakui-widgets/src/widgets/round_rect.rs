@@ -15,8 +15,8 @@ Responds with [RoundRectResponse].
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
     pub color: Color,
-    pub border: Option<Border>,
     pub min_size: Vec2,
+    pub border: Option<Border>,
     pub radius: BorderRadius,
 }
 
@@ -24,6 +24,7 @@ auto_builders!(RoundRect {
     color: Color,
     min_size: Vec2,
     border: Option<Border>,
+    radius: BorderRadius,
 });
 
 impl RoundRect {
@@ -34,11 +35,6 @@ impl RoundRect {
             radius: radius.into(),
             border: None,
         }
-    }
-
-    pub fn radius<T: Into<BorderRadius>>(mut self, radius: T) -> Self {
-        self.radius = radius.into();
-        self
     }
 
     #[track_caller]
@@ -89,10 +85,10 @@ impl Widget for RoundRectWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
-        rect.color = self.props.color;
-        rect.border = self.props.border;
-        rect.add(ctx.paint);
+        shapes::RoundedRectangle::new(layout_node.rect, self.props.radius)
+            .color(self.props.color)
+            .border(self.props.border)
+            .add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

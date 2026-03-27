@@ -1,3 +1,4 @@
+use yakui::style::TextStyle;
 use yakui::widgets::{Pad, TextBox};
 use yakui::{center, use_state};
 
@@ -6,10 +7,10 @@ pub fn run() {
     let autofocus = use_state(|| false);
 
     center(|| {
-        let mut box1 = TextBox::new(text.borrow().clone());
-        box1.style.font_size = 60.0;
-        box1.padding = Pad::all(50.0);
-        box1.placeholder = "placeholder".into();
+        let box1 = TextBox::new(text.borrow().clone())
+            .style(TextStyle::label().font_size(60.0))
+            .padding(Pad::all(50.0))
+            .placeholder("placeholder");
 
         let response = box1.show();
 

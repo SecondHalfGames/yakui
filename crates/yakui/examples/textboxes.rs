@@ -19,7 +19,7 @@ fn two_columns() {
                     let text = use_state(|| "".to_owned());
 
                     let response = TextBox::new(text.borrow().as_str())
-                        .placeholder("placeholder".into())
+                        .placeholder("placeholder")
                         .show()
                         .into_inner();
 
@@ -40,7 +40,7 @@ fn four_rows() {
                     let text = use_state(|| "".to_owned());
 
                     let response = TextBox::new(text.borrow().as_str())
-                        .placeholder("placeholder".into())
+                        .placeholder("placeholder")
                         .show()
                         .into_inner();
 
