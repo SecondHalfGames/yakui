@@ -6,6 +6,7 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+mod anymap;
 mod id;
 mod response;
 mod state;
