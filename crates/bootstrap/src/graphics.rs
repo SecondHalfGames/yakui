@@ -36,7 +36,7 @@ impl Graphics {
         let instance = wgpu::Instance::default();
         let surface = unsafe {
             instance.create_surface_unsafe(
-                wgpu::SurfaceTargetUnsafe::from_window(window)
+                wgpu::SurfaceTargetUnsafe::from_display_and_window(&window, &window)
                     .expect("Could not create wgpu surface from window"),
             )
         }
