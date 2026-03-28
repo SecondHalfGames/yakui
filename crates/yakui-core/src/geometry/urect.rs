@@ -1,3 +1,6 @@
+use core::fmt::Display;
+use core::ops::{Div, Mul};
+
 use glam::UVec2;
 
 use super::Rect;
@@ -22,20 +25,31 @@ impl URect {
         size: UVec2::ONE,
     };
 
-    /// Create a `Rect` from a position and size.
+    /// Create a `URect` from a position and size.
     #[inline]
     pub fn from_pos_size(pos: UVec2, size: UVec2) -> Self {
         Self { pos, size }
     }
 
-    /// The position of the rectangle's upper-left corner. This is the minimum
-    /// value enclosed by the rectangle.
+    /// Create a `URect` from a center position and size.
+    ///
+    /// Note: Calculated with integer division.
+    #[inline]
+    pub fn from_center_size(center: UVec2, size: UVec2) -> Self {
+        Self {
+            pos: center - size / 2,
+            size,
+        }
+    }
+
+    /// Casts the `URect` into a [`Rect`].
     #[inline]
     pub fn as_rect(&self) -> Rect {
         Rect::from_pos_size(self.pos.as_vec2(), self.size.as_vec2())
     }
 
-    /// The size of the rectangle.
+    /// The position of the rectangle's upper-left corner. This is the minimum
+    /// value enclosed by the rectangle.
     #[inline]
     pub fn pos(&self) -> UVec2 {
         self.pos
@@ -45,6 +59,14 @@ impl URect {
     #[inline]
     pub fn size(&self) -> UVec2 {
         self.size
+    }
+
+    /// The center position of the rectangle.
+    ///
+    /// Note: Calculated with integer division.
+    #[inline]
+    pub fn center(&self) -> UVec2 {
+        self.pos + self.size / 2
     }
 
     /// The maximum value enclosed by the rectangle.
@@ -63,6 +85,12 @@ impl URect {
     #[inline]
     pub fn set_size(&mut self, size: UVec2) {
         self.size = size;
+    }
+
+    /// Set the rectangle's maximum extent.
+    #[inline]
+    pub fn set_max(&mut self, max: UVec2) {
+        self.size = max - self.pos;
     }
 
     /// Tells whether the given point is contained within the rectangle.
@@ -90,5 +118,69 @@ impl URect {
         let y_intersect = self.pos.y < other_max.y && self_max.y > other.pos.y;
 
         x_intersect && y_intersect
+    }
+
+    /// Returns a rectangle that fits this rectangle and the given rectangle.
+    #[inline]
+    pub fn constrain(mut self, other: Self) -> Self {
+        let min = self.pos().max(other.pos());
+        let max = self.max().min(other.max());
+
+        self.set_pos(min);
+        self.set_max(max);
+        self
+    }
+}
+
+impl Mul<UVec2> for URect {
+    type Output = Self;
+
+    fn mul(self, rhs: UVec2) -> Self::Output {
+        Self {
+            pos: self.pos * rhs,
+            size: self.size * rhs,
+        }
+    }
+}
+
+impl Mul<u32> for URect {
+    type Output = Self;
+
+    fn mul(self, rhs: u32) -> Self::Output {
+        Self {
+            pos: self.pos * rhs,
+            size: self.size * rhs,
+        }
+    }
+}
+
+impl Div<UVec2> for URect {
+    type Output = Self;
+
+    fn div(self, rhs: UVec2) -> Self::Output {
+        Self {
+            pos: self.pos / rhs,
+            size: self.size / rhs,
+        }
+    }
+}
+
+impl Div<u32> for URect {
+    type Output = Self;
+
+    fn div(self, rhs: u32) -> Self::Output {
+        Self {
+            pos: self.pos / rhs,
+            size: self.size / rhs,
+        }
+    }
+}
+
+impl Display for URect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "{{{},{} @ {}*{}}}",
+            self.pos.x, self.pos.y, self.size.x, self.size.y
+        ))
     }
 }
