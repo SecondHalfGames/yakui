@@ -1,4 +1,4 @@
-use bootsrap::ExampleState;
+use bootstrap::ExampleState;
 use yakui::style::TextStyle;
 use yakui::widgets::{Pad, TextBox};
 use yakui::{center, use_state};
