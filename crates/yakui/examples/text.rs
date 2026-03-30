@@ -1,3 +1,4 @@
+use yakui::style::TextStyle;
 use yakui::widgets::Text;
 use yakui::{column, label, row, text, Color};
 
@@ -6,9 +7,11 @@ pub fn run() {
         row(|| {
             label("Hello, world!");
 
-            let mut text = Text::new(48.0, "colored text!");
-            text.style.color = Color::RED;
-            text.show();
+            Text::with_style(
+                "colored text!",
+                TextStyle::label().font_size(48.0).color(Color::RED),
+            )
+            .show();
         });
 
         text(96.0, "yakui text demo!");

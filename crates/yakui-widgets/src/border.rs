@@ -1,5 +1,7 @@
 use yakui_core::geometry::Color;
 
+use crate::auto_builders;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Border {
     pub color: Color,
@@ -7,7 +9,7 @@ pub struct Border {
 }
 
 impl Border {
-    pub fn new(color: Color, width: f32) -> Self {
+    pub const fn new(color: Color, width: f32) -> Self {
         Self { color, width }
     }
 }
@@ -26,14 +28,16 @@ pub struct BorderRadius {
     pub bottom_right: f32,
 }
 
+auto_builders!(BorderRadius {
+    top_left: f32,
+    top_right: f32,
+    bottom_left: f32,
+    bottom_right: f32,
+});
+
 impl From<f32> for BorderRadius {
     fn from(radius: f32) -> Self {
-        Self {
-            top_left: radius,
-            top_right: radius,
-            bottom_left: radius,
-            bottom_right: radius,
-        }
+        Self::uniform(radius)
     }
 }
 
@@ -49,11 +53,22 @@ impl From<(f32, f32, f32, f32)> for BorderRadius {
 }
 
 impl BorderRadius {
-    pub fn uniform(radius: f32) -> Self {
-        Self::from(radius)
+    pub const ZERO: Self = Self::uniform(0.0);
+
+    pub const fn none() -> Self {
+        Self::ZERO
     }
 
-    pub fn new(top_left: f32, top_right: f32, bottom_left: f32, bottom_right: f32) -> Self {
+    pub const fn uniform(radius: f32) -> Self {
+        Self {
+            top_left: radius,
+            top_right: radius,
+            bottom_left: radius,
+            bottom_right: radius,
+        }
+    }
+
+    pub const fn new(top_left: f32, top_right: f32, bottom_left: f32, bottom_right: f32) -> Self {
         Self {
             top_left,
             top_right,
@@ -62,7 +77,7 @@ impl BorderRadius {
         }
     }
 
-    pub fn top(radius: f32) -> Self {
+    pub const fn top(radius: f32) -> Self {
         Self {
             top_left: radius,
             top_right: radius,
@@ -71,7 +86,7 @@ impl BorderRadius {
         }
     }
 
-    pub fn bottom(radius: f32) -> Self {
+    pub const fn bottom(radius: f32) -> Self {
         Self {
             top_left: 0.0,
             top_right: 0.0,
@@ -80,7 +95,7 @@ impl BorderRadius {
         }
     }
 
-    pub fn left(radius: f32) -> Self {
+    pub const fn left(radius: f32) -> Self {
         Self {
             top_left: radius,
             top_right: 0.0,
@@ -89,7 +104,7 @@ impl BorderRadius {
         }
     }
 
-    pub fn right(radius: f32) -> Self {
+    pub const fn right(radius: f32) -> Self {
         Self {
             top_left: 0.0,
             top_right: radius,

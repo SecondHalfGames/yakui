@@ -4,6 +4,7 @@ use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
 use yakui_core::TextureId;
 
+use crate::auto_builders;
 use crate::border::{Border, BorderRadius};
 
 pub fn cross(output: &mut PaintDom, rect: Rect, color: Color) {
@@ -111,6 +112,8 @@ pub struct Circle {
     pub color: Color,
 }
 
+auto_builders!(Circle { color: Color });
+
 impl Circle {
     pub fn new(center: Vec2, radius: f32) -> Self {
         Self {
@@ -171,6 +174,12 @@ pub struct RoundedRectangle {
     pub radius: BorderRadius,
     pub border: Option<Border>,
 }
+
+auto_builders!(RoundedRectangle {
+    color: Color,
+    texture: Option<(TextureId, Rect)>,
+    border: Option<Border>,
+});
 
 impl RoundedRectangle {
     pub fn new<T: Into<BorderRadius>>(rect: Rect, radius: T) -> Self {

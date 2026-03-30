@@ -85,17 +85,17 @@ impl Widget for DividerWidget {
         let Some(parent) = ctx.dom.get(id).unwrap().parent else {
             return;
         };
-        let line_width = ctx.layout.get(parent).unwrap().rect.size().x;
 
-        let outer_rect = ctx.layout.get(id).unwrap().rect;
+        let parent_rect = ctx.layout.get(parent).unwrap().rect;
+        let layout_rect = ctx.layout.get(id).unwrap().rect;
 
-        let line_pos = outer_rect.pos()
+        let line_pos = Vec2::new(parent_rect.pos().x, layout_rect.pos().y)
             + Vec2::new(
                 self.props.indent,
-                (outer_rect.size().y - self.props.thickness) / 2.0,
+                (layout_rect.size().y - self.props.thickness) / 2.0,
             );
         let line_size = Vec2::new(
-            line_width - self.props.indent - self.props.end_indent,
+            parent_rect.size().x - self.props.indent - self.props.end_indent,
             self.props.thickness,
         );
 

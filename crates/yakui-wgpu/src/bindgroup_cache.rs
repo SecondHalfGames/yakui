@@ -7,7 +7,7 @@ pub(crate) struct TextureBindgroupCacheEntry {
     pub id: TextureId,
     pub min_filter: wgpu::FilterMode,
     pub mag_filter: wgpu::FilterMode,
-    pub mipmap_filter: wgpu::FilterMode,
+    pub mipmap_filter: wgpu::MipmapFilterMode,
     pub address_mode: wgpu::AddressMode,
 }
 
@@ -64,7 +64,7 @@ pub fn bindgroup(
     view: &wgpu::TextureView,
     min_filter: wgpu::FilterMode,
     mag_filter: wgpu::FilterMode,
-    mipmap_filter: wgpu::FilterMode,
+    mipmap_filter: wgpu::MipmapFilterMode,
     address_mode: wgpu::AddressMode,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {

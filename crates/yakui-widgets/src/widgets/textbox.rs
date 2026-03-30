@@ -61,13 +61,10 @@ auto_builders!(TextBox {
 
 impl TextBox {
     pub fn new<S: Into<String>>(text: S) -> Self {
-        let mut style = TextStyle::label();
-        style.align = TextAlignment::Start;
-
         Self {
             text: text.into(),
 
-            style,
+            style: TextStyle::label().align(TextAlignment::Start),
             padding: Pad::all(8.0),
             fill: Some(colors::BACKGROUND_3),
             radius: 6.0,

@@ -93,7 +93,7 @@ impl InnerAtlas {
                 kind: self.kind,
                 rect,
                 offset,
-                tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
+                tex_rect: rect.as_rect() / texture_size.as_vec2(),
                 texture: self.texture.unwrap(),
             }));
         }
@@ -161,7 +161,7 @@ impl InnerAtlas {
             kind: self.kind,
             rect,
             offset,
-            tex_rect: rect.as_rect().div_vec2(texture_size.as_vec2()),
+            tex_rect: rect.as_rect() / texture_size.as_vec2(),
             texture: self.texture.unwrap(),
         }))
     }

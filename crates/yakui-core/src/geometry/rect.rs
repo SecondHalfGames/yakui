@@ -1,4 +1,9 @@
+use core::fmt::Display;
+use core::ops::{Div, Mul};
+
 use glam::Vec2;
+
+use crate::geometry::URect;
 
 /// A bounding rectangle with floating point coordinates.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -26,6 +31,21 @@ impl Rect {
         Self { pos, size }
     }
 
+    /// Create a `Rect` from a center position and size.
+    #[inline]
+    pub fn from_center_size(center: Vec2, size: Vec2) -> Self {
+        Self {
+            pos: center - size / 2.0,
+            size,
+        }
+    }
+
+    /// Casts the `Rect` into a [`URect`].
+    #[inline]
+    pub fn as_urect(&self) -> URect {
+        URect::from_pos_size(self.pos.as_uvec2(), self.size.as_uvec2())
+    }
+
     /// The position of the rectangle's upper-left corner. This is the minimum
     /// value enclosed by the rectangle.
     #[inline]
@@ -37,6 +57,12 @@ impl Rect {
     #[inline]
     pub fn size(&self) -> Vec2 {
         self.size
+    }
+
+    /// The center position of the rectangle.
+    #[inline]
+    pub fn center(&self) -> Vec2 {
+        self.pos + self.size / 2.0
     }
 
     /// The maximum value enclosed by the rectangle.
@@ -90,20 +116,67 @@ impl Rect {
         x_intersect && y_intersect
     }
 
-    /// Scale the rectangle by dividing it by a vector.
-    #[inline]
-    pub fn div_vec2(&self, size: Vec2) -> Self {
-        Self::from_pos_size(self.pos / size, self.size / size)
-    }
-
     /// Returns a rectangle that fits this rectangle and the given rectangle.
     #[inline]
-    pub fn constrain(mut self, other: Rect) -> Self {
+    pub fn constrain(mut self, other: Self) -> Self {
         let min = self.pos().max(other.pos());
         let max = self.max().min(other.max());
 
         self.set_pos(min);
         self.set_max(max);
         self
+    }
+}
+
+impl Mul<Vec2> for Rect {
+    type Output = Self;
+
+    fn mul(self, rhs: Vec2) -> Self::Output {
+        Self {
+            pos: self.pos * rhs,
+            size: self.size * rhs,
+        }
+    }
+}
+
+impl Mul<f32> for Rect {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self {
+            pos: self.pos * rhs,
+            size: self.size * rhs,
+        }
+    }
+}
+
+impl Div<Vec2> for Rect {
+    type Output = Self;
+
+    fn div(self, rhs: Vec2) -> Self::Output {
+        Self {
+            pos: self.pos / rhs,
+            size: self.size / rhs,
+        }
+    }
+}
+
+impl Div<f32> for Rect {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self {
+            pos: self.pos / rhs,
+            size: self.size / rhs,
+        }
+    }
+}
+
+impl Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "{{{},{} @ {}*{}}}",
+            self.pos.x, self.pos.y, self.size.x, self.size.y
+        ))
     }
 }

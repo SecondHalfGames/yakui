@@ -29,9 +29,7 @@ pub fn run() {
     align(Alignment::TOP_RIGHT, || {
         pad(Pad::all(8.0), || {
             colored_box_container(Color::hex(0x444444), || {
-                let mut row = List::row();
-                row.main_axis_size = MainAxisSize::Min;
-                row.show(|| {
+                List::row().main_axis_size(MainAxisSize::Min).show(|| {
                     stat_column(|| {
                         label("Name");
                         for datum in &data {
@@ -64,9 +62,9 @@ fn divider() {
 }
 
 fn stat_column(children: impl FnOnce()) {
-    let mut col = List::column();
-    col.main_axis_size = MainAxisSize::Min;
-    col.show(children);
+    List::column()
+        .main_axis_size(MainAxisSize::Min)
+        .show(children);
 }
 
 fn main() {

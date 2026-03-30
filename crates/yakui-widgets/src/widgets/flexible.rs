@@ -2,6 +2,7 @@ use yakui_core::geometry::FlexFit;
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -28,11 +29,23 @@ pub struct Flexible {
     pub fit: FlexFit,
 }
 
+auto_builders!(Flexible {
+    flex: u32,
+    fit: FlexFit,
+});
+
 impl Flexible {
     pub fn new(flex: u32) -> Self {
         Self {
             flex,
             fit: FlexFit::Loose,
+        }
+    }
+
+    pub fn tight(flex: u32) -> Self {
+        Self {
+            flex,
+            fit: FlexFit::Tight,
         }
     }
 

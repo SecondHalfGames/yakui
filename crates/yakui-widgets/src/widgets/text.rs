@@ -42,12 +42,9 @@ auto_builders!(Text {
 
 impl Text {
     pub fn new<S: Into<Cow<'static, str>>>(font_size: f32, text: S) -> Self {
-        let mut style = TextStyle::label();
-        style.font_size = font_size;
-
         Self {
             text: text.into(),
-            style,
+            style: TextStyle::label().font_size(font_size),
             padding: Pad::ZERO,
         }
     }

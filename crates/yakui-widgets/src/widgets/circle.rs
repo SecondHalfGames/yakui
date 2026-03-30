@@ -78,11 +78,12 @@ impl Widget for CircleWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let center = layout_node.rect.pos() + layout_node.rect.size() / 2.0;
+        let center = layout_node.rect.center();
         let radius = layout_node.rect.size().x.min(layout_node.rect.size().y) / 2.0;
-        let mut circle = shapes::Circle::new(center, radius);
-        circle.color = self.props.color;
-        circle.add(ctx.paint);
+
+        shapes::Circle::new(center, radius)
+            .color(self.props.color)
+            .add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

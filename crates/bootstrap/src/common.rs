@@ -19,6 +19,7 @@ pub struct ExampleState {
     /// `ManagedTextureId` is a texture owned by yakui. You can create one by
     /// giving yakui some image data; it'll be uploaded by the renderer.
     pub monkey: ManagedTextureId,
+    pub monkey_transparent: ManagedTextureId,
     pub monkey_blurred: ManagedTextureId,
     pub brown_inlay: ManagedTextureId,
 

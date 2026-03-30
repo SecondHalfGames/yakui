@@ -1,4 +1,5 @@
 use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
+use wgpu::CurrentSurfaceTexture;
 
 use yakui::UVec2;
 
@@ -35,7 +36,7 @@ impl Graphics {
         let instance = wgpu::Instance::default();
         let surface = unsafe {
             instance.create_surface_unsafe(
-                wgpu::SurfaceTargetUnsafe::from_window(window)
+                wgpu::SurfaceTargetUnsafe::from_display_and_window(&window, &window)
                     .expect("Could not create wgpu surface from window"),
             )
         }
@@ -109,8 +110,10 @@ impl Graphics {
     #[profiling::function]
     pub fn paint(&mut self, yak: &mut yakui::Yakui, bg: wgpu::Color) {
         let output = match self.surface.get_current_texture() {
-            Ok(output) => output,
-            Err(_) => return,
+            CurrentSurfaceTexture::Success(output) | CurrentSurfaceTexture::Suboptimal(output) => {
+                output
+            }
+            _ => return,
         };
 
         let view = output
