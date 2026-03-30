@@ -23,11 +23,6 @@ impl<T> Response<T> {
     pub fn into_inner(self) -> T {
         self.inner
     }
-
-    /// Request that the widget with this response should receive focus.
-    pub fn request_focus(&self) {
-        crate::context::dom().request_focus(self.id);
-    }
 }
 
 impl<T> Deref for Response<T> {

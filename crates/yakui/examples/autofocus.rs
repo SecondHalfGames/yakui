@@ -1,8 +1,9 @@
+use bootstrap::ExampleState;
 use yakui::style::TextStyle;
 use yakui::widgets::{Pad, TextBox};
 use yakui::{center, use_state};
 
-pub fn run() {
+pub fn run(state: &mut ExampleState) {
     let text = use_state(String::new);
     let autofocus = use_state(|| false);
 
@@ -16,7 +17,11 @@ pub fn run() {
 
         if !autofocus.get() {
             autofocus.set(true);
-            response.request_focus();
+
+            let focus_id = response.id;
+            state.commands.push(Box::new(move |yakui| {
+                yakui.request_focus(Some(focus_id));
+            }));
         }
 
         if let Some(new_text) = response.into_inner().text {
@@ -26,5 +31,5 @@ pub fn run() {
 }
 
 fn main() {
-    bootstrap::start(run as fn());
+    bootstrap::start(run as fn(&mut ExampleState));
 }
