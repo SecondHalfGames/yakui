@@ -31,7 +31,7 @@ if yakui::button("Hello").clicked {
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Button {
     pub text: Cow<'static, str>,
-    pub alignment: Alignment,
+    pub text_min_width: f32,
     pub padding: Pad,
     pub border_radius: BorderRadius,
     pub style: DynamicButtonStyle,
@@ -41,7 +41,7 @@ pub struct Button {
 
 auto_builders!(Button {
     text: Cow<'static, str>,
-    alignment: Alignment,
+    text_min_width: f32,
     padding: Pad,
     border_radius: BorderRadius,
     style: DynamicButtonStyle,
@@ -77,7 +77,7 @@ impl Button {
     pub fn unstyled(text: impl Into<Cow<'static, str>>) -> Self {
         Self {
             text: text.into(),
-            alignment: Alignment::CENTER,
+            text_min_width: 0.0,
             padding: Pad::ZERO,
             border_radius: BorderRadius::default(),
             style: DynamicButtonStyle::default(),
@@ -109,7 +109,7 @@ impl Button {
 
         Self {
             text: text.into(),
-            alignment: Alignment::CENTER,
+            text_min_width: 0.0,
             padding: Pad::balanced(20.0, 10.0),
             border_radius: 6.0.into(),
             style,
@@ -182,7 +182,10 @@ impl Widget for ButtonWidget {
         container.show_children(|| {
             crate::pad(self.props.padding, || {
                 crate::align(align, || {
-                    RenderText::with_style(self.props.text.clone(), text_style).show();
+                    RenderText::with_style(self.props.text.clone(), text_style)
+                        .inline(true)
+                        .min_width(self.props.text_min_width)
+                        .show();
                 });
             });
         });
