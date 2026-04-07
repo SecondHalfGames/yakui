@@ -55,12 +55,12 @@ impl Yakui {
         self.paint.textures()
     }
 
-    /// Set the size of the surface the yakui is being rendered onto.
+    /// Set the size of the surface that is being rendered onto.
     pub fn set_surface_size(&mut self, size: Vec2) {
         self.paint.set_surface_size(size);
     }
 
-    /// Return the current size of the primary surface.
+    /// Get the size of the surface that is being painted onto.
     pub fn surface_size(&self) -> Vec2 {
         self.paint.surface_size()
     }
@@ -117,9 +117,9 @@ impl Yakui {
     /// Calculates the geometry needed to render the current state and gives
     /// access to the [`PaintDom`], which holds information about how to paint
     /// widgets.
-    pub fn paint(&mut self) -> &PaintDom {
+    pub fn paint(&mut self) -> &mut PaintDom {
         self.paint.paint_all(&self.dom, &self.layout);
-        &self.paint
+        &mut self.paint
     }
 
     /// Returns access to the state's DOM.
