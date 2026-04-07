@@ -10,15 +10,15 @@ mod vulkan_texture;
 use ash::util::read_spv;
 pub use ash::vk;
 use buffer::Buffer;
-use bytemuck::{bytes_of, Pod, Zeroable};
+use bytemuck::{Pod, Zeroable, bytes_of};
 pub use descriptors::Descriptors;
 use std::{collections::HashMap, io::Cursor};
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
+use vulkan_texture::{NO_TEXTURE_ID, UploadQueue};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui_core::geometry::UVec2;
 use yakui_core::paint::PaintLimits;
-use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
+use yakui_core::{ManagedTextureId, paint::Vertex as YakuiVertex};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
@@ -575,7 +575,9 @@ impl YakuiVulkan {
         use yakui_core::paint::TextureChange;
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
-            for (id, texture) in paint.textures() {
+            let textures = paint.textures();
+
+            for (id, texture) in textures.iter() {
                 let texture = VulkanTexture::from_yakui_texture(
                     vulkan_context,
                     &mut self.descriptors,
@@ -588,10 +590,12 @@ impl YakuiVulkan {
             return;
         }
 
-        for (id, change) in paint.texture_edits() {
+        let textures = paint.textures();
+
+        for (id, change) in textures.edits() {
             match change {
                 TextureChange::Added => {
-                    let texture = paint.texture(id).unwrap();
+                    let texture = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,
@@ -615,7 +619,7 @@ impl YakuiVulkan {
                             self.uploads.dispose(old);
                         }
                     }
-                    let new = paint.texture(id).unwrap();
+                    let new = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,

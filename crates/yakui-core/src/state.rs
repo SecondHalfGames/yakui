@@ -28,6 +28,14 @@ impl Yakui {
         }
     }
 
+    /// Create a new `Yakui` that shares resources with this one.
+    pub fn fork(&self) -> Self {
+        Self {
+            paint: self.paint.fork(),
+            ..Self::new()
+        }
+    }
+
     /// Handles the given event. Returns `true` if the event was sunk by yakui
     /// and should not be processed by the application.
     pub fn handle_event(&mut self, event: Event) -> bool {
@@ -48,11 +56,6 @@ impl Yakui {
     /// Creates a texture for use within yakui.
     pub fn add_texture(&mut self, texture: Texture) -> ManagedTextureId {
         self.paint.add_texture(texture)
-    }
-
-    /// Returns an iterator of all textures managed by yakui.
-    pub fn textures(&self) -> impl Iterator<Item = (ManagedTextureId, &Texture)> {
-        self.paint.textures()
     }
 
     /// Set the size of the surface the yakui is being rendered onto.
