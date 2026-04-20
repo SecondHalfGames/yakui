@@ -161,13 +161,15 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
                 self.window.as_ref().unwrap().request_redraw();
             }
 
-            WindowEvent::MouseInput { state, button, .. } => {
-                // This print is a handy way to show which mouse events are
-                // handled by yakui, and which ones will make it to the
-                // underlying application.
-                if button == winit::event::MouseButton::Left {
-                    println!("Left mouse button {state:?}");
-                }
+            // This print is a handy way to show which mouse events are
+            // handled by yakui, and which ones will make it to the
+            // underlying application.
+            WindowEvent::MouseInput {
+                state,
+                button: winit::event::MouseButton::Left,
+                ..
+            } => {
+                println!("Left mouse button {state:?}");
             }
 
             WindowEvent::Resized(size) => {

@@ -195,9 +195,7 @@ impl InputState {
                 if button == &MouseButton::One && *down {
                     self.selection.set(None);
                 }
-                let response = self.mouse_button_changed(dom, layout, *button, *down);
-
-                response
+                self.mouse_button_changed(dom, layout, *button, *down)
             }
             Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
             Event::KeyChanged {
