@@ -29,6 +29,7 @@ pub struct ExampleState {
     pub custom: Option<TextureId>,
 
     /// Deferred commands to run on the yakui state after the current frame
+    #[allow(clippy::type_complexity)]
     pub commands: Vec<Box<dyn FnOnce(&mut yakui::Yakui) + 'static>>,
 }
 
