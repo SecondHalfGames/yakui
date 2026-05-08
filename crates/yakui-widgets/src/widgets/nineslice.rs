@@ -1,8 +1,8 @@
 use yakui_core::{
-    ManagedTextureId, Response,
     geometry::{Rect, Vec2, Vec4},
     paint::{PaintMesh, Vertex},
     widget::{PaintContext, Widget},
+    ManagedTextureId, Response,
 };
 
 use crate::{auto_builders, shorthand::pad, util::widget_children, widgets::pad::Pad};

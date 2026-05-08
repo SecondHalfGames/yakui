@@ -2,9 +2,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use yakui_core::ManagedTextureId;
 use yakui_core::geometry::{Rect, URect, UVec2, Vec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFilter, TextureFormat};
+use yakui_core::ManagedTextureId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {

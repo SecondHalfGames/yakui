@@ -10,15 +10,15 @@ mod vulkan_texture;
 use ash::util::read_spv;
 pub use ash::vk;
 use buffer::Buffer;
-use bytemuck::{Pod, Zeroable, bytes_of};
+use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
 use std::{collections::HashMap, io::Cursor};
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::{NO_TEXTURE_ID, UploadQueue};
+use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui_core::geometry::UVec2;
 use yakui_core::paint::PaintLimits;
-use yakui_core::{ManagedTextureId, paint::Vertex as YakuiVertex};
+use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
