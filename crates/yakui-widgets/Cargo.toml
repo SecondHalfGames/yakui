@@ -15,17 +15,17 @@ default-fonts = []
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-cosmic-text = { version = "0.15.0", default-features = false, features = [
+cosmic-text = { version = "0.18.2", default-features = false, features = [
     "std",
     "swash",
 ] }
-sys-locale = "0.3.1"
+sys-locale = "0.3.2"
 
 log.workspace = true
 thunderdome.workspace = true
 
 [target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))'.dependencies]
-arboard = "3.4.1"
+arboard = "3.6.1"
 
 [dev-dependencies]
 yakui = { path = "../yakui" }
