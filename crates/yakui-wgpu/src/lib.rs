@@ -478,23 +478,27 @@ impl YakuiWgpu {
     fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
         profiling::scope!("update_textures");
 
-        for (id, texture) in paint.textures() {
-            self.managed_textures.entry(id).or_insert_with(|| {
-                GpuManagedTexture::new(
-                    device,
-                    queue,
-                    texture,
-                    &self.premul_pipeline,
-                    &self.premul_bind_group_layout,
-                    &self.samplers,
-                )
-            });
+        let textures = paint.textures();
+
+        {
+            for (id, texture) in textures.iter() {
+                self.managed_textures.entry(id).or_insert_with(|| {
+                    GpuManagedTexture::new(
+                        device,
+                        queue,
+                        texture,
+                        &self.premul_pipeline,
+                        &self.premul_bind_group_layout,
+                        &self.samplers,
+                    )
+                });
+            }
         }
 
-        for (id, change) in paint.texture_edits() {
+        for (id, change) in textures.edits() {
             match change {
                 TextureChange::Added => {
-                    let texture = paint.texture(id).unwrap();
+                    let texture = textures.get(id).unwrap();
                     self.managed_textures.insert(
                         id,
                         GpuManagedTexture::new(
@@ -514,7 +518,7 @@ impl YakuiWgpu {
 
                 TextureChange::Modified => {
                     if let Some(existing) = self.managed_textures.get_mut(&id) {
-                        let texture = paint.texture(id).unwrap();
+                        let texture = textures.get(id).unwrap();
                         existing.update(
                             device,
                             queue,

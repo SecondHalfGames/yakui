@@ -13,6 +13,7 @@ anymap = "0.12.1"
 bitflags = "2.11.1"
 fast-srgb8 = "1.0.0"
 keyboard-types = { version = "0.8.3", default-features = false }
+parking_lot = "0.12.5"
 
 log.workspace = true
 glam.workspace = true

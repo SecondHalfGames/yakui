@@ -575,7 +575,9 @@ impl YakuiVulkan {
         use yakui_core::paint::TextureChange;
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
-            for (id, texture) in paint.textures() {
+            let textures = paint.textures();
+
+            for (id, texture) in textures.iter() {
                 let texture = VulkanTexture::from_yakui_texture(
                     vulkan_context,
                     &mut self.descriptors,
@@ -588,10 +590,12 @@ impl YakuiVulkan {
             return;
         }
 
-        for (id, change) in paint.texture_edits() {
+        let textures = paint.textures();
+
+        for (id, change) in textures.edits() {
             match change {
                 TextureChange::Added => {
-                    let texture = paint.texture(id).unwrap();
+                    let texture = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,
@@ -615,7 +619,7 @@ impl YakuiVulkan {
                             self.uploads.dispose(old);
                         }
                     }
-                    let new = paint.texture(id).unwrap();
+                    let new = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,
