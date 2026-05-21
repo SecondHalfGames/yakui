@@ -408,6 +408,9 @@ impl YakuiWgpu {
     fn update_buffers(&mut self, paint: &PaintDom, buffers: &mut Buffers) {
         profiling::scope!("update_buffers");
 
+        buffers.vertices.clear();
+        buffers.indices.clear();
+        buffers.commands.clear();
         self.texture_bindgroup_cache.clear();
 
         let commands = paint
