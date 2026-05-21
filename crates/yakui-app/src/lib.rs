@@ -21,6 +21,7 @@ pub struct Graphics {
 
     window: yakui_winit::YakuiWinit,
     pub renderer: yakui_wgpu::YakuiWgpu,
+    buffers: yakui_wgpu::Buffers,
     /// Tracks whether winit is still initializing
     pub is_init: bool,
 }
@@ -84,7 +85,8 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue);
+        let renderer = yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone());
+        let buffers = renderer.buffers();
 
         // yakui_winit processes winit events and applies them to our yakui
         // state.
@@ -102,6 +104,7 @@ impl Graphics {
             multisampling: Multisampling::new(),
 
             renderer,
+            buffers,
             window,
             is_init: true,
         }
@@ -173,7 +176,7 @@ impl Graphics {
 
         let clear = encoder.finish();
 
-        let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, surface);
+        let paint_yak = self.renderer.paint(yak, &mut self.buffers, surface);
 
         self.queue.submit([clear, paint_yak]);
         output.present();

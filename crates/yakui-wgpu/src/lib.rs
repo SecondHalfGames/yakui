@@ -27,6 +27,9 @@ use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
 
 pub struct YakuiWgpu {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+
     limits: PaintLimits,
     main_pipeline: PipelineCache,
     text_pipeline: PipelineCache,
@@ -38,7 +41,10 @@ pub struct YakuiWgpu {
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
     texture_bindgroup_cache: TextureBindgroupCache,
+}
 
+/// Holds per-surface buffers that yakui-wgpu needs to paint
+pub struct Buffers {
     vertices: Buffer,
     indices: Buffer,
     commands: Vec<DrawCommand>,
@@ -73,7 +79,7 @@ impl Vertex {
 }
 
 impl YakuiWgpu {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+    pub fn new(device: wgpu::Device, queue: wgpu::Queue) -> Self {
         let limits = PaintLimits {
             max_texture_size_1d: device.limits().max_texture_dimension_1d,
             max_texture_size_2d: device.limits().max_texture_dimension_2d,
@@ -118,7 +124,7 @@ impl YakuiWgpu {
 
         let text_pipeline = PipelineCache::new(pipeline_layout);
 
-        let samplers = Samplers::new(device);
+        let samplers = Samplers::new(&device);
 
         let premul_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -187,15 +193,15 @@ impl YakuiWgpu {
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
         let default_texture = GpuManagedTexture::new(
-            device,
-            queue,
+            &device,
+            &queue,
             &default_texture_data,
             &premul_pipeline,
             &premul_bind_group_layout,
             &samplers,
         );
         let default_bindgroup = bindgroup_cache::bindgroup(
-            device,
+            &device,
             &layout,
             &samplers,
             &default_texture.view,
@@ -206,6 +212,9 @@ impl YakuiWgpu {
         );
 
         Self {
+            device,
+            queue,
+
             limits,
             main_pipeline,
             text_pipeline,
@@ -216,9 +225,6 @@ impl YakuiWgpu {
             managed_textures: HashMap::new(),
 
             texture_bindgroup_cache: TextureBindgroupCache::new(layout, default_bindgroup),
-            vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
-            indices: Buffer::new(wgpu::BufferUsages::INDEX),
-            commands: Vec::new(),
         }
     }
 
@@ -261,19 +267,29 @@ impl YakuiWgpu {
         existing.view = view.into();
     }
 
+    #[must_use]
+    pub fn buffers(&self) -> Buffers {
+        Buffers {
+            vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
+            indices: Buffer::new(wgpu::BufferUsages::INDEX),
+            commands: Vec::new(),
+        }
+    }
+
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
     pub fn paint(
         &mut self,
         state: &mut yakui_core::Yakui,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        buffers: &mut Buffers,
         surface: SurfaceInfo<'_>,
     ) -> wgpu::CommandBuffer {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("yakui Encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("yakui Encoder"),
+            });
 
-        self.paint_with_encoder(state, device, queue, &mut encoder, surface);
+        self.paint_with_encoder(state, buffers, &mut encoder, surface);
 
         encoder.finish()
     }
@@ -281,8 +297,7 @@ impl YakuiWgpu {
     pub fn paint_with_encoder(
         &mut self,
         state: &mut yakui_core::Yakui,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        buffers: &mut Buffers,
         encoder: &mut wgpu::CommandEncoder,
         surface: SurfaceInfo<'_>,
     ) {
@@ -291,18 +306,18 @@ impl YakuiWgpu {
         state.set_paint_limit(self.limits);
         let paint = state.paint();
 
-        self.update_textures(device, paint, queue);
+        self.update_textures(paint);
 
         let layers = paint.layers();
         if layers.iter().all(|layer| layer.calls.is_empty()) {
             return;
         }
 
-        self.update_buffers(device, paint);
+        self.update_buffers(paint, buffers);
 
-        let vertices = self.vertices.upload(device, queue);
-        let indices = self.indices.upload(device, queue);
-        let commands = &self.commands;
+        let vertices = buffers.vertices.upload(&self.device, &self.queue);
+        let indices = buffers.indices.upload(&self.device, &self.queue);
+        let commands = &buffers.commands;
 
         if paint.surface_size() == Vec2::ZERO {
             return;
@@ -329,14 +344,14 @@ impl YakuiWgpu {
             let mut last_clip = None;
 
             let main_pipeline = self.main_pipeline.get(
-                device,
+                &self.device,
                 surface.format,
                 surface.sample_count,
                 make_main_pipeline,
             );
 
             let text_pipeline = self.text_pipeline.get(
-                device,
+                &self.device,
                 surface.format,
                 surface.sample_count,
                 make_text_pipeline,
@@ -390,12 +405,9 @@ impl YakuiWgpu {
         }
     }
 
-    fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
+    fn update_buffers(&mut self, paint: &PaintDom, buffers: &mut Buffers) {
         profiling::scope!("update_buffers");
 
-        self.vertices.clear();
-        self.indices.clear();
-        self.commands.clear();
         self.texture_bindgroup_cache.clear();
 
         let commands = paint
@@ -409,14 +421,14 @@ impl YakuiWgpu {
                     color: vertex.color,
                 });
 
-                let base = self.vertices.len() as u32;
+                let base = buffers.vertices.len() as u32;
                 let indices = call.indices.iter().map(|&index| base + index as u32);
 
-                let start = self.indices.len() as u32;
+                let start = buffers.indices.len() as u32;
                 let end = start + indices.len() as u32;
 
-                self.vertices.extend(vertices);
-                self.indices.extend(indices);
+                buffers.vertices.extend(vertices);
+                buffers.indices.extend(indices);
 
                 let bind_group_entry = call
                     .texture
@@ -455,7 +467,7 @@ impl YakuiWgpu {
                                 address_mode,
                             };
                             self.texture_bindgroup_cache.update(
-                                device,
+                                &self.device,
                                 entry,
                                 view,
                                 &self.samplers,
@@ -472,10 +484,10 @@ impl YakuiWgpu {
                 }
             });
 
-        self.commands.extend(commands);
+        buffers.commands.extend(commands);
     }
 
-    fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
+    fn update_textures(&mut self, paint: &PaintDom) {
         profiling::scope!("update_textures");
 
         let textures = paint.textures();
@@ -484,8 +496,8 @@ impl YakuiWgpu {
             for (id, texture) in textures.iter() {
                 self.managed_textures.entry(id).or_insert_with(|| {
                     GpuManagedTexture::new(
-                        device,
-                        queue,
+                        &self.device,
+                        &self.queue,
                         texture,
                         &self.premul_pipeline,
                         &self.premul_bind_group_layout,
@@ -502,8 +514,8 @@ impl YakuiWgpu {
                     self.managed_textures.insert(
                         id,
                         GpuManagedTexture::new(
-                            device,
-                            queue,
+                            &self.device,
+                            &self.queue,
                             texture,
                             &self.premul_pipeline,
                             &self.premul_bind_group_layout,
@@ -520,8 +532,8 @@ impl YakuiWgpu {
                     if let Some(existing) = self.managed_textures.get_mut(&id) {
                         let texture = textures.get(id).unwrap();
                         existing.update(
-                            device,
-                            queue,
+                            &self.device,
+                            &self.queue,
                             texture,
                             &self.premul_pipeline,
                             &self.premul_bind_group_layout,

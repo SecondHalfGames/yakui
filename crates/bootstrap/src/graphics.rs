@@ -1,5 +1,5 @@
-use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 use wgpu::CurrentSurfaceTexture;
+use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 
 use yakui::UVec2;
 
@@ -18,6 +18,7 @@ pub struct Graphics {
     multisampling: Multisampling,
 
     pub renderer: yakui_wgpu::YakuiWgpu,
+    wgpu_buffers: yakui_wgpu::Buffers,
 }
 
 impl Graphics {
@@ -81,7 +82,8 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(&device, &queue);
+        let renderer = yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone());
+        let wgpu_buffers = renderer.buffers();
 
         Self {
             device,
@@ -95,6 +97,7 @@ impl Graphics {
             multisampling: Multisampling::new(),
 
             renderer,
+            wgpu_buffers,
         }
     }
 
@@ -152,7 +155,7 @@ impl Graphics {
 
         let clear = encoder.finish();
 
-        let paint_yak = self.renderer.paint(yak, &self.device, &self.queue, surface);
+        let paint_yak = self.renderer.paint(yak, &mut self.wgpu_buffers, surface);
 
         self.queue.submit([clear, paint_yak]);
         output.present();

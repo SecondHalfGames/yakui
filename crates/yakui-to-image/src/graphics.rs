@@ -98,7 +98,8 @@ impl Graphics {
             color_attachment: &view,
             resolve_target: None,
         };
-        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, surface);
+        let mut buffers = yak_renderer.buffers();
+        let paint_yak = yak_renderer.paint(yak, &mut buffers, surface);
 
         let mut encoder = self
             .device
