@@ -48,6 +48,8 @@ impl YakuiSdl3 {
             },
             (true, true) | (false, false) => {}
         }
+
+        self.text_input_enabled = new_value;
     }
 
     pub fn handle_event(&mut self, state: &mut yakui_core::Yakui, event: &SdlEvent) -> bool {
