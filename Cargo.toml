@@ -15,7 +15,7 @@ image = { version = "0.25.10", default-features = false }
 anyhow = "1.0.102"
 insta = "1.47.2"
 
-wgpu = "29.0.1"
+wgpu = "29.0.3"
 ash = { version = "0.38.0", default-features = false, features = ["std"] }
 ash-window = "0.13.0"
 
