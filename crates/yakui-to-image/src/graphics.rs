@@ -18,6 +18,7 @@ impl Graphics {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: None,
                 force_fallback_adapter: false,
+                apply_limit_buckets: false,
             })
             .await
             .unwrap();
@@ -140,7 +141,7 @@ impl Graphics {
             })
             .unwrap();
 
-        let padded_data = buffer_slice.get_mapped_range().to_vec();
+        let padded_data = buffer_slice.get_mapped_range().unwrap();
         let mut data = Vec::new();
         for chunk in padded_data.chunks(buffer_size.padded_bytes_per_row as usize) {
             data.extend(&chunk[..buffer_size.unpadded_bytes_per_row as usize]);
