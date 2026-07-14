@@ -215,11 +215,11 @@ pub trait Widget: 'static + fmt::Debug {
         let node_id = ctx.dom.current();
         let node = ctx.dom.get_current();
 
-        let selection = ctx.input.selection()?;
+        let focus = ctx.input.focus()?;
         let mut current_index = None;
 
         for (index, &child) in node.children.iter().enumerate() {
-            if ctx.contains(child, selection) {
+            if ctx.contains(child, focus) {
                 current_index = Some(index);
                 break;
             }
@@ -260,7 +260,7 @@ pub trait Widget: 'static + fmt::Debug {
             // should pick the widget that's nearest to the given navigation
             // direction that's focusable.
 
-            if selection != node_id && self.event_interest().contains(EventInterest::FOCUS) {
+            if focus != node_id && self.event_interest().contains(EventInterest::FOCUS) {
                 // This widget is directly focusable, so focus it!
                 return Some(node_id);
             }

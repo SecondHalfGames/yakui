@@ -30,7 +30,7 @@ pub(crate) fn navigate(
     input: &InputState,
     dir: NavDirection,
 ) -> Option<WidgetId> {
-    let mut current = input.selection();
+    let mut current = input.focus();
 
     while let Some(id) = current {
         let node = dom.get(id).unwrap();

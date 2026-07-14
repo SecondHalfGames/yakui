@@ -461,7 +461,7 @@ impl Widget for TextBoxWidget {
                     });
                 }
 
-                ctx.input.set_selection(Some(ctx.dom.current()));
+                ctx.input.set_focus(Some(ctx.dom.current()));
 
                 EventResponse::Sink
             }
@@ -681,7 +681,7 @@ impl Widget for TextBoxWidget {
                                             self.text_changed_by_cosmic.set(true);
                                         } else {
                                             self.activated = true;
-                                            ctx.input.set_selection(None);
+                                            ctx.input.set_focus(None);
                                         }
                                     } else {
                                         editor.action(font_system, cosmic_text::Action::Enter);
@@ -696,7 +696,7 @@ impl Widget for TextBoxWidget {
                                 if *down {
                                     editor.action(font_system, cosmic_text::Action::Escape);
                                     if self.props.inline_edit {
-                                        ctx.input.set_selection(None);
+                                        ctx.input.set_focus(None);
                                     }
                                 }
                                 res = EventResponse::Sink;

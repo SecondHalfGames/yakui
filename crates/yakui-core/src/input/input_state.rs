@@ -14,7 +14,7 @@ use crate::widget::EventContext;
 use super::mouse::MouseButton;
 use super::{KeyCode, Modifiers};
 
-/// Holds yakui's input state, like cursor position, hovered, and selected
+/// Holds yakui's input state, like cursor position, hovered, and focused
 /// widgets.
 #[derive(Debug)]
 pub struct InputState {
@@ -27,11 +27,11 @@ pub struct InputState {
     /// Details about widgets and their mouse intersections.
     intersections: RefCell<Intersections>,
 
-    /// The widget that is currently selected.
-    selection: Cell<Option<WidgetId>>,
+    /// The widget that is currently focused.
+    focus: Cell<Option<WidgetId>>,
 
-    /// The widget that was selected last frame.
-    last_selection: Cell<Option<WidgetId>>,
+    /// The widget that was focused last frame.
+    last_focus: Cell<Option<WidgetId>>,
 
     /// If there's a pending navigation event, it's stored here!
     pending_navigation: Cell<Option<NavDirection>>,
@@ -116,8 +116,8 @@ impl InputState {
                 mouse_entered_and_sunk: Vec::new(),
                 mouse_down_in: HashMap::new(),
             }),
-            selection: Cell::new(None),
-            last_selection: Cell::new(None),
+            focus: Cell::new(None),
+            last_focus: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
         }
@@ -126,7 +126,7 @@ impl InputState {
     /// Begin a new frame for input handling.
     pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
         self.text_input_enabled.set(false);
-        self.notify_selection(dom, layout);
+        self.notify_focus(dom, layout);
     }
 
     /// Finish applying input events for this frame.
@@ -138,7 +138,7 @@ impl InputState {
     fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
         if let Some(dir) = self.pending_navigation.take() {
             if let Some(new_focus) = navigate(dom, layout, self, dir) {
-                self.set_selection(Some(new_focus));
+                self.set_focus(Some(new_focus));
             }
         }
     }
@@ -163,14 +163,14 @@ impl InputState {
             .map(|pos| pos / layout.scale_factor())
     }
 
-    /// Return the currently selected widget, if there is one.
-    pub fn selection(&self) -> Option<WidgetId> {
-        self.selection.get()
+    /// Return the currently focused widget, if there is one.
+    pub fn focus(&self) -> Option<WidgetId> {
+        self.focus.get()
     }
 
-    /// Set the currently selected widget.
-    pub fn set_selection(&self, id: Option<WidgetId>) {
-        self.selection.set(id);
+    /// Set the currently focused widget.
+    pub fn set_focus(&self, id: Option<WidgetId>) {
+        self.focus.set(id);
     }
 
     /// Attempt to navigate in a direction within the UI.
@@ -190,10 +190,10 @@ impl InputState {
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
-                // Left clicking clears selection, unless the widget handling the event sets the
-                // same selection again
+                // Left clicking clears focus, unless the widget handling the event sets the
+                // same focus again
                 if button == &MouseButton::One && *down {
-                    self.selection.set(None);
+                    self.focus.set(None);
                 }
                 self.mouse_button_changed(dom, layout, *button, *down)
             }
@@ -206,21 +206,21 @@ impl InputState {
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
             Event::RequestFocus(id) => {
-                self.set_selection(*id);
+                self.set_focus(*id);
                 EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
         };
 
-        // Any input events can change selection, notify of changes immediately
-        self.notify_selection(dom, layout);
+        // Any input events can change focus, notify of changes immediately
+        self.notify_focus(dom, layout);
 
         res
     }
 
-    fn notify_selection(&self, dom: &Dom, layout: &LayoutDom) {
-        let mut current = self.selection.get();
-        let last = self.last_selection.get();
+    fn notify_focus(&self, dom: &Dom, layout: &LayoutDom) {
+        let mut current = self.focus.get();
+        let last = self.last_focus.get();
 
         if current == last {
             return;
@@ -236,7 +236,7 @@ impl InputState {
                     &WidgetEvent::FocusChanged(true),
                 );
             } else {
-                self.selection.set(None);
+                self.focus.set(None);
                 current = None;
             }
         }
@@ -253,7 +253,7 @@ impl InputState {
             }
         }
 
-        self.last_selection.set(current);
+        self.last_focus.set(current);
     }
 
     /// Signal that the mouse has moved.
@@ -309,8 +309,8 @@ impl InputState {
         down: bool,
         modifiers: Option<Modifiers>,
     ) -> EventResponse {
-        let selected = self.selection.get();
-        if let Some(id) = selected {
+        let focus = self.focus.get();
+        if let Some(id) = focus {
             let Some(layout_node) = layout.get(id) else {
                 return EventResponse::Bubble;
             };
@@ -340,8 +340,8 @@ impl InputState {
     }
 
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
-        let selected = self.selection.get();
-        if let Some(id) = selected {
+        let focus = self.focus.get();
+        if let Some(id) = focus {
             let Some(layout_node) = layout.get(id) else {
                 return EventResponse::Bubble;
             };
