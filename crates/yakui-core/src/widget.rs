@@ -9,7 +9,7 @@ use glam::Vec2;
 use crate::dom::Dom;
 use crate::event::EventResponse;
 use crate::event::{EventInterest, WidgetEvent};
-use crate::geometry::{Constraints, FlexFit};
+use crate::geometry::{Constraints, FlexFit, Rect};
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::navigation::NavDirection;
@@ -39,6 +39,32 @@ impl LayoutContext<'_> {
     pub fn calculate_layout(&mut self, widget: WidgetId, constraints: Constraints) -> Vec2 {
         self.layout
             .calculate(self.dom, self.input, self.paint, widget, constraints)
+    }
+
+    /// Returns the current layout rectangle for the given widget relative
+    /// to the given ancestor.
+    pub fn rect_relative_to(&self, widget: WidgetId, ancestor: WidgetId) -> Option<Rect> {
+        let layout = self.layout.get(widget)?;
+        let mut rect = layout.rect;
+
+        if widget == ancestor {
+            rect.set_pos(Vec2::ZERO);
+            return Some(rect);
+        }
+
+        let mut current = widget;
+
+        loop {
+            let parent = self.dom.get(current)?.parent?;
+            if parent == ancestor {
+                return Some(rect);
+            }
+
+            let parent_layout = self.layout.get(parent)?;
+            rect.set_pos(rect.pos() + parent_layout.rect.pos());
+
+            current = parent;
+        }
     }
 }
 
@@ -112,6 +138,67 @@ impl NavigateContext<'_> {
         }
 
         false
+    }
+
+    fn nearest_in_direction(
+        &self,
+        origin: WidgetId,
+        dir: NavDirection,
+        candidates: impl IntoIterator<Item = WidgetId>,
+    ) -> Option<WidgetId> {
+        candidates
+            .into_iter()
+            .filter_map(|candidate| {
+                self.directional_score(origin, candidate, dir)
+                    .map(|score| (candidate, score))
+            })
+            .min_by(|(_, score_a), (_, score_b)| score_a.total_cmp(score_b))
+            .map(|(candidate, _)| candidate)
+    }
+
+    /// Returns the directional desirebility of a candidate widget
+    /// as a score where lower is better
+    fn directional_score(
+        &self,
+        origin: WidgetId,
+        candidate: WidgetId,
+        dir: NavDirection,
+    ) -> Option<f32> {
+        let origin = self.layout.get(origin)?.rect.center();
+        let candidate = self.layout.get(candidate)?.rect.center();
+        let delta = candidate - origin;
+
+        let (forward, cross) = match dir {
+            NavDirection::Down => (delta.y, delta.x),
+            NavDirection::Up => (-delta.y, delta.x),
+            NavDirection::Left => (-delta.x, delta.y),
+            NavDirection::Right => (delta.x, delta.y),
+            NavDirection::Next | NavDirection::Previous => return None,
+        };
+
+        if forward <= 0.0 {
+            return None;
+        }
+
+        // Prefer parallel widgets
+        let score = forward * forward + 2.0 * cross * cross;
+        score.is_finite().then_some(score)
+    }
+}
+
+bitflags::bitflags! {
+    /// A bitfield representing the focus policy of a widget.
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone, Copy, Default)]
+    pub struct FocusPolicy: u8 {
+        /// Focusable through sequential navigation.
+        const SEQUENTIAL = 1 << 0;
+
+        /// Focusable through directional navigation.
+        const DIRECTIONAL = 1 << 1;
+
+        /// Automatically focused when this widget or one of its
+        /// descendants sinks a primary pointer click.
+        const POINTER = 1 << 2;
     }
 }
 
@@ -208,18 +295,29 @@ pub trait Widget: 'static + fmt::Debug {
         EventResponse::Bubble
     }
 
+    /// Returns the focus policy for this widget.
+    ///
+    /// The default implementation implies no focus behavior.
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::empty()
+    }
+
     /// Tell which widget should be navigated to if the user navigates in a
     /// given direction.
-    #[allow(unused)]
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
+        self.default_navigate(ctx, dir)
+    }
+
+    /// Perform the default navigation based on focus and position.
+    fn default_navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {
         let node_id = ctx.dom.current();
         let node = ctx.dom.get_current();
 
-        let focus = ctx.input.focus()?;
+        let focus = ctx.input.focus();
         let mut current_index = None;
 
         for (index, &child) in node.children.iter().enumerate() {
-            if ctx.contains(child, focus) {
+            if focus.is_some_and(|focus| ctx.contains(child, focus)) {
                 current_index = Some(index);
                 break;
             }
@@ -249,8 +347,19 @@ pub trait Widget: 'static + fmt::Debug {
                     }
                 }
 
-                _ => {
-                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
+                NavDirection::Down
+                | NavDirection::Up
+                | NavDirection::Left
+                | NavDirection::Right => {
+                    let focus = focus?;
+
+                    let candidates = node
+                        .children
+                        .iter()
+                        .enumerate()
+                        .filter(|(child_index, _)| *child_index != index)
+                        .filter_map(|(_, &child)| ctx.try_navigate(child, dir));
+                    return ctx.nearest_in_direction(focus, dir, candidates);
                 }
             }
 
@@ -260,9 +369,22 @@ pub trait Widget: 'static + fmt::Debug {
             // should pick the widget that's nearest to the given navigation
             // direction that's focusable.
 
-            if focus != node_id && self.event_interest().contains(EventInterest::FOCUS) {
-                // This widget is directly focusable, so focus it!
-                return Some(node_id);
+            if focus != Some(node_id) {
+                let policy = self.focus_policy();
+
+                let can_focus = match dir {
+                    NavDirection::Next | NavDirection::Previous => {
+                        policy.contains(FocusPolicy::SEQUENTIAL)
+                    }
+                    NavDirection::Down
+                    | NavDirection::Up
+                    | NavDirection::Left
+                    | NavDirection::Right => policy.contains(FocusPolicy::DIRECTIONAL),
+                };
+
+                if can_focus {
+                    return Some(node_id);
+                }
             }
 
             match dir {
@@ -286,9 +408,17 @@ pub trait Widget: 'static + fmt::Debug {
                     None
                 }
 
-                _ => {
-                    log::debug!("NavDirection::{dir:?} not implemented in Widget::navigate.");
-                    None
+                NavDirection::Down
+                | NavDirection::Up
+                | NavDirection::Left
+                | NavDirection::Right => {
+                    let focus = focus?;
+
+                    let candidates = node
+                        .children
+                        .iter()
+                        .filter_map(|&child| ctx.try_navigate(child, dir));
+                    ctx.nearest_in_direction(focus, dir, candidates)
                 }
             }
         }
@@ -317,6 +447,9 @@ pub trait ErasedWidget: Any + fmt::Debug {
 
     /// Returns the type name of the widget, usable only for debugging.
     fn type_name(&self) -> &'static str;
+
+    /// See [`Widget::focus_policy`].
+    fn focus_policy(&self) -> FocusPolicy;
 
     /// See [`Widget::navigate`].
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId>;
@@ -354,6 +487,10 @@ where
 
     fn type_name(&self) -> &'static str {
         type_name::<T>()
+    }
+
+    fn focus_policy(&self) -> FocusPolicy {
+        <T as Widget>::focus_policy(self)
     }
 
     fn navigate(&self, ctx: NavigateContext<'_>, dir: NavDirection) -> Option<WidgetId> {

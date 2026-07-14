@@ -9,7 +9,7 @@ use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 use crate::navigation::{navigate, NavDirection};
-use crate::widget::EventContext;
+use crate::widget::{EventContext, FocusPolicy};
 
 use super::mouse::MouseButton;
 use super::{KeyCode, Modifiers};
@@ -35,6 +35,9 @@ pub struct InputState {
 
     /// If there's a pending navigation event, it's stored here!
     pending_navigation: Cell<Option<NavDirection>>,
+
+    /// If set, navigation is enabled.
+    navigation_enabled: Cell<bool>,
 
     /// If set, text input should be active.
     text_input_enabled: Cell<bool>,
@@ -120,6 +123,7 @@ impl InputState {
             last_focus: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
+            navigation_enabled: Cell::new(true),
         }
     }
 
@@ -171,6 +175,11 @@ impl InputState {
     /// Set the currently focused widget.
     pub fn set_focus(&self, id: Option<WidgetId>) {
         self.focus.set(id);
+    }
+
+    /// Sets whether navigation is enabled.
+    pub fn set_navigation_enabled(&self, enabled: bool) {
+        self.navigation_enabled.set(enabled);
     }
 
     /// Attempt to navigate in a direction within the UI.
@@ -309,29 +318,78 @@ impl InputState {
         down: bool,
         modifiers: Option<Modifiers>,
     ) -> EventResponse {
-        let focus = self.focus.get();
-        if let Some(id) = focus {
-            let Some(layout_node) = layout.get(id) else {
-                return EventResponse::Bubble;
-            };
+        let modifiers = modifiers.unwrap_or(self.modifiers.get());
+        let res = self.send_key_to_focus(dom, layout, key, down, modifiers);
+        if res == EventResponse::Sink {
+            // don't attempt key navigation
+            return res;
+        }
+        self.key_navigate(key, down, modifiers)
+    }
 
-            if layout_node
-                .event_interest
-                .contains(EventInterest::FOCUSED_KEYBOARD)
-            {
-                // Panic safety: if this node is in the layout DOM, it must be
-                // in the DOM.
-                let mut node = dom.get_mut(id).unwrap();
-                let event = WidgetEvent::KeyChanged {
-                    key,
-                    down,
-                    modifiers: modifiers.unwrap_or(self.modifiers.get()),
-                };
-                return self.fire_event(dom, layout, id, &mut node, &event);
-            }
+    fn send_key_to_focus(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        key: KeyCode,
+        down: bool,
+        modifiers: Modifiers,
+    ) -> EventResponse {
+        let Some(id) = self.focus.get() else {
+            return EventResponse::Bubble;
+        };
+        let Some(layout_node) = layout.get(id) else {
+            return EventResponse::Bubble;
+        };
+
+        if !layout_node
+            .event_interest
+            .contains(EventInterest::FOCUSED_KEYBOARD)
+        {
+            return EventResponse::Bubble;
         }
 
-        EventResponse::Bubble
+        // Panic safety: if this node is in the layout DOM, it must be
+        // in the DOM.
+        let mut node = dom.get_mut(id).unwrap();
+        let event = WidgetEvent::KeyChanged {
+            key,
+            down,
+            modifiers,
+        };
+        self.fire_event(dom, layout, id, &mut node, &event)
+    }
+
+    fn key_navigate(&self, key: KeyCode, down: bool, modifiers: Modifiers) -> EventResponse {
+        if !self.navigation_enabled.get() {
+            return EventResponse::Bubble;
+        }
+
+        let direction = match key {
+            KeyCode::Tab if modifiers.shift() => NavDirection::Previous,
+            KeyCode::Tab => NavDirection::Next,
+            KeyCode::ArrowDown => NavDirection::Down,
+            KeyCode::ArrowUp => NavDirection::Up,
+            KeyCode::ArrowLeft => NavDirection::Left,
+            KeyCode::ArrowRight => NavDirection::Right,
+            _ => return EventResponse::Bubble,
+        };
+
+        if self.focus().is_none()
+            && matches!(
+                direction,
+                NavDirection::Down | NavDirection::Up | NavDirection::Left | NavDirection::Right
+            )
+        {
+            return EventResponse::Bubble;
+        }
+
+        if down {
+            self.navigate(direction);
+        }
+
+        // still sink the up too
+        EventResponse::Sink
     }
 
     fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
@@ -382,6 +440,17 @@ impl InputState {
                     modifiers: self.modifiers.get(),
                 };
                 let response = self.fire_event(dom, layout, id, &mut node, &event);
+                drop(node);
+
+                if button == MouseButton::One
+                    && down
+                    && response == EventResponse::Sink
+                    && self.focus().is_none()
+                {
+                    if let Some(target) = pointer_focus_target(dom, id) {
+                        self.focus.set(Some(target));
+                    }
+                }
 
                 if response == EventResponse::Sink {
                     overall_response = response;
@@ -561,5 +630,15 @@ fn hit_test(_dom: &Dom, layout: &LayoutDom, coords: Vec2, output: &mut Vec<Widge
         if rect.contains_point(coords) {
             output.push(id);
         }
+    }
+}
+
+fn pointer_focus_target(dom: &Dom, mut current: WidgetId) -> Option<WidgetId> {
+    loop {
+        let node = dom.get(current)?;
+        if node.widget.focus_policy().contains(FocusPolicy::POINTER) {
+            return Some(current);
+        }
+        current = node.parent?;
     }
 }
