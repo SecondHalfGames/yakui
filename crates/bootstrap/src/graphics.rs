@@ -48,6 +48,7 @@ impl Graphics {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
+                apply_limit_buckets: false,
             })
             .await
             .unwrap();
@@ -77,6 +78,7 @@ impl Graphics {
             height: size.y,
             present_mode: wgpu::PresentMode::Fifo,
             desired_maximum_frame_latency: 2,
+            color_space: wgpu::SurfaceColorSpace::Auto,
         };
         surface.configure(&device, &surface_config);
 
@@ -158,6 +160,6 @@ impl Graphics {
         let paint_yak = self.renderer.paint(yak, &mut self.wgpu_buffers, surface);
 
         self.queue.submit([clear, paint_yak]);
-        output.present();
+        self.queue.present(output);
     }
 }

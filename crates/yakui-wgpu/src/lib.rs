@@ -574,7 +574,7 @@ fn make_main_pipeline(
             module: &main_shader,
             entry_point: None,
             compilation_options: Default::default(),
-            buffers: &[Vertex::DESCRIPTOR],
+            buffers: &[Some(Vertex::DESCRIPTOR)],
         },
         fragment: Some(wgpu::FragmentState {
             module: &main_shader,
@@ -623,7 +623,7 @@ fn make_text_pipeline(
             module: &text_shader,
             entry_point: None,
             compilation_options: Default::default(),
-            buffers: &[Vertex::DESCRIPTOR],
+            buffers: &[Some(Vertex::DESCRIPTOR)],
         },
         fragment: Some(wgpu::FragmentState {
             module: &text_shader,
