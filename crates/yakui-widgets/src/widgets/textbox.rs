@@ -5,9 +5,8 @@ use cosmic_text::{Edit, Selection};
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::input::{KeyCode, Modifiers, MouseButton};
-use yakui_core::navigation::NavDirection;
 use yakui_core::paint::PaintRect;
-use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
+use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
 use crate::clipboard::ClipboardHolder;
@@ -358,11 +357,12 @@ impl Widget for TextBoxWidget {
         self.default_paint(ctx);
     }
 
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+    }
+
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE
-            | EventInterest::FOCUS
-            | EventInterest::FOCUSED_KEYBOARD
-            | EventInterest::MOUSE_MOVE
+        EventInterest::MOUSE_INSIDE | EventInterest::FOCUSED_KEYBOARD | EventInterest::MOUSE_MOVE
     }
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -461,8 +461,6 @@ impl Widget for TextBoxWidget {
                     });
                 }
 
-                ctx.input.set_selection(Some(ctx.dom.current()));
-
                 EventResponse::Sink
             }
 
@@ -489,16 +487,12 @@ impl Widget for TextBoxWidget {
                         let res;
 
                         match key {
+                            // Allow navigation when appropriate
                             KeyCode::Tab => {
-                                if *down {
-                                    if modifiers.shift() {
-                                        ctx.input.navigate(NavDirection::Previous);
-                                    } else {
-                                        ctx.input.navigate(NavDirection::Next);
-                                    }
-                                }
-
-                                res = EventResponse::Sink;
+                                res = EventResponse::Bubble;
+                            }
+                            KeyCode::ArrowUp | KeyCode::ArrowDown if !self.props.multiline => {
+                                res = EventResponse::Bubble
                             }
 
                             KeyCode::ArrowLeft => {
@@ -681,7 +675,7 @@ impl Widget for TextBoxWidget {
                                             self.text_changed_by_cosmic.set(true);
                                         } else {
                                             self.activated = true;
-                                            ctx.input.set_selection(None);
+                                            ctx.input.set_focus(None);
                                         }
                                     } else {
                                         editor.action(font_system, cosmic_text::Action::Enter);
@@ -696,7 +690,7 @@ impl Widget for TextBoxWidget {
                                 if *down {
                                     editor.action(font_system, cosmic_text::Action::Escape);
                                     if self.props.inline_edit {
-                                        ctx.input.set_selection(None);
+                                        ctx.input.set_focus(None);
                                     }
                                 }
                                 res = EventResponse::Sink;

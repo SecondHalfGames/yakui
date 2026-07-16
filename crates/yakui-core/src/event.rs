@@ -138,9 +138,6 @@ bitflags::bitflags! {
         /// Notify this widget whenever the mouse cursor moves.
         const MOUSE_MOVE = 4;
 
-        /// This widget can be focused.
-        const FOCUS = 8;
-
         /// If this widget is focused, it should receive keyboard events.
         const FOCUSED_KEYBOARD = 16;
 
