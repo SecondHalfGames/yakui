@@ -165,6 +165,8 @@ impl PaintDom {
             return;
         }
 
+        let previous_clip = self.current_clip;
+
         self.current_clip = Rect::from_pos_size(
             (layout_node.clip.pos() * self.scale_factor).round(),
             (layout_node.clip.size() * self.scale_factor).round(),
@@ -191,6 +193,8 @@ impl PaintDom {
         if layout_node.new_layer {
             self.layers.pop();
         }
+
+        self.current_clip = previous_clip;
     }
 
     /// Paint all of the widgets in the given DOM.
