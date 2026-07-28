@@ -6,7 +6,7 @@ use crate::id::WidgetId;
 ///
 /// Widget responses can convey information like whether the widget was clicked,
 /// is currently hovered, or had an update to its state.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Response<T> {
     inner: T,
 

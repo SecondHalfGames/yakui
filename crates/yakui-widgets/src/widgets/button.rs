@@ -2,8 +2,8 @@ use std::borrow::Cow;
 
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Color;
-use yakui_core::input::MouseButton;
-use yakui_core::widget::{EventContext, Widget};
+use yakui_core::input::{KeyCode, MouseButton};
+use yakui_core::widget::{EventContext, FocusPolicy, Widget};
 use yakui_core::{Alignment, Response};
 
 use crate::border::{Border, BorderRadius};
@@ -37,6 +37,7 @@ pub struct Button {
     pub style: DynamicButtonStyle,
     pub hover_style: DynamicButtonStyle,
     pub down_style: DynamicButtonStyle,
+    pub focus_style: DynamicButtonStyle,
 }
 
 auto_builders!(Button {
@@ -47,6 +48,7 @@ auto_builders!(Button {
     style: DynamicButtonStyle,
     hover_style: DynamicButtonStyle,
     down_style: DynamicButtonStyle,
+    focus_style: DynamicButtonStyle,
 });
 
 /// Contains styles that can vary based on the state of the button.
@@ -83,6 +85,7 @@ impl Button {
             style: DynamicButtonStyle::default(),
             hover_style: DynamicButtonStyle::default(),
             down_style: DynamicButtonStyle::default(),
+            focus_style: DynamicButtonStyle::default(),
         }
     }
 
@@ -107,6 +110,12 @@ impl Button {
             ..Default::default()
         };
 
+        let focus_style = DynamicButtonStyle {
+            fill: style.fill,
+            border: down_style.border,
+            ..Default::default()
+        };
+
         Self {
             text: text.into(),
             alignment: Alignment::CENTER,
@@ -115,6 +124,7 @@ impl Button {
             style,
             hover_style,
             down_style,
+            focus_style,
         }
     }
 
@@ -130,12 +140,14 @@ pub struct ButtonWidget {
     hovering: bool,
     mouse_down: bool,
     clicked: bool,
+    focused: bool,
 }
 
 #[derive(Debug)]
 pub struct ButtonResponse {
     pub hovering: bool,
     pub clicked: bool,
+    pub focused: bool,
 }
 
 impl Widget for ButtonWidget {
@@ -148,6 +160,7 @@ impl Widget for ButtonWidget {
             hovering: false,
             mouse_down: false,
             clicked: false,
+            focused: false,
         }
     }
 
@@ -165,6 +178,11 @@ impl Widget for ButtonWidget {
             border = style.border;
         } else if self.hovering {
             let style = &self.props.hover_style;
+            color = style.fill;
+            text_style = style.text.clone();
+            border = style.border;
+        } else if self.focused {
+            let style = &self.props.focus_style;
             color = style.fill;
             text_style = style.text.clone();
             border = style.border;
@@ -193,11 +211,16 @@ impl Widget for ButtonWidget {
         Self::Response {
             hovering: self.hovering,
             clicked,
+            focused: self.focused,
         }
     }
 
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+    }
+
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -234,6 +257,20 @@ impl Widget for ButtonWidget {
 
                     EventResponse::Bubble
                 }
+            }
+            WidgetEvent::FocusChanged(focused) => {
+                self.focused = *focused;
+                EventResponse::Bubble
+            }
+            WidgetEvent::KeyChanged {
+                key: KeyCode::Enter | KeyCode::NumpadEnter,
+                down,
+                ..
+            } => {
+                if *down {
+                    self.clicked = true;
+                }
+                EventResponse::Sink
             }
             _ => EventResponse::Bubble,
         }

@@ -1,9 +1,10 @@
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
-use yakui_core::geometry::{Constraints, Vec2};
-use yakui_core::input::MouseButton;
-use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
+use yakui_core::geometry::{Color, Constraints, Vec2};
+use yakui_core::input::{KeyCode, MouseButton};
+use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::border::Border;
 use crate::shapes::RoundedRectangle;
 use crate::{colors, shapes};
 
@@ -46,11 +47,13 @@ pub struct CheckboxWidget {
     hovering: bool,
     mouse_down: bool,
     just_toggled: bool,
+    focused: bool,
 }
 
 #[derive(Debug)]
 pub struct CheckboxResponse {
     pub checked: bool,
+    pub focused: bool,
 }
 
 impl Widget for CheckboxWidget {
@@ -63,6 +66,7 @@ impl Widget for CheckboxWidget {
             hovering: false,
             mouse_down: false,
             just_toggled: false,
+            focused: false,
         }
     }
 
@@ -75,7 +79,10 @@ impl Widget for CheckboxWidget {
             self.just_toggled = false;
         }
 
-        CheckboxResponse { checked }
+        CheckboxResponse {
+            checked,
+            focused: self.focused,
+        }
     }
 
     fn paint(&self, ctx: PaintContext<'_>) {
@@ -86,7 +93,24 @@ impl Widget for CheckboxWidget {
         check_rect.set_pos(check_rect.pos() + padding / 2.0);
         check_rect.set_size(check_rect.size() - padding);
 
-        let bg = RoundedRectangle::new(layout_node.rect, 6.0).color(colors::BACKGROUND_3);
+        let (background, border) = if self.mouse_down {
+            (
+                colors::BACKGROUND_3.adjust(0.8),
+                Border::new(Color::WHITE, 1.0),
+            )
+        } else if self.hovering {
+            (
+                colors::BACKGROUND_3.adjust(1.2),
+                Border::new(Color::WHITE.adjust(0.75), 1.0),
+            )
+        } else if self.focused {
+            (colors::BACKGROUND_3, Border::new(Color::WHITE, 1.0))
+        } else {
+            (colors::BACKGROUND_3, Border::new(colors::BACKGROUND_1, 1.0))
+        };
+        let bg = RoundedRectangle::new(layout_node.rect, 6.0)
+            .color(background)
+            .border(Some(border));
         bg.add(ctx.paint);
 
         if self.props.checked {
@@ -98,8 +122,12 @@ impl Widget for CheckboxWidget {
         constraints.constrain_min(Vec2::splat(OUTER_SIZE))
     }
 
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+    }
+
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -133,6 +161,20 @@ impl Widget for CheckboxWidget {
                     self.mouse_down = false;
                     EventResponse::Bubble
                 }
+            }
+            WidgetEvent::FocusChanged(focused) => {
+                self.focused = *focused;
+                EventResponse::Bubble
+            }
+            WidgetEvent::KeyChanged {
+                key: KeyCode::Enter | KeyCode::NumpadEnter,
+                down,
+                ..
+            } => {
+                if *down {
+                    self.just_toggled = true;
+                }
+                EventResponse::Sink
             }
             _ => EventResponse::Bubble,
         }

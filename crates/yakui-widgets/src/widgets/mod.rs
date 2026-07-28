@@ -30,6 +30,7 @@ mod stack;
 mod state;
 mod text;
 mod textbox;
+mod trap;
 mod unconstrained_box;
 mod window;
 
@@ -65,5 +66,6 @@ pub use self::stack::*;
 pub use self::state::*;
 pub use self::text::*;
 pub use self::textbox::*;
+pub use self::trap::*;
 pub use self::unconstrained_box::*;
 pub use self::window::*;

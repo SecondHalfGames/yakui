@@ -69,7 +69,7 @@ impl Widget for KeyboardWidget {
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
-        ctx.input.set_selection(Some(ctx.dom.current()));
+        ctx.input.set_focus(Some(ctx.dom.current()));
         Vec2::ZERO
     }
 
