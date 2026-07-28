@@ -103,15 +103,14 @@ impl Rect {
 
     /// Tells whether two rectangles intersect.
     ///
-    /// If the rectangles touch but do not overlap, they are considered **not
-    /// intersecting**.
+    /// If the rectangles touch but do not overlap, they are still considered **intersecting**.
     #[inline]
     pub fn intersects(&self, other: &Self) -> bool {
         let self_max = self.max();
         let other_max = other.max();
 
-        let x_intersect = self.pos.x < other_max.x && self_max.x > other.pos.x;
-        let y_intersect = self.pos.y < other_max.y && self_max.y > other.pos.y;
+        let x_intersect = self.pos.x <= other_max.x && self_max.x >= other.pos.x;
+        let y_intersect = self.pos.y <= other_max.y && self_max.y >= other.pos.y;
 
         x_intersect && y_intersect
     }
