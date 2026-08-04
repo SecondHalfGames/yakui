@@ -13,7 +13,7 @@ pub struct Constraints {
 impl Constraints {
     /// Create a new `Constraints` with a minimum size of zero and the given
     /// maximum.
-    pub fn loose(max: Vec2) -> Self {
+    pub const fn loose(max: Vec2) -> Self {
         Self {
             min: Vec2::ZERO,
             max,
@@ -22,7 +22,7 @@ impl Constraints {
 
     /// Create a new `Constraints` whose minimum and maximum constraints are the
     /// given value.
-    pub fn tight(value: Vec2) -> Self {
+    pub const fn tight(value: Vec2) -> Self {
         Self {
             min: value,
             max: value,
@@ -31,7 +31,7 @@ impl Constraints {
 
     /// Create a new `Constraints` whose minimum size is zero and whose maximum
     /// is infinite.
-    pub fn none() -> Self {
+    pub const fn none() -> Self {
         Self {
             min: Vec2::ZERO,
             max: Vec2::new(f32::INFINITY, f32::INFINITY),

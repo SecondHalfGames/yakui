@@ -51,7 +51,7 @@ impl Color {
 
     /// Creates a new color using the existing color and the given linear alpha
     /// value given as a float.
-    pub fn with_alpha(mut self, alpha: f32) -> Self {
+    pub const fn with_alpha(mut self, alpha: f32) -> Self {
         self.a = (alpha * 255.0).round() as u8;
         self
     }
