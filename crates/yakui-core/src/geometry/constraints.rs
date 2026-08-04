@@ -38,6 +38,24 @@ impl Constraints {
         }
     }
 
+    /// Create a new `Constraints` whose minimum and maximum width are the given
+    /// values, and whose height is infinite.
+    pub const fn width(min: f32, max: f32) -> Self {
+        Self {
+            min: Vec2::new(min, 0.0),
+            max: Vec2::new(max, f32::INFINITY),
+        }
+    }
+
+    /// Create a new `Constraints` whose minimum and maximum height are the given
+    /// values, and whose width is infinite.
+    pub const fn height(min: f32, max: f32) -> Self {
+        Self {
+            min: Vec2::new(0.0, min),
+            max: Vec2::new(f32::INFINITY, max),
+        }
+    }
+
     /// Returns the size closest to the given size that satisfies the minimun
     /// constraints.
     pub fn constrain_min(&self, base: Vec2) -> Vec2 {
