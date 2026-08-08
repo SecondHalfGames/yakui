@@ -49,7 +49,7 @@ impl List {
         Self {
             direction,
             item_spacing: 0.0,
-            main_axis_size: MainAxisSize::Max,
+            main_axis_size: MainAxisSize::Min,
             main_axis_alignment: MainAxisAlignment::Start,
             cross_axis_alignment: CrossAxisAlignment::Start,
         }

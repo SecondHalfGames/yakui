@@ -52,9 +52,7 @@ impl Widget for OffsetWidget {
         // enforced by the incoming constraints.
         let constraints = Constraints::loose(input.max);
 
-        let mut self_size = if input.max.is_finite() {
-            input.max
-        } else if input.min.is_finite() {
+        let mut self_size = if input.min.is_finite() {
             input.min
         } else {
             Vec2::ZERO
