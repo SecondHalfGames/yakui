@@ -1,11 +1,12 @@
 use std::cell::{Cell, RefCell};
 
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::paint::{PaintRect, Pipeline};
+use yakui_core::paint::{PaintDom, PaintRect, Pipeline};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
-use crate::font::Fonts;
+use crate::auto_builders;
+use crate::font::{FontSelection, Fonts};
 use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
@@ -16,217 +17,366 @@ supports features like padding.
 
 Responds with [RenderTextResponse].
 */
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RenderText {
-    pub text: String,
-    pub style: TextStyle,
+    /// The text normally fills up the entire available space if it doesn't go from left to right,
+    /// marking it as inline would force it to calculate the text width instead.
+    pub inline: bool,
+    pub min_width: f32,
+
+    pub cursor: Option<cosmic_text::Cursor>,
+    pub selection: Option<(cosmic_text::Cursor, cosmic_text::Cursor)>,
+    pub preedit_cursor: Option<cosmic_text::Cursor>,
+    pub preedit_cursor_end: Option<cosmic_text::Cursor>,
+    pub selected_bg_color: Color,
+    pub cursor_color: Color,
 }
 
+impl Default for RenderText {
+    fn default() -> Self {
+        Self {
+            inline: false,
+            min_width: Default::default(),
+
+            cursor: None,
+            selection: None,
+            preedit_cursor: None,
+            preedit_cursor_end: None,
+            selected_bg_color: Color::CLEAR,
+            cursor_color: Color::CLEAR,
+        }
+    }
+}
+
+auto_builders!(RenderText {
+    inline: bool,
+    min_width: f32,
+});
+
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct RenderTextResponse {
-    pub size: Option<Vec2>,
+    /// The measured max size of the text, without accounting for constraints, in *physical* pixel unit.
+    pub measured_size: Vec2,
+    /// The size of the text, in *physical* pixel unit.
+    pub physical_size: Vec2,
+    /// The size of the text, in *logical* pixel unit.
+    pub size: Vec2,
+    /// The size constraints for the text, in *physical* pixel unit.
+    pub max_size: (Option<f32>, Option<f32>),
 }
 
 impl RenderText {
-    pub fn new<S: Into<String>>(text: S) -> Self {
+    pub fn new() -> Self {
         Self {
-            text: text.into(),
-            style: TextStyle::label(),
-        }
-    }
-
-    pub fn with_style<S: Into<String>>(text: S, style: TextStyle) -> Self {
-        Self {
-            text: text.into(),
-            style,
+            ..Default::default()
         }
     }
 
     #[track_caller]
-    pub fn show(self) -> Response<RenderTextResponse> {
-        Self::show_with_scroll(self, None)
+    pub fn show(self, text: &str, style: &TextStyle) -> Response<RenderTextResponse> {
+        Self::show_with_scroll(self, text, style, None)
     }
 
     #[track_caller]
     pub fn show_with_scroll(
         self,
+        text: &str,
+        style: &TextStyle,
         scroll: Option<cosmic_text::Scroll>,
     ) -> Response<RenderTextResponse> {
-        widget::<RenderTextWidget>((self, scroll))
+        widget::<RenderTextWidget>((self, text, style, scroll))
     }
 }
 
 #[derive(Debug)]
 pub struct RenderTextWidget {
-    props: RenderText,
     buffer: RefCell<Option<cosmic_text::Buffer>>,
-    line_offsets: RefCell<Vec<f32>>,
-    size: Cell<Option<Vec2>>,
+
+    props: RenderText,
+    text: String,
+    style: TextStyle,
+    text_changed: Cell<bool>,
+
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
     scale_factor: Cell<Option<f32>>,
-    last_scroll: Cell<Option<cosmic_text::Scroll>>,
+
     scroll: Option<cosmic_text::Scroll>,
-    relayout: Cell<bool>,
+    scroll_changed: Cell<bool>,
+
+    measured_size: Cell<Vec2>,
+    physical_text_size: Cell<Vec2>,
+    text_size: Cell<Vec2>,
+
+    text_cursor: Cell<Option<Rect>>,
 }
 
 impl Widget for RenderTextWidget {
-    type Props<'a> = (RenderText, Option<cosmic_text::Scroll>);
+    type Props<'a> = (
+        RenderText,
+        &'a str,
+        &'a TextStyle,
+        Option<cosmic_text::Scroll>,
+    );
     type Response = RenderTextResponse;
 
     fn new() -> Self {
         Self {
-            props: RenderText::new(""),
             buffer: RefCell::default(),
-            line_offsets: RefCell::default(),
-            size: Cell::default(),
+
+            props: RenderText::new(),
+            text: String::default(),
+            style: TextStyle::default(),
+            text_changed: Cell::new(true),
+
             max_size: Cell::default(),
             scale_factor: Cell::default(),
-            last_scroll: Cell::default(),
+
             scroll: None,
-            relayout: Cell::new(false),
+            scroll_changed: Cell::new(false),
+
+            measured_size: Cell::default(),
+            physical_text_size: Cell::default(),
+            text_size: Cell::default(),
+
+            text_cursor: Cell::default(),
         }
     }
 
-    fn update(&mut self, (props, scroll): Self::Props<'_>) -> Self::Response {
-        if props.text != self.props.text || props.style.attrs != self.props.style.attrs {
-            self.relayout.set(true);
+    fn update(&mut self, (props, text, style, scroll): Self::Props<'_>) -> Self::Response {
+        if text != self.text {
+            self.text = text.to_string();
+            self.text_changed.set(true);
+        }
+
+        if style != &self.style {
+            self.style = style.clone();
+            self.text_changed.set(true);
+        }
+
+        if scroll != self.scroll {
+            self.scroll_changed.set(true)
         }
 
         self.props = props;
         self.scroll = scroll;
 
         Self::Response {
-            size: self.size.get(),
+            measured_size: self.measured_size.get(),
+            physical_size: self.physical_text_size.get(),
+            size: self.text_size.get(),
+            max_size: self.max_size.get().unwrap_or_default(),
         }
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
-        ctx.layout.enable_clipping(ctx.dom);
+        // if we're scrolling via cosmic-text, enable clipping
+        if self.scroll.is_some() {
+            ctx.layout.enable_clipping(ctx.dom);
+        }
 
-        let max_width = constraints
-            .max
-            .x
-            .is_finite()
-            .then_some(constraints.max.x * ctx.layout.scale_factor());
-        let max_height = constraints
-            .max
-            .y
-            .is_finite()
-            .then_some(constraints.max.y * ctx.layout.scale_factor());
+        if let Some(cursor) = self.text_cursor.get() {
+            ctx.input.set_text_cursor(cursor);
+        }
+
+        let max_width = (constraints.min.x.max(constraints.max.x)).max(self.props.min_width);
+        let max_width = if max_width.is_normal() {
+            Some((max_width * ctx.layout.scale_factor()).ceil())
+        } else {
+            let max_width = self.props.min_width;
+            if max_width.is_normal() {
+                Some((max_width * ctx.layout.scale_factor()).ceil())
+            } else {
+                None
+            }
+        };
+
+        let max_height = constraints.min.y.max(constraints.max.y);
+        let max_height = if max_height.is_normal() {
+            Some((max_height * ctx.layout.scale_factor()).ceil())
+        } else {
+            None
+        };
+
         let max_size = (max_width, max_height);
 
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
 
-        fonts.with_system(|font_system| {
-            let relayout = self.relayout.take();
+        fonts.with_inner(|fonts| {
+            let text_changed = self.text_changed.take();
+            let size_changed = self.max_size.get() != Some(max_size);
+            let scroll_changed = self.scroll_changed.take();
+
+            self.max_size.set(Some(max_size));
+            self.scale_factor.set(Some(ctx.layout.scale_factor()));
 
             let mut buffer_ref = self.buffer.borrow_mut();
             let buffer = buffer_ref.get_or_insert_with(|| {
                 cosmic_text::Buffer::new(
-                    font_system,
-                    self.props.style.to_metrics(ctx.layout.scale_factor()),
+                    &mut fonts.font_system,
+                    self.style.to_metrics(ctx.layout.scale_factor()),
                 )
             });
 
-            if self.scale_factor.get() != Some(ctx.layout.scale_factor())
-                || self.max_size.get() != Some(max_size)
-                || relayout
-            {
-                buffer.set_metrics_and_size(
-                    font_system,
-                    self.props.style.to_metrics(ctx.layout.scale_factor()),
-                    max_width,
-                    max_height,
+            if text_changed {
+                buffer.set_text(
+                    &self.text,
+                    &fonts.font_selection.get_cosmic_attrs(&self.style.font),
+                    cosmic_text::Shaping::Advanced,
+                    self.style.align.into(),
                 );
-
-                self.max_size.set(Some(max_size));
-                self.scale_factor.set(Some(ctx.layout.scale_factor()));
             }
 
-            if self.last_scroll.get() != self.scroll {
+            if text_changed || size_changed {
+                let measured_width = measure_text_width(
+                    &mut fonts.font_system,
+                    &mut fonts.font_selection,
+                    &self.text,
+                    &self.style,
+                    ctx.layout.scale_factor(),
+                    max_width,
+                )
+                .ceil();
+                let measured_height = measure_text_height(
+                    &mut fonts.font_system,
+                    &mut fonts.font_selection,
+                    &self.text,
+                    &self.style,
+                    ctx.layout.scale_factor(),
+                    max_width,
+                )
+                .ceil();
+
+                let physical_text_width = match max_width {
+                    // if it's not inline, then we check if anything is RTL or if the text doesn't flow from left to right
+                    Some(max_width)
+                        if !self.props.inline
+                            && (self.style.align != TextAlignment::Start
+                                || buffer.layout_runs().any(|run| run.rtl)) =>
+                    {
+                        max_width.ceil()
+                    }
+                    // else, just measure the text's width since we have no reason take up the entire width
+                    _ => measured_width.max(self.props.min_width * ctx.layout.scale_factor()),
+                };
+
+                self.measured_size
+                    .set(Vec2::new(measured_width, measured_height));
+                self.physical_text_size.set(Vec2::new(
+                    physical_text_width,
+                    measured_height.min(max_height.unwrap_or(f32::INFINITY)),
+                ));
+                self.text_size
+                    .set((self.physical_text_size.get() / ctx.layout.scale_factor()).round());
+
+                buffer.set_metrics(self.style.to_metrics(ctx.layout.scale_factor()));
+                buffer.set_size(Some(self.physical_text_size.get().x), max_height);
+            }
+
+            if text_changed || size_changed || scroll_changed {
                 if let Some(scroll) = self.scroll {
                     buffer.set_scroll(scroll);
                 }
 
-                self.last_scroll.set(self.scroll);
+                buffer.shape_until_scroll(&mut fonts.font_system, text_changed);
             }
 
-            if relayout {
-                buffer.set_text(
-                    font_system,
-                    &self.props.text,
-                    &self.props.style.attrs.as_attrs(),
-                    cosmic_text::Shaping::Advanced,
-                    None,
-                );
-            }
-
-            buffer.shape_until_scroll(font_system, true);
-
-            let mut line_offsets = self.line_offsets.borrow_mut();
-            line_offsets.clear();
-
-            let widest_line = buffer
-                .layout_runs()
-                .map(|layout| layout.line_w)
-                .max_by(|a, b| a.total_cmp(b))
-                .unwrap_or_default()
-                .max(constraints.min.x * ctx.layout.scale_factor());
-
-            for run in buffer.layout_runs() {
-                let offset = match self.props.style.align {
-                    TextAlignment::Start => 0.0,
-                    TextAlignment::Center => (widest_line - run.line_w) / 2.0,
-                    TextAlignment::End => widest_line - run.line_w,
-                };
-
-                line_offsets.push(offset / ctx.layout.scale_factor());
-            }
-
-            let size = {
-                let size_y = buffer
-                    .layout_runs()
-                    .map(|layout| layout.line_height)
-                    .sum::<f32>()
-                    .ceil();
-
-                Vec2::new(
-                    widest_line / ctx.layout.scale_factor(),
-                    (size_y / ctx.layout.scale_factor()).ceil(),
-                )
-            };
-
-            let size = constraints.constrain(size);
-            self.size.set(Some(size));
-
-            size
+            self.text_size.get()
         })
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, ctx: PaintContext<'_>) {
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
-        let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
+        let layout_rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
 
         let buffer_ref = self.buffer.borrow();
         let Some(buffer) = buffer_ref.as_ref() else {
             return;
         };
 
-        fonts.with_system(|font_system| {
-            let line_offsets = self.line_offsets.borrow();
+        let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
+        fonts.with_inner(|fonts| {
             let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
 
-            for (layout, x_offset) in buffer.layout_runs().zip(line_offsets.iter().copied()) {
-                for glyph in layout.glyphs {
-                    if let Some(render) = text_global.get_or_insert(ctx.paint, font_system, glyph) {
-                        paint_text(
-                            &mut ctx,
-                            self.props.style.color,
-                            glyph,
-                            render,
-                            layout_node.rect.pos() + Vec2::new(x_offset, 0.0),
-                            layout.line_y,
-                        )
+            if let Some((start, end)) = self.props.selection {
+                for run in buffer.layout_runs() {
+                    let y = run.line_top;
+                    let h = run.line_height;
+
+                    for (x, w) in run.highlight(start, end) {
+                        let pos = Vec2::new(x, y) * inv_scale_factor;
+                        let size = Vec2::new(w, h) * inv_scale_factor;
+
+                        let mut selection_rect =
+                            PaintRect::new(Rect::from_pos_size(layout_rect.pos() + pos, size));
+                        selection_rect.color = self.props.selected_bg_color;
+                        selection_rect.add(ctx.paint);
+                    }
+                }
+            }
+
+            for run in buffer.layout_runs() {
+                for glyph in run.glyphs {
+                    let render =
+                        text_global.get_glyph_render(ctx.paint, &mut fonts.font_system, glyph);
+                    paint_text(
+                        ctx.paint,
+                        inv_scale_factor,
+                        &run,
+                        glyph,
+                        render,
+                        layout_rect.pos(),
+                        self.style.color,
+                    );
+                }
+            }
+
+            if let Some(cursor) = self.props.cursor {
+                const CURSOR_WIDTH: f32 = 1.5;
+
+                let cursor_rect = buffer.layout_runs().find_map(|run| {
+                    let (x, y) = (run.cursor_position(&cursor)?, run.line_top);
+                    let (w, h) = (run.line_w, run.line_height);
+
+                    Some(((x, y), (w, h)))
+                });
+
+                self.text_cursor.set(cursor_rect.map(|((x, y), (w, h))| {
+                    Rect::from_pos_size(
+                        layout_rect.pos() * ctx.layout.scale_factor() + Vec2::new(x, y),
+                        Vec2::new(w - x, h),
+                    )
+                }));
+
+                if let Some(((x, y), (_, h))) = cursor_rect {
+                    let pos = Vec2::new(x * inv_scale_factor, y * inv_scale_factor);
+                    let size = Vec2::new(CURSOR_WIDTH, h * inv_scale_factor);
+                    let mut rect = Rect::from_pos_size(layout_rect.pos() + pos, size);
+                    let diff_pos = (rect.pos().x - layout_rect.pos().x).min(0.0);
+                    let diff_max = (layout_rect.max().x - rect.max().x).min(0.0);
+                    rect.set_pos((rect.pos() + Vec2::new(-diff_pos + diff_max, 0.0)).floor());
+
+                    let mut cursor_highlight = PaintRect::new(rect);
+                    cursor_highlight.color = self.props.cursor_color;
+                    cursor_highlight.add(ctx.paint);
+                }
+            }
+
+            if let Some((preedit_cursor, preedit_cursor_end)) =
+                self.props.preedit_cursor.zip(self.props.preedit_cursor_end)
+            {
+                for run in buffer.layout_runs() {
+                    let y = run.line_top;
+                    let h = run.line_height;
+
+                    for (x, w) in run.highlight(preedit_cursor, preedit_cursor_end) {
+                        let pos = Vec2::new(x, y + h) * inv_scale_factor - Vec2::new(0.0, 3.0);
+                        let size = Vec2::new(w * inv_scale_factor, 3.0);
+
+                        let mut preedit_highlight =
+                            PaintRect::new(Rect::from_pos_size(layout_rect.pos() + pos, size));
+                        preedit_highlight.color = self.style.color;
+                        preedit_highlight.add(ctx.paint);
                     }
                 }
             }
@@ -234,24 +384,27 @@ impl Widget for RenderTextWidget {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn paint_text(
-    ctx: &mut PaintContext<'_>,
-    color: Color,
+    paint: &mut PaintDom,
+    inv_scale_factor: f32,
+    run: &cosmic_text::LayoutRun,
     glyph: &cosmic_text::LayoutGlyph,
     render: GlyphRender,
-    layout_pos: Vec2,
-    line_y: f32,
+    widget_pos: Vec2,
+    color: Color,
 ) {
-    let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
-
     let size = render.rect.size().as_vec2();
 
     let physical = glyph.physical((0.0, 0.0), 1.0);
     let pos = Vec2::new(physical.x as f32, physical.y as f32);
 
     let mut rect = PaintRect::new(Rect::from_pos_size(
-        Vec2::new(pos.x + render.offset.x, pos.y - render.offset.y + line_y) * inv_scale_factor
-            + layout_pos,
+        Vec2::new(
+            pos.x + render.offset.x,
+            pos.y - render.offset.y + run.line_y,
+        ) * inv_scale_factor
+            + widget_pos,
         Vec2::new(size.x, size.y) * inv_scale_factor,
     ));
 
@@ -263,5 +416,67 @@ fn paint_text(
     rect.texture = Some((TextureId::Managed(render.texture), render.tex_rect));
     rect.pipeline = Pipeline::Text;
 
-    rect.add(ctx.paint);
+    rect.add(paint);
+}
+
+/// Measures the width of a particular string of text, with the given max width and FontSystem.
+/// Wraps according to the max width.
+///
+/// Note: The returned width is in physical unit. The max width must also be in physical unit.
+#[must_use]
+pub fn measure_text_width(
+    font_system: &mut cosmic_text::FontSystem,
+    font_selection: &mut FontSelection,
+    text: &str,
+    style: &TextStyle,
+    scale_factor: f32,
+    max_width: Option<f32>,
+) -> f32 {
+    let mut buffer = cosmic_text::Buffer::new(font_system, style.to_metrics(scale_factor));
+    buffer.set_size(max_width, None);
+    buffer.set_text(
+        text,
+        &font_selection.get_cosmic_attrs(&style.font),
+        cosmic_text::Shaping::Advanced,
+        None,
+    );
+    buffer.shape_until_scroll(font_system, false);
+
+    buffer
+        .layout_runs()
+        .map(|run| {
+            if run.rtl {
+                max_width.unwrap_or(run.line_w)
+            } else {
+                run.line_w
+            }
+        })
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
+        .unwrap_or_default()
+}
+
+/// Measures the height of a particular string of text, with the given max width and FontSystem.
+/// Wraps according to the max width.
+///
+/// Note: The returned height is in physical unit. The max width must also be in physical unit.
+#[must_use]
+pub fn measure_text_height(
+    font_system: &mut cosmic_text::FontSystem,
+    font_selection: &mut FontSelection,
+    text: &str,
+    style: &TextStyle,
+    scale_factor: f32,
+    max_width: Option<f32>,
+) -> f32 {
+    let mut buffer = cosmic_text::Buffer::new(font_system, style.to_metrics(scale_factor));
+    buffer.set_size(max_width, None);
+    buffer.set_text(
+        text,
+        &font_selection.get_cosmic_attrs(&style.font),
+        cosmic_text::Shaping::Advanced,
+        None,
+    );
+    buffer.shape_until_scroll(font_system, false);
+
+    buffer.layout_runs().map(|run| run.line_height).sum::<f32>()
 }
