@@ -89,6 +89,7 @@ macro_rules! auto_builders {
     };
 }
 
+#[doc(hidden)]
 pub use paste;
 
 pub use auto_builders;
