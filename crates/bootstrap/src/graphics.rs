@@ -1,5 +1,5 @@
-use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 use wgpu::CurrentSurfaceTexture;
+use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 
 use yakui::UVec2;
 
@@ -84,7 +84,8 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone());
+        let renderer =
+            yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone(), Default::default());
         let wgpu_buffers = renderer.buffers();
 
         Self {

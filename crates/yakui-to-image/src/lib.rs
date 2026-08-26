@@ -1,4 +1,4 @@
-use std::fs::{create_dir_all, File};
+use std::fs::{File, create_dir_all};
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
@@ -22,6 +22,10 @@ pub fn paint_and_save_to<P: AsRef<Path>>(state: &mut yakui_core::Yakui, path: P)
 
 pub fn paint(state: &mut yakui_core::Yakui) -> RgbaImage {
     let graphics = pollster::block_on(Graphics::new());
-    let mut renderer = yakui_wgpu::YakuiWgpu::new(graphics.device.clone(), graphics.queue.clone());
+    let mut renderer = yakui_wgpu::YakuiWgpu::new(
+        graphics.device.clone(),
+        graphics.queue.clone(),
+        Default::default(),
+    );
     graphics.paint(state, &mut renderer)
 }

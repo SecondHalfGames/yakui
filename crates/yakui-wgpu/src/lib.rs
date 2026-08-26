@@ -78,8 +78,13 @@ impl Vertex {
     };
 }
 
+#[derive(Default)]
+pub struct Config {
+    pub blend_in_srgb: bool,
+}
+
 impl YakuiWgpu {
-    pub fn new(device: wgpu::Device, queue: wgpu::Queue) -> Self {
+    pub fn new(device: wgpu::Device, queue: wgpu::Queue, _config: Config) -> Self {
         let limits = PaintLimits {
             max_texture_size_1d: device.limits().max_texture_dimension_1d,
             max_texture_size_2d: device.limits().max_texture_dimension_2d,

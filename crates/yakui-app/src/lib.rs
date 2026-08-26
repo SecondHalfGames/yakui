@@ -87,7 +87,8 @@ impl Graphics {
 
         // yakui_wgpu takes paint output from yakui and renders it for us using
         // wgpu.
-        let renderer = yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone());
+        let renderer =
+            yakui_wgpu::YakuiWgpu::new(device.clone(), queue.clone(), Default::default());
         let buffers = renderer.buffers();
 
         // yakui_winit processes winit events and applies them to our yakui
