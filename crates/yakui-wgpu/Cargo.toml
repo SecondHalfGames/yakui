@@ -18,3 +18,12 @@ thunderdome.workspace = true
 wgpu.workspace = true
 
 profiling.workspace = true
+
+
+[dev-dependencies]
+yakui = { path = "../yakui", version = "0.3.0" }
+yakui-winit = { path = "../yakui-winit", version = "0.3.0" }
+
+pollster.workspace = true
+
+winit.workspace = true
