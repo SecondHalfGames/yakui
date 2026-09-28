@@ -140,7 +140,7 @@ pub struct ButtonWidget {
     hovering: bool,
     mouse_down: bool,
     clicked: bool,
-    focused: bool,
+    nav_focused: bool,
 }
 
 #[derive(Debug)]
@@ -160,7 +160,7 @@ impl Widget for ButtonWidget {
             hovering: false,
             mouse_down: false,
             clicked: false,
-            focused: false,
+            nav_focused: false,
         }
     }
 
@@ -181,7 +181,7 @@ impl Widget for ButtonWidget {
             color = style.fill;
             text_style = style.text.clone();
             border = style.border;
-        } else if self.focused {
+        } else if self.nav_focused {
             let style = &self.props.focus_style;
             color = style.fill;
             text_style = style.text.clone();
@@ -211,7 +211,7 @@ impl Widget for ButtonWidget {
         Self::Response {
             hovering: self.hovering,
             clicked,
-            focused: self.focused,
+            focused: self.nav_focused,
         }
     }
 
@@ -258,8 +258,11 @@ impl Widget for ButtonWidget {
                     EventResponse::Bubble
                 }
             }
-            WidgetEvent::FocusChanged(focused) => {
-                self.focused = *focused;
+            WidgetEvent::FocusChanged {
+                focused,
+                navigation,
+            } => {
+                self.nav_focused = *focused && *navigation;
                 EventResponse::Bubble
             }
             WidgetEvent::KeyChanged {

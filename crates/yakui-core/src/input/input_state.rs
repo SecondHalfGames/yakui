@@ -30,6 +30,9 @@ pub struct InputState {
     /// The widget that is currently focused.
     focus: Cell<Option<WidgetId>>,
 
+    /// Whether the latest focus change was due to navigation.
+    focus_navigation: Cell<bool>,
+
     /// The widget that was focused last frame.
     last_focus: Cell<Option<WidgetId>>,
 
@@ -120,6 +123,7 @@ impl InputState {
                 mouse_down_in: HashMap::new(),
             }),
             focus: Cell::new(None),
+            focus_navigation: Cell::new(false),
             last_focus: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
@@ -142,7 +146,7 @@ impl InputState {
     fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
         if let Some(dir) = self.pending_navigation.take() {
             if let Some(new_focus) = navigate(dom, layout, self, dir) {
-                self.set_focus(Some(new_focus));
+                self.set_focus(Some(new_focus), true);
             }
         }
     }
@@ -173,8 +177,9 @@ impl InputState {
     }
 
     /// Set the currently focused widget.
-    pub fn set_focus(&self, id: Option<WidgetId>) {
+    pub fn set_focus(&self, id: Option<WidgetId>, from_navigation: bool) {
         self.focus.set(id);
+        self.focus_navigation.set(from_navigation);
     }
 
     /// Sets whether navigation is enabled.
@@ -202,7 +207,7 @@ impl InputState {
                 // Left clicking clears focus, unless the widget handling the event sets the
                 // same focus again
                 if button == &MouseButton::One && *down {
-                    self.focus.set(None);
+                    self.set_focus(None, false);
                 }
                 self.mouse_button_changed(dom, layout, *button, *down)
             }
@@ -215,7 +220,7 @@ impl InputState {
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
             Event::TextInput(c) => self.text_input(dom, layout, *c),
             Event::RequestFocus(id) => {
-                self.set_focus(*id);
+                self.set_focus(*id, false);
                 EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
@@ -230,6 +235,7 @@ impl InputState {
     fn notify_focus(&self, dom: &Dom, layout: &LayoutDom) {
         let mut current = self.focus.get();
         let last = self.last_focus.get();
+        let navigation = self.focus_navigation.get();
 
         if current == last {
             return;
@@ -242,10 +248,13 @@ impl InputState {
                     layout,
                     entered,
                     &mut node,
-                    &WidgetEvent::FocusChanged(true),
+                    &WidgetEvent::FocusChanged {
+                        focused: true,
+                        navigation,
+                    },
                 );
             } else {
-                self.focus.set(None);
+                self.set_focus(None, false);
                 current = None;
             }
         }
@@ -257,7 +266,10 @@ impl InputState {
                     layout,
                     left,
                     &mut node,
-                    &WidgetEvent::FocusChanged(false),
+                    &WidgetEvent::FocusChanged {
+                        focused: false,
+                        navigation,
+                    },
                 );
             }
         }
@@ -448,7 +460,7 @@ impl InputState {
                     && self.focus().is_none()
                 {
                     if let Some(target) = pointer_focus_target(dom, id) {
-                        self.focus.set(Some(target));
+                        self.set_focus(Some(target), false);
                     }
                 }
 
