@@ -53,7 +53,7 @@ pub struct CheckboxWidget {
 #[derive(Debug)]
 pub struct CheckboxResponse {
     pub checked: bool,
-    pub focused: bool,
+    pub nav_focused: bool,
 }
 
 impl Widget for CheckboxWidget {
@@ -81,7 +81,7 @@ impl Widget for CheckboxWidget {
 
         CheckboxResponse {
             checked,
-            focused: self.nav_focused,
+            nav_focused: self.nav_focused,
         }
     }
 

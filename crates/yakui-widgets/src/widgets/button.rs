@@ -147,7 +147,7 @@ pub struct ButtonWidget {
 pub struct ButtonResponse {
     pub hovering: bool,
     pub clicked: bool,
-    pub focused: bool,
+    pub nav_focused: bool,
 }
 
 impl Widget for ButtonWidget {
@@ -211,7 +211,7 @@ impl Widget for ButtonWidget {
         Self::Response {
             hovering: self.hovering,
             clicked,
-            focused: self.nav_focused,
+            nav_focused: self.nav_focused,
         }
     }
 
