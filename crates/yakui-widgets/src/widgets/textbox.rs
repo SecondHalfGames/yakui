@@ -367,7 +367,7 @@ impl Widget for TextBoxWidget {
 
     fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
-            WidgetEvent::FocusChanged(focused) => {
+            WidgetEvent::FocusChanged { focused, .. } => {
                 self.active = *focused;
                 if !*focused {
                     self.lost_focus = true;
@@ -675,7 +675,7 @@ impl Widget for TextBoxWidget {
                                             self.text_changed_by_cosmic.set(true);
                                         } else {
                                             self.activated = true;
-                                            ctx.input.set_focus(None);
+                                            ctx.input.set_focus(None, false);
                                         }
                                     } else {
                                         editor.action(font_system, cosmic_text::Action::Enter);
@@ -690,7 +690,7 @@ impl Widget for TextBoxWidget {
                                 if *down {
                                     editor.action(font_system, cosmic_text::Action::Escape);
                                     if self.props.inline_edit {
-                                        ctx.input.set_focus(None);
+                                        ctx.input.set_focus(None, false);
                                     }
                                 }
                                 res = EventResponse::Sink;

@@ -108,7 +108,13 @@ pub enum WidgetEvent {
     TextInput(char, Modifiers),
 
     /// The widget was focused or unfocused.
-    FocusChanged(bool),
+    FocusChanged {
+        /// Whether the widget is focused.
+        focused: bool,
+
+        /// Whether the change was due to navigation.
+        navigation: bool,
+    },
 }
 
 /// Responses that can be given to an event.

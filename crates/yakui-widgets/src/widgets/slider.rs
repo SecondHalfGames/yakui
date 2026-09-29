@@ -187,7 +187,7 @@ impl Widget for SliderWidget {
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match event {
-            WidgetEvent::FocusChanged(focused) => {
+            WidgetEvent::FocusChanged { focused, .. } => {
                 self.focused = *focused;
                 EventResponse::Bubble
             }
