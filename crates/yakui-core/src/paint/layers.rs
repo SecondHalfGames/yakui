@@ -1,12 +1,14 @@
 use std::ops::Deref;
 
+use crate::geometry::Rect;
+
 use super::PaintCall;
 
 /// Contains all of the draw calls for a single layer of the UI.
 #[derive(Debug)]
 pub struct PaintLayer {
     /// The draw calls that can be used to paint this layer.
-    pub calls: Vec<PaintCall>,
+    pub calls: Vec<(Rect, PaintCall)>,
 }
 
 impl PaintLayer {
