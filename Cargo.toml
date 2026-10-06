@@ -25,3 +25,4 @@ raw-window-handle = "0.6.2"
 
 profiling = "1.0.17"
 tracy-client = "0.18.4"
+paste = "1.0"

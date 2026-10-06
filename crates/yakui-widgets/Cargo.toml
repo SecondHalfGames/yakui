@@ -21,6 +21,7 @@ cosmic-text = { version = "0.18.2", default-features = false, features = [
 ] }
 sys-locale = "0.3.2"
 
+paste.workspace = true
 log.workspace = true
 thunderdome.workspace = true
 
