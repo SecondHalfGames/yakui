@@ -13,7 +13,7 @@ fn row_st_d_ve_textbox(initial_text: &'static str) {
     row(|| {
         row(|| {
             row(|| {
-                let response = textbox(text.borrow().clone()).into_inner();
+                let response = textbox(text.borrow().as_str()).into_inner();
 
                 if let Some(new_text) = response.text {
                     text.set(new_text);
@@ -43,6 +43,8 @@ pub fn run() {
                 row_st_d_ve_textbox("b");
             }
         };
+
+        textbox("hi");
     });
 }
 
