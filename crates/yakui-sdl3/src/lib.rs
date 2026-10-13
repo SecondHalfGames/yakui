@@ -46,6 +46,19 @@ impl YakuiSdl3 {
             }
             _ => {}
         }
+
+        if new_value {
+            if let Some((rect, cursor)) = state.get_text_cursor() {
+                let pos = rect.pos();
+                let size = rect.size();
+
+                self.text_input.set_rect(
+                    window,
+                    sdl3::rect::Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+                    cursor,
+                );
+            }
+        }
     }
 
     pub fn handle_event(&mut self, state: &mut yakui_core::Yakui, event: &SdlEvent) -> bool {
@@ -118,6 +131,21 @@ impl YakuiSdl3 {
                 }
 
                 false
+            }
+
+            SdlEvent::TextEditing {
+                text,
+                start,
+                length,
+                ..
+            } => {
+                let byte_lens = text.chars().map(|v| v.len_utf8()).collect::<Vec<_>>();
+                let start = *start as usize;
+                let end = start + *length as usize;
+                let start = byte_lens[..start].iter().sum();
+                let end = byte_lens[..end].iter().sum();
+
+                state.handle_event(Event::TextPreedit(text.clone(), Some((start, end))))
             }
 
             SdlEvent::KeyDown {
