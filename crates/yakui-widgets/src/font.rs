@@ -210,7 +210,11 @@ impl FontSelection {
             weight: font_key.weight,
         })
         .and_then(|font_key| self.cosmic_attrs.get(&font_key))
-        .map(cosmic_text::AttrsOwned::as_attrs)
+        .map(|attrs| {
+            attrs
+                .as_attrs()
+                .weight(cosmic_text::Weight(font_key.weight.0))
+        })
         .unwrap_or_else(|| {
             log::warn!(
                 "Font family {:?} ({}) not found.",
