@@ -6,6 +6,7 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+mod globals;
 mod id;
 mod response;
 mod state;
@@ -21,6 +22,7 @@ pub mod navigation;
 pub mod paint;
 pub mod widget;
 
+pub use self::globals::*;
 pub use self::id::*;
 pub use self::response::*;
 pub use self::state::*;
