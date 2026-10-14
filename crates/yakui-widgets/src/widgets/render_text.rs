@@ -205,6 +205,7 @@ impl Widget for RenderTextWidget {
         fonts.with_inner(|fonts| {
             let text_changed = self.text_changed.take();
             let size_changed = self.max_size.get() != Some(max_size);
+            let scale_changed = self.scale_factor.get() != Some(ctx.layout.scale_factor());
             let scroll_changed = self.scroll_changed.take();
 
             self.max_size.set(Some(max_size));
@@ -227,7 +228,7 @@ impl Widget for RenderTextWidget {
                 );
             }
 
-            if text_changed || size_changed {
+            if text_changed || size_changed || scale_changed {
                 let measured_width = measure_text_width(
                     &mut fonts.font_system,
                     &mut fonts.font_selection,
@@ -273,7 +274,7 @@ impl Widget for RenderTextWidget {
                 buffer.set_size(Some(self.physical_text_size.get().x), max_height);
             }
 
-            if text_changed || size_changed || scroll_changed {
+            if text_changed || size_changed || scale_changed || scroll_changed {
                 if let Some(scroll) = self.scroll {
                     buffer.set_scroll(scroll);
                 }
