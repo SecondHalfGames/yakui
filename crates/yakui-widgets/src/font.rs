@@ -211,9 +211,13 @@ impl FontSelection {
         })
         .and_then(|font_key| self.cosmic_attrs.get(&font_key))
         .map(|attrs| {
+            // variable fonts exist so maybe our stored attribute is wrong anyway--the weight and stretch returned would simply be bogus
+            // cosmic-text is capable of handling them, but fontdb::FaceInfo doesn't report this kind of info,
+            // so we'll just pretend a match exists and move on with our day :)
             attrs
                 .as_attrs()
-                .weight(cosmic_text::Weight(font_key.weight.0))
+                .weight(font_key.weight.into())
+                .stretch(font_key.stretch.into())
         })
         .unwrap_or_else(|| {
             log::warn!(
