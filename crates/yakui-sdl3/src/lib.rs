@@ -151,6 +151,7 @@ impl YakuiSdl3 {
             SdlEvent::KeyDown {
                 scancode, keymod, ..
             } => {
+                state.handle_event(Event::ModifiersChanged(from_sdl_modifiers(*keymod)));
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
                     state.handle_event(Event::KeyChanged {
                         key,
@@ -165,6 +166,7 @@ impl YakuiSdl3 {
             SdlEvent::KeyUp {
                 scancode, keymod, ..
             } => {
+                state.handle_event(Event::ModifiersChanged(from_sdl_modifiers(*keymod)));
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
                     state.handle_event(Event::KeyChanged {
                         key,
