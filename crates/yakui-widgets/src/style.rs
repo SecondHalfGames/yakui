@@ -40,15 +40,31 @@ impl FontWidth {
 impl From<cosmic_text::Stretch> for FontWidth {
     fn from(value: cosmic_text::Stretch) -> Self {
         match value {
-            cosmic_text::Stretch::UltraCondensed => Self::UltraCondensed,
-            cosmic_text::Stretch::ExtraCondensed => Self::ExtraCondensed,
-            cosmic_text::Stretch::Condensed => Self::Condensed,
-            cosmic_text::Stretch::SemiCondensed => Self::SemiCondensed,
-            cosmic_text::Stretch::Normal => Self::Normal,
-            cosmic_text::Stretch::SemiExpanded => Self::SemiExpanded,
-            cosmic_text::Stretch::Expanded => Self::Expanded,
-            cosmic_text::Stretch::ExtraExpanded => Self::ExtraExpanded,
-            cosmic_text::Stretch::UltraExpanded => Self::UltraExpanded,
+            cosmic_text::Stretch::UltraCondensed => FontWidth::UltraCondensed,
+            cosmic_text::Stretch::ExtraCondensed => FontWidth::ExtraCondensed,
+            cosmic_text::Stretch::Condensed => FontWidth::Condensed,
+            cosmic_text::Stretch::SemiCondensed => FontWidth::SemiCondensed,
+            cosmic_text::Stretch::Normal => FontWidth::Normal,
+            cosmic_text::Stretch::SemiExpanded => FontWidth::SemiExpanded,
+            cosmic_text::Stretch::Expanded => FontWidth::Expanded,
+            cosmic_text::Stretch::ExtraExpanded => FontWidth::ExtraExpanded,
+            cosmic_text::Stretch::UltraExpanded => FontWidth::UltraExpanded,
+        }
+    }
+}
+
+impl From<FontWidth> for cosmic_text::Stretch {
+    fn from(value: FontWidth) -> Self {
+        match value {
+            FontWidth::UltraCondensed => cosmic_text::Stretch::UltraCondensed,
+            FontWidth::ExtraCondensed => cosmic_text::Stretch::ExtraCondensed,
+            FontWidth::Condensed => cosmic_text::Stretch::Condensed,
+            FontWidth::SemiCondensed => cosmic_text::Stretch::SemiCondensed,
+            FontWidth::Normal => cosmic_text::Stretch::Normal,
+            FontWidth::SemiExpanded => cosmic_text::Stretch::SemiExpanded,
+            FontWidth::Expanded => cosmic_text::Stretch::Expanded,
+            FontWidth::ExtraExpanded => cosmic_text::Stretch::ExtraExpanded,
+            FontWidth::UltraExpanded => cosmic_text::Stretch::UltraExpanded,
         }
     }
 }
@@ -109,6 +125,12 @@ impl FontWeight {
 
 impl From<cosmic_text::Weight> for FontWeight {
     fn from(value: cosmic_text::Weight) -> Self {
+        Self(value.0)
+    }
+}
+
+impl From<FontWeight> for cosmic_text::Weight {
+    fn from(value: FontWeight) -> Self {
         Self(value.0)
     }
 }
