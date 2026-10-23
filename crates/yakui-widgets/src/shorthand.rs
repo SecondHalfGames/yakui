@@ -64,7 +64,7 @@ pub fn button<S: Into<Cow<'static, str>>>(text: S) -> Response<ButtonResponse> {
 
 /// See [Circle].
 #[track_caller]
-pub fn colored_circle<S: Into<f32>>(color: Color, size: S) -> Response<CircleResponse> {
+pub fn colored_circle(color: Color, size: f32) -> Response<CircleResponse> {
     Circle::new().min_radius(size).color(color).show()
 }
 
