@@ -301,6 +301,10 @@ impl Widget for RenderTextWidget {
 
             if let Some((start, end)) = self.props.selection {
                 for run in buffer.layout_runs() {
+                    if !(start.line..=end.line).contains(&run.line_i) {
+                        continue;
+                    }
+
                     let y = run.line_top;
                     let h = run.line_height;
 
@@ -370,6 +374,10 @@ impl Widget for RenderTextWidget {
                 self.props.preedit_cursor.zip(self.props.preedit_cursor_end)
             {
                 for run in buffer.layout_runs() {
+                    if !(preedit_cursor.line..=preedit_cursor_end.line).contains(&run.line_i) {
+                        continue;
+                    }
+
                     let y = run.line_top;
                     let h = run.line_height;
 
