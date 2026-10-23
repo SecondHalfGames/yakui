@@ -3,10 +3,11 @@ use ash::vk;
 use crate::vulkan_context::VulkanContext;
 
 /// A thin wrapper around descriptor related functionality
+#[allow(missing_docs)]
 pub struct Descriptors {
     pub(crate) pool: vk::DescriptorPool,
-    pub(crate) set: vk::DescriptorSet,
-    pub(crate) layout: vk::DescriptorSetLayout,
+    pub set: vk::DescriptorSet,
+    pub layout: vk::DescriptorSetLayout,
     texture_count: u32,
 }
 

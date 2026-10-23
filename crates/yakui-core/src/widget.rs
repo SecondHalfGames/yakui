@@ -74,6 +74,7 @@ pub struct PaintContext<'dom> {
     pub dom: &'dom Dom,
     pub layout: &'dom LayoutDom,
     pub paint: &'dom mut PaintDom,
+    pub clip: Rect,
 }
 
 impl PaintContext<'_> {
