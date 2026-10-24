@@ -352,10 +352,33 @@ impl Widget for RenderTextWidget {
 
             if let Some(cursor) = self.props.cursor {
                 const CURSOR_WIDTH: f32 = 1.5;
+                let line_width = self.physical_text_size.get().x;
 
                 let cursor_rect = buffer.layout_runs().find_map(|run| {
-                    let (x, y) = (run.cursor_position(&cursor)?, run.line_top);
+                    let (mut x, y) = (run.cursor_position(&cursor)?, run.line_top);
                     let (w, h) = (run.line_w, run.line_height);
+
+                    // Madeline Sparkles: when there's no glyphs that means the line is empty. cosmic_text doesn't
+                    // put the cursor correctly when there's alignment.
+                    // this is probably a bug on cosmic's part...
+                    // the code below is copied from how cosmic text calculates text alignment
+                    if run.glyphs.is_empty() {
+                        if let Some(align) = buffer.lines[run.line_i].align() {
+                            use cosmic_text::Align;
+
+                            let alignment_correction = match (align, run.rtl) {
+                                (Align::Left, true) => (line_width - run.line_w).max(0.),
+                                (Align::Left, false) => 0.,
+                                (Align::Right, true) => 0.,
+                                (Align::Right, false) => (line_width - run.line_w).max(0.),
+                                (Align::Center, _) => (line_width - run.line_w).max(0.) / 2.0,
+                                (Align::End, _) => (line_width - run.line_w).max(0.),
+                                (Align::Justified, _) => 0.,
+                            };
+
+                            x += alignment_correction;
+                        }
+                    }
 
                     Some(((x, y), (w, h)))
                 });
