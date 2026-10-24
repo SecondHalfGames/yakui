@@ -6,7 +6,7 @@ use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::{Response, TextureId};
 
 use crate::auto_builders;
-use crate::font::{FontSelection, Fonts};
+use crate::font::Fonts;
 use crate::style::{TextAlignment, TextStyle};
 use crate::text_renderer::{GlyphRender, Kind, TextGlobalState};
 use crate::util::widget;
@@ -94,15 +94,18 @@ pub struct RenderTextWidget {
     buffer: RefCell<Option<cosmic_text::Buffer>>,
 
     props: RenderText,
+
     text: String,
     style: TextStyle,
+    scroll: Option<cosmic_text::Scroll>,
     text_changed: Cell<bool>,
+    font_changed: Cell<bool>,
+    align_changed: Cell<bool>,
+    style_changed: Cell<bool>,
+    scroll_changed: Cell<bool>,
 
     max_size: Cell<Option<(Option<f32>, Option<f32>)>>,
     scale_factor: Cell<Option<f32>>,
-
-    scroll: Option<cosmic_text::Scroll>,
-    scroll_changed: Cell<bool>,
 
     measured_size: Cell<Vec2>,
     physical_text_size: Cell<Vec2>,
@@ -127,13 +130,15 @@ impl Widget for RenderTextWidget {
             props: RenderText::new(),
             text: String::default(),
             style: TextStyle::default(),
+            scroll: None,
             text_changed: Cell::new(true),
+            font_changed: Cell::new(true),
+            align_changed: Cell::new(true),
+            style_changed: Cell::new(true),
+            scroll_changed: Cell::new(false),
 
             max_size: Cell::default(),
             scale_factor: Cell::default(),
-
-            scroll: None,
-            scroll_changed: Cell::new(false),
 
             measured_size: Cell::default(),
             physical_text_size: Cell::default(),
@@ -149,9 +154,19 @@ impl Widget for RenderTextWidget {
             self.text_changed.set(true);
         }
 
+        if style.font != self.style.font {
+            self.style.font = style.font.clone();
+            self.font_changed.set(true);
+        }
+
+        if style.align != self.style.align {
+            self.style.align = style.align;
+            self.align_changed.set(true);
+        }
+
         if style != &self.style {
             self.style = style.clone();
-            self.text_changed.set(true);
+            self.style_changed.set(true);
         }
 
         if scroll != self.scroll {
@@ -181,11 +196,11 @@ impl Widget for RenderTextWidget {
 
         let max_width = (constraints.min.x.max(constraints.max.x)).max(self.props.min_width);
         let max_width = if max_width.is_normal() {
-            Some((max_width * ctx.layout.scale_factor()).ceil())
+            Some(max_width * ctx.layout.scale_factor())
         } else {
             let max_width = self.props.min_width;
             if max_width.is_normal() {
-                Some((max_width * ctx.layout.scale_factor()).ceil())
+                Some(max_width * ctx.layout.scale_factor())
             } else {
                 None
             }
@@ -193,7 +208,7 @@ impl Widget for RenderTextWidget {
 
         let max_height = constraints.min.y.max(constraints.max.y);
         let max_height = if max_height.is_normal() {
-            Some((max_height * ctx.layout.scale_factor()).ceil())
+            Some(max_height * ctx.layout.scale_factor())
         } else {
             None
         };
@@ -204,10 +219,13 @@ impl Widget for RenderTextWidget {
 
         fonts.with_inner(|fonts| {
             let text_changed = self.text_changed.take();
-            let size_changed = self.max_size.get() != Some(max_size);
-            let scale_changed = self.scale_factor.get() != Some(ctx.layout.scale_factor());
+            let font_changed = self.font_changed.take();
+            let align_changed = self.align_changed.take();
+            let style_changed = self.style_changed.take();
             let scroll_changed = self.scroll_changed.take();
 
+            let max_size_changed = self.max_size.get() != Some(max_size);
+            let scale_changed = self.scale_factor.get() != Some(ctx.layout.scale_factor());
             self.max_size.set(Some(max_size));
             self.scale_factor.set(Some(ctx.layout.scale_factor()));
 
@@ -219,34 +237,28 @@ impl Widget for RenderTextWidget {
                 )
             });
 
-            if text_changed {
+            // set_text is potentially expensive.
+            // only update the styles if it's not necessary to set the text.
+            if text_changed || font_changed {
                 buffer.set_text(
                     &self.text,
                     &fonts.font_selection.get_cosmic_attrs(&self.style.font),
                     cosmic_text::Shaping::Advanced,
                     self.style.align.into(),
                 );
+            } else if align_changed {
+                for line in &mut buffer.lines {
+                    line.set_align(self.style.align.into());
+                }
             }
 
-            if text_changed || size_changed || scale_changed {
-                let measured_width = measure_text_width(
-                    &mut fonts.font_system,
-                    &mut fonts.font_selection,
-                    &self.text,
-                    &self.style,
-                    ctx.layout.scale_factor(),
-                    max_width,
-                )
-                .ceil();
-                let measured_height = measure_text_height(
-                    &mut fonts.font_system,
-                    &mut fonts.font_selection,
-                    &self.text,
-                    &self.style,
-                    ctx.layout.scale_factor(),
-                    max_width,
-                )
-                .ceil();
+            if style_changed || scale_changed {
+                buffer.set_metrics(self.style.to_metrics(ctx.layout.scale_factor()));
+            }
+
+            if text_changed || font_changed || style_changed || max_size_changed || scale_changed {
+                let (measured_width, measured_height) =
+                    measure_text_size(buffer, &mut fonts.font_system, max_width);
 
                 let physical_text_width = match max_width {
                     // if it's not inline, then we check if anything is RTL or if the text doesn't flow from left to right
@@ -255,7 +267,7 @@ impl Widget for RenderTextWidget {
                             && (self.style.align != TextAlignment::Start
                                 || buffer.layout_runs().any(|run| run.rtl)) =>
                     {
-                        max_width.ceil()
+                        max_width
                     }
                     // else, just measure the text's width since we have no reason take up the entire width
                     _ => measured_width.max(self.props.min_width * ctx.layout.scale_factor()),
@@ -268,18 +280,24 @@ impl Widget for RenderTextWidget {
                     measured_height.min(max_height.unwrap_or(f32::INFINITY)),
                 ));
                 self.text_size
-                    .set((self.physical_text_size.get() / ctx.layout.scale_factor()).round());
+                    .set((self.physical_text_size.get() / ctx.layout.scale_factor()).ceil());
 
-                buffer.set_metrics(self.style.to_metrics(ctx.layout.scale_factor()));
                 buffer.set_size(Some(self.physical_text_size.get().x), max_height);
             }
 
-            if text_changed || size_changed || scale_changed || scroll_changed {
+            if text_changed
+                || font_changed
+                || align_changed
+                || style_changed
+                || scroll_changed
+                || max_size_changed
+                || scale_changed
+            {
                 if let Some(scroll) = self.scroll {
                     buffer.set_scroll(scroll);
                 }
 
-                buffer.shape_until_scroll(&mut fonts.font_system, text_changed);
+                buffer.shape_until_scroll(&mut fonts.font_system, text_changed || font_changed);
             }
 
             self.text_size.get()
@@ -287,14 +305,14 @@ impl Widget for RenderTextWidget {
     }
 
     fn paint(&self, ctx: PaintContext<'_>) {
-        let fonts = ctx.dom.get_global_or_init(Fonts::default);
-        let layout_rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
-
         let buffer_ref = self.buffer.borrow();
         let Some(buffer) = buffer_ref.as_ref() else {
             return;
         };
 
+        let fonts = ctx.dom.get_global_or_init(Fonts::default);
+        let layout_rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
+        let physical_layout_pos = layout_rect.pos() * ctx.layout.scale_factor();
         let inv_scale_factor = 1.0 / ctx.layout.scale_factor();
         fonts.with_inner(|fonts| {
             let text_global = ctx.dom.get_global_or_init(TextGlobalState::new);
@@ -322,17 +340,13 @@ impl Widget for RenderTextWidget {
 
             for run in buffer.layout_runs() {
                 for glyph in run.glyphs {
-                    let render =
-                        text_global.get_glyph_render(ctx.paint, &mut fonts.font_system, glyph);
-                    paint_text(
+                    let (render, physical_glyph) = text_global.get_glyph_render(
                         ctx.paint,
-                        inv_scale_factor,
-                        &run,
+                        &mut fonts.font_system,
                         glyph,
-                        render,
-                        layout_rect.pos(),
-                        self.style.color,
+                        (physical_layout_pos.x, physical_layout_pos.y + run.line_y),
                     );
+                    paint_text(ctx.paint, render, &physical_glyph, self.style.color);
                 }
             }
 
@@ -349,7 +363,7 @@ impl Widget for RenderTextWidget {
                 self.text_cursor.set(cursor_rect.map(|((x, y), (w, h))| {
                     (
                         Rect::from_pos_size(
-                            layout_rect.pos() * ctx.layout.scale_factor() + Vec2::new(0.0, y),
+                            physical_layout_pos + Vec2::new(0.0, y),
                             Vec2::new(w, h),
                         ),
                         x as i32,
@@ -399,25 +413,19 @@ impl Widget for RenderTextWidget {
 #[allow(clippy::too_many_arguments)]
 fn paint_text(
     paint: &mut PaintDom,
-    inv_scale_factor: f32,
-    run: &cosmic_text::LayoutRun,
-    glyph: &cosmic_text::LayoutGlyph,
     render: GlyphRender,
-    widget_pos: Vec2,
+    physical: &cosmic_text::PhysicalGlyph,
     color: Color,
 ) {
-    let size = render.rect.size().as_vec2();
-
-    let physical = glyph.physical((0.0, 0.0), 1.0);
-    let pos = Vec2::new(physical.x as f32, physical.y as f32);
-
+    // we supply the text pipeline with physical pixels.
+    // scale factor is already accounted for by cosmic-text.
+    // in the text pipeline, we'll skip scaling the vertices by the scale factor.
     let mut rect = PaintRect::new(Rect::from_pos_size(
         Vec2::new(
-            pos.x + render.offset.x,
-            pos.y - render.offset.y + run.line_y,
-        ) * inv_scale_factor
-            + widget_pos,
-        Vec2::new(size.x, size.y) * inv_scale_factor,
+            (physical.x + render.atlas.offset.x) as f32,
+            (physical.y - render.atlas.offset.y) as f32,
+        ),
+        render.atlas.size,
     ));
 
     if render.kind == Kind::Mask {
@@ -425,70 +433,53 @@ fn paint_text(
     } else {
         rect.color = Color::CLEAR;
     }
-    rect.texture = Some((TextureId::Managed(render.texture), render.tex_rect));
+    rect.texture = Some((TextureId::Managed(render.texture), render.atlas.tex_rect));
     rect.pipeline = Pipeline::Text;
 
     rect.add(paint);
 }
 
-/// Measures the width of a particular string of text, with the given max width and FontSystem.
+/// Measures the width and height of a particular string of text, with the given max width and FontSystem.
 /// Wraps according to the max width.
 ///
-/// Note: The returned width is in physical unit. The max width must also be in physical unit.
+/// Note: The returned sizes are in physical unit. The max width must also be in physical unit.
 #[must_use]
-pub fn measure_text_width(
+pub fn measure_text_size(
+    buffer: &mut cosmic_text::Buffer,
     font_system: &mut cosmic_text::FontSystem,
-    font_selection: &mut FontSelection,
-    text: &str,
-    style: &TextStyle,
-    scale_factor: f32,
     max_width: Option<f32>,
-) -> f32 {
-    let mut buffer = cosmic_text::Buffer::new(font_system, style.to_metrics(scale_factor));
-    buffer.set_size(max_width, None);
-    buffer.set_text(
-        text,
-        &font_selection.get_cosmic_attrs(&style.font),
-        cosmic_text::Shaping::Advanced,
-        None,
-    );
-    buffer.shape_until_scroll(font_system, false);
+) -> (f32, f32) {
+    let size = buffer.size();
+    let scroll = buffer.scroll();
 
-    buffer
-        .layout_runs()
-        .map(|run| {
-            if run.rtl {
-                max_width.unwrap_or(run.line_w)
-            } else {
-                run.line_w
-            }
-        })
-        .max_by(|a, b| a.partial_cmp(b).unwrap())
-        .unwrap_or_default()
-}
+    let result = {
+        buffer.set_size(max_width, None);
+        buffer.set_scroll(cosmic_text::Scroll {
+            line: usize::MAX,
+            vertical: 0.0,
+            horizontal: 0.0,
+        });
+        buffer.shape_until_scroll(font_system, false);
 
-/// Measures the height of a particular string of text, with the given max width and FontSystem.
-/// Wraps according to the max width.
-///
-/// Note: The returned height is in physical unit. The max width must also be in physical unit.
-#[must_use]
-pub fn measure_text_height(
-    font_system: &mut cosmic_text::FontSystem,
-    font_selection: &mut FontSelection,
-    text: &str,
-    style: &TextStyle,
-    scale_factor: f32,
-    max_width: Option<f32>,
-) -> f32 {
-    let mut buffer = cosmic_text::Buffer::new(font_system, style.to_metrics(scale_factor));
-    buffer.set_size(max_width, None);
-    buffer.set_text(
-        text,
-        &font_selection.get_cosmic_attrs(&style.font),
-        cosmic_text::Shaping::Advanced,
-        None,
-    );
-    buffer.shape_until_scroll(font_system, false);
+        let width = buffer
+            .layout_runs()
+            .map(|run| {
+                if run.rtl {
+                    max_width.unwrap_or(run.line_w)
+                } else {
+                    run.line_w
+                }
+            })
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or_default();
 
-    buffer.layout_runs().map(|run| run.line_height).sum::<f32>()
+        let height = buffer.layout_runs().map(|run| run.line_height).sum::<f32>();
+
+        (width, height)
+    };
+
+    buffer.set_size(size.0, size.1);
+    buffer.set_scroll(scroll);
+
+    result
 }
