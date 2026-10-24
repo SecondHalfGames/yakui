@@ -11,9 +11,9 @@ pub(crate) struct Multisampling {
 impl Multisampling {
     pub fn new() -> Self {
         Self {
-            sample_count: 4,
+            sample_count: 0,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            size: PhysicalSize::new(800, 600),
+            size: PhysicalSize::new(0, 0),
             ms_view: None,
         }
     }
@@ -27,6 +27,9 @@ impl Multisampling {
         sample_count: u32,
     ) -> SurfaceInfo<'a> {
         if size != self.size || format != self.format || sample_count != self.sample_count {
+            self.size = size;
+            self.format = format;
+            self.sample_count = sample_count;
             self.ms_view = None;
         }
 
