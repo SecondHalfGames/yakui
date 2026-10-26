@@ -26,7 +26,7 @@ pub fn run<T: ExampleBody>(mut yak: Yakui, mut state: ExampleState, title: Strin
     let (width, height) = window.size();
     let size = UVec2::new(width, height);
 
-    let mut yak_window = YakuiSdl3::new(&window);
+    let mut yak_window = YakuiSdl3::new(&window, &video_subsystem);
     let mut graphics = pollster::block_on(Graphics::new(&window, size, get_sample_count()));
 
     'main_loop: loop {

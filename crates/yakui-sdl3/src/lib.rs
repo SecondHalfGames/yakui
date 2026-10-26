@@ -1,10 +1,10 @@
 mod keys;
 
 use sdl3::event::{Event as SdlEvent, WindowEvent};
+use sdl3::keyboard::TextInputUtil;
 use sdl3::mouse::MouseButton as SdlMouseButton;
-use sdl3::sys::keyboard::{SDL_StartTextInput, SDL_StopTextInput};
-use sdl3::sys::video::SDL_GetWindowDisplayScale;
 use sdl3::video::Window;
+use sdl3::VideoSubsystem;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, UVec2, Vec2};
 use yakui_core::input::MouseButton;
@@ -13,7 +13,7 @@ use self::keys::{from_sdl_modifiers, from_sdl_scancode};
 
 pub struct YakuiSdl3 {
     init: Option<InitState>,
-    text_input_enabled: bool,
+    text_input: TextInputUtil,
 }
 
 struct InitState {
@@ -21,35 +21,44 @@ struct InitState {
     scale: f32,
 }
 
-fn scale_factor(window: &Window) -> f32 {
-    unsafe { SDL_GetWindowDisplayScale(window.raw()) }
-}
-
 impl YakuiSdl3 {
-    pub fn new(window: &Window) -> Self {
+    pub fn new(window: &Window, video_subsystem: &VideoSubsystem) -> Self {
         let size = window.size().into();
-        let scale = scale_factor(window);
+        let scale = window.display_scale();
+
+        let text_input = video_subsystem.text_input();
 
         Self {
             init: Some(InitState { size, scale }),
-            text_input_enabled: false,
+            text_input,
         }
     }
 
     pub fn update(&mut self, window: &Window, state: &mut yakui_core::Yakui) {
+        let current_value = self.text_input.is_active(window);
         let new_value = state.text_input_enabled();
-
-        match (self.text_input_enabled, new_value) {
-            (false, true) => unsafe {
-                SDL_StartTextInput(window.raw());
-            },
-            (true, false) => unsafe {
-                SDL_StopTextInput(window.raw());
-            },
-            (true, true) | (false, false) => {}
+        match (new_value, current_value) {
+            (true, false) => {
+                self.text_input.start(window);
+            }
+            (false, true) => {
+                self.text_input.stop(window);
+            }
+            _ => {}
         }
 
-        self.text_input_enabled = new_value;
+        if new_value {
+            if let Some((rect, cursor)) = state.get_text_cursor() {
+                let pos = rect.pos();
+                let size = rect.size();
+
+                self.text_input.set_rect(
+                    window,
+                    sdl3::rect::Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+                    cursor,
+                );
+            }
+        }
     }
 
     pub fn handle_event(&mut self, state: &mut yakui_core::Yakui, event: &SdlEvent) -> bool {
@@ -124,9 +133,25 @@ impl YakuiSdl3 {
                 false
             }
 
+            SdlEvent::TextEditing {
+                text,
+                start,
+                length,
+                ..
+            } => {
+                let byte_lens = text.chars().map(|v| v.len_utf8()).collect::<Vec<_>>();
+                let start = *start as usize;
+                let end = start + *length as usize;
+                let start = byte_lens[..start].iter().sum();
+                let end = byte_lens[..end].iter().sum();
+
+                state.handle_event(Event::TextPreedit(text.clone(), Some((start, end))))
+            }
+
             SdlEvent::KeyDown {
                 scancode, keymod, ..
             } => {
+                state.handle_event(Event::ModifiersChanged(from_sdl_modifiers(*keymod)));
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
                     state.handle_event(Event::KeyChanged {
                         key,
@@ -141,6 +166,7 @@ impl YakuiSdl3 {
             SdlEvent::KeyUp {
                 scancode, keymod, ..
             } => {
+                state.handle_event(Event::ModifiersChanged(from_sdl_modifiers(*keymod)));
                 if let Some(key) = scancode.and_then(from_sdl_scancode) {
                     state.handle_event(Event::KeyChanged {
                         key,

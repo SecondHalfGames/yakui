@@ -48,6 +48,11 @@ pub enum Event {
     /// A Unicode codepoint was typed in the window.
     TextInput(char),
 
+    /// An input-method preedit event has been fired.
+    ///
+    /// Follows winit's `Ime::Preedit`
+    TextPreedit(String, Option<(usize, usize)>),
+
     /// Request focus of a specific widget, or clear focus if `None`.
     RequestFocus(Option<WidgetId>),
 }
@@ -107,8 +112,17 @@ pub enum WidgetEvent {
     /// Text was sent to the widget.
     TextInput(char, Modifiers),
 
+    /// Preedit text was sent to the widget.
+    TextPreedit(String, Option<(usize, usize)>),
+
     /// The widget was focused or unfocused.
-    FocusChanged(bool),
+    FocusChanged {
+        /// Whether the widget is focused.
+        focused: bool,
+
+        /// Whether the change was due to navigation.
+        navigation: bool,
+    },
 }
 
 /// Responses that can be given to an event.

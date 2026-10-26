@@ -6,6 +6,7 @@ use smallvec::SmallVec;
 
 use crate::dom::{Dom, DomNode};
 use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
+use crate::geometry::Rect;
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
 use crate::navigation::{navigate, NavDirection};
@@ -30,6 +31,9 @@ pub struct InputState {
     /// The widget that is currently focused.
     focus: Cell<Option<WidgetId>>,
 
+    /// Whether the latest focus change was due to navigation.
+    focus_navigation: Cell<bool>,
+
     /// The widget that was focused last frame.
     last_focus: Cell<Option<WidgetId>>,
 
@@ -41,6 +45,9 @@ pub struct InputState {
 
     /// If set, text input should be active.
     text_input_enabled: Cell<bool>,
+
+    /// If there's a text input active with a cursor, this will be set and forwarded to the window.
+    text_cursor: Cell<Option<(Rect, i32)>>,
 }
 
 #[derive(Debug)]
@@ -120,16 +127,19 @@ impl InputState {
                 mouse_down_in: HashMap::new(),
             }),
             focus: Cell::new(None),
+            focus_navigation: Cell::new(false),
             last_focus: Cell::new(None),
             pending_navigation: Cell::new(None),
             text_input_enabled: Cell::new(false),
             navigation_enabled: Cell::new(true),
+            text_cursor: Cell::new(None),
         }
     }
 
     /// Begin a new frame for input handling.
     pub fn start(&self, dom: &Dom, layout: &LayoutDom) {
         self.text_input_enabled.set(false);
+        self.text_cursor.set(None);
         self.notify_focus(dom, layout);
     }
 
@@ -142,7 +152,7 @@ impl InputState {
     fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
         if let Some(dir) = self.pending_navigation.take() {
             if let Some(new_focus) = navigate(dom, layout, self, dir) {
-                self.set_focus(Some(new_focus));
+                self.set_focus(Some(new_focus), true);
             }
         }
     }
@@ -159,6 +169,20 @@ impl InputState {
         self.text_input_enabled.get()
     }
 
+    /// Sets the text cursor. Should be called every update from an active text input.
+    ///
+    /// Should be in physical pixels. The [`Rect`] is the input box, and the [`i32`] is the cursor's position inside.
+    pub fn set_text_cursor(&self, cursor: (Rect, i32)) {
+        self.text_cursor.set(Some(cursor));
+    }
+
+    /// Gets the text cursor, if any.
+    ///
+    /// Should be in physical pixels. The [`Rect`] is the input box, and the [`i32`] is the cursor's position inside.
+    pub fn get_text_cursor(&self) -> Option<(Rect, i32)> {
+        self.text_cursor.get()
+    }
+
     /// Returns the mouse position, or [`None`] if it's outside the window.
     pub fn mouse_pos(&self, layout: &LayoutDom) -> Option<Vec2> {
         self.mouse
@@ -173,8 +197,9 @@ impl InputState {
     }
 
     /// Set the currently focused widget.
-    pub fn set_focus(&self, id: Option<WidgetId>) {
+    pub fn set_focus(&self, id: Option<WidgetId>, from_navigation: bool) {
         self.focus.set(id);
+        self.focus_navigation.set(from_navigation);
     }
 
     /// Sets whether navigation is enabled.
@@ -191,31 +216,32 @@ impl InputState {
         &self,
         dom: &Dom,
         layout: &LayoutDom,
-        event: &Event,
+        event: Event,
     ) -> EventResponse {
         let res = match event {
             Event::CursorMoved(pos) => {
-                self.mouse_moved(dom, layout, *pos);
+                self.mouse_moved(dom, layout, pos);
                 EventResponse::Bubble
             }
             Event::MouseButtonChanged { button, down } => {
                 // Left clicking clears focus, unless the widget handling the event sets the
                 // same focus again
-                if button == &MouseButton::One && *down {
-                    self.focus.set(None);
+                if button == MouseButton::One && down {
+                    self.set_focus(None, false);
                 }
-                self.mouse_button_changed(dom, layout, *button, *down)
+                self.mouse_button_changed(dom, layout, button, down)
             }
-            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, *delta),
+            Event::MouseScroll { delta } => self.send_mouse_scroll(dom, layout, delta),
             Event::KeyChanged {
                 key,
                 down,
                 modifiers,
-            } => self.keyboard_key_changed(dom, layout, *key, *down, *modifiers),
+            } => self.keyboard_key_changed(dom, layout, key, down, modifiers),
             Event::ModifiersChanged(modifiers) => self.modifiers_changed(modifiers),
-            Event::TextInput(c) => self.text_input(dom, layout, *c),
+            Event::TextInput(c) => self.text_input(dom, layout, c),
+            Event::TextPreedit(text, position) => self.text_preedit(dom, layout, text, position),
             Event::RequestFocus(id) => {
-                self.set_focus(*id);
+                self.set_focus(id, false);
                 EventResponse::Bubble
             }
             _ => EventResponse::Bubble,
@@ -230,6 +256,7 @@ impl InputState {
     fn notify_focus(&self, dom: &Dom, layout: &LayoutDom) {
         let mut current = self.focus.get();
         let last = self.last_focus.get();
+        let navigation = self.focus_navigation.get();
 
         if current == last {
             return;
@@ -242,10 +269,13 @@ impl InputState {
                     layout,
                     entered,
                     &mut node,
-                    &WidgetEvent::FocusChanged(true),
+                    &WidgetEvent::FocusChanged {
+                        focused: true,
+                        navigation,
+                    },
                 );
             } else {
-                self.focus.set(None);
+                self.set_focus(None, false);
                 current = None;
             }
         }
@@ -257,7 +287,10 @@ impl InputState {
                     layout,
                     left,
                     &mut node,
-                    &WidgetEvent::FocusChanged(false),
+                    &WidgetEvent::FocusChanged {
+                        focused: false,
+                        navigation,
+                    },
                 );
             }
         }
@@ -392,14 +425,40 @@ impl InputState {
         EventResponse::Sink
     }
 
-    fn modifiers_changed(&self, modifiers: &Modifiers) -> EventResponse {
-        self.modifiers.set(*modifiers);
+    fn modifiers_changed(&self, modifiers: Modifiers) -> EventResponse {
+        self.modifiers.set(modifiers);
+        EventResponse::Bubble
+    }
+
+    fn text_preedit(
+        &self,
+        dom: &Dom,
+        layout: &LayoutDom,
+        text: String,
+        position: Option<(usize, usize)>,
+    ) -> EventResponse {
+        if let Some(id) = self.focus() {
+            let Some(layout_node) = layout.get(id) else {
+                return EventResponse::Bubble;
+            };
+
+            if layout_node
+                .event_interest
+                .contains(EventInterest::FOCUSED_KEYBOARD)
+            {
+                // Panic safety: if this node is in the layout DOM, it must be
+                // in the DOM.
+                let mut node = dom.get_mut(id).unwrap();
+                let event = WidgetEvent::TextPreedit(text, position);
+                return self.fire_event(dom, layout, id, &mut node, &event);
+            }
+        }
+
         EventResponse::Bubble
     }
 
     fn text_input(&self, dom: &Dom, layout: &LayoutDom, c: char) -> EventResponse {
-        let focus = self.focus.get();
-        if let Some(id) = focus {
+        if let Some(id) = self.focus() {
             let Some(layout_node) = layout.get(id) else {
                 return EventResponse::Bubble;
             };
@@ -448,7 +507,7 @@ impl InputState {
                     && self.focus().is_none()
                 {
                     if let Some(target) = pointer_focus_target(dom, id) {
-                        self.focus.set(Some(target));
+                        self.set_focus(Some(target), false);
                     }
                 }
 

@@ -36,9 +36,9 @@ pub fn run(_state: &mut ExampleState) {
                         checked.set(checkbox_res.checked);
 
                         let text = use_state(|| String::from("Edit me"));
-                        let textbox_res = TextBox::new(text.borrow().clone())
+                        let textbox_res = TextBox::new()
                             .placeholder("Type here")
-                            .show();
+                            .show(text.borrow().as_str());
                         if let Some(new_text) = textbox_res.into_inner().text {
                             text.set(new_text);
                         }

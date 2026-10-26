@@ -47,13 +47,13 @@ pub struct CheckboxWidget {
     hovering: bool,
     mouse_down: bool,
     just_toggled: bool,
-    focused: bool,
+    nav_focused: bool,
 }
 
 #[derive(Debug)]
 pub struct CheckboxResponse {
     pub checked: bool,
-    pub focused: bool,
+    pub nav_focused: bool,
 }
 
 impl Widget for CheckboxWidget {
@@ -66,7 +66,7 @@ impl Widget for CheckboxWidget {
             hovering: false,
             mouse_down: false,
             just_toggled: false,
-            focused: false,
+            nav_focused: false,
         }
     }
 
@@ -81,7 +81,7 @@ impl Widget for CheckboxWidget {
 
         CheckboxResponse {
             checked,
-            focused: self.focused,
+            nav_focused: self.nav_focused,
         }
     }
 
@@ -103,7 +103,7 @@ impl Widget for CheckboxWidget {
                 colors::BACKGROUND_3.adjust(1.2),
                 Border::new(Color::WHITE.adjust(0.75), 1.0),
             )
-        } else if self.focused {
+        } else if self.nav_focused {
             (colors::BACKGROUND_3, Border::new(Color::WHITE, 1.0))
         } else {
             (colors::BACKGROUND_3, Border::new(colors::BACKGROUND_1, 1.0))
@@ -162,8 +162,11 @@ impl Widget for CheckboxWidget {
                     EventResponse::Bubble
                 }
             }
-            WidgetEvent::FocusChanged(focused) => {
-                self.focused = *focused;
+            WidgetEvent::FocusChanged {
+                focused,
+                navigation,
+            } => {
+                self.nav_focused = *focused && *navigation;
                 EventResponse::Bubble
             }
             WidgetEvent::KeyChanged {

@@ -18,9 +18,9 @@ fn two_columns() {
                 for _ in 0..4 {
                     let text = use_state(|| "".to_owned());
 
-                    let response = TextBox::new(text.borrow().as_str())
+                    let response = TextBox::new()
                         .placeholder("placeholder")
-                        .show()
+                        .show(text.borrow().as_str())
                         .into_inner();
 
                     if let Some(new_text) = response.text {
@@ -39,9 +39,9 @@ fn four_rows() {
                 for _ in 0..2 {
                     let text = use_state(|| "".to_owned());
 
-                    let response = TextBox::new(text.borrow().as_str())
+                    let response = TextBox::new()
                         .placeholder("placeholder")
-                        .show()
+                        .show(text.borrow().as_str())
                         .into_inner();
 
                     if let Some(new_text) = response.text {

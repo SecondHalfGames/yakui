@@ -33,7 +33,7 @@ pub fn run() {
                             expanded(|| {
                                 let name = use_state(|| String::from("Hello"));
 
-                                let res = textbox(name.borrow().clone());
+                                let res = textbox(name.borrow().as_str());
                                 if let Some(new_text) = res.into_inner().text {
                                     name.set(new_text);
                                 }
