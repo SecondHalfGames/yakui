@@ -127,20 +127,21 @@ struct LoadCommonFontsWidget {
 }
 
 impl Widget for LoadCommonFontsWidget {
-    type Props<'a> = ();
+    type Props = ();
 
     type Response = ();
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
             loaded: Cell::default(),
         }
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
     fn layout(
         &self,
+        _props: &Self::Props,
         ctx: yakui::widget::LayoutContext<'_>,
         _constraints: yakui::Constraints,
     ) -> yakui::Vec2 {

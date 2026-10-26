@@ -6,7 +6,7 @@ use yakui_core::Response;
 
 /// Show a widget with the given children and props.
 #[track_caller]
-pub fn widget_children<T, F>(children: F, props: T::Props<'_>) -> Response<T::Response>
+pub fn widget_children<T, F>(children: F, props: T::Props) -> Response<T::Response>
 where
     T: Widget,
     F: FnOnce(),
@@ -20,7 +20,7 @@ where
 
 /// Show a widget with the given props.
 #[track_caller]
-pub fn widget<T>(props: T::Props<'_>) -> Response<T::Response>
+pub fn widget<T>(props: T::Props) -> Response<T::Response>
 where
     T: Widget,
 {

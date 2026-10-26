@@ -59,7 +59,6 @@ pub struct SliderResponse {
 
 #[derive(Debug)]
 pub struct SliderWidget {
-    props: Slider,
     rect: Cell<Option<Rect>>,
     dragging: bool,
     pending_value: Option<f64>,
@@ -68,33 +67,29 @@ pub struct SliderWidget {
 }
 
 impl SliderWidget {
-    fn current_value(&self) -> f64 {
-        self.pending_value.unwrap_or(self.props.value)
+    fn current_value(&self, props: &Slider) -> f64 {
+        self.pending_value.unwrap_or(props.value)
     }
 
-    fn keyboard_step(&self) -> f64 {
-        self.props
+    fn keyboard_step(&self, props: &Slider) -> f64 {
+        props
             .step
             // 1% if no step configured
-            .unwrap_or((self.props.max - self.props.min) / 100.0)
+            .unwrap_or((props.max - props.min) / 100.0)
             .abs()
     }
 
-    fn clamp_value(&self, value: f64) -> f64 {
-        value.clamp(
-            self.props.min.min(self.props.max),
-            self.props.min.max(self.props.max),
-        )
+    fn clamp_value(&self, props: &Slider, value: f64) -> f64 {
+        value.clamp(props.min.min(props.max), props.min.max(props.max))
     }
 }
 
 impl Widget for SliderWidget {
-    type Props<'a> = Slider;
+    type Props = Slider;
     type Response = SliderResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
-            props: Slider::new(0.0, 0.0, 1.0),
             rect: Cell::new(None),
             dragging: false,
             pending_value: None,
@@ -103,9 +98,7 @@ impl Widget for SliderWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-
+    fn update(&mut self, props: &Self::Props) -> Self::Response {
         colored_box(TRACK_COLOR, [0.0, TRACK_HEIGHT]);
         let res = draggable(|| {
             colored_circle(KNOB_COLOR, KNOB_SIZE);
@@ -115,7 +108,7 @@ impl Widget for SliderWidget {
         self.confirmed = false;
         self.dragging = res.dragging.is_some();
 
-        let mut value = self.props.value;
+        let mut value = props.value;
 
         if let (Some(drag), Some(rect)) = (res.dragging, self.rect.get()) {
             let min_pos = rect.pos().x;
@@ -123,19 +116,19 @@ impl Widget for SliderWidget {
             let actual_pos = drag.current.x.clamp(min_pos, max_pos);
 
             let percentage = (actual_pos - min_pos) / (max_pos - min_pos);
-            value = self.props.min + percentage as f64 * (self.props.max - self.props.min);
+            value = props.min + percentage as f64 * (props.max - props.min);
         }
 
         if let Some(pending_value) = self.pending_value.take() {
             value = pending_value;
         }
 
-        if let Some(step) = self.props.step {
+        if let Some(step) = props.step {
             value = round_to_step(value, step);
         }
-        value = self.clamp_value(value);
+        value = self.clamp_value(props, value);
 
-        if value != self.props.value {
+        if value != props.value {
             SliderResponse {
                 value: Some(value),
                 confirmed,
@@ -150,7 +143,12 @@ impl Widget for SliderWidget {
         }
     }
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        props: &Self::Props,
+        mut ctx: LayoutContext<'_>,
+        constraints: Constraints,
+    ) -> Vec2 {
         let node = ctx.dom.get_current();
         let size = Vec2::new(
             constraints.constrain_width(DEFAULT_WIDTH).max(KNOB_SIZE),
@@ -167,7 +165,7 @@ impl Widget for SliderWidget {
             Vec2::new(KNOB_SIZE / 2.0, (TOTAL_HEIGHT - TRACK_HEIGHT) / 2.0),
         );
 
-        let percentage = (self.props.value - self.props.min) / (self.props.max - self.props.min);
+        let percentage = (props.value - props.min) / (props.max - props.min);
         let percentage = percentage.clamp(0.0, 1.0);
         let knob_offset = (size.x - KNOB_SIZE) * percentage as f32;
         let knob_pos = Vec2::new(knob_offset, (TOTAL_HEIGHT - KNOB_SIZE) / 2.0);
@@ -177,15 +175,20 @@ impl Widget for SliderWidget {
         size
     }
 
-    fn focus_policy(&self) -> FocusPolicy {
+    fn focus_policy(&self, _props: &Self::Props) -> FocusPolicy {
         FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match event {
             WidgetEvent::FocusChanged { focused, .. } => {
                 self.focused = *focused;
@@ -193,15 +196,15 @@ impl Widget for SliderWidget {
             }
             WidgetEvent::KeyChanged { key, down, .. } => {
                 let value = match key {
-                    KeyCode::ArrowLeft => self.current_value() - self.keyboard_step(),
-                    KeyCode::ArrowRight => self.current_value() + self.keyboard_step(),
-                    KeyCode::Home => self.props.min,
-                    KeyCode::End => self.props.max,
+                    KeyCode::ArrowLeft => self.current_value(props) - self.keyboard_step(props),
+                    KeyCode::ArrowRight => self.current_value(props) + self.keyboard_step(props),
+                    KeyCode::Home => props.min,
+                    KeyCode::End => props.max,
                     _ => return EventResponse::Bubble,
                 };
 
                 if *down {
-                    self.pending_value = Some(self.clamp_value(value));
+                    self.pending_value = Some(self.clamp_value(props, value));
                     self.confirmed = true;
                 }
 
@@ -211,7 +214,7 @@ impl Widget for SliderWidget {
         }
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, _props: &Self::Props, mut ctx: PaintContext<'_>) {
         // This is a little gross: stash our position from this frame's layout
         // pass so that we can compare it against any drag updates that happen
         // at the beginning of the next frame.

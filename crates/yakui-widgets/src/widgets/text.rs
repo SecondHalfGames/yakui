@@ -87,34 +87,28 @@ impl Text {
 }
 
 #[derive(Debug)]
-pub struct TextWidget {
-    props: Text,
-}
+pub struct TextWidget;
 
 pub struct TextResponse {
     pub render_text: RenderTextResponse,
 }
 
 impl Widget for TextWidget {
-    type Props<'a> = Text;
+    type Props = Text;
     type Response = TextResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Text::new(0.0, Cow::Borrowed("")),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-
+    fn update(&mut self, props: &Self::Props) -> Self::Response {
         let mut render_text = None;
-        pad(self.props.padding, || {
+        pad(props.padding, || {
             render_text = Some(
                 RenderText::new()
-                    .inline(self.props.inline)
-                    .min_width(self.props.min_width)
-                    .show(&self.props.text, &self.props.style)
+                    .inline(props.inline)
+                    .min_width(props.min_width)
+                    .show(&props.text, &props.style)
                     .into_inner(),
             );
         });

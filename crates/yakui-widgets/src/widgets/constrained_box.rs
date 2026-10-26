@@ -27,35 +27,26 @@ impl ConstrainedBox {
 }
 
 #[derive(Debug)]
-pub struct ConstrainedBoxWidget {
-    props: ConstrainedBox,
-}
+pub struct ConstrainedBoxWidget;
 
 pub type ConstrainedBoxResponse = ();
 
 impl Widget for ConstrainedBoxWidget {
-    type Props<'a> = ConstrainedBox;
+    type Props = ConstrainedBox;
     type Response = ConstrainedBoxResponse;
 
-    fn new() -> Self {
-        Self {
-            props: ConstrainedBox::new(Constraints {
-                min: Vec2::ZERO,
-                max: Vec2::ZERO,
-            }),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         let constraints = Constraints {
-            min: Vec2::max(input.min, self.props.constraints.min),
-            max: Vec2::min(input.max, self.props.constraints.max),
+            min: Vec2::max(input.min, props.constraints.min),
+            max: Vec2::min(input.max, props.constraints.max),
         };
 
         for &child in &node.children {

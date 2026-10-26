@@ -43,7 +43,6 @@ impl Checkbox {
 
 #[derive(Debug)]
 pub struct CheckboxWidget {
-    props: Checkbox,
     hovering: bool,
     mouse_down: bool,
     just_toggled: bool,
@@ -57,12 +56,11 @@ pub struct CheckboxResponse {
 }
 
 impl Widget for CheckboxWidget {
-    type Props<'a> = Checkbox;
+    type Props = Checkbox;
     type Response = CheckboxResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
-            props: Checkbox::new(false),
             hovering: false,
             mouse_down: false,
             just_toggled: false,
@@ -70,10 +68,8 @@ impl Widget for CheckboxWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-
-        let mut checked = self.props.checked;
+    fn update(&mut self, props: &Self::Props) -> Self::Response {
+        let mut checked = props.checked;
         if self.just_toggled {
             checked = !checked;
             self.just_toggled = false;
@@ -85,7 +81,7 @@ impl Widget for CheckboxWidget {
         }
     }
 
-    fn paint(&self, ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, ctx: PaintContext<'_>) {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let padding = Vec2::splat(OUTER_SIZE - INNER_SIZE);
@@ -113,24 +109,34 @@ impl Widget for CheckboxWidget {
             .border(Some(border));
         bg.add(ctx.paint);
 
-        if self.props.checked {
+        if props.checked {
             shapes::cross(ctx.paint, check_rect, colors::TEXT);
         }
     }
 
-    fn layout(&self, _ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        _props: &Self::Props,
+        _ctx: LayoutContext<'_>,
+        constraints: Constraints,
+    ) -> Vec2 {
         constraints.constrain_min(Vec2::splat(OUTER_SIZE))
     }
 
-    fn focus_policy(&self) -> FocusPolicy {
+    fn focus_policy(&self, _props: &Self::Props) -> FocusPolicy {
         FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match event {
             WidgetEvent::MouseEnter => {
                 self.hovering = true;

@@ -27,25 +27,26 @@ impl Layer {
 }
 
 #[derive(Debug)]
-pub struct LayerWidget {
-    props: Layer,
-}
+pub struct LayerWidget;
 
 pub type LayerResponse = ();
 
 impl Widget for LayerWidget {
-    type Props<'a> = Layer;
+    type Props = Layer;
     type Response = LayerResponse;
 
-    fn new() -> Self {
-        Self { props: Layer {} }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        _props: &Self::Props,
+        mut ctx: LayoutContext<'_>,
+        constraints: Constraints,
+    ) -> Vec2 {
         ctx.layout.new_layer(ctx.dom);
 
         let node = ctx.dom.get_current();

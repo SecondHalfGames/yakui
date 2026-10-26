@@ -5,16 +5,21 @@ use crate::widget::{LayoutContext, Widget};
 pub struct RootWidget;
 
 impl Widget for RootWidget {
-    type Props<'a> = ();
+    type Props = ();
     type Response = ();
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, constraints: Constraints) -> glam::Vec2 {
+    fn layout(
+        &self,
+        _props: &Self::Props,
+        mut ctx: LayoutContext<'_>,
+        constraints: Constraints,
+    ) -> glam::Vec2 {
         ctx.layout.new_layer(ctx.dom);
 
         let node = ctx.dom.get_current();

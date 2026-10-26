@@ -50,34 +50,25 @@ impl Divider {
 }
 
 #[derive(Debug)]
-pub struct DividerWidget {
-    props: Divider,
-}
+pub struct DividerWidget;
 
 pub type DividerResponse = ();
 
 impl Widget for DividerWidget {
-    type Props<'a> = Divider;
+    type Props = Divider;
     type Response = DividerResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Divider::new(Color::WHITE, 0.0, 0.0),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
+
+    fn layout(&self, props: &Self::Props, _ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        Vec2::new(input.min.x, props.height.clamp(input.min.y, input.max.y))
     }
 
-    fn layout(&self, _ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
-        Vec2::new(
-            input.min.x,
-            self.props.height.clamp(input.min.y, input.max.y),
-        )
-    }
-
-    fn paint(&self, ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, ctx: PaintContext<'_>) {
         // We get the parent's width during the paint phase because
         // using constraints.max.x is often useless as it is often infinite.
 
@@ -90,17 +81,14 @@ impl Widget for DividerWidget {
         let layout_rect = ctx.layout.get(id).unwrap().rect;
 
         let line_pos = Vec2::new(parent_rect.pos().x, layout_rect.pos().y)
-            + Vec2::new(
-                self.props.indent,
-                (layout_rect.size().y - self.props.thickness) / 2.0,
-            );
+            + Vec2::new(props.indent, (layout_rect.size().y - props.thickness) / 2.0);
         let line_size = Vec2::new(
-            parent_rect.size().x - self.props.indent - self.props.end_indent,
-            self.props.thickness,
+            parent_rect.size().x - props.indent - props.end_indent,
+            props.thickness,
         );
 
         let mut line_rect = PaintRect::new(Rect::from_pos_size(line_pos, line_size));
-        line_rect.color = self.props.color;
+        line_rect.color = props.color;
         line_rect.add(ctx.paint);
     }
 }

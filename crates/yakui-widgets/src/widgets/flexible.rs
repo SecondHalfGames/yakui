@@ -63,27 +63,21 @@ impl Flexible {
 }
 
 #[derive(Debug)]
-pub struct FlexibleWidget {
-    props: Flexible,
-}
+pub struct FlexibleWidget;
 
 pub type FlexibleResponse = ();
 
 impl Widget for FlexibleWidget {
-    type Props<'a> = Flexible;
+    type Props = Flexible;
     type Response = FlexibleResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Flexible::new(0),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn flex(&self) -> (u32, FlexFit) {
-        (self.props.flex, self.props.fit)
+    fn flex(&self, props: &Self::Props) -> (u32, FlexFit) {
+        (props.flex, props.fit)
     }
 }

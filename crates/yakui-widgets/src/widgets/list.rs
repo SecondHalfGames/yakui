@@ -70,26 +70,22 @@ impl List {
 }
 
 #[derive(Debug)]
-pub struct ListWidget {
-    props: List,
-}
+pub struct ListWidget;
 
 pub type ListResponse = ();
 
 impl Widget for ListWidget {
-    type Props<'a> = List;
+    type Props = List;
     type Response = ListResponse;
 
-    fn new() -> Self {
-        Self { props: List::row() }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn flex(&self) -> (u32, FlexFit) {
-        let flex = if self.props.cross_axis_alignment == CrossAxisAlignment::Stretch {
+    fn flex(&self, props: &Self::Props) -> (u32, FlexFit) {
+        let flex = if props.cross_axis_alignment == CrossAxisAlignment::Stretch {
             1
         } else {
             0
@@ -101,18 +97,17 @@ impl Widget for ListWidget {
     // This approach to layout is based on Flutter's Flex layout algorithm.
     //
     // https://api.flutter.dev/flutter/widgets/Flex-class.html#layout-algorithm
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let direction = self.props.direction;
+        let direction = props.direction;
 
-        let total_item_spacing =
-            self.props.item_spacing * node.children.len().saturating_sub(1) as f32;
+        let total_item_spacing = props.item_spacing * node.children.len().saturating_sub(1) as f32;
 
         let mut total_main_axis_size = total_item_spacing;
         let mut max_cross_axis_size = 0.0;
 
         let cross_axis_max = direction.get_cross_axis(input.max);
-        let cross_axis_min = match self.props.cross_axis_alignment {
+        let cross_axis_min = match props.cross_axis_alignment {
             CrossAxisAlignment::Stretch => cross_axis_max,
             _ => 0.0,
         };
@@ -192,7 +187,7 @@ impl Widget for ListWidget {
 
         let cross_size = max_cross_axis_size.max(direction.get_cross_axis(input.min));
 
-        let main_axis_size = match self.props.main_axis_size {
+        let main_axis_size = match props.main_axis_size {
             MainAxisSize::Min => total_main_axis_size,
             MainAxisSize::Max => {
                 let main_max = direction.get_main_axis(input.max);
@@ -229,7 +224,7 @@ impl Widget for ListWidget {
         }
 
         // Finally, position all children based on the sizes calculated above.
-        let (leading_space, mut between_space) = match self.props.main_axis_alignment {
+        let (leading_space, mut between_space) = match props.main_axis_alignment {
             MainAxisAlignment::Start => (0.0, 0.0),
             MainAxisAlignment::Center => ((main_axis_size - total_main_axis_size) / 2.0, 0.0),
             MainAxisAlignment::End => (main_axis_size - total_main_axis_size, 0.0),
@@ -260,7 +255,7 @@ impl Widget for ListWidget {
                 (between_space, between_space)
             }
         };
-        between_space += self.props.item_spacing;
+        between_space += props.item_spacing;
 
         let mut next_main = leading_space;
 
@@ -275,7 +270,7 @@ impl Widget for ListWidget {
             let child_main = direction.get_main_axis(child_size);
             let child_cross = direction.get_cross_axis(child_size);
 
-            let cross = match self.props.cross_axis_alignment {
+            let cross = match props.cross_axis_alignment {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => (cross_size - child_cross) / 2.0,
                 CrossAxisAlignment::End => cross_size - child_cross,

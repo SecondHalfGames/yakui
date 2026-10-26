@@ -42,29 +42,23 @@ impl Circle {
 }
 
 #[derive(Debug)]
-pub struct CircleWidget {
-    props: Circle,
-}
+pub struct CircleWidget;
 
 pub type CircleResponse = ();
 
 impl Widget for CircleWidget {
-    type Props<'a> = Circle;
+    type Props = Circle;
     type Response = CircleResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Circle::new(),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let mut size = Vec2::splat(self.props.min_radius);
+        let mut size = Vec2::splat(props.min_radius);
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, input);
@@ -74,7 +68,7 @@ impl Widget for CircleWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
@@ -82,7 +76,7 @@ impl Widget for CircleWidget {
         let radius = layout_node.rect.size().x.min(layout_node.rect.size().y) / 2.0;
 
         shapes::Circle::new(center, radius)
-            .color(self.props.color)
+            .color(props.color)
             .add(ctx.paint);
 
         for &child in &node.children {

@@ -90,32 +90,28 @@ impl CountGrid {
 
 #[derive(Debug)]
 pub struct CountGridWidget {
-    props: CountGrid,
     max_sizes: RefCell<Vec<f32>>, // cache max_sizes vector to avoid reallocating every frame
 }
 
 pub type CountGridResponse = ();
 
 impl Widget for CountGridWidget {
-    type Props<'a> = CountGrid;
+    type Props = CountGrid;
     type Response = CountGridResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
-            props: CountGrid::col(0),
             max_sizes: RefCell::new(vec![]),
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
 
-        let n_cross = self.props.cross_axis_count;
-        let direction = self.props.direction;
+        let n_cross = props.cross_axis_count;
+        let direction = props.direction;
 
         // Pad the number of children to be a multiple of cross_n (if not already the case)
         let n = node.children.len();
@@ -128,7 +124,7 @@ impl Widget for CountGridWidget {
         // in each axis
 
         let cell_cross_max = direction.get_cross_axis(input.max) / n_cross as f32;
-        let cell_cross_min = match self.props.cross_axis_alignment {
+        let cell_cross_min = match props.cross_axis_alignment {
             // If stretch, the cells will be as wide as possible
             CrossAxisAlignment::Stretch => cell_cross_max,
             _ => 0.0,
@@ -141,7 +137,7 @@ impl Widget for CountGridWidget {
         };
 
         let cell_main_max = total_main_max / n_main as f32;
-        let cell_main_min = match self.props.main_axis_align_items {
+        let cell_main_min = match props.main_axis_align_items {
             MainAxisAlignItems::Stretch => cell_main_max,
             _ => 0.0,
         };
@@ -189,7 +185,7 @@ impl Widget for CountGridWidget {
             for (cross_axis_id, &child_id) in cross_line_slice.iter().enumerate() {
                 let layout = ctx.layout.get_mut(child_id).unwrap();
 
-                let cross_axis_size = match self.props.cross_axis_alignment {
+                let cross_axis_size = match props.cross_axis_alignment {
                     CrossAxisAlignment::Stretch => cell_cross_max,
                     _ => max_sizes[cross_axis_id],
                 };
@@ -205,19 +201,19 @@ impl Widget for CountGridWidget {
         }
 
         // Calculate offset needed for alignment
-        let mut offset_main_global = match self.props.main_axis_alignment {
+        let mut offset_main_global = match props.main_axis_alignment {
             MainAxisAlignment::Start => 0.0,
             MainAxisAlignment::Center => ((total_main_max - total_main_size) / 2.0).max(0.0),
             MainAxisAlignment::End => (total_main_max - total_main_size).max(0.0),
             other => unimplemented!("MainAxisAlignment::{other:?}"),
         };
-        offset_main_global = match self.props.main_axis_size {
+        offset_main_global = match props.main_axis_size {
             MainAxisSize::Max => offset_main_global,
             MainAxisSize::Min => 0.0,
         };
 
         // only used in case the widget total cross is less than the minimum cross axis
-        let offset_cross_global = match self.props.cross_axis_alignment {
+        let offset_cross_global = match props.cross_axis_alignment {
             CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
             CrossAxisAlignment::Center => {
                 ((direction.get_cross_axis(input.min) - max_total_cross_size) / 2.0).max(0.0)
@@ -235,22 +231,22 @@ impl Widget for CountGridWidget {
             let layout = ctx.layout.get_mut(child_id).unwrap();
 
             let child_cross_size = direction.get_cross_axis(layout.rect.size());
-            let cell_cross_size = match self.props.cross_axis_alignment {
+            let cell_cross_size = match props.cross_axis_alignment {
                 CrossAxisAlignment::Stretch => cell_cross_max,
                 _ => max_sizes[cross_id],
             };
-            let offset_cross = match self.props.cross_axis_alignment {
+            let offset_cross = match props.cross_axis_alignment {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => ((cell_cross_size - child_cross_size) / 2.0).max(0.0),
                 CrossAxisAlignment::End => (cell_cross_size - child_cross_size).max(0.0),
             };
 
             let child_main_size = direction.get_main_axis(layout.rect.size());
-            let cell_main_size = match self.props.main_axis_align_items {
+            let cell_main_size = match props.main_axis_align_items {
                 MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => cell_main_max,
                 _ => max_sizes[n_cross + main_id],
             };
-            let offset_main = match self.props.main_axis_align_items {
+            let offset_main = match props.main_axis_align_items {
                 MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => 0.0,
                 MainAxisAlignItems::Center => ((cell_main_size - child_main_size) / 2.0).max(0.0),
                 MainAxisAlignItems::End => (cell_main_size - child_main_size).max(0.0),
@@ -269,11 +265,11 @@ impl Widget for CountGridWidget {
         let _ = std::mem::replace(&mut *self.max_sizes.borrow_mut(), max_sizes);
 
         // Figure out the final size of the grid
-        let cross_grid_size = match self.props.cross_axis_alignment {
+        let cross_grid_size = match props.cross_axis_alignment {
             CrossAxisAlignment::Stretch => direction.get_cross_axis(input.max),
             _ => max_total_cross_size,
         };
-        let main_grid_size = match self.props.main_axis_size {
+        let main_grid_size = match props.main_axis_size {
             MainAxisSize::Max => total_main_max,
             MainAxisSize::Min => total_main_size,
         };

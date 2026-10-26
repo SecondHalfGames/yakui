@@ -27,36 +27,33 @@ impl Trap {
 }
 
 #[derive(Debug)]
-pub struct TrapWidget {
-    props: Trap,
-}
+pub struct TrapWidget;
 
 impl Widget for TrapWidget {
-    type Props<'a> = Trap;
+    type Props = Trap;
     type Response = ();
 
-    fn new() -> Self {
-        Self {
-            props: Trap::new(NavDirections::ALL),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn navigate(&self, ctx: NavigateContext<'_>, direction: NavDirection) -> Option<WidgetId> {
+    fn navigate(
+        &self,
+        props: &Self::Props,
+        ctx: NavigateContext<'_>,
+        direction: NavDirection,
+    ) -> Option<WidgetId> {
         // first, navigate among descendants normally
-        if let Some(target) = self.default_navigate(ctx, direction) {
+        if let Some(target) = self.default_navigate(props, ctx, direction) {
             return Some(target);
         }
 
         let focus = ctx.input.focus()?;
 
         // if the focus originated inside, keep it there
-        if self.props.directions.contains(direction.flag())
-            && ctx.contains(ctx.dom.current(), focus)
-        {
+        if props.directions.contains(direction.flag()) && ctx.contains(ctx.dom.current(), focus) {
             return Some(focus);
         }
 

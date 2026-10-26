@@ -55,24 +55,19 @@ impl NineSlice {
 }
 
 #[derive(Debug)]
-pub struct NineSliceWidget {
-    props: Option<NineSlice>,
-}
+pub struct NineSliceWidget;
 
 impl Widget for NineSliceWidget {
-    type Props<'a> = NineSlice;
+    type Props = NineSlice;
     type Response = ();
 
-    fn new() -> Self {
-        Self { props: None }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = Some(props);
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
-        let props = self.props.as_ref().unwrap();
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
         let NineSlice {
             texture,
             margins:

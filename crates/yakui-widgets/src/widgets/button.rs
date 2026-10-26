@@ -136,7 +136,6 @@ impl Button {
 
 #[derive(Debug)]
 pub struct ButtonWidget {
-    props: Button,
     hovering: bool,
     mouse_down: bool,
     clicked: bool,
@@ -151,12 +150,11 @@ pub struct ButtonResponse {
 }
 
 impl Widget for ButtonWidget {
-    type Props<'a> = Button;
+    type Props = Button;
     type Response = ButtonResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
-            props: Button::unstyled(Cow::Borrowed("")),
             hovering: false,
             mouse_down: false,
             clicked: false,
@@ -164,25 +162,23 @@ impl Widget for ButtonWidget {
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-
-        let mut color = self.props.style.fill;
-        let mut border = self.props.style.border;
-        let mut text_style = &self.props.style.text;
+    fn update(&mut self, props: &Self::Props) -> Self::Response {
+        let mut color = props.style.fill;
+        let mut border = props.style.border;
+        let mut text_style = &props.style.text;
 
         if self.mouse_down {
-            let style = &self.props.down_style;
+            let style = &props.down_style;
             color = style.fill;
             text_style = &style.text;
             border = style.border;
         } else if self.hovering {
-            let style = &self.props.hover_style;
+            let style = &props.hover_style;
             color = style.fill;
             text_style = &style.text;
             border = style.border;
         } else if self.nav_focused {
-            let style = &self.props.focus_style;
+            let style = &props.focus_style;
             color = style.fill;
             text_style = &style.text;
             border = style.border;
@@ -194,16 +190,16 @@ impl Widget for ButtonWidget {
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let container = RoundRect::new(self.props.border_radius)
+        let container = RoundRect::new(props.border_radius)
             .border(border)
             .color(color);
         container.show_children(|| {
-            crate::pad(self.props.padding, || {
+            crate::pad(props.padding, || {
                 crate::align(align, || {
                     RenderText::new()
                         .inline(true)
-                        .min_width(self.props.text_min_width)
-                        .show(&self.props.text, text_style);
+                        .min_width(props.text_min_width)
+                        .show(&props.text, text_style);
                 });
             });
         });
@@ -218,15 +214,20 @@ impl Widget for ButtonWidget {
         }
     }
 
-    fn focus_policy(&self) -> FocusPolicy {
+    fn focus_policy(&self, _props: &Self::Props) -> FocusPolicy {
         FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match event {
             WidgetEvent::MouseEnter => {
                 self.hovering = true;

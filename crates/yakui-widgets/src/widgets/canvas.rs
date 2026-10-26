@@ -36,30 +36,22 @@ impl Canvas {
 }
 
 #[derive(Debug)]
-pub struct CanvasWidget {
-    props: Canvas,
-}
+pub struct CanvasWidget;
 
 pub type CanvasResponse = ();
 
 impl Widget for CanvasWidget {
-    type Props<'a> = Canvas;
+    type Props = Canvas;
     type Response = CanvasResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Canvas {
-                draw: IgnoreDebug(None),
-            },
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
-        if let IgnoreDebug(Some(draw)) = &self.props.draw {
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
+        if let IgnoreDebug(Some(draw)) = &props.draw {
             (draw)(&mut ctx);
         }
 
