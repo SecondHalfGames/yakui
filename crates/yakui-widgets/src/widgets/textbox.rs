@@ -186,7 +186,10 @@ impl Widget for TextBoxWidget {
     }
 
     fn update(&mut self, (props, text): Self::Props<'_>) -> Self::Response {
-        let text_changed_by_caller = text != self.text || props.style != self.props.style;
+        // We need to initialize text attributes later when text or style is default
+        let text_changed_by_caller = self.cosmic_editor.borrow().is_none()
+            || text != self.text
+            || props.style != self.props.style;
         if text_changed_by_caller {
             self.text_changed_by_cosmic.set(false);
         }
