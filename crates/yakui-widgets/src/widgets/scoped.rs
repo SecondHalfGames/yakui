@@ -40,15 +40,15 @@ impl<T> fmt::Debug for Scope<T> {
 pub type ScopeResponse = ();
 
 #[derive(Debug)]
-pub struct ScopeWidget {}
+pub struct ScopeWidget;
 
 impl Widget for ScopeWidget {
-    type Props<'a> = ();
+    type Props = ();
     type Response = ScopeResponse;
 
-    fn new() -> Self {
-        Self {}
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 }

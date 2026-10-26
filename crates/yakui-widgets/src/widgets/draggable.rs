@@ -45,14 +45,14 @@ pub struct Dragging {
 }
 
 impl Widget for DraggableWidget {
-    type Props<'a> = Draggable;
+    type Props = Draggable;
     type Response = DraggableResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self { current_drag: None }
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {
         let dragging = self.current_drag.as_ref().map(|drag| Dragging {
             start: drag.start_position,
             current: drag.mouse_position + drag.offset_from_mouse,
@@ -61,11 +61,16 @@ impl Widget for DraggableWidget {
         DraggableResponse { dragging }
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::MOUSE_ALL
     }
 
-    fn event(&mut self, ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match *event {
             WidgetEvent::MouseButtonChanged {
                 button: MouseButton::One,

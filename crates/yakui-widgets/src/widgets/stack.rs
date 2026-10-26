@@ -48,15 +48,15 @@ pub struct StackWidget;
 pub type StackResponse = ();
 
 impl Widget for StackWidget {
-    type Props<'a> = Stack;
+    type Props = Stack;
 
     type Response = StackResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {
         // nothing here
     }
 }

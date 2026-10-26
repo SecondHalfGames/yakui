@@ -25,27 +25,21 @@ impl Offset {
 }
 
 #[derive(Debug)]
-pub struct OffsetWidget {
-    props: Offset,
-}
+pub struct OffsetWidget;
 
 pub type OffsetResponse = ();
 
 impl Widget for OffsetWidget {
-    type Props<'a> = Offset;
+    type Props = Offset;
     type Response = OffsetResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Offset::new(Vec2::ZERO),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
 
         // Offset allows its children to be smaller than the minimum size
@@ -63,7 +57,7 @@ impl Widget for OffsetWidget {
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, constraints);
             self_size = self_size.max(child_size);
-            ctx.layout.set_pos(child, self.props.offset);
+            ctx.layout.set_pos(child, props.offset);
         }
 
         self_size

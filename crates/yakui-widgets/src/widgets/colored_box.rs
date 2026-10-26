@@ -57,29 +57,23 @@ impl ColoredBox {
 }
 
 #[derive(Debug)]
-pub struct ColoredBoxWidget {
-    props: ColoredBox,
-}
+pub struct ColoredBoxWidget;
 
 pub type ColoredBoxResponse = ();
 
 impl Widget for ColoredBoxWidget {
-    type Props<'a> = ColoredBox;
+    type Props = ColoredBox;
     type Response = ColoredBoxResponse;
 
-    fn new() -> Self {
-        Self {
-            props: ColoredBox::empty(),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let mut size = self.props.min_size;
+        let mut size = props.min_size;
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, input);
@@ -89,12 +83,12 @@ impl Widget for ColoredBoxWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
         let mut rect = PaintRect::new(layout_node.rect);
-        rect.color = self.props.color;
+        rect.color = props.color;
         rect.add(ctx.paint);
 
         for &child in &node.children {

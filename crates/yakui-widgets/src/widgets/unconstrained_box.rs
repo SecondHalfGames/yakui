@@ -37,36 +37,30 @@ impl UnconstrainedBox {
 }
 
 #[derive(Debug)]
-pub struct UnconstrainedBoxWidget {
-    props: UnconstrainedBox,
-}
+pub struct UnconstrainedBoxWidget;
 
 pub type UnconstrainedBoxResponse = ();
 
 impl Widget for UnconstrainedBoxWidget {
-    type Props<'a> = UnconstrainedBox;
+    type Props = UnconstrainedBox;
     type Response = UnconstrainedBoxResponse;
 
-    fn new() -> Self {
-        Self {
-            props: UnconstrainedBox::new(),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
 
-        let (min_x, max_x) = if self.props.constrain_x {
+        let (min_x, max_x) = if props.constrain_x {
             (0.0, input.max.x)
         } else {
             (0.0, f32::INFINITY)
         };
 
-        let (min_y, max_y) = if self.props.constrain_y {
+        let (min_y, max_y) = if props.constrain_y {
             (0.0, input.max.y)
         } else {
             (0.0, f32::INFINITY)

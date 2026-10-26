@@ -32,45 +32,40 @@ impl Reflow {
 }
 
 #[derive(Debug)]
-pub struct ReflowWidget {
-    props: Reflow,
-}
+pub struct ReflowWidget;
 
 pub type ReflowResponse = ();
 
 impl Widget for ReflowWidget {
-    type Props<'a> = Reflow;
+    type Props = Reflow;
     type Response = ReflowResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Reflow {
-                anchor: Alignment::TOP_LEFT,
-                pivot: Pivot::TOP_LEFT,
-                offset: Dim2::ZERO,
-            },
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn flow(&self) -> Flow {
+    fn flow(&self, props: &Self::Props) -> Flow {
         Flow::Relative {
-            anchor: self.props.anchor,
-            offset: self.props.offset,
+            anchor: props.anchor,
+            offset: props.offset,
         }
     }
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        props: &Self::Props,
+        mut ctx: LayoutContext<'_>,
+        _constraints: Constraints,
+    ) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
         for &child in &node.children {
             size = size.max(ctx.calculate_layout(child, Constraints::none()));
         }
 
-        let pivot_offset = -size * self.props.pivot.as_vec2();
+        let pivot_offset = -size * props.pivot.as_vec2();
         for &child in &node.children {
             ctx.layout.set_pos(child, pivot_offset);
         }

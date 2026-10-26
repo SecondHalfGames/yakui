@@ -18,7 +18,7 @@ use thunderdome::Arena;
 
 use crate::id::WidgetId;
 use crate::response::Response;
-use crate::widget::{ErasedWidget, Widget};
+use crate::widget::{ErasedWidget, Widget, WidgetInstance};
 
 use self::dummy::DummyWidget;
 use self::dynamic_scope::DynamicScope;
@@ -189,7 +189,7 @@ impl Dom {
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
     #[track_caller]
-    pub fn do_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
+    pub fn do_widget<T: Widget>(&self, props: T::Props) -> Response<T::Response> {
         let response = self.begin_widget::<T>(props);
         self.end_widget::<T>(response.id);
         response
@@ -199,7 +199,7 @@ impl Dom {
     ///
     /// After calling this method, children can be added to this widget.
     #[track_caller]
-    pub fn begin_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
+    pub fn begin_widget<T: Widget>(&self, props: T::Props) -> Response<T::Response> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
         let (id, mut widget, callsite) = {
@@ -211,7 +211,10 @@ impl Dom {
             // DOM, so we need to rip the widget out of the tree so we can
             // release our lock.
             let node = nodes.get_mut(id.index()).unwrap();
-            let widget = replace(&mut node.widget, Box::new(DummyWidget));
+            let widget = replace(
+                &mut node.widget,
+                Box::new(WidgetInstance::<DummyWidget>::new(())),
+            );
 
             node.dynamic_scope_index = self.inner.dynamic_scope.current_scope();
             node.next_child = 0;
@@ -220,16 +223,24 @@ impl Dom {
 
         // Potentially recreate the widget, then update it.
         let response = {
-            let is_type_different = widget.as_ref().type_id() != TypeId::of::<T>();
+            let is_type_different = widget.as_ref().type_id() != TypeId::of::<WidgetInstance<T>>();
             let is_callsite_different = callsite != Location::caller();
 
             if is_callsite_different || is_type_different {
-                widget = Box::new(T::new());
+                widget = Box::new(WidgetInstance::<T>::new(props));
+            } else {
+                let instance = widget
+                    .as_any_mut()
+                    .downcast_mut::<WidgetInstance<T>>()
+                    .unwrap();
+                instance.props = props;
             }
 
-            let widget = widget.as_any_mut().downcast_mut::<T>().unwrap();
-
-            widget.update(props)
+            let instance = widget
+                .as_any_mut()
+                .downcast_mut::<WidgetInstance<T>>()
+                .unwrap();
+            instance.state.update(&instance.props)
         };
 
         // Quick! Put the widget back, before anyone notices!
@@ -272,7 +283,7 @@ impl DomInner {
     fn new() -> Self {
         let mut nodes = Arena::new();
         let root = nodes.insert(DomNode {
-            widget: Box::new(RootWidget),
+            widget: Box::new(WidgetInstance::<RootWidget>::new(())),
             parent: None,
             children: Vec::new(),
             next_child: 0,
@@ -300,7 +311,7 @@ fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
         id
     } else {
         let index = nodes.insert(DomNode {
-            widget: Box::new(DummyWidget),
+            widget: Box::new(WidgetInstance::<DummyWidget>::new(())),
             parent: Some(parent_id),
             children: Vec::new(),
             next_child: 0,

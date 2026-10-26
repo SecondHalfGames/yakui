@@ -11,14 +11,14 @@ use yakui_core::Yakui;
 struct TestWidget;
 
 impl Widget for TestWidget {
-    type Props<'a> = ();
+    type Props = ();
     type Response = ();
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 }
 
 /// https://github.com/LPGhatguy/yakui/issues/69
@@ -51,29 +51,39 @@ struct KeyboardWidget {
 }
 
 impl Widget for KeyboardWidget {
-    type Props<'a> = ();
+    type Props = ();
     type Response = Rc<AtomicUsize>;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
             count: Rc::new(AtomicUsize::new(0)),
         }
     }
 
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {
         self.count.clone()
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::FOCUSED_KEYBOARD
     }
 
-    fn layout(&self, ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        _props: &Self::Props,
+        ctx: LayoutContext<'_>,
+        _constraints: Constraints,
+    ) -> Vec2 {
         ctx.input.set_focus(Some(ctx.dom.current()), false);
         Vec2::ZERO
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         if let WidgetEvent::TextInput(..) = event {
             self.count.fetch_add(1, Ordering::SeqCst);
         }

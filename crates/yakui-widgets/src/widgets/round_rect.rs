@@ -49,29 +49,23 @@ impl RoundRect {
 }
 
 #[derive(Debug)]
-pub struct RoundRectWidget {
-    props: RoundRect,
-}
+pub struct RoundRectWidget;
 
 pub type RoundRectResponse = ();
 
 impl Widget for RoundRectWidget {
-    type Props<'a> = RoundRect;
+    type Props = RoundRect;
     type Response = RoundRectResponse;
 
-    fn new() -> Self {
-        Self {
-            props: RoundRect::new(0.0),
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let mut size = self.props.min_size;
+        let mut size = props.min_size;
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, input);
@@ -81,13 +75,13 @@ impl Widget for RoundRectWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        shapes::RoundedRectangle::new(layout_node.rect, self.props.radius)
-            .color(self.props.color)
-            .border(self.props.border)
+        shapes::RoundedRectangle::new(layout_node.rect, props.radius)
+            .color(props.color)
+            .border(props.border)
             .add(ctx.paint);
 
         for &child in &node.children {

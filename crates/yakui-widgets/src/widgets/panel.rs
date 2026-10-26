@@ -48,32 +48,28 @@ impl Panel {
 
 #[derive(Debug)]
 pub struct PanelWidget {
-    props: Panel,
     size: RefCell<Vec2>,
 }
 
 pub type PanelResponse = ();
 
 impl Widget for PanelWidget {
-    type Props<'a> = Panel;
+    type Props = Panel;
     type Response = PanelResponse;
 
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self {
-            props: Panel::side(),
             size: RefCell::new(Vec2::ZERO),
         }
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = input.constrain(*self.size.borrow());
 
-        match self.props.kind {
+        match props.kind {
             PanelKind::Side => {
                 if input.max.y.is_finite() {
                     size.y = input.max.y;
@@ -103,7 +99,7 @@ impl Widget for PanelWidget {
         input.constrain(size)
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, _props: &Self::Props, mut ctx: PaintContext<'_>) {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
         let mut rect = PaintRect::new(layout_node.rect);
         rect.color = colors::BACKGROUND_2;
@@ -115,11 +111,16 @@ impl Widget for PanelWidget {
         }
     }
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match event {
             WidgetEvent::MouseMoved(Some(_pos)) => {
                 // TODO: How do we know where the mouse is relative to our

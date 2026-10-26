@@ -52,39 +52,28 @@ impl Image {
 }
 
 #[derive(Debug)]
-pub struct ImageWidget {
-    props: Image,
-}
+pub struct ImageWidget;
 
 pub type ImageResponse = ();
 
 impl Widget for ImageWidget {
-    type Props<'a> = Image;
+    type Props = Image;
     type Response = ImageResponse;
 
-    fn new() -> Self {
-        Self {
-            props: Image {
-                image: None,
-                size: Vec2::ZERO,
-                color: Color::WHITE,
-                fit_mode: ImageFit::Stretch,
-            },
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
-        let mut output_size = input.constrain(self.props.size);
+    fn layout(&self, props: &Self::Props, ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+        let mut output_size = input.constrain(props.size);
 
-        match self.props.fit_mode {
+        match props.fit_mode {
             ImageFit::Stretch => {}
 
             ImageFit::Fit => {
-                if let Some(TextureId::Managed(id)) = self.props.image {
+                if let Some(TextureId::Managed(id)) = props.image {
                     let textures = ctx.paint.textures();
                     if let Some(texture) = textures.get(id) {
                         let real_size = texture.size().as_vec2();
@@ -106,12 +95,12 @@ impl Widget for ImageWidget {
         output_size
     }
 
-    fn paint(&self, ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, ctx: PaintContext<'_>) {
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        if let Some(image) = self.props.image {
+        if let Some(image) = props.image {
             let mut rect = PaintRect::new(layout_node.rect);
-            rect.color = self.props.color;
+            rect.color = props.color;
             rect.texture = Some((image, Rect::ONE));
             rect.add(ctx.paint);
         }

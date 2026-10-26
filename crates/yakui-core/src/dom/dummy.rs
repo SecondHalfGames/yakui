@@ -6,14 +6,14 @@ use crate::widget::Widget;
 pub(crate) struct DummyWidget;
 
 impl Widget for DummyWidget {
-    type Props<'a> = ();
+    type Props = ();
     type Response = ();
 
     #[inline]
-    fn new() -> Self {
+    fn new(_props: &Self::Props) -> Self {
         Self
     }
 
     #[inline]
-    fn update(&mut self, _props: Self::Props<'_>) -> Self::Response {}
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 }

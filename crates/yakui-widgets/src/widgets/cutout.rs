@@ -55,35 +55,23 @@ impl CutOut {
 }
 
 #[derive(Debug)]
-pub struct CutOutWidget {
-    props: CutOut,
-}
+pub struct CutOutWidget;
 
 pub type CutOutResponse = ();
 
 impl Widget for CutOutWidget {
-    type Props<'a> = CutOut;
+    type Props = CutOut;
     type Response = CutOutResponse;
 
-    fn new() -> Self {
-        Self {
-            props: CutOut {
-                image: None,
-                image_color: Color::WHITE,
-                overlay_color: Color::CLEAR,
-                min_size: Vec2::ZERO,
-                radius: 0.0,
-            },
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
+    fn layout(&self, props: &Self::Props, mut ctx: LayoutContext<'_>, input: Constraints) -> Vec2 {
         let node = ctx.dom.get_current();
-        let mut size = self.props.min_size;
+        let mut size = props.min_size;
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, input);
@@ -93,25 +81,25 @@ impl Widget for CutOutWidget {
         input.constrain_min(size)
     }
 
-    fn paint(&self, mut ctx: PaintContext<'_>) {
+    fn paint(&self, props: &Self::Props, mut ctx: PaintContext<'_>) {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        if let Some(image) = self.props.image {
+        if let Some(image) = props.image {
             let texture_rect = Rect::from_pos_size(
                 (layout_node.rect.pos() - ctx.layout.viewport().pos())
                     / ctx.layout.viewport().size(),
                 layout_node.rect.size() / ctx.layout.viewport().size(),
             );
 
-            RoundedRectangle::new(layout_node.rect, self.props.radius)
-                .color(self.props.image_color)
+            RoundedRectangle::new(layout_node.rect, props.radius)
+                .color(props.image_color)
                 .texture((image, texture_rect))
                 .add(ctx.paint);
         }
 
-        RoundedRectangle::new(layout_node.rect, self.props.radius)
-            .color(self.props.overlay_color)
+        RoundedRectangle::new(layout_node.rect, props.radius)
+            .color(props.overlay_color)
             .add(ctx.paint);
 
         for &child in &node.children {

@@ -27,32 +27,29 @@ impl MaxWidth {
 }
 
 #[derive(Debug)]
-pub struct MaxWidthWidget {
-    props: MaxWidth,
-}
+pub struct MaxWidthWidget;
 
 pub type MaxWidthResponse = ();
 
 impl Widget for MaxWidthWidget {
-    type Props<'a> = MaxWidth;
+    type Props = MaxWidth;
     type Response = MaxWidthResponse;
 
-    fn new() -> Self {
-        Self {
-            props: MaxWidth {
-                max_width: f32::INFINITY,
-            },
-        }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn layout(&self, mut ctx: LayoutContext<'_>, mut constraints: Constraints) -> Vec2 {
+    fn layout(
+        &self,
+        props: &Self::Props,
+        mut ctx: LayoutContext<'_>,
+        mut constraints: Constraints,
+    ) -> Vec2 {
         let node = ctx.dom.get_current();
         let mut size = Vec2::ZERO;
-        constraints.max.x = constraints.max.x.min(self.props.max_width);
+        constraints.max.x = constraints.max.x.min(props.max_width);
 
         for &child in &node.children {
             let child_size = ctx.calculate_layout(child, constraints);

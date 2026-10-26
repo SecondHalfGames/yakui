@@ -25,29 +25,30 @@ impl Opaque {
 }
 
 #[derive(Debug)]
-pub struct OpaqueWidget {
-    props: Opaque,
-}
+pub struct OpaqueWidget;
 
 pub type OpaqueResponse = ();
 
 impl Widget for OpaqueWidget {
-    type Props<'a> = Opaque;
+    type Props = Opaque;
     type Response = OpaqueResponse;
 
-    fn new() -> Self {
-        Self { props: Opaque {} }
+    fn new(_props: &Self::Props) -> Self {
+        Self
     }
 
-    fn update(&mut self, props: Self::Props<'_>) -> Self::Response {
-        self.props = props;
-    }
+    fn update(&mut self, _props: &Self::Props) -> Self::Response {}
 
-    fn event_interest(&self) -> EventInterest {
+    fn event_interest(&self, _props: &Self::Props) -> EventInterest {
         EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_MOVE
     }
 
-    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+    fn event(
+        &mut self,
+        _props: &Self::Props,
+        _ctx: EventContext<'_>,
+        event: &WidgetEvent,
+    ) -> EventResponse {
         match event {
             WidgetEvent::MouseEnter
             | WidgetEvent::MouseLeave
