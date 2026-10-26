@@ -34,8 +34,15 @@ impl Multisampling {
             return SurfaceInfo {
                 format,
                 sample_count,
-                color_attachment: view,
-                resolve_target: None,
+                color_attachment: wgpu::RenderPassColorAttachment {
+                    view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                },
             };
         }
 
@@ -61,8 +68,15 @@ impl Multisampling {
         SurfaceInfo {
             format,
             sample_count,
-            color_attachment: ms_view,
-            resolve_target: Some(view),
+            color_attachment: wgpu::RenderPassColorAttachment {
+                view: ms_view,
+                depth_slice: None,
+                resolve_target: Some(view),
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            },
         }
     }
 }

@@ -5,6 +5,7 @@ use crate::id::TextureId;
 
 #[allow(missing_docs)]
 pub struct PaintMesh<V, I> {
+    /// Vertex positions, the unit here is in logical pixels.
     pub vertices: V,
     pub indices: I,
     pub texture: Option<(TextureId, Rect)>,
@@ -28,27 +29,38 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(missing_docs)]
-pub struct PaintCall {
+pub struct YakuiPaintCall {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
     pub texture: Option<TextureId>,
     pub pipeline: Pipeline,
-    pub clip: Option<Rect>,
 }
 
-impl PaintCall {
-    /// Create a new empty `PaintCall`.
+impl YakuiPaintCall {
+    /// Create a new empty `YakuiPaintCall`.
     pub fn new() -> Self {
         Self {
             vertices: Vec::new(),
             indices: Vec::new(),
             texture: None,
             pipeline: Pipeline::Main,
-            clip: None,
         }
     }
+}
+
+/// A user-managed ID for an externally managed paint call
+pub type UserPaintCallId = u64;
+
+/// Represents a paint call that may be internal to yakui or handled by the user.
+#[derive(Debug)]
+pub enum PaintCall {
+    /// A paint call that is internal to yakui.
+    Internal(YakuiPaintCall),
+
+    /// A paint call that is managed by the user or renderer.
+    User(UserPaintCallId),
 }
 
 #[derive(Debug, Clone, Copy)]
