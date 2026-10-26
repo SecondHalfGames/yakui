@@ -23,6 +23,10 @@ pub fn run() {
             }
         });
 
+        if button("Clear textbox!").clicked {
+            text.set("".to_string());
+        }
+
         let mut my_box = TextBox::new();
         my_box.min_width = 400.0;
         my_box.style.align = align.get();
