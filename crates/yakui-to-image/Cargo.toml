@@ -5,12 +5,11 @@ publish = false
 version = "0.0.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 yakui-core = { path = "../yakui-core" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 
+pollster.workspace = true
+image = { workspace = true, features = ["png"] }
+
 wgpu.workspace = true
-image = { version = "0.24.4", default-features = false, features = ["png"] }
-pollster = "0.3.0"

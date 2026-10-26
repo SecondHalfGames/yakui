@@ -3,7 +3,7 @@ name = "yakui-widgets"
 description = "Built-in widgets for yakui"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
 [features]
@@ -11,16 +11,24 @@ default = ["default-fonts"]
 
 # Include built-in fonts.
 default-fonts = []
+system-fonts = ["cosmic-text/fontconfig"]
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }
 
-fontdue = "0.8.0"
-thunderdome = "0.6.0"
-smol_str = "0.2.1"
+cosmic-text = { version = "0.19.0", default-features = false, features = [
+    "std",
+    "swash",
+] }
+sys-locale = "0.3.2"
+
+paste.workspace = true
+log.workspace = true
+thunderdome.workspace = true
+
+[target.'cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))'.dependencies]
+arboard = "3.6.1"
 
 [dev-dependencies]
 yakui = { path = "../yakui" }
 yakui-test = { path = "../yakui-test" }
-
-insta = "1.15.0"

@@ -12,7 +12,6 @@ In the future, this widget may be extended to support arbitrary transforms
 applied to layers.
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Layer {}
 
@@ -21,6 +20,7 @@ impl Layer {
         Self {}
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<LayerResponse> {
         widget_children::<LayerWidget, F>(children, self)
     }

@@ -33,7 +33,6 @@ Align::new(yakui::Alignment::TOP_RIGHT).show(|| {
 ```
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Align {
     pub alignment: Alignment,
@@ -50,6 +49,7 @@ impl Align {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<AlignResponse> {
         widget_children::<AlignWidget, F>(children, self)
     }

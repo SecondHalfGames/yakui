@@ -1,5 +1,6 @@
 use ash::vk;
 use yakui::geometry::{UVec2, Vec2};
+use yakui::style::TextStyle;
 use yakui_vulkan::*;
 
 use winit::{
@@ -45,10 +46,14 @@ fn main() {
             &vulkan_test.device,
             vulkan_test.present_queue,
             vulkan_test.device_memory_properties,
+            vulkan_test.device_properties,
         );
-        let mut options = yakui_vulkan::Options::default();
-        options.render_pass = vulkan_test.render_pass;
+        let options = yakui_vulkan::Options {
+            render_pass: vulkan_test.render_pass,
+            ..Default::default()
+        };
         let mut yakui_vulkan = YakuiVulkan::new(&vulkan_context, options);
+        yakui_vulkan.set_paint_limits(&vulkan_context, &mut yak);
         // Prepare for one frame in flight
         yakui_vulkan.transfers_submitted();
         let gui_state = GuiState {
@@ -68,7 +73,8 @@ fn main() {
     let mut winit_initializing = true;
 
     event_loop.set_control_flow(ControlFlow::Poll);
-    _ = event_loop.run(|event, event_loop| match event {
+    #[allow(deprecated)] // winit!! :shakes-fist:
+    let _ = event_loop.run(|event, event_loop| match event {
         Event::WindowEvent {
             event:
                 WindowEvent::CloseRequested
@@ -93,6 +99,7 @@ fn main() {
                 &vulkan_test.device,
                 vulkan_test.present_queue,
                 vulkan_test.device_memory_properties,
+                vulkan_test.device_properties,
             );
 
             yak.start();
@@ -214,9 +221,11 @@ fn gui(gui_state: &GuiState) {
         row(|| {
             label("Hello, world!");
 
-            let mut text = Text::new(48.0, "colored text!");
-            text.style.color = Color::RED;
-            text.show();
+            Text::with_style(
+                "colored text!",
+                TextStyle::label().font_size(48.0).color(Color::RED),
+            )
+            .show();
         });
 
         text(96.0, format!("look it is a {animal}"));
@@ -232,6 +241,7 @@ struct VulkanTest {
     instance: ash::Instance,
     surface_loader: ash::khr::surface::Instance,
     device_memory_properties: vk::PhysicalDeviceMemoryProperties,
+    device_properties: vk::PhysicalDeviceProperties,
 
     present_queue: vk::Queue,
 
@@ -259,10 +269,9 @@ impl VulkanTest {
     /// Vulkan Broadly lifted from: https://github.com/ash-rs/ash/blob/0.37.2/examples/src/lib.rs
     pub fn new(window_width: u32, window_height: u32, window: &winit::window::Window) -> Self {
         use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
-        use std::ffi::CStr;
 
         let entry = unsafe { ash::Entry::load().expect("failed to load Vulkan") };
-        let app_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"Yakui Vulkan Test\0") };
+        let app_name = c"Yakui Vulkan Test";
 
         let appinfo = vk::ApplicationInfo::default()
             .application_name(app_name)
@@ -511,6 +520,8 @@ impl VulkanTest {
         let device_memory_properties =
             unsafe { instance.get_physical_device_memory_properties(physical_device) };
 
+        let device_properties = unsafe { instance.get_physical_device_properties(physical_device) };
+
         Self {
             device,
             physical_device,
@@ -520,6 +531,7 @@ impl VulkanTest {
             surface_loader,
             swapchain_info,
             device_memory_properties,
+            device_properties,
             surface,
             swapchain,
             present_image_views,
@@ -712,6 +724,7 @@ fn init_winit(
 
     let event_loop = EventLoop::new().unwrap();
 
+    #[allow(deprecated)]
     let window = event_loop
         .create_window(
             Window::default_attributes()

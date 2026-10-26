@@ -7,16 +7,29 @@
 
 mod ignore_debug;
 
+pub mod util;
+
+// Stubbed out implementation awaiting:
+// https://github.com/1Password/arboard/pull/103
+// https://github.com/1Password/arboard/pull/171
+#[cfg_attr(
+    not(any(target_os = "linux", target_os = "macos", target_os = "windows")),
+    path = "clipboard_stub.rs"
+)]
+pub mod clipboard;
+
+pub mod border;
 pub mod colors;
 pub mod font;
 pub mod shapes;
 pub mod shorthand;
 pub mod style;
 pub mod text_renderer;
-pub mod util;
 pub mod widgets;
 
 pub use self::shorthand::*;
+
+pub use cosmic_text;
 
 #[doc(hidden)]
 pub struct DocTest {

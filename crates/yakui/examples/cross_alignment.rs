@@ -14,9 +14,7 @@ pub fn run(state: &mut ExampleState) {
     let index = (state.time.floor() as usize) % alignments.len();
     let alignment = alignments[index];
 
-    let mut row = List::row();
-    row.cross_axis_alignment = alignment;
-    row.show(|| {
+    List::row().cross_axis_alignment(alignment).show(|| {
         colored_box(Color::RED, [100.0, 100.0]);
         expanded(|| {
             colored_box(Color::GREEN, [100.0, 100.0]);

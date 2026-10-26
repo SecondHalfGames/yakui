@@ -20,7 +20,7 @@ impl fmt::Debug for Dom {
 
 struct ViewTree<'a>(&'a Arena<DomNode>);
 
-impl<'a> fmt::Debug for ViewTree<'a> {
+impl fmt::Debug for ViewTree<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let nodes = &self.0;
         let iter = nodes.iter().map(|(id, node)| {

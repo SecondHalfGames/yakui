@@ -28,7 +28,7 @@ pub fn run() {
 
                     for i in 0..num_segments {
                         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
-                        let center = layout_node.rect.pos() + layout_node.rect.size() / 2.0;
+                        let center = layout_node.rect.center();
 
                         let frac = (i as f32) / (num_segments as f32);
                         let start_angle = frac * TAU + (gap / 2.0);

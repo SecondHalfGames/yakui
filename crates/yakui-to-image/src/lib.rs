@@ -16,14 +16,12 @@ pub fn paint_and_save_to<P: AsRef<Path>>(state: &mut yakui_core::Yakui, path: P)
 
     let image = paint(state);
     let mut file = BufWriter::new(File::create(path).unwrap());
-    image
-        .write_to(&mut file, image::ImageOutputFormat::Png)
-        .unwrap();
+    image.write_to(&mut file, image::ImageFormat::Png).unwrap();
     file.flush().unwrap();
 }
 
 pub fn paint(state: &mut yakui_core::Yakui) -> RgbaImage {
     let graphics = pollster::block_on(Graphics::new());
-    let mut renderer = yakui_wgpu::YakuiWgpu::new(&graphics.device, &graphics.queue);
+    let mut renderer = yakui_wgpu::YakuiWgpu::new(graphics.device.clone(), graphics.queue.clone());
     graphics.paint(state, &mut renderer)
 }

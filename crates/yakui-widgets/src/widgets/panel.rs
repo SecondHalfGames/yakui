@@ -16,14 +16,12 @@ const _RESIZE_HANDLE_WIDTH: f32 = 6.0;
 /// for resizing: add a child widget for this purpose, or handle the hit
 /// detection and movement within a single widget?
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Panel {
     pub kind: PanelKind,
 }
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum PanelKind {
     Side,
     TopBottom,
@@ -42,6 +40,7 @@ impl Panel {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<PanelResponse> {
         widget_children::<PanelWidget, F>(children, self)
     }

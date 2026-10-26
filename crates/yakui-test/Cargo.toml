@@ -2,7 +2,6 @@
 name = "yakui-test"
 description = "Testing utilities for yakui widgets"
 publish = false
-version = "0.0.0"
 edition = "2021"
 
 [features]
@@ -12,4 +11,4 @@ images = ["yakui-to-image"]
 yakui-core = { path = "../yakui-core" }
 yakui-to-image = { path = "../yakui-to-image", optional = true }
 
-insta = "1.15.0"
+insta.workspace = true

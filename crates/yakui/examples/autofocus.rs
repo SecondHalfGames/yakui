@@ -1,21 +1,27 @@
+use bootstrap::ExampleState;
+use yakui::style::TextStyle;
 use yakui::widgets::{Pad, TextBox};
 use yakui::{center, use_state};
 
-pub fn run() {
-    let text = use_state(|| "".to_owned());
+pub fn run(state: &mut ExampleState) {
+    let text = use_state(String::new);
     let autofocus = use_state(|| false);
 
     center(|| {
-        let mut box1 = TextBox::new(text.borrow().as_str());
-        box1.style.font_size = 60.0;
-        box1.padding = Pad::all(50.0);
-        box1.placeholder = "placeholder".into();
+        let box1 = TextBox::new()
+            .style(TextStyle::label().font_size(60.0))
+            .padding(Pad::all(50.0))
+            .placeholder("placeholder");
 
-        let response = box1.show();
+        let response = box1.show(text.borrow().as_str());
 
         if !autofocus.get() {
             autofocus.set(true);
-            response.request_focus();
+
+            let focus_id = response.id;
+            state.commands.push(Box::new(move |yakui| {
+                yakui.request_focus(Some(focus_id));
+            }));
         }
 
         if let Some(new_text) = response.into_inner().text {
@@ -25,5 +31,5 @@ pub fn run() {
 }
 
 fn main() {
-    bootstrap::start(run as fn());
+    bootstrap::start(run as fn(&mut ExampleState));
 }

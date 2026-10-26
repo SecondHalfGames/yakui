@@ -5,17 +5,25 @@ use yakui_core::{
     ManagedTextureId, Response,
 };
 
-use crate::{shorthand::pad, util::widget_children, widgets::pad::Pad};
+use crate::{auto_builders, shorthand::pad, util::widget_children, widgets::pad::Pad};
 
 #[derive(Debug)]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct NineSlice {
-    texture: ManagedTextureId,
+    pub texture: ManagedTextureId,
+
     /// Texture margins in pixels around the central NineSlice region, before
     /// scaling.
+    pub margins: Pad,
+
+    pub scale: f32,
+}
+
+auto_builders!(NineSlice {
+    texture: ManagedTextureId,
     margins: Pad,
     scale: f32,
-}
+});
 
 impl NineSlice {
     pub fn new(texture: ManagedTextureId, margins: Pad, scale: f32) -> Self {
@@ -26,6 +34,7 @@ impl NineSlice {
         }
     }
 
+    #[track_caller]
     pub fn show(self, children: impl FnOnce()) -> Response<()> {
         let scaled_margins = {
             let mut m = self.margins;
@@ -79,7 +88,9 @@ impl Widget for NineSliceWidget {
 
         let rect = ctx.layout.get(ctx.dom.current()).unwrap().rect;
 
-        let texture = ctx.paint.texture(texture).unwrap();
+        let textures = ctx.paint.textures();
+
+        let texture = textures.get(texture).unwrap();
         let texture_size = texture.size().as_vec2();
 
         let top_left = rect.pos();
@@ -121,6 +132,8 @@ impl Widget for NineSliceWidget {
             props.texture.into(),
             Rect::from_pos_size(Vec2::ZERO, texture_size),
         ));
+        drop(textures);
+
         ctx.paint.add_mesh(mesh);
 
         let node = ctx.dom.get_current();

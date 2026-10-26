@@ -2,14 +2,15 @@ use std::borrow::Cow;
 
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Color;
-use yakui_core::input::MouseButton;
-use yakui_core::widget::{EventContext, Widget};
+use yakui_core::input::{KeyCode, MouseButton};
+use yakui_core::widget::{EventContext, FocusPolicy, Widget};
 use yakui_core::{Alignment, Response};
 
-use crate::colors;
+use crate::border::{Border, BorderRadius};
 use crate::style::{TextAlignment, TextStyle};
 use crate::util::widget;
 use crate::widgets::Pad;
+use crate::{auto_builders, colors};
 
 use super::{RenderText, RoundRect};
 
@@ -27,33 +28,49 @@ if yakui::button("Hello").clicked {
 ```
 */
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Button {
     pub text: Cow<'static, str>,
+    pub text_min_width: f32,
     pub padding: Pad,
-    pub border_radius: f32,
+    pub border_radius: BorderRadius,
     pub style: DynamicButtonStyle,
     pub hover_style: DynamicButtonStyle,
     pub down_style: DynamicButtonStyle,
+    pub focus_style: DynamicButtonStyle,
 }
+
+auto_builders!(Button {
+    text: Cow<'static, str>,
+    text_min_width: f32,
+    padding: Pad,
+    border_radius: BorderRadius,
+    style: DynamicButtonStyle,
+    hover_style: DynamicButtonStyle,
+    down_style: DynamicButtonStyle,
+    focus_style: DynamicButtonStyle,
+});
 
 /// Contains styles that can vary based on the state of the button.
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub struct DynamicButtonStyle {
     pub text: TextStyle,
     pub fill: Color,
+    pub border: Option<Border>,
 }
+
+auto_builders!(DynamicButtonStyle {
+    text: TextStyle,
+    fill: Color,
+    border: Option<Border>,
+});
 
 impl Default for DynamicButtonStyle {
     fn default() -> Self {
-        let mut text = TextStyle::label();
-        text.align = TextAlignment::Center;
-
         Self {
-            text,
+            text: TextStyle::label().align(TextAlignment::Center),
             fill: Color::GRAY,
+            border: None,
         }
     }
 }
@@ -62,43 +79,56 @@ impl Button {
     pub fn unstyled(text: impl Into<Cow<'static, str>>) -> Self {
         Self {
             text: text.into(),
+            text_min_width: 0.0,
             padding: Pad::ZERO,
-            border_radius: 0.0,
+            border_radius: BorderRadius::default(),
             style: DynamicButtonStyle::default(),
             hover_style: DynamicButtonStyle::default(),
             down_style: DynamicButtonStyle::default(),
+            focus_style: DynamicButtonStyle::default(),
         }
     }
 
     pub fn styled(text: impl Into<Cow<'static, str>>) -> Self {
         let style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3,
-            ..Default::default()
+            text: TextStyle::label()
+                .color(Color::WHITE.adjust(0.6))
+                .align(TextAlignment::Center),
+            border: Some(Border::new(colors::BACKGROUND_1, 1.0)),
         };
 
         let hover_style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3.adjust(1.2),
+            border: Some(Border::new(Color::WHITE.adjust(0.75), 1.0)),
             ..Default::default()
         };
 
         let down_style = DynamicButtonStyle {
             fill: colors::BACKGROUND_3.adjust(0.8),
+            border: Some(Border::new(Color::WHITE, 1.0)),
             ..Default::default()
         };
 
-        let mut text_style = TextStyle::label();
-        text_style.align = TextAlignment::Center;
+        let focus_style = DynamicButtonStyle {
+            fill: style.fill,
+            border: down_style.border,
+            ..Default::default()
+        };
 
         Self {
             text: text.into(),
+            text_min_width: 0.0,
             padding: Pad::balanced(20.0, 10.0),
-            border_radius: 6.0,
+            border_radius: 6.0.into(),
             style,
             hover_style,
             down_style,
+            focus_style,
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<ButtonResponse> {
         widget::<ButtonWidget>(self)
     }
@@ -110,12 +140,14 @@ pub struct ButtonWidget {
     hovering: bool,
     mouse_down: bool,
     clicked: bool,
+    nav_focused: bool,
 }
 
 #[derive(Debug)]
 pub struct ButtonResponse {
     pub hovering: bool,
     pub clicked: bool,
+    pub nav_focused: bool,
 }
 
 impl Widget for ButtonWidget {
@@ -128,6 +160,7 @@ impl Widget for ButtonWidget {
             hovering: false,
             mouse_down: false,
             clicked: false,
+            nav_focused: false,
         }
     }
 
@@ -135,32 +168,42 @@ impl Widget for ButtonWidget {
         self.props = props;
 
         let mut color = self.props.style.fill;
-        let mut text_style = self.props.style.text.clone();
+        let mut border = self.props.style.border;
+        let mut text_style = &self.props.style.text;
 
         if self.mouse_down {
             let style = &self.props.down_style;
             color = style.fill;
-            text_style = style.text.clone();
+            text_style = &style.text;
+            border = style.border;
         } else if self.hovering {
             let style = &self.props.hover_style;
             color = style.fill;
-            text_style = style.text.clone();
+            text_style = &style.text;
+            border = style.border;
+        } else if self.nav_focused {
+            let style = &self.props.focus_style;
+            color = style.fill;
+            text_style = &style.text;
+            border = style.border;
         }
 
-        let alignment = match text_style.align {
+        let align = match text_style.align {
             TextAlignment::Start => Alignment::CENTER_LEFT,
             TextAlignment::Center => Alignment::CENTER,
             TextAlignment::End => Alignment::CENTER_RIGHT,
         };
 
-        let mut container = RoundRect::new(self.props.border_radius);
-        container.color = color;
+        let container = RoundRect::new(self.props.border_radius)
+            .border(border)
+            .color(color);
         container.show_children(|| {
             crate::pad(self.props.padding, || {
-                crate::align(alignment, || {
-                    let mut text = RenderText::label(self.props.text.clone());
-                    text.style = text_style;
-                    text.show();
+                crate::align(align, || {
+                    RenderText::new()
+                        .inline(true)
+                        .min_width(self.props.text_min_width)
+                        .show(&self.props.text, text_style);
                 });
             });
         });
@@ -171,11 +214,16 @@ impl Widget for ButtonWidget {
         Self::Response {
             hovering: self.hovering,
             clicked,
+            nav_focused: self.nav_focused,
         }
     }
 
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+    }
+
     fn event_interest(&self) -> EventInterest {
-        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE
+        EventInterest::MOUSE_INSIDE | EventInterest::MOUSE_OUTSIDE | EventInterest::FOCUSED_KEYBOARD
     }
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
@@ -212,6 +260,23 @@ impl Widget for ButtonWidget {
 
                     EventResponse::Bubble
                 }
+            }
+            WidgetEvent::FocusChanged {
+                focused,
+                navigation,
+            } => {
+                self.nav_focused = *focused && *navigation;
+                EventResponse::Bubble
+            }
+            WidgetEvent::KeyChanged {
+                key: KeyCode::Enter | KeyCode::NumpadEnter,
+                down,
+                ..
+            } => {
+                if *down {
+                    self.clicked = true;
+                }
+                EventResponse::Sink
             }
             _ => EventResponse::Bubble,
         }

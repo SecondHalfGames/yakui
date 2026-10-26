@@ -4,9 +4,7 @@ use yakui::{button, checkbox, use_state};
 pub fn run() {
     let shown = use_state(|| false);
 
-    let mut col = List::column();
-    col.item_spacing = 8.0;
-    col.show(|| {
+    List::column().item_spacing(8.0).show(|| {
         shown.set(checkbox(shown.get()).checked);
         if shown.get() {
             button("Hello!");

@@ -8,7 +8,6 @@ use crate::util::widget_children;
 Offsets its child by the given number of logical pixels.
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Offset {
     pub offset: Vec2,
@@ -19,6 +18,7 @@ impl Offset {
         Self { offset }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<OffsetResponse> {
         widget_children::<OffsetWidget, F>(children, self)
     }

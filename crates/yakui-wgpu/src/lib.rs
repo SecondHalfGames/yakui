@@ -27,14 +27,24 @@ use self::samplers::Samplers;
 use self::texture::{GpuManagedTexture, GpuTexture};
 
 pub struct YakuiWgpu {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+
     limits: PaintLimits,
     main_pipeline: PipelineCache,
     text_pipeline: PipelineCache,
+
+    premul_pipeline: wgpu::RenderPipeline,
+    premul_bind_group_layout: wgpu::BindGroupLayout,
+
     samplers: Samplers,
     textures: Arena<GpuTexture>,
     managed_textures: HashMap<ManagedTextureId, GpuManagedTexture>,
     texture_bindgroup_cache: TextureBindgroupCache,
+}
 
+/// Holds per-surface buffers that yakui-wgpu needs to paint
+pub struct Buffers {
     vertices: Buffer,
     indices: Buffer,
     commands: Vec<DrawCommand>,
@@ -69,7 +79,7 @@ impl Vertex {
 }
 
 impl YakuiWgpu {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue) -> Self {
+    pub fn new(device: wgpu::Device, queue: wgpu::Queue) -> Self {
         let limits = PaintLimits {
             max_texture_size_1d: device.limits().max_texture_dimension_1d,
             max_texture_size_2d: device.limits().max_texture_dimension_2d,
@@ -100,48 +110,121 @@ impl YakuiWgpu {
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("yakui Main Pipeline Layout"),
-            bind_group_layouts: &[&layout],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
         });
 
         let main_pipeline = PipelineCache::new(pipeline_layout);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("yakui Text Pipeline Layout"),
-            bind_group_layouts: &[&layout],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
         });
 
         let text_pipeline = PipelineCache::new(pipeline_layout);
 
-        let samplers = Samplers::new(device);
+        let samplers = Samplers::new(&device);
+
+        let premul_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("yakui Premultiply Texture Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
+                        count: None,
+                    },
+                ],
+            });
+
+        let premul_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("yakui Premultiply Texture Pipeline Layout"),
+                bind_group_layouts: &[Some(&premul_bind_group_layout)],
+                immediate_size: 0,
+            });
+
+        let premul_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Main Shader"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shaders/premul.wgsl").into()),
+        });
+
+        let premul_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("yakui Premultiply Texture Pipeline"),
+            layout: Some(&premul_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &premul_shader,
+                entry_point: None,
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &premul_shader,
+                entry_point: None,
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                ..Default::default()
+            },
+            multiview_mask: None,
+            cache: None,
+        });
 
         let default_texture_data =
             Texture::new(TextureFormat::Rgba8Srgb, UVec2::new(1, 1), vec![255; 4]);
-        let default_texture = GpuManagedTexture::new(device, queue, &default_texture_data);
+        let default_texture = GpuManagedTexture::new(
+            &device,
+            &queue,
+            &default_texture_data,
+            &premul_pipeline,
+            &premul_bind_group_layout,
+            &samplers,
+        );
         let default_bindgroup = bindgroup_cache::bindgroup(
-            device,
+            &device,
             &layout,
             &samplers,
             &default_texture.view,
             default_texture.min_filter,
             default_texture.mag_filter,
-            wgpu::FilterMode::Nearest,
+            wgpu::MipmapFilterMode::Nearest,
             wgpu::AddressMode::ClampToEdge,
         );
 
         Self {
+            device,
+            queue,
+
             limits,
             main_pipeline,
             text_pipeline,
             samplers,
+            premul_pipeline,
+            premul_bind_group_layout,
             textures: Arena::new(),
             managed_textures: HashMap::new(),
 
             texture_bindgroup_cache: TextureBindgroupCache::new(layout, default_bindgroup),
-            vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
-            indices: Buffer::new(wgpu::BufferUsages::INDEX),
-            commands: Vec::new(),
         }
     }
 
@@ -152,7 +235,7 @@ impl YakuiWgpu {
         view: impl Into<Arc<wgpu::TextureView>>,
         min_filter: wgpu::FilterMode,
         mag_filter: wgpu::FilterMode,
-        mipmap_filter: wgpu::FilterMode,
+        mipmap_filter: wgpu::MipmapFilterMode,
         address_mode: wgpu::AddressMode,
     ) -> TextureId {
         let index = self.textures.insert(GpuTexture {
@@ -184,19 +267,29 @@ impl YakuiWgpu {
         existing.view = view.into();
     }
 
+    #[must_use]
+    pub fn buffers(&self) -> Buffers {
+        Buffers {
+            vertices: Buffer::new(wgpu::BufferUsages::VERTEX),
+            indices: Buffer::new(wgpu::BufferUsages::INDEX),
+            commands: Vec::new(),
+        }
+    }
+
     #[must_use = "YakuiWgpu::paint returns a command buffer which MUST be submitted to wgpu."]
     pub fn paint(
         &mut self,
         state: &mut yakui_core::Yakui,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        buffers: &mut Buffers,
         surface: SurfaceInfo<'_>,
     ) -> wgpu::CommandBuffer {
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("yakui Encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("yakui Encoder"),
+            });
 
-        self.paint_with_encoder(state, device, queue, &mut encoder, surface);
+        self.paint_with_encoder(state, buffers, &mut encoder, surface);
 
         encoder.finish()
     }
@@ -204,8 +297,7 @@ impl YakuiWgpu {
     pub fn paint_with_encoder(
         &mut self,
         state: &mut yakui_core::Yakui,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        buffers: &mut Buffers,
         encoder: &mut wgpu::CommandEncoder,
         surface: SurfaceInfo<'_>,
     ) {
@@ -214,18 +306,18 @@ impl YakuiWgpu {
         state.set_paint_limit(self.limits);
         let paint = state.paint();
 
-        self.update_textures(device, paint, queue);
+        self.update_textures(paint);
 
         let layers = paint.layers();
         if layers.iter().all(|layer| layer.calls.is_empty()) {
             return;
         }
 
-        self.update_buffers(device, paint);
+        self.update_buffers(paint, buffers);
 
-        let vertices = self.vertices.upload(device, queue);
-        let indices = self.indices.upload(device, queue);
-        let commands = &self.commands;
+        let vertices = buffers.vertices.upload(&self.device, &self.queue);
+        let indices = buffers.indices.upload(&self.device, &self.queue);
+        let commands = &buffers.commands;
 
         if paint.surface_size() == Vec2::ZERO {
             return;
@@ -236,6 +328,7 @@ impl YakuiWgpu {
                 label: Some("yakui Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: surface.color_attachment,
+                    depth_slice: None,
                     resolve_target: surface.resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,
@@ -251,14 +344,14 @@ impl YakuiWgpu {
             let mut last_clip = None;
 
             let main_pipeline = self.main_pipeline.get(
-                device,
+                &self.device,
                 surface.format,
                 surface.sample_count,
                 make_main_pipeline,
             );
 
             let text_pipeline = self.text_pipeline.get(
-                device,
+                &self.device,
                 surface.format,
                 surface.sample_count,
                 make_text_pipeline,
@@ -268,7 +361,6 @@ impl YakuiWgpu {
                 match command.pipeline {
                     Pipeline::Main => render_pass.set_pipeline(main_pipeline),
                     Pipeline::Text => render_pass.set_pipeline(text_pipeline),
-                    _ => continue,
                 }
 
                 if command.clip != last_clip {
@@ -313,12 +405,12 @@ impl YakuiWgpu {
         }
     }
 
-    fn update_buffers(&mut self, device: &wgpu::Device, paint: &PaintDom) {
+    fn update_buffers(&mut self, paint: &PaintDom, buffers: &mut Buffers) {
         profiling::scope!("update_buffers");
 
-        self.vertices.clear();
-        self.indices.clear();
-        self.commands.clear();
+        buffers.vertices.clear();
+        buffers.indices.clear();
+        buffers.commands.clear();
         self.texture_bindgroup_cache.clear();
 
         let commands = paint
@@ -332,14 +424,14 @@ impl YakuiWgpu {
                     color: vertex.color,
                 });
 
-                let base = self.vertices.len() as u32;
+                let base = buffers.vertices.len() as u32;
                 let indices = call.indices.iter().map(|&index| base + index as u32);
 
-                let start = self.indices.len() as u32;
+                let start = buffers.indices.len() as u32;
                 let end = start + indices.len() as u32;
 
-                self.vertices.extend(vertices);
-                self.indices.extend(indices);
+                buffers.vertices.extend(vertices);
+                buffers.indices.extend(indices);
 
                 let bind_group_entry = call
                     .texture
@@ -351,7 +443,7 @@ impl YakuiWgpu {
                                 &texture.view,
                                 texture.min_filter,
                                 texture.mag_filter,
-                                wgpu::FilterMode::Nearest,
+                                wgpu::MipmapFilterMode::Nearest,
                                 texture.address_mode,
                             ))
                         }
@@ -378,7 +470,7 @@ impl YakuiWgpu {
                                 address_mode,
                             };
                             self.texture_bindgroup_cache.update(
-                                device,
+                                &self.device,
                                 entry,
                                 view,
                                 &self.samplers,
@@ -395,24 +487,44 @@ impl YakuiWgpu {
                 }
             });
 
-        self.commands.extend(commands);
+        buffers.commands.extend(commands);
     }
 
-    fn update_textures(&mut self, device: &wgpu::Device, paint: &PaintDom, queue: &wgpu::Queue) {
+    fn update_textures(&mut self, paint: &PaintDom) {
         profiling::scope!("update_textures");
 
-        for (id, texture) in paint.textures() {
-            self.managed_textures
-                .entry(id)
-                .or_insert_with(|| GpuManagedTexture::new(device, queue, texture));
+        let textures = paint.textures();
+
+        {
+            for (id, texture) in textures.iter() {
+                self.managed_textures.entry(id).or_insert_with(|| {
+                    GpuManagedTexture::new(
+                        &self.device,
+                        &self.queue,
+                        texture,
+                        &self.premul_pipeline,
+                        &self.premul_bind_group_layout,
+                        &self.samplers,
+                    )
+                });
+            }
         }
 
-        for (id, change) in paint.texture_edits() {
+        for (id, change) in textures.edits() {
             match change {
                 TextureChange::Added => {
-                    let texture = paint.texture(id).unwrap();
-                    self.managed_textures
-                        .insert(id, GpuManagedTexture::new(device, queue, texture));
+                    let texture = textures.get(id).unwrap();
+                    self.managed_textures.insert(
+                        id,
+                        GpuManagedTexture::new(
+                            &self.device,
+                            &self.queue,
+                            texture,
+                            &self.premul_pipeline,
+                            &self.premul_bind_group_layout,
+                            &self.samplers,
+                        ),
+                    );
                 }
 
                 TextureChange::Removed => {
@@ -421,8 +533,15 @@ impl YakuiWgpu {
 
                 TextureChange::Modified => {
                     if let Some(existing) = self.managed_textures.get_mut(&id) {
-                        let texture = paint.texture(id).unwrap();
-                        existing.update(device, queue, texture);
+                        let texture = textures.get(id).unwrap();
+                        existing.update(
+                            &self.device,
+                            &self.queue,
+                            texture,
+                            &self.premul_pipeline,
+                            &self.premul_bind_group_layout,
+                            &self.samplers,
+                        );
                     }
                 }
             }
@@ -455,7 +574,7 @@ fn make_main_pipeline(
             module: &main_shader,
             entry_point: None,
             compilation_options: Default::default(),
-            buffers: &[Vertex::DESCRIPTOR],
+            buffers: &[Some(Vertex::DESCRIPTOR)],
         },
         fragment: Some(wgpu::FragmentState {
             module: &main_shader,
@@ -481,7 +600,7 @@ fn make_main_pipeline(
             count: samples,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -504,7 +623,7 @@ fn make_text_pipeline(
             module: &text_shader,
             entry_point: None,
             compilation_options: Default::default(),
-            buffers: &[Vertex::DESCRIPTOR],
+            buffers: &[Some(Vertex::DESCRIPTOR)],
         },
         fragment: Some(wgpu::FragmentState {
             module: &text_shader,
@@ -530,7 +649,7 @@ fn make_text_pipeline(
             count: samples,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }

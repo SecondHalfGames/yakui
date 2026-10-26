@@ -69,12 +69,12 @@ impl Widget for KeyboardWidget {
     }
 
     fn layout(&self, ctx: LayoutContext<'_>, _constraints: Constraints) -> Vec2 {
-        ctx.input.set_selection(Some(ctx.dom.current()));
+        ctx.input.set_focus(Some(ctx.dom.current()), false);
         Vec2::ZERO
     }
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
-        if let WidgetEvent::TextInput(_) = event {
+        if let WidgetEvent::TextInput(..) = event {
             self.count.fetch_add(1, Ordering::SeqCst);
         }
 

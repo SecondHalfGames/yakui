@@ -1,3 +1,4 @@
+use crate::auto_builders;
 use crate::shapes::RoundedRectangle;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
@@ -12,7 +13,6 @@ implementing a blur-behind effect.
 Responds with [CutOutResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct CutOut {
     pub image: Option<TextureId>,
@@ -21,6 +21,13 @@ pub struct CutOut {
     pub min_size: Vec2,
     pub radius: f32,
 }
+
+auto_builders!(CutOut {
+    image_color: Color,
+    overlay_color: Color,
+    min_size: Vec2,
+    radius: f32,
+});
 
 impl CutOut {
     pub fn new<I>(image: I, overlay_color: Color) -> Self
@@ -36,10 +43,12 @@ impl CutOut {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<CutOutResponse> {
         widget::<CutOutWidget>(self)
     }
 
+    #[track_caller]
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<CutOutResponse> {
         widget_children::<CutOutWidget, F>(children, self)
     }
@@ -95,15 +104,15 @@ impl Widget for CutOutWidget {
                 layout_node.rect.size() / ctx.layout.viewport().size(),
             );
 
-            let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
-            rect.color = self.props.image_color;
-            rect.texture = Some((image, texture_rect));
-            rect.add(ctx.paint);
+            RoundedRectangle::new(layout_node.rect, self.props.radius)
+                .color(self.props.image_color)
+                .texture((image, texture_rect))
+                .add(ctx.paint);
         }
 
-        let mut rect = RoundedRectangle::new(layout_node.rect, self.props.radius);
-        rect.color = self.props.overlay_color;
-        rect.add(ctx.paint);
+        RoundedRectangle::new(layout_node.rect, self.props.radius)
+            .color(self.props.overlay_color)
+            .add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

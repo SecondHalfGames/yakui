@@ -3,18 +3,18 @@ name = "yakui-app"
 description = "Wrapper crate for yakui, a UI library for games"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
 [features]
 
 [dependencies]
 yakui = { path = "../yakui", version = "0.3.0" }
-yakui-core = { path = "../yakui-core", version = "0.3.0" }
-yakui-widgets = { path = "../yakui-widgets", version = "0.3.0", default-features = false }
 yakui-winit = { path = "../yakui-winit", version = "0.3.0" }
 yakui-wgpu = { path = "../yakui-wgpu", version = "0.3.0" }
 
-profiling = { version = "1.0.6", optional = true }
-winit = { version = "0.30.0" }
 wgpu.workspace = true
+
+winit = { workspace = true, features = ["rwh_06"] }
+
+profiling.workspace = true

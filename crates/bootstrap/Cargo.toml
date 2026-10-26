@@ -9,17 +9,23 @@ profile = ["profiling/profile-with-tracy", "tracy-client"]
 
 [dependencies]
 yakui = { path = "../yakui" }
-yakui-app = { path = "../yakui-app" }
 yakui-wgpu = { path = "../yakui-wgpu" }
 yakui-winit = { path = "../yakui-winit" }
+yakui-sdl3 = { path = "../yakui-sdl3" }
 
-anyhow = "1.0.58"
-env_logger = "0.10.0"
-image = { version = "0.24.2", default-features = false, features = ["png"] }
-log = "0.4.17"
-pollster = "0.3.0"
-profiling = "1.0.6"
-tracy-client = { version = "0.15.1", optional = true }
+env_logger.workspace = true
+log.workspace = true
+pollster.workspace = true
+image = { workspace = true, features = ["png"] }
+anyhow.workspace = true
 
-winit = "0.30.0"
 wgpu.workspace = true
+
+sdl3 = { workspace = true, features = [
+    "build-from-source",
+    "raw-window-handle",
+] }
+winit = { workspace = true, default-features = true }
+
+profiling.workspace = true
+tracy-client = { workspace = true, optional = true }

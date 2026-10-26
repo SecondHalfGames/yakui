@@ -3,20 +3,21 @@ name = "yakui-core"
 description = "Core crate for yakui, a UI library for games"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
 
 [dependencies]
 anymap = "0.12.1"
-bitflags = "2.4.2"
-glam = "0.29.0"
-keyboard-types = { version = "0.7.0", default-features = false }
-log = "0.4.17"
+bitflags = "2.11.1"
 fast-srgb8 = "1.0.0"
-profiling = "1.0.6"
-smallvec = "1.9.0"
-thunderdome = "0.6.0"
+keyboard-types = { version = "0.8.3", default-features = false }
+parking_lot = "0.12.5"
 
-[features]
+log.workspace = true
+glam.workspace = true
+thunderdome.workspace = true
+smallvec.workspace = true
+
+profiling.workspace = true

@@ -6,9 +6,6 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-#[macro_use]
-mod mopmopa;
-
 mod id;
 mod response;
 mod state;
@@ -20,6 +17,7 @@ pub mod event;
 pub mod geometry;
 pub mod input;
 pub mod layout;
+pub mod navigation;
 pub mod paint;
 pub mod widget;
 

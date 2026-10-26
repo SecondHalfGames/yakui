@@ -6,7 +6,7 @@ use crate::id::WidgetId;
 ///
 /// Widget responses can convey information like whether the widget was clicked,
 /// is currently hovered, or had an update to its state.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Response<T> {
     inner: T,
 
@@ -22,11 +22,6 @@ impl<T> Response<T> {
     /// Unwrap the response into the underlying type.
     pub fn into_inner(self) -> T {
         self.inner
-    }
-
-    /// Request that the widget with this response should receive focus.
-    pub fn request_focus(&self) {
-        crate::context::dom().request_focus(self.id);
     }
 }
 

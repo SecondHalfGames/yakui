@@ -1,10 +1,12 @@
 use std::cell::Cell;
 
+use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
-use yakui_core::widget::{LayoutContext, PaintContext, Widget};
+use yakui_core::input::KeyCode;
+use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::{colored_circle, colors, draggable, util};
+use crate::{auto_builders, colored_circle, colors, draggable, util};
 
 use crate::colored_box;
 
@@ -17,7 +19,6 @@ const KNOB_SIZE: f32 = 24.0;
 const TOTAL_HEIGHT: f32 = KNOB_SIZE * 1.5;
 
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Slider {
     pub value: f64,
@@ -25,6 +26,13 @@ pub struct Slider {
     pub max: f64,
     pub step: Option<f64>,
 }
+
+auto_builders!(Slider {
+    value: f64,
+    min: f64,
+    max: f64,
+    step: Option<f64>,
+});
 
 impl Slider {
     pub fn new(value: f64, min: f64, max: f64) -> Self {
@@ -36,21 +44,48 @@ impl Slider {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<SliderResponse> {
         util::widget::<SliderWidget>(self)
     }
 }
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct SliderResponse {
+    pub confirmed: bool,
     pub value: Option<f64>,
+    pub focused: bool,
 }
 
 #[derive(Debug)]
 pub struct SliderWidget {
     props: Slider,
     rect: Cell<Option<Rect>>,
+    dragging: bool,
+    pending_value: Option<f64>,
+    confirmed: bool,
+    focused: bool,
+}
+
+impl SliderWidget {
+    fn current_value(&self) -> f64 {
+        self.pending_value.unwrap_or(self.props.value)
+    }
+
+    fn keyboard_step(&self) -> f64 {
+        self.props
+            .step
+            // 1% if no step configured
+            .unwrap_or((self.props.max - self.props.min) / 100.0)
+            .abs()
+    }
+
+    fn clamp_value(&self, value: f64) -> f64 {
+        value.clamp(
+            self.props.min.min(self.props.max),
+            self.props.min.max(self.props.max),
+        )
+    }
 }
 
 impl Widget for SliderWidget {
@@ -61,6 +96,10 @@ impl Widget for SliderWidget {
         Self {
             props: Slider::new(0.0, 0.0, 1.0),
             rect: Cell::new(None),
+            dragging: false,
+            pending_value: None,
+            confirmed: false,
+            focused: false,
         }
     }
 
@@ -71,6 +110,10 @@ impl Widget for SliderWidget {
         let res = draggable(|| {
             colored_circle(KNOB_COLOR, KNOB_SIZE);
         });
+
+        let confirmed = (self.dragging && res.dragging.is_none()) || self.confirmed;
+        self.confirmed = false;
+        self.dragging = res.dragging.is_some();
 
         let mut value = self.props.value;
 
@@ -83,14 +126,27 @@ impl Widget for SliderWidget {
             value = self.props.min + percentage as f64 * (self.props.max - self.props.min);
         }
 
+        if let Some(pending_value) = self.pending_value.take() {
+            value = pending_value;
+        }
+
         if let Some(step) = self.props.step {
             value = round_to_step(value, step);
         }
+        value = self.clamp_value(value);
 
         if value != self.props.value {
-            SliderResponse { value: Some(value) }
+            SliderResponse {
+                value: Some(value),
+                confirmed,
+                focused: self.focused,
+            }
         } else {
-            SliderResponse { value: None }
+            SliderResponse {
+                value: None,
+                confirmed,
+                focused: self.focused,
+            }
         }
     }
 
@@ -119,6 +175,40 @@ impl Widget for SliderWidget {
         ctx.layout.set_pos(knob, knob_pos);
 
         size
+    }
+
+    fn focus_policy(&self) -> FocusPolicy {
+        FocusPolicy::SEQUENTIAL | FocusPolicy::DIRECTIONAL | FocusPolicy::POINTER
+    }
+
+    fn event_interest(&self) -> EventInterest {
+        EventInterest::FOCUSED_KEYBOARD
+    }
+
+    fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
+        match event {
+            WidgetEvent::FocusChanged { focused, .. } => {
+                self.focused = *focused;
+                EventResponse::Bubble
+            }
+            WidgetEvent::KeyChanged { key, down, .. } => {
+                let value = match key {
+                    KeyCode::ArrowLeft => self.current_value() - self.keyboard_step(),
+                    KeyCode::ArrowRight => self.current_value() + self.keyboard_step(),
+                    KeyCode::Home => self.props.min,
+                    KeyCode::End => self.props.max,
+                    _ => return EventResponse::Bubble,
+                };
+
+                if *down {
+                    self.pending_value = Some(self.clamp_value(value));
+                    self.confirmed = true;
+                }
+
+                EventResponse::Sink
+            }
+            _ => EventResponse::Bubble,
+        }
     }
 
     fn paint(&self, mut ctx: PaintContext<'_>) {

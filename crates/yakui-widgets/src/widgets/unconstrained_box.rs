@@ -2,6 +2,7 @@ use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -10,12 +11,16 @@ A box that renders its child with one or both of its constraint axes ignored.
 Responds with [UnconstrainedBoxResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct UnconstrainedBox {
     pub constrain_x: bool,
     pub constrain_y: bool,
 }
+
+auto_builders!(UnconstrainedBox {
+    constrain_x: bool,
+    constrain_y: bool,
+});
 
 impl UnconstrainedBox {
     pub fn new() -> Self {
@@ -25,6 +30,7 @@ impl UnconstrainedBox {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<UnconstrainedBoxResponse> {
         widget_children::<UnconstrainedBoxWidget, F>(children, self)
     }

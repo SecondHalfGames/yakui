@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 /// Defines box constraints used for layout.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Constraints {
     /// The minimum size that is allowed by these constraints.
     pub min: Vec2,
@@ -13,7 +13,7 @@ pub struct Constraints {
 impl Constraints {
     /// Create a new `Constraints` with a minimum size of zero and the given
     /// maximum.
-    pub fn loose(max: Vec2) -> Self {
+    pub const fn loose(max: Vec2) -> Self {
         Self {
             min: Vec2::ZERO,
             max,
@@ -22,7 +22,7 @@ impl Constraints {
 
     /// Create a new `Constraints` whose minimum and maximum constraints are the
     /// given value.
-    pub fn tight(value: Vec2) -> Self {
+    pub const fn tight(value: Vec2) -> Self {
         Self {
             min: value,
             max: value,
@@ -31,10 +31,28 @@ impl Constraints {
 
     /// Create a new `Constraints` whose minimum size is zero and whose maximum
     /// is infinite.
-    pub fn none() -> Self {
+    pub const fn none() -> Self {
         Self {
             min: Vec2::ZERO,
             max: Vec2::new(f32::INFINITY, f32::INFINITY),
+        }
+    }
+
+    /// Create a new `Constraints` whose minimum and maximum width are the given
+    /// values, and whose height is infinite.
+    pub const fn width(min: f32, max: f32) -> Self {
+        Self {
+            min: Vec2::new(min, 0.0),
+            max: Vec2::new(max, f32::INFINITY),
+        }
+    }
+
+    /// Create a new `Constraints` whose minimum and maximum height are the given
+    /// values, and whose width is infinite.
+    pub const fn height(min: f32, max: f32) -> Self {
+        Self {
+            min: Vec2::new(0.0, min),
+            max: Vec2::new(f32::INFINITY, max),
         }
     }
 

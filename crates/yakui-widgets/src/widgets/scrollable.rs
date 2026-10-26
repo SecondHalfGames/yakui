@@ -3,12 +3,11 @@ use std::cell::Cell;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
+use yakui_core::{Response, WidgetId};
 
 use crate::util::widget_children;
 
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Scrollable {
     pub direction: Option<ScrollDirection>,
@@ -25,6 +24,7 @@ impl Scrollable {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ScrollableResponse> {
         widget_children::<ScrollableWidget, F>(children, self)
     }
@@ -35,12 +35,26 @@ pub enum ScrollDirection {
     Y,
 }
 
+impl ScrollDirection {
+    fn axis(self, vec: Vec2) -> f32 {
+        match self {
+            ScrollDirection::Y => vec.y,
+        }
+    }
+
+    fn axis_mut(self, vec: &mut Vec2) -> &mut f32 {
+        match self {
+            ScrollDirection::Y => &mut vec.y,
+        }
+    }
+}
+
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct ScrollableWidget {
     props: Scrollable,
     scroll_position: Cell<Vec2>,
     canvas_size: Cell<Vec2>,
+    last_focus: Cell<Option<WidgetId>>,
 }
 
 pub type ScrollableResponse = ();
@@ -54,6 +68,7 @@ impl Widget for ScrollableWidget {
             props: Scrollable::none(),
             scroll_position: Cell::new(Vec2::ZERO),
             canvas_size: Cell::new(Vec2::ZERO),
+            last_focus: Cell::new(None),
         }
     }
 
@@ -82,6 +97,7 @@ impl Widget for ScrollableWidget {
         self.canvas_size.set(canvas_size);
 
         let size = constraints.constrain(canvas_size);
+        self.scroll_to_focus(&ctx, size);
 
         let max_scroll_position = (canvas_size - size).max(Vec2::ZERO);
         let mut scroll_position = self
@@ -118,12 +134,50 @@ impl Widget for ScrollableWidget {
 
     fn event(&mut self, _ctx: EventContext<'_>, event: &WidgetEvent) -> EventResponse {
         match *event {
-            WidgetEvent::MouseScroll { delta } => {
+            WidgetEvent::MouseScroll { delta, .. } => {
                 let pos = self.scroll_position.get();
                 self.scroll_position.set(pos + delta);
                 EventResponse::Sink
             }
             _ => EventResponse::Bubble,
         }
+    }
+}
+
+impl ScrollableWidget {
+    fn scroll_to_focus(&self, ctx: &LayoutContext<'_>, viewport_size: Vec2) {
+        let Some(dir) = self.props.direction else {
+            return;
+        };
+
+        let focus = ctx.input.focus();
+        if self.last_focus.replace(focus) == focus {
+            return;
+        }
+        let Some(focus) = focus else {
+            return;
+        };
+        let scrollable = ctx.dom.current();
+        let Some(focused_rect) = ctx.rect_relative_to(focus, scrollable) else {
+            return;
+        };
+
+        let mut scroll_position = self.scroll_position.get();
+
+        let current_scroll = dir.axis(scroll_position);
+        let viewport_end = dir.axis(viewport_size);
+
+        let visible_start = dir.axis(focused_rect.pos()) - current_scroll;
+        let visible_end = dir.axis(focused_rect.max()) - current_scroll;
+
+        if visible_start < 0.0 {
+            // before the viewport
+            *dir.axis_mut(&mut scroll_position) += visible_start;
+        } else if visible_end > viewport_end {
+            // after the viewport
+            *dir.axis_mut(&mut scroll_position) += visible_end - viewport_end;
+        }
+
+        self.scroll_position.set(scroll_position);
     }
 }

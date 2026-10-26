@@ -8,9 +8,7 @@ pub fn run() {
     let sliding = use_state(|| 50.0);
 
     pad(Pad::all(20.0), || {
-        let mut col = List::column();
-        col.item_spacing = 8.0;
-        col.show(|| {
+        List::column().item_spacing(8.0).show(|| {
             if button("Button").clicked {
                 println!("Button clicked");
             }
@@ -18,9 +16,9 @@ pub fn run() {
             let res = checkbox(checked.get());
             checked.set(res.checked);
 
-            let res = textbox(name.borrow().clone());
-            if let Some(new_name) = res.text.as_ref() {
-                name.set(new_name.clone());
+            let res = textbox(name.borrow().as_str());
+            if let Some(new_text) = res.into_inner().text {
+                name.set(new_text);
             }
 
             row(|| {
@@ -32,10 +30,9 @@ pub fn run() {
             });
 
             row(|| {
-                let mut slider = Slider::new(sliding.get(), 0.0, 100.0);
-                slider.step = Some(step_size.get());
-
-                let res = slider.show();
+                let res = Slider::new(sliding.get(), 0.0, 100.0)
+                    .step(step_size.get())
+                    .show();
                 if let Some(new_value) = res.value {
                     sliding.set(new_value);
                 }

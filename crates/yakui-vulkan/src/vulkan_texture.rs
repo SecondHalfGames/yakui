@@ -183,7 +183,6 @@ fn get_format(yakui_format: yakui::paint::TextureFormat) -> vk::Format {
         yakui::paint::TextureFormat::Rgba8Srgb => vk::Format::R8G8B8A8_SRGB,
         yakui::paint::TextureFormat::Rgba8SrgbPremultiplied => vk::Format::R8G8B8A8_SRGB,
         yakui::paint::TextureFormat::R8 => vk::Format::R8_UNORM,
-        _ => panic!("Unsupported texture format: {yakui_format:?}"),
     }
 }
 
@@ -343,7 +342,7 @@ impl UploadPhase {
         if self
             .buffers
             .last()
-            .map_or(true, |(buffer, fill)| fill + data.len() > buffer.capacity())
+            .is_none_or(|(buffer, fill)| fill + data.len() > buffer.capacity())
         {
             self.buffers.push((
                 Buffer::with_capacity(

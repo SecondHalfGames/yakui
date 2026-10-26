@@ -12,7 +12,7 @@ pub use ash::vk;
 use buffer::Buffer;
 use bytemuck::{bytes_of, Pod, Zeroable};
 pub use descriptors::Descriptors;
-use std::{collections::HashMap, ffi::CStr, io::Cursor};
+use std::{collections::HashMap, io::Cursor};
 pub use vulkan_context::VulkanContext;
 use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
@@ -50,7 +50,6 @@ pub struct YakuiVulkan {
 }
 
 /// Vulkan configuration
-#[non_exhaustive]
 #[derive(Default)]
 pub struct Options {
     /// Indicates that VK_KHR_dynamic_rendering is enabled and should be used with the given format
@@ -107,7 +106,6 @@ impl From<yakui_core::paint::Pipeline> for Workflow {
         match p {
             yakui_core::paint::Pipeline::Main => Workflow::Main,
             yakui_core::paint::Pipeline::Text => Workflow::Text,
-            _ => panic!("Unknown pipeline {p:?}"),
         }
     }
 }
@@ -136,17 +134,7 @@ impl YakuiVulkan {
     /// ## Safety
     /// - `vulkan_context` must have valid members
     /// - the members of `render_surface` must have been created with the same [`ash::Device`] as `vulkan_context`.
-    pub fn new(
-        state: &mut yakui_core::Yakui,
-        vulkan_context: &VulkanContext,
-        options: Options,
-    ) -> Self {
-        state.set_paint_limit(PaintLimits {
-            max_texture_size_1d: vulkan_context.properties.limits.max_image_dimension1_d,
-            max_texture_size_2d: vulkan_context.properties.limits.max_image_dimension2_d,
-            max_texture_size_3d: vulkan_context.properties.limits.max_image_dimension3_d,
-        });
-
+    pub fn new(vulkan_context: &VulkanContext, options: Options) -> Self {
         let device = vulkan_context.device;
         let descriptors = Descriptors::new(vulkan_context);
 
@@ -191,7 +179,7 @@ impl YakuiVulkan {
                 .unwrap()
         };
 
-        let shader_entry_name = unsafe { CStr::from_bytes_with_nul_unchecked(b"main\0") };
+        let shader_entry_name = c"main";
         let shader_stage_create_infos = [
             vk::PipelineShaderStageCreateInfo {
                 module: vertex_shader_module,
@@ -381,6 +369,16 @@ impl YakuiVulkan {
     /// with a call to `transfers_finished` must not be executing.
     pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
         self.uploads.phase_executed(vulkan_context);
+    }
+
+    /// Establish limits for yakui's painting logic from the Vulkan context
+    /// limits.
+    pub fn set_paint_limits(&self, vulkan_context: &VulkanContext, state: &mut yakui_core::Yakui) {
+        state.set_paint_limit(PaintLimits {
+            max_texture_size_1d: vulkan_context.properties.limits.max_image_dimension1_d,
+            max_texture_size_2d: vulkan_context.properties.limits.max_image_dimension2_d,
+            max_texture_size_3d: vulkan_context.properties.limits.max_image_dimension3_d,
+        });
     }
 
     /// Paint the yakui GUI using the provided [`VulkanContext`]
@@ -577,7 +575,9 @@ impl YakuiVulkan {
         use yakui_core::paint::TextureChange;
         if !self.initial_textures_synced {
             self.initial_textures_synced = true;
-            for (id, texture) in paint.textures() {
+            let textures = paint.textures();
+
+            for (id, texture) in textures.iter() {
                 let texture = VulkanTexture::from_yakui_texture(
                     vulkan_context,
                     &mut self.descriptors,
@@ -590,10 +590,12 @@ impl YakuiVulkan {
             return;
         }
 
-        for (id, change) in paint.texture_edits() {
+        let textures = paint.textures();
+
+        for (id, change) in textures.edits() {
             match change {
                 TextureChange::Added => {
-                    let texture = paint.texture(id).unwrap();
+                    let texture = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,
@@ -617,7 +619,7 @@ impl YakuiVulkan {
                             self.uploads.dispose(old);
                         }
                     }
-                    let new = paint.texture(id).unwrap();
+                    let new = textures.get(id).unwrap();
                     let texture = VulkanTexture::from_yakui_texture(
                         vulkan_context,
                         &mut self.descriptors,

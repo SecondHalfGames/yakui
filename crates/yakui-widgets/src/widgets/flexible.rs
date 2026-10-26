@@ -2,6 +2,7 @@ use yakui_core::geometry::FlexFit;
 use yakui_core::widget::Widget;
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -22,18 +23,29 @@ yakui::flexible(2, || {
 ```
 */
 #[derive(Debug)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Flexible {
     pub flex: u32,
     pub fit: FlexFit,
 }
 
+auto_builders!(Flexible {
+    flex: u32,
+    fit: FlexFit,
+});
+
 impl Flexible {
     pub fn new(flex: u32) -> Self {
         Self {
             flex,
             fit: FlexFit::Loose,
+        }
+    }
+
+    pub fn tight(flex: u32) -> Self {
+        Self {
+            flex,
+            fit: FlexFit::Tight,
         }
     }
 
@@ -44,6 +56,7 @@ impl Flexible {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<FlexibleResponse> {
         widget_children::<FlexibleWidget, F>(children, self)
     }

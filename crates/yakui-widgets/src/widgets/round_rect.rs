@@ -2,8 +2,9 @@ use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
-use crate::shapes;
+use crate::border::{Border, BorderRadius};
 use crate::util::{widget, widget_children};
+use crate::{auto_builders, shapes};
 
 /**
 A colored box with rounded corners that can contain children.
@@ -11,27 +12,37 @@ A colored box with rounded corners that can contain children.
 Responds with [RoundRectResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct RoundRect {
-    pub radius: f32,
     pub color: Color,
     pub min_size: Vec2,
+    pub border: Option<Border>,
+    pub radius: BorderRadius,
 }
 
+auto_builders!(RoundRect {
+    color: Color,
+    min_size: Vec2,
+    border: Option<Border>,
+    radius: BorderRadius,
+});
+
 impl RoundRect {
-    pub fn new(radius: f32) -> Self {
+    pub fn new<T: Into<BorderRadius>>(radius: T) -> Self {
         Self {
-            radius,
             color: Color::WHITE,
             min_size: Vec2::ZERO,
+            radius: radius.into(),
+            border: None,
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<RoundRectResponse> {
         widget::<RoundRectWidget>(self)
     }
 
+    #[track_caller]
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<RoundRectResponse> {
         widget_children::<RoundRectWidget, F>(children, self)
     }
@@ -74,9 +85,10 @@ impl Widget for RoundRectWidget {
         let node = ctx.dom.get_current();
         let layout_node = ctx.layout.get(ctx.dom.current()).unwrap();
 
-        let mut rect = shapes::RoundedRectangle::new(layout_node.rect, self.props.radius);
-        rect.color = self.props.color;
-        rect.add(ctx.paint);
+        shapes::RoundedRectangle::new(layout_node.rect, self.props.radius)
+            .color(self.props.color)
+            .border(self.props.border)
+            .add(ctx.paint);
 
         for &child in &node.children {
             ctx.paint(child);

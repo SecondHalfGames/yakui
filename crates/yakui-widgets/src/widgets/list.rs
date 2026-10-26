@@ -2,6 +2,7 @@ use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, Widget};
 use yakui_core::{CrossAxisAlignment, Direction, Flow, MainAxisAlignment, MainAxisSize, Response};
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -26,7 +27,6 @@ yakui::row(|| {
 ```
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct List {
     pub direction: Direction,
@@ -36,6 +36,13 @@ pub struct List {
     pub main_axis_alignment: MainAxisAlignment,
     pub cross_axis_alignment: CrossAxisAlignment,
 }
+
+auto_builders!(List {
+    item_spacing: f32,
+    main_axis_size: MainAxisSize,
+    main_axis_alignment: MainAxisAlignment,
+    cross_axis_alignment: CrossAxisAlignment,
+});
 
 impl List {
     pub fn new(direction: Direction) -> Self {
@@ -56,6 +63,7 @@ impl List {
         Self::new(Direction::Right)
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ListResponse> {
         widget_children::<ListWidget, F>(children, self)
     }
@@ -195,7 +203,6 @@ impl Widget for ListWidget {
                     total_main_axis_size
                 }
             }
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         let container_size = input.constrain(direction.vec2(main_axis_size, cross_size));
@@ -218,8 +225,6 @@ impl Widget for ListWidget {
                     let child_layout = ctx.layout.get_mut(child_id).unwrap();
                     child_layout.rect.set_pos(anchor + offset);
                 }
-
-                other => unimplemented!("Flow::{other:?}"),
             }
         }
 
@@ -254,7 +259,6 @@ impl Widget for ListWidget {
                     (main_axis_size - total_main_axis_size) / (node.children.len() as f32 + 1.0);
                 (between_space, between_space)
             }
-            other => unimplemented!("MainAxisAlignment::{other:?}"),
         };
         between_space += self.props.item_spacing;
 
@@ -275,7 +279,6 @@ impl Widget for ListWidget {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => (cross_size - child_cross) / 2.0,
                 CrossAxisAlignment::End => cross_size - child_cross,
-                other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
             child_layout.rect.set_pos(direction.vec2(next_main, cross));
 

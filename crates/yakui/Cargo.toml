@@ -3,12 +3,11 @@ name = "yakui"
 description = "A UI library for games"
 version = "0.3.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/LPGhatguy/yakui"
+repository = "https://github.com/SecondHalfGames/yakui"
 edition = "2021"
 
 [features]
 default = ["default-fonts"]
-
 default-fonts = ["yakui-widgets/default-fonts"]
 
 [dependencies]
@@ -16,5 +15,6 @@ yakui-core = { path = "../yakui-core", version = "0.3.0" }
 yakui-widgets = { path = "../yakui-widgets", version = "0.3.0", default-features = false }
 
 [dev-dependencies]
+yakui-widgets = { path = "../yakui-widgets", features = ["system-fonts"] }
 bootstrap = { path = "../bootstrap" }
-lyon_tessellation = "1.0.11"
+lyon_tessellation = "1.0.20"

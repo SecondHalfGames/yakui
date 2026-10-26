@@ -1,6 +1,8 @@
 use crate::event::EventInterest;
 use crate::WidgetId;
 
+/// Tracks all widgets interested in pointer events, organized by layer and
+/// sorted according to the other that should be used for hit testing.
 #[derive(Debug)]
 pub(crate) struct MouseInterest {
     layers: Vec<Vec<(WidgetId, EventInterest)>>,
@@ -51,7 +53,7 @@ impl MouseInterest {
         let top = self.layer_stack.pop();
         debug_assert!(
             top.is_some(),
-            "cannot call PaintLayers::pop without a corresponding push call"
+            "cannot call MouseInterest::pop_layer without a corresponding push call"
         );
     }
 }

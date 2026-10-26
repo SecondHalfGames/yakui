@@ -3,23 +3,25 @@
 
 mod debug;
 mod dummy;
+mod dynamic_scope;
 mod root;
 
 use std::any::{type_name, TypeId};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;
+use std::panic::Location;
 use std::rc::Rc;
 
 use anymap::AnyMap;
 use thunderdome::Arena;
 
 use crate::id::WidgetId;
-use crate::input::InputState;
 use crate::response::Response;
 use crate::widget::{ErasedWidget, Widget};
 
 use self::dummy::DummyWidget;
+use self::dynamic_scope::DynamicScope;
 use self::root::RootWidget;
 
 /// The DOM that contains the tree of active widgets.
@@ -33,7 +35,7 @@ struct DomInner {
     removed_nodes: RefCell<Vec<WidgetId>>,
     root: WidgetId,
     globals: RefCell<AnyMap>,
-    pending_focus_request: RefCell<Option<WidgetId>>,
+    dynamic_scope: DynamicScope,
 }
 
 /// A node in the [`Dom`].
@@ -48,9 +50,16 @@ pub struct DomNode {
     /// All of this node's children.
     pub children: Vec<WidgetId>,
 
+    /// Which set of dynamically scoped variables this node is bound to.
+    pub dynamic_scope_index: Option<usize>,
+
     /// Used when building the tree. The index of the next child if a new child
     /// starts being built.
     next_child: usize,
+
+    /// The callsite that called this Widget. Mark functions that create multiple widgets with `#[track_caller]` if you want them to be 'treated' as a single widget.
+    /// I.e. all the widgets under that function will share the same callsite (aka that which called said function).
+    callsite: &'static Location<'static>,
 }
 
 impl Dom {
@@ -71,23 +80,21 @@ impl Dom {
     pub fn start(&self) {
         log::debug!("Dom::start()");
 
+        self.inner.dynamic_scope.clear();
+
         let mut nodes = self.inner.nodes.borrow_mut();
         let root = nodes.get_mut(self.inner.root.index()).unwrap();
         root.next_child = 0;
     }
 
     /// End the DOM's build phase.
-    pub fn finish(&self, input: &InputState) {
+    pub fn finish(&self) {
         log::debug!("Dom::finish()");
 
         let mut nodes = self.inner.nodes.borrow_mut();
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
         let root = self.inner.root;
         trim_children(&mut nodes, &mut removed_nodes, root);
-
-        if let Some(widget_id) = self.inner.pending_focus_request.borrow_mut().take() {
-            input.set_selection(Some(widget_id));
-        }
     }
 
     /// Tells how many nodes are currently in the DOM.
@@ -103,11 +110,6 @@ impl Dom {
     /// Gives the root widget in the DOM. This widget will always exist.
     pub fn root(&self) -> WidgetId {
         self.inner.root
-    }
-
-    /// Request focus for the given widget id
-    pub fn request_focus(&self, id: WidgetId) {
-        *self.inner.pending_focus_request.borrow_mut() = Some(id);
     }
 
     /// Gives a list of all of the nodes that were removed in the last update.
@@ -186,6 +188,7 @@ impl Dom {
 
     /// Convenience method for calling [`Dom::begin_widget`] immediately
     /// followed by [`Dom::end_widget`].
+    #[track_caller]
     pub fn do_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         let response = self.begin_widget::<T>(props);
         self.end_widget::<T>(response.id);
@@ -195,10 +198,11 @@ impl Dom {
     /// Begin building a widget with the given type and props.
     ///
     /// After calling this method, children can be added to this widget.
+    #[track_caller]
     pub fn begin_widget<T: Widget>(&self, props: T::Props<'_>) -> Response<T::Response> {
         log::trace!("begin_widget::<{}>({props:#?}", type_name::<T>());
 
-        let (id, mut widget) = {
+        let (id, mut widget, callsite) = {
             let mut nodes = self.inner.nodes.borrow_mut();
             let id = next_widget(&mut nodes, self.current());
             self.inner.stack.borrow_mut().push(id);
@@ -209,17 +213,22 @@ impl Dom {
             let node = nodes.get_mut(id.index()).unwrap();
             let widget = replace(&mut node.widget, Box::new(DummyWidget));
 
+            node.dynamic_scope_index = self.inner.dynamic_scope.current_scope();
             node.next_child = 0;
-            (id, widget)
+            (id, widget, node.callsite)
         };
 
         // Potentially recreate the widget, then update it.
         let response = {
-            if widget.as_ref().type_id() != TypeId::of::<T>() {
+            let is_type_different = widget.as_ref().type_id() != TypeId::of::<T>();
+            let is_callsite_different = callsite != Location::caller();
+
+            if is_callsite_different || is_type_different {
                 widget = Box::new(T::new());
             }
 
-            let widget = widget.downcast_mut::<T>().unwrap();
+            let widget = widget.as_any_mut().downcast_mut::<T>().unwrap();
+
             widget.update(props)
         };
 
@@ -228,6 +237,7 @@ impl Dom {
             let mut nodes = self.inner.nodes.borrow_mut();
             let node = nodes.get_mut(id.index()).unwrap();
             node.widget = widget;
+            node.callsite = Location::caller();
         }
 
         Response::new(id, response)
@@ -251,6 +261,11 @@ impl Dom {
         let mut removed_nodes = self.inner.removed_nodes.borrow_mut();
         trim_children(&mut nodes, &mut removed_nodes, id);
     }
+
+    /// Returns access to the DOM's dynamic scope container.
+    pub fn dynamic_scope(&self) -> &DynamicScope {
+        &self.inner.dynamic_scope
+    }
 }
 
 impl DomInner {
@@ -261,6 +276,8 @@ impl DomInner {
             parent: None,
             children: Vec::new(),
             next_child: 0,
+            dynamic_scope_index: None,
+            callsite: Location::caller(),
         });
 
         Self {
@@ -269,11 +286,12 @@ impl DomInner {
             removed_nodes: RefCell::new(Vec::new()),
             stack: RefCell::new(Vec::new()),
             root: WidgetId::new(root),
-            pending_focus_request: RefCell::new(None),
+            dynamic_scope: DynamicScope::new(),
         }
     }
 }
 
+#[track_caller]
 fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
     let parent = nodes.get_mut(parent_id.index()).unwrap();
     if parent.next_child < parent.children.len() {
@@ -286,6 +304,8 @@ fn next_widget(nodes: &mut Arena<DomNode>, parent_id: WidgetId) -> WidgetId {
             parent: Some(parent_id),
             children: Vec::new(),
             next_child: 0,
+            dynamic_scope_index: None,
+            callsite: Location::caller(),
         });
 
         let id = WidgetId::new(index);

@@ -24,6 +24,16 @@ impl Color {
         Self { r, g, b, a: 255 }
     }
 
+    /// Create a new `Color` with all channels set to the given value.
+    pub const fn greyscale(v: u8) -> Self {
+        Self {
+            r: v,
+            g: v,
+            b: v,
+            a: 255,
+        }
+    }
+
     /// Create a color from a number, intended to be written as a hex literal.
     ///
     /// ```rust
@@ -41,7 +51,7 @@ impl Color {
 
     /// Creates a new color using the existing color and the given linear alpha
     /// value given as a float.
-    pub fn with_alpha(mut self, alpha: f32) -> Self {
+    pub const fn with_alpha(mut self, alpha: f32) -> Self {
         self.a = (alpha * 255.0).round() as u8;
         self
     }
@@ -81,6 +91,11 @@ impl Color {
     /// Blend with `other` in linear space
     pub fn lerp(&self, other: &Color, ratio: f32) -> Self {
         Self::from_linear(self.to_linear().lerp(other.to_linear(), ratio))
+    }
+
+    /// Turn the color into an array.
+    pub fn to_array(&self) -> [u8; 4] {
+        [self.r, self.g, self.b, self.a]
     }
 }
 

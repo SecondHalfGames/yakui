@@ -3,6 +3,7 @@ use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
 use yakui_core::Response;
 
+use crate::auto_builders;
 use crate::util::{widget, widget_children};
 
 /**
@@ -11,12 +12,16 @@ A colored box that can contain children.
 Responds with [ColoredBoxResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct ColoredBox {
     pub color: Color,
     pub min_size: Vec2,
 }
+
+auto_builders!(ColoredBox {
+    color: Color,
+    min_size: Vec2,
+});
 
 impl ColoredBox {
     pub fn empty() -> Self {
@@ -40,10 +45,12 @@ impl ColoredBox {
         }
     }
 
+    #[track_caller]
     pub fn show(self) -> Response<ColoredBoxResponse> {
         widget::<ColoredBoxWidget>(self)
     }
 
+    #[track_caller]
     pub fn show_children<F: FnOnce()>(self, children: F) -> Response<ColoredBoxResponse> {
         widget_children::<ColoredBoxWidget, F>(children, self)
     }

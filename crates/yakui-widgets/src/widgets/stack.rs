@@ -27,7 +27,6 @@ yakui::column(|| {
 ```
 */
 #[derive(Debug, Default)]
-#[non_exhaustive]
 pub struct Stack {}
 
 impl Stack {
@@ -37,6 +36,7 @@ impl Stack {
     }
 
     /// Shows the [Stack] along with its children.
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<StackResponse> {
         widget_children::<StackWidget, F>(children, self)
     }

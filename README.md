@@ -185,6 +185,12 @@ The `yakui-winit` crate contains bindings for use with [winit].
 [`yakui-winit`]: https://crates.io/crates/yakui-winit
 [winit]: https://github.com/rust-windowing/winit
 
+### [`yakui-sdl3`]
+The `yakui-sdl3` crate contains bindings for use with [sdl3].
+
+[`yakui-sdl3`]: https://crates.io/crates/yakui-sdl3
+[sdl3]: https://github.com/vhspace/sdl3-rs
+
 ### [`yakui-wgpu`]
 The `yakui-wgpu` crate is a yakui renderer that uses [wgpu].
 

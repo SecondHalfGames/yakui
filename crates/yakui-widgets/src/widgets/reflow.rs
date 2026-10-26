@@ -9,7 +9,6 @@ Changes the flow behavior a widget tree, allowing it to break out of list, grid,
 or table layouts.
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Reflow {
     pub anchor: Alignment,
@@ -26,6 +25,7 @@ impl Reflow {
         }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<ReflowResponse> {
         widget_children::<ReflowWidget, F>(children, self)
     }

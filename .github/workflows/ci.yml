@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - label: Stable
+          - label: Build Stable
             rust_version: stable
           # - label: MSRV
           #   rust_version: 1.62.0
@@ -25,6 +25,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: ./.github/deps
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -40,11 +41,12 @@ jobs:
       run: cargo test --verbose ${{ matrix.flags }}
 
   lint:
-    name: Rustfmt and Clippy
     runs-on: ubuntu-latest
+    name: Rustfmt and Clippy
 
     steps:
     - uses: actions/checkout@v3
+    - uses: ./.github/deps
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1

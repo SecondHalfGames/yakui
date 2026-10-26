@@ -26,6 +26,7 @@ pub fn run() {
                             layout.rect.pos() + offset,
                             layout.rect.size() / RES as f32,
                         );
+
                         let mut rect = PaintRect::new(rect);
 
                         let r = x as f32 / RES as f32;

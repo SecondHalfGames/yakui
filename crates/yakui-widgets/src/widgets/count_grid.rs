@@ -5,6 +5,7 @@ use yakui_core::{
     CrossAxisAlignment, Direction, MainAxisAlignItems, MainAxisAlignment, MainAxisSize, Response,
 };
 
+use crate::auto_builders;
 use crate::util::widget_children;
 
 /**
@@ -27,7 +28,6 @@ Check the count_grid example to see it in action with different alignments and s
 Responds with [CountGridResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct CountGrid {
     pub direction: Direction,
@@ -37,6 +37,15 @@ pub struct CountGrid {
     pub main_axis_align_items: MainAxisAlignItems,
     pub cross_axis_alignment: CrossAxisAlignment,
 }
+
+auto_builders!(CountGrid {
+    direction: Direction,
+    cross_axis_count: usize,
+    main_axis_alignment: MainAxisAlignment,
+    main_axis_size: MainAxisSize,
+    main_axis_align_items: MainAxisAlignItems,
+    cross_axis_alignment: CrossAxisAlignment,
+});
 
 impl CountGrid {
     /// The children will be laid out in a grid with the given number of columns.
@@ -65,26 +74,6 @@ impl CountGrid {
         }
     }
 
-    pub fn cross_axis_aligment(mut self, alignment: CrossAxisAlignment) -> Self {
-        self.cross_axis_alignment = alignment;
-        self
-    }
-
-    pub fn main_axis_aligment(mut self, alignment: MainAxisAlignment) -> Self {
-        self.main_axis_alignment = alignment;
-        self
-    }
-
-    pub fn main_axis_size(mut self, size: MainAxisSize) -> Self {
-        self.main_axis_size = size;
-        self
-    }
-
-    pub fn main_axis_align_items(mut self, items: MainAxisAlignItems) -> Self {
-        self.main_axis_align_items = items;
-        self
-    }
-
     /// The children will be laid out in a grid with the given number of columns/rows.
     /// They should be provided in cross-axis-major order.
     /// For example, if you want a 2x3 column-based grid, you should provide the children in this order:
@@ -93,6 +82,7 @@ impl CountGrid {
     /// 2 3
     /// 4 5
     /// ```
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<CountGridResponse> {
         widget_children::<CountGridWidget, F>(children, self)
     }
@@ -224,7 +214,6 @@ impl Widget for CountGridWidget {
         offset_main_global = match self.props.main_axis_size {
             MainAxisSize::Max => offset_main_global,
             MainAxisSize::Min => 0.0,
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         // only used in case the widget total cross is less than the minimum cross axis
@@ -236,7 +225,6 @@ impl Widget for CountGridWidget {
             CrossAxisAlignment::End => {
                 (direction.get_cross_axis(input.min) - max_total_cross_size).max(0.0)
             }
-            other => unimplemented!("CrossAxisAlignment::{other:?}"),
         };
 
         // Apply alignment by offsetting all children
@@ -255,7 +243,6 @@ impl Widget for CountGridWidget {
                 CrossAxisAlignment::Start | CrossAxisAlignment::Stretch => 0.0,
                 CrossAxisAlignment::Center => ((cell_cross_size - child_cross_size) / 2.0).max(0.0),
                 CrossAxisAlignment::End => (cell_cross_size - child_cross_size).max(0.0),
-                other => unimplemented!("CrossAxisAlignment::{other:?}"),
             };
 
             let child_main_size = direction.get_main_axis(layout.rect.size());
@@ -267,7 +254,6 @@ impl Widget for CountGridWidget {
                 MainAxisAlignItems::Start | MainAxisAlignItems::Stretch => 0.0,
                 MainAxisAlignItems::Center => ((cell_main_size - child_main_size) / 2.0).max(0.0),
                 MainAxisAlignItems::End => (cell_main_size - child_main_size).max(0.0),
-                other => unimplemented!("MainAxisAlignItems::{other:?}"),
             };
 
             let offset_pos = layout.rect.pos()
@@ -290,7 +276,6 @@ impl Widget for CountGridWidget {
         let main_grid_size = match self.props.main_axis_size {
             MainAxisSize::Max => total_main_max,
             MainAxisSize::Min => total_main_size,
-            other => unimplemented!("MainAxisSize::{other:?}"),
         };
 
         direction.vec2(main_grid_size, cross_grid_size)

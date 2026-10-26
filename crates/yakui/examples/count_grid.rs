@@ -162,15 +162,11 @@ fn parameter_select(
 }
 
 fn column_spacing<F: FnOnce()>(children: F) {
-    let mut l = List::column();
-    l.item_spacing = 5.0;
-    l.show(children);
+    List::column().item_spacing(5.0).show(children);
 }
 
 fn row_spacing<F: FnOnce()>(children: F) {
-    let mut l = List::row();
-    l.item_spacing = 5.0;
-    l.show(children);
+    List::row().item_spacing(5.0).show(children);
 }
 
 fn box_with_label(color: Color, size: f32) {

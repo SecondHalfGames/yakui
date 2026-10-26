@@ -19,7 +19,6 @@ const RECT_INDEX: [u16; 6] = [
     3, 0, 2,
 ];
 
-#[non_exhaustive]
 #[allow(missing_docs)]
 pub struct PaintRect {
     pub rect: Rect,

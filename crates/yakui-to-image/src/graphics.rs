@@ -18,20 +18,13 @@ impl Graphics {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: None,
                 force_fallback_adapter: false,
+                apply_limit_buckets: false,
             })
             .await
             .unwrap();
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    memory_hints: Default::default(),
-                    label: None,
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor::default())
             .await
             .unwrap();
 
@@ -87,6 +80,7 @@ impl Graphics {
                 label: Some("Clear"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
+                    depth_slice: None,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
@@ -105,7 +99,8 @@ impl Graphics {
             color_attachment: &view,
             resolve_target: None,
         };
-        let paint_yak = yak_renderer.paint(yak, &self.device, &self.queue, surface);
+        let mut buffers = yak_renderer.buffers();
+        let paint_yak = yak_renderer.paint(yak, &mut buffers, surface);
 
         let mut encoder = self
             .device
@@ -114,15 +109,15 @@ impl Graphics {
             });
 
         encoder.copy_texture_to_buffer(
-            wgpu::ImageCopyTexture {
+            wgpu::TexelCopyTextureInfo {
                 texture: &texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            wgpu::ImageCopyBuffer {
+            wgpu::TexelCopyBufferInfo {
                 buffer: &buffer,
-                layout: wgpu::ImageDataLayout {
+                layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(buffer_size.padded_bytes_per_row),
                     rows_per_image: Some(size.height),
@@ -133,15 +128,20 @@ impl Graphics {
 
         let copy = encoder.finish();
 
-        self.queue.submit([clear, paint_yak, copy]);
+        let submit_index = self.queue.submit([clear, paint_yak, copy]);
         let buffer_slice = buffer.slice(..);
         buffer_slice.map_async(wgpu::MapMode::Read, |res| {
             res.unwrap();
         });
 
-        self.device.poll(wgpu::Maintain::Wait);
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submit_index),
+                timeout: None,
+            })
+            .unwrap();
 
-        let padded_data = buffer_slice.get_mapped_range().to_vec();
+        let padded_data = buffer_slice.get_mapped_range().unwrap();
         let mut data = Vec::new();
         for chunk in padded_data.chunks(buffer_size.padded_bytes_per_row as usize) {
             data.extend(&chunk[..buffer_size.unpadded_bytes_per_row as usize]);

@@ -10,7 +10,6 @@ A box that enforces a maximum width upon its children.
 Responds with [MaxWidthResponse].
 */
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct MaxWidth {
     pub max_width: f32,
@@ -21,6 +20,7 @@ impl MaxWidth {
         Self { max_width }
     }
 
+    #[track_caller]
     pub fn show<F: FnOnce()>(self, children: F) -> Response<MaxWidthResponse> {
         widget_children::<MaxWidthWidget, F>(children, self)
     }

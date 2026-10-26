@@ -27,6 +27,7 @@ impl Window {
         }
     }
 
+    #[track_caller]
     pub fn show<F: 'static + Fn()>(mut self, children: F) -> Response<WindowResponse> {
         self.children = Some(Box::new(children));
         widget::<WindowWidget>(self)
