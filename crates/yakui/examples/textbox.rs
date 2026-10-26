@@ -1,5 +1,5 @@
 use bootstrap::load_common_fonts;
-use yakui::widgets::{Pad, TextBox};
+use yakui::widgets::TextBox;
 use yakui::{button, column, label, row, use_state};
 
 pub fn run() {
@@ -25,11 +25,8 @@ pub fn run() {
 
         let mut my_box = TextBox::new();
         my_box.min_width = 400.0;
-        my_box.style.font_size = 60.0;
         my_box.style.align = align.get();
-        my_box.placeholder_style.font_size = 60.0;
         my_box.placeholder_style.align = align.get();
-        my_box.padding = Pad::all(50.0);
         my_box.placeholder = "placeholder".into();
         my_box.multiline = true;
 
