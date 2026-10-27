@@ -170,11 +170,11 @@ impl Widget for RenderTextWidget {
         }
 
         if scroll != self.scroll {
+            self.scroll = scroll;
             self.scroll_changed.set(true)
         }
 
         self.props = props;
-        self.scroll = scroll;
 
         Self::Response {
             measured_size: self.measured_size.get(),
