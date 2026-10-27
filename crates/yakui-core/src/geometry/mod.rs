@@ -7,7 +7,7 @@ mod rect;
 mod urect;
 
 #[doc(no_inline)]
-pub use glam::{UVec2, Vec2, Vec4};
+pub use glam::{IVec2, UVec2, Vec2, Vec4};
 
 pub use self::color::*;
 pub use self::constraints::*;

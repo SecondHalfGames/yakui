@@ -271,17 +271,16 @@ impl PaintDom {
         call.indices.extend(indices);
 
         let vertices = mesh.vertices.into_iter().map(|mut vertex| {
-            let mut pos = vertex.position * self.scale_factor;
-            pos += self.unscaled_viewport.pos();
+            // The function [`paint_text`](yakui_widgets::widgets::render_text::paint_text) already gives us everything in physical unit.
+            // We don't need to convert it again.
+            // (Note: Subpixel alignment is accounted for in the text atlas.)
+            let mut pos = if mesh.pipeline == Pipeline::Text {
+                vertex.position
+            } else {
+                vertex.position * self.scale_factor
+            };
 
-            // Currently, we only round the vertices of geometry fed to the text
-            // pipeline because rounding all geometry causes hairline cracks in
-            // some geometry, like rounded rectangles.
-            //
-            // See: https://github.com/SecondHalfGames/yakui/issues/153
-            if mesh.pipeline == Pipeline::Text {
-                pos = pos.round();
-            }
+            pos += self.unscaled_viewport.pos();
 
             pos /= self.surface_size;
 

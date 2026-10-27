@@ -124,16 +124,16 @@ pub struct TextBoxWidget {
     preedit_cursor_end: Option<cosmic_text::Cursor>,
 
     render_text_response: RenderTextResponse,
+    render_text_changed: Cell<bool>,
 
     cosmic_editor: RefCell<Option<cosmic_text::Editor<'static>>>,
     is_textbox_empty: bool,
-    size_changed: Cell<bool>,
     scroll_changed: Cell<bool>,
     text_changed: Cell<bool>,
     /// Whether the Cosmic Text editor context has changed the text since the
     /// previous update. Edits from the user take precedence over edits from the
     /// application.
-    text_changed_by_cosmic: Cell<bool>,
+    text_changed_by_cosmic: bool,
 }
 
 pub struct TextBoxResponse {
@@ -171,13 +171,13 @@ impl Widget for TextBoxWidget {
             preedit_cursor_end: None,
 
             render_text_response: RenderTextResponse::default(),
+            render_text_changed: Cell::new(true),
 
             cosmic_editor: RefCell::new(None),
             is_textbox_empty: true,
-            size_changed: Cell::new(true),
             scroll_changed: Cell::new(false),
             text_changed: Cell::new(true),
-            text_changed_by_cosmic: Cell::new(false),
+            text_changed_by_cosmic: false,
         }
     }
 
@@ -191,9 +191,9 @@ impl Widget for TextBoxWidget {
             || text != self.text
             || props.style != self.props.style;
         if text_changed_by_caller {
-            self.text_changed_by_cosmic.set(false);
+            self.text_changed_by_cosmic = false;
         }
-        let text_changed_by_cosmic = self.text_changed_by_cosmic.take();
+        let text_changed_by_cosmic = mem::take(&mut self.text_changed_by_cosmic);
         self.text_changed
             .set(text_changed_by_caller || text_changed_by_cosmic);
 
@@ -222,14 +222,16 @@ impl Widget for TextBoxWidget {
         let mut editor_ref = self.cosmic_editor.borrow_mut();
         let editor = editor_ref.as_mut().unwrap();
 
-        let size_changed = self.size_changed.take();
+        let render_text_changed = self.render_text_changed.take();
         let scroll_changed = self.scroll_changed.get();
 
         let mut new_scroll = None;
 
         fonts.with_inner(|fonts| {
             if text_changed_by_caller {
-                editor.set_cursor(cosmic_text::Cursor::new(0, 0));
+                let scroll = editor.with_buffer(|buffer| buffer.scroll());
+                let cursor = editor.cursor();
+
                 editor.set_selection(cosmic_text::Selection::None);
                 editor.with_buffer_mut(|buffer| {
                     buffer.set_text(
@@ -238,28 +240,36 @@ impl Widget for TextBoxWidget {
                             .font_selection
                             .get_cosmic_attrs(&self.props.style.font),
                         cosmic_text::Shaping::Advanced,
-                        None,
+                        self.props.style.align.into(),
                     );
+                    buffer.set_scroll(scroll);
                 });
-                editor.action(
-                    &mut fonts.font_system,
-                    cosmic_text::Action::Motion(cosmic_text::Motion::BufferEnd),
-                );
+
+                // TODO: Madeline Sparkles: cosmic text doesn't clamp cursor positions for us,
+                // so we'll have to do it ourselves... this is probably a bug.
+                let cursor_line = cursor
+                    .line
+                    .min(editor.with_buffer(|buffer| buffer.lines.len().saturating_sub(1)));
+                let cursor_index = cursor.index.min(editor.with_buffer(|buffer| {
+                    buffer.lines[cursor_line].text().len().saturating_sub(1)
+                }));
+                editor.set_cursor(cosmic_text::Cursor {
+                    line: cursor_line,
+                    index: cursor_index,
+                    affinity: cursor.affinity,
+                });
+
+                editor.shape_as_needed(&mut fonts.font_system, false);
             }
 
             if text_changed_by_caller || text_changed_by_cosmic {
-                editor.with_buffer_mut(|buffer| {
-                    // apply styles
-                    for line in buffer.lines.iter_mut() {
-                        line.set_align(self.props.style.align.into());
-                    }
-
-                    self.is_textbox_empty = !(buffer.lines.len() > 1
-                        || buffer.lines.iter().any(|v| !v.text().is_empty()));
+                editor.with_buffer(|buffer| {
+                    self.is_textbox_empty = buffer.lines.is_empty()
+                        || (buffer.lines.len() == 1 && buffer.lines[0].text().is_empty())
                 });
             }
 
-            if scroll_changed || size_changed {
+            if scroll_changed || render_text_changed {
                 // TODO: Madeline Sparkles: this entire thing shouldn't be needed but there's a bug in cosmic-text.
                 editor.with_buffer_mut(|buffer| {
                     let mut scroll = buffer.scroll();
@@ -322,7 +332,7 @@ impl Widget for TextBoxWidget {
                 .into_inner();
 
             if self.render_text_response != response {
-                self.size_changed.set(true);
+                self.render_text_changed.set(true);
             }
             self.render_text_response = response;
         });
@@ -344,19 +354,17 @@ impl Widget for TextBoxWidget {
             ctx.input.enable_text_input();
         }
 
-        let size_changed = self.size_changed.get();
-
-        let text_changed = self.text_changed.take();
-        let scroll_changed = self.scroll_changed.take();
-
         let mut editor_ref = self.cosmic_editor.borrow_mut();
         let editor = editor_ref.as_mut().unwrap();
 
         let fonts = ctx.dom.get_global_or_init(Fonts::default);
         fonts.with_inner(|fonts| {
+            let render_text_changed = self.render_text_changed.get();
+            let text_changed = self.text_changed.take();
+
             let scroll = editor.with_buffer(|buffer| buffer.scroll());
 
-            if size_changed {
+            if render_text_changed {
                 editor.with_buffer_mut(|buffer| {
                     buffer.set_metrics(self.props.style.to_metrics(ctx.layout.scale_factor()));
                     buffer.set_size(
@@ -366,7 +374,8 @@ impl Widget for TextBoxWidget {
                 });
             }
 
-            if size_changed || text_changed || scroll_changed {
+            let scroll_changed = self.scroll_changed.take();
+            if render_text_changed || text_changed || scroll_changed {
                 editor.shape_as_needed(&mut fonts.font_system, text_changed);
             }
 
@@ -651,17 +660,17 @@ impl Widget for TextBoxWidget {
 
                     KeyCode::Backspace => {
                         action = Some(cosmic_text::Action::Backspace);
-                        self.text_changed_by_cosmic.set(true);
+                        self.text_changed_by_cosmic = true;
                     }
                     KeyCode::Delete => {
                         action = Some(cosmic_text::Action::Delete);
-                        self.text_changed_by_cosmic.set(true);
+                        self.text_changed_by_cosmic = true;
                     }
                     KeyCode::Enter | KeyCode::NumpadEnter => {
                         if self.props.inline_edit {
                             if self.props.multiline && modifiers.shift() {
                                 action = Some(cosmic_text::Action::Enter);
-                                self.text_changed_by_cosmic.set(true);
+                                self.text_changed_by_cosmic = true;
                             } else {
                                 self.activated = true;
                                 self.active = false;
@@ -671,7 +680,7 @@ impl Widget for TextBoxWidget {
                             }
                         } else {
                             action = Some(cosmic_text::Action::Enter);
-                            self.text_changed_by_cosmic.set(true);
+                            self.text_changed_by_cosmic = true;
                         }
                     }
 
@@ -696,7 +705,7 @@ impl Widget for TextBoxWidget {
                             clipboard.copy(&text);
                         }
                         editor.delete_selection();
-                        self.text_changed_by_cosmic.set(true);
+                        self.text_changed_by_cosmic = true;
                     }
                     KeyCode::KeyC if main_modifier(modifiers) => {
                         let clipboard = ctx.dom.get_global_or_init(ClipboardHolder::default);
@@ -710,7 +719,7 @@ impl Widget for TextBoxWidget {
 
                         if let Some(text) = clipboard.paste() {
                             editor.insert_string(&text, None);
-                            self.text_changed_by_cosmic.set(true);
+                            self.text_changed_by_cosmic = true;
                         }
                     }
                     _ => {}
@@ -829,7 +838,7 @@ impl Widget for TextBoxWidget {
                     }
                     editor.set_cursor(preedit_cursor);
 
-                    self.text_changed_by_cosmic.set(true);
+                    self.text_changed_by_cosmic = true;
                 } else if !text.is_empty() && *text != self.preedit_text {
                     if self.preedit_cursor.is_none() {
                         self.preedit_cursor = Some(editor.cursor());
@@ -849,7 +858,7 @@ impl Widget for TextBoxWidget {
 
                     self.preedit_text = text.clone();
 
-                    self.text_changed_by_cosmic.set(true);
+                    self.text_changed_by_cosmic = true;
                 }
 
                 if let Some(cursor) = self.preedit_cursor {
@@ -871,7 +880,7 @@ impl Widget for TextBoxWidget {
                 if !modifiers.ctrl() && !modifiers.meta() {
                     fonts.with_inner(|fonts| {
                         editor.action(&mut fonts.font_system, cosmic_text::Action::Insert(*c));
-                        self.text_changed_by_cosmic.set(true);
+                        self.text_changed_by_cosmic = true;
                     });
                 }
 
