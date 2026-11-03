@@ -212,8 +212,8 @@ impl TextStyle {
 
     pub fn to_metrics(&self, scale_factor: f32) -> cosmic_text::Metrics {
         cosmic_text::Metrics::new(
-            (self.font_size * scale_factor).ceil(),
-            (self.line_height() * scale_factor).ceil(),
+            self.font_size * scale_factor,
+            self.line_height() * scale_factor,
         )
     }
 }

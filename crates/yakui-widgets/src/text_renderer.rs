@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use yakui_core::geometry::{Rect, URect, UVec2, Vec2};
+use yakui_core::geometry::{IVec2, Rect, URect, UVec2, Vec2};
 use yakui_core::paint::{PaintDom, Texture, TextureFilter, TextureFormat};
 use yakui_core::ManagedTextureId;
 
@@ -28,12 +28,18 @@ impl Kind {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AtlasRect {
+    pub size: Vec2,
+    pub tex_rect: Rect,
+    pub offset: IVec2,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GlyphRender {
     pub(crate) kind: Kind,
-    pub rect: URect,
-    pub offset: Vec2,
-    pub tex_rect: Rect,
     pub texture: ManagedTextureId,
+    pub atlas: AtlasRect,
 }
 
 enum AtlasResult {
@@ -47,7 +53,7 @@ enum AtlasResult {
 struct InnerAtlas {
     kind: Kind,
     texture: Option<ManagedTextureId>,
-    glyph_rects: HashMap<cosmic_text::CacheKey, (URect, Vec2)>,
+    atlas_rects: HashMap<cosmic_text::CacheKey, AtlasRect>,
     next_pos: UVec2,
     max_height: u32,
 }
@@ -57,7 +63,7 @@ impl InnerAtlas {
         Self {
             kind,
             texture: None,
-            glyph_rects: HashMap::new(),
+            atlas_rects: HashMap::new(),
             next_pos: UVec2::ZERO,
             max_height: 0,
         }
@@ -72,8 +78,8 @@ impl InnerAtlas {
                 UVec2::new(texture_size, texture_size),
                 vec![0; (texture_size * texture_size) as usize * self.kind.num_channels()],
             );
-            texture.mag_filter = TextureFilter::Linear;
-            texture.min_filter = TextureFilter::Linear;
+            texture.mag_filter = TextureFilter::Nearest;
+            texture.min_filter = TextureFilter::Nearest;
             self.texture = Some(paint.add_texture(texture))
         }
 
@@ -94,13 +100,11 @@ impl InnerAtlas {
 
         let texture_size = { paint.textures().get(texture_id).unwrap().size() };
 
-        if let Some((rect, offset)) = self.glyph_rects.get(&glyph.cache_key).cloned() {
+        if let Some(atlas) = self.atlas_rects.get(&glyph.cache_key).cloned() {
             return AtlasResult::Cached(GlyphRender {
                 kind: self.kind,
-                rect,
-                offset,
-                tex_rect: rect.as_rect() / texture_size.as_vec2(),
                 texture: self.texture.unwrap(),
+                atlas,
             });
         }
 
@@ -158,22 +162,24 @@ impl InnerAtlas {
         }
         paint.mark_texture_modified(self.texture.unwrap());
 
-        let rect = URect::from_pos_size(pos, glyph_size);
-        let offset = Vec2::new(image.placement.left as f32, image.placement.top as f32);
+        let rect = URect::from_pos_size(pos, glyph_size).as_rect();
+        let atlas = AtlasRect {
+            size: rect.size(),
+            tex_rect: rect / texture_size.as_vec2(),
+            offset: IVec2::new(image.placement.left, image.placement.top),
+        };
 
-        self.glyph_rects.insert(glyph.cache_key, (rect, offset));
+        self.atlas_rects.insert(glyph.cache_key, atlas);
 
         AtlasResult::Inserted(GlyphRender {
             kind: self.kind,
-            rect,
-            offset,
-            tex_rect: rect.as_rect() / texture_size.as_vec2(),
             texture: self.texture.unwrap(),
+            atlas,
         })
     }
 
     fn clear(&mut self) {
-        self.glyph_rects.clear();
+        self.atlas_rects.clear();
         self.next_pos = UVec2::ZERO;
         self.max_height = 0;
     }
@@ -225,13 +231,14 @@ impl TextAtlas {
         paint: &mut PaintDom,
         font_system: &mut cosmic_text::FontSystem,
         glyph: &cosmic_text::LayoutGlyph,
-    ) -> GlyphRender {
+        offset: (f32, f32),
+    ) -> (GlyphRender, cosmic_text::PhysicalGlyph) {
         if glyph.color_opt.is_some() {
             panic!("Glyph should not have color_opt! yakui uses its own color.");
         }
-        let physical_glyph = glyph.physical((0.0, 0.0), 1.0);
+        let physical_glyph = glyph.physical(offset, 1.0);
 
-        if let Some(kind) = self.glyph_kind_cache.get(&physical_glyph.cache_key) {
+        let render = if let Some(kind) = self.glyph_kind_cache.get(&physical_glyph.cache_key) {
             let result = match kind {
                 Kind::Mask => self.mask_atlas.get_or_insert(
                     paint,
@@ -299,7 +306,9 @@ impl TextAtlas {
                     }
                 },
             }
-        }
+        };
+
+        (render, physical_glyph)
     }
 }
 
@@ -332,11 +341,12 @@ impl TextGlobalState {
         paint: &mut PaintDom,
         font_system: &mut cosmic_text::FontSystem,
         glyph: &cosmic_text::LayoutGlyph,
-    ) -> GlyphRender {
+        offset: (f32, f32),
+    ) -> (GlyphRender, cosmic_text::PhysicalGlyph) {
         self.inner
             .borrow_mut()
             .atlas
-            .get_or_insert(paint, font_system, glyph)
+            .get_or_insert(paint, font_system, glyph, offset)
     }
 
     pub fn new() -> Self {
