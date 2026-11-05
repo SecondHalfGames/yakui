@@ -47,8 +47,8 @@ impl YakuiSdl3 {
             _ => {}
         }
 
-        if new_value {
-            if let Some((rect, cursor)) = state.get_text_cursor() {
+        if new_value
+            && let Some((rect, cursor)) = state.get_text_cursor() {
                 let pos = rect.pos();
                 let size = rect.size();
 
@@ -58,7 +58,6 @@ impl YakuiSdl3 {
                     cursor,
                 );
             }
-        }
     }
 
     pub fn handle_event(&mut self, state: &mut yakui_core::Yakui, event: &SdlEvent) -> bool {

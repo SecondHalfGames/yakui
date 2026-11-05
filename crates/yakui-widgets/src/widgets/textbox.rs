@@ -733,8 +733,8 @@ impl Widget for TextBoxWidget {
                             editor.set_selection(cosmic_text::Selection::None);
                         }
                         Select::DeselectPrevAffinity => {
-                            if bound_start != bound_end {
-                                if let Some(cosmic_text::Action::Motion(
+                            if bound_start != bound_end
+                                && let Some(cosmic_text::Action::Motion(
                                     cosmic_text::Motion::Previous,
                                 )) = action
                                 {
@@ -767,13 +767,12 @@ impl Widget for TextBoxWidget {
                                         }
                                     });
                                 }
-                            }
 
                             editor.set_selection(cosmic_text::Selection::None);
                         }
                         Select::DeselectNextAffinity => {
-                            if bound_start != bound_end {
-                                if let Some(cosmic_text::Action::Motion(
+                            if bound_start != bound_end
+                                && let Some(cosmic_text::Action::Motion(
                                     cosmic_text::Motion::Next,
                                 )) = action
                                 {
@@ -806,7 +805,6 @@ impl Widget for TextBoxWidget {
                                         }
                                     });
                                 }
-                            }
 
                             editor.set_selection(cosmic_text::Selection::None);
                         }
@@ -831,11 +829,10 @@ impl Widget for TextBoxWidget {
                     self.preedit_text = String::new();
                     let preedit_cursor = self.preedit_cursor.take().unwrap();
 
-                    if let Some(preedit_cursor_end) = self.preedit_cursor_end.take() {
-                        if preedit_cursor < preedit_cursor_end {
+                    if let Some(preedit_cursor_end) = self.preedit_cursor_end.take()
+                        && preedit_cursor < preedit_cursor_end {
                             editor.delete_range(preedit_cursor, preedit_cursor_end);
                         }
-                    }
                     editor.set_cursor(preedit_cursor);
 
                     self.text_changed_by_cosmic = true;
@@ -847,12 +844,11 @@ impl Widget for TextBoxWidget {
                     let preedit_cursor = self.preedit_cursor.unwrap();
 
                     editor.set_selection(cosmic_text::Selection::None);
-                    if let Some(preedit_cursor_end) = self.preedit_cursor_end {
-                        if preedit_cursor < preedit_cursor_end {
+                    if let Some(preedit_cursor_end) = self.preedit_cursor_end
+                        && preedit_cursor < preedit_cursor_end {
                             editor.delete_range(preedit_cursor, preedit_cursor_end);
                             editor.set_cursor(preedit_cursor);
                         }
-                    }
                     editor.insert_string(text, None);
                     self.preedit_cursor_end = Some(editor.cursor());
 
@@ -861,14 +857,13 @@ impl Widget for TextBoxWidget {
                     self.text_changed_by_cosmic = true;
                 }
 
-                if let Some(cursor) = self.preedit_cursor {
-                    if let &Some((_start, end)) = position {
+                if let Some(cursor) = self.preedit_cursor
+                    && let &Some((_start, end)) = position {
                         editor.set_cursor(cosmic_text::Cursor {
                             index: cursor.index + end,
                             ..cursor
                         });
                     }
-                }
 
                 EventResponse::Sink
             }

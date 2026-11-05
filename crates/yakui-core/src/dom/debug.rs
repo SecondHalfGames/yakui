@@ -24,7 +24,7 @@ impl fmt::Debug for ViewTree<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let nodes = &self.0;
         let iter = nodes.iter().map(|(id, node)| {
-            format!("{id:?}: {:?}, children: {:?}", &node.widget, &node.children)
+            format!("{id:?}: {:?}, children: {:?}", node.widget, node.children)
         });
 
         f.debug_list().entries(iter).finish()

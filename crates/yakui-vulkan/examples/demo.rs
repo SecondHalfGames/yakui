@@ -212,7 +212,7 @@ fn create_yakui_texture(
 }
 
 fn gui(gui_state: &GuiState) {
-    use yakui::{column, label, row, text, widgets::Text, Color};
+    use yakui::{Color, column, label, row, text, widgets::Text};
     let (animal, texture): (&'static str, yakui::TextureId) = match gui_state.which_image {
         WhichImage::Monkey => ("monkye", gui_state.monkey.into()),
         WhichImage::Dog => ("dog haha good boy", gui_state.dog),
@@ -399,7 +399,7 @@ impl VulkanTest {
             desired_image_count = surface_capabilities.max_image_count;
         }
         let surface_resolution = match surface_capabilities.current_extent.width {
-            std::u32::MAX => vk::Extent2D {
+            u32::MAX => vk::Extent2D {
                 width: window_width,
                 height: window_height,
             },
@@ -554,7 +554,7 @@ impl VulkanTest {
                 .get_physical_device_surface_capabilities(self.physical_device, self.surface)
                 .unwrap();
             let surface_resolution = match surface_capabilities.current_extent.width {
-                std::u32::MAX => vk::Extent2D {
+                u32::MAX => vk::Extent2D {
                     width: window_width,
                     height: window_height,
                 },
@@ -577,18 +577,20 @@ impl VulkanTest {
         }
     }
 
-    unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) { unsafe {
-        let device = &self.device;
-        for &fb in &self.framebuffers {
-            device.destroy_framebuffer(fb, None);
+    unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) {
+        unsafe {
+            let device = &self.device;
+            for &fb in &self.framebuffers {
+                device.destroy_framebuffer(fb, None);
+            }
+            for image_view in &self.present_image_views {
+                device.destroy_image_view(*image_view, None);
+            }
+            self.swapchain_info
+                .swapchain_loader
+                .destroy_swapchain(swapchain, None);
         }
-        for image_view in &self.present_image_views {
-            device.destroy_image_view(*image_view, None);
-        }
-        self.swapchain_info
-            .swapchain_loader
-            .destroy_swapchain(swapchain, None);
-    }}
+    }
 
     pub fn cmd_begin(&self) -> u32 {
         let (present_index, _) = unsafe {
