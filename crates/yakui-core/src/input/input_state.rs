@@ -145,8 +145,17 @@ impl InputState {
 
     /// Finish applying input events for this frame.
     pub fn finish(&self, dom: &Dom, layout: &LayoutDom) {
+        self.refresh_mouse_hover(dom, layout);
         self.settle_buttons();
         self.handle_navigation(dom, layout);
+    }
+
+    pub(crate) fn is_mouse_sunk(&self) -> bool {
+        !self
+            .intersections
+            .borrow()
+            .mouse_entered_and_sunk
+            .is_empty()
     }
 
     fn handle_navigation(&self, dom: &Dom, layout: &LayoutDom) {
@@ -306,6 +315,10 @@ impl InputState {
         }
 
         self.send_mouse_move(dom, layout);
+        self.refresh_mouse_hover(dom, layout);
+    }
+
+    fn refresh_mouse_hover(&self, dom: &Dom, layout: &LayoutDom) {
         self.mouse_hit_test(dom, layout);
         self.send_mouse_enter(dom, layout);
         self.send_mouse_leave(dom, layout);

@@ -151,6 +151,11 @@ impl Yakui {
         self.input.text_input_enabled()
     }
 
+    /// Returns whether a widget sinks hover at the mouse position.
+    pub fn is_mouse_sunk(&self) -> bool {
+        self.input.is_mouse_sunk()
+    }
+
     /// Gets the text cursor, if any.
     pub fn get_text_cursor(&self) -> Option<(Rect, i32)> {
         self.input.get_text_cursor()
