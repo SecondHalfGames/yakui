@@ -577,7 +577,7 @@ impl VulkanTest {
         }
     }
 
-    unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) {
+    unsafe fn destroy_swapchain(&self, swapchain: vk::SwapchainKHR) { unsafe {
         let device = &self.device;
         for &fb in &self.framebuffers {
             device.destroy_framebuffer(fb, None);
@@ -588,7 +588,7 @@ impl VulkanTest {
         self.swapchain_info
             .swapchain_loader
             .destroy_swapchain(swapchain, None);
-    }
+    }}
 
     pub fn cmd_begin(&self) -> u32 {
         let (present_index, _) = unsafe {

@@ -170,12 +170,12 @@ impl VulkanTexture {
         )
     }
 
-    pub(crate) unsafe fn cleanup(&self, device: &ash::Device) {
+    pub(crate) unsafe fn cleanup(&self, device: &ash::Device) { unsafe {
         device.destroy_sampler(self.sampler, None);
         device.destroy_image_view(self.view, None);
         device.destroy_image(self.image, None);
         device.free_memory(self.memory, None);
-    }
+    }}
 }
 
 fn get_format(yakui_format: yakui::paint::TextureFormat) -> vk::Format {
@@ -221,11 +221,11 @@ impl UploadQueue {
     }
 
     /// Call whenever a draw command buffer has completed execution
-    pub unsafe fn phase_executed(&mut self, vulkan_context: &VulkanContext) {
+    pub unsafe fn phase_executed(&mut self, vulkan_context: &VulkanContext) { unsafe {
         let mut finished = self.in_flight.pop_front().expect("no commands in flight");
         // TODO: Reuse
         finished.cleanup(vulkan_context.device);
-    }
+    }}
 
     /// Schedule `texture` to be disposed of after the previous phase completes
     pub unsafe fn dispose(&mut self, texture: VulkanTexture) {
@@ -239,7 +239,7 @@ impl UploadQueue {
         image: vk::Image,
         extent: vk::Extent2D,
         data: &[u8],
-    ) {
+    ) { unsafe {
         self.pre_barriers.push(vk::ImageMemoryBarrier {
             dst_access_mask: vk::AccessFlags::TRANSFER_WRITE,
             new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
@@ -268,9 +268,9 @@ impl UploadQueue {
             },
             ..Default::default()
         });
-    }
+    }}
 
-    pub unsafe fn record(&mut self, vulkan_context: &VulkanContext, cmd: vk::CommandBuffer) {
+    pub unsafe fn record(&mut self, vulkan_context: &VulkanContext, cmd: vk::CommandBuffer) { unsafe {
         let device = vulkan_context.device;
         device.cmd_pipeline_barrier(
             cmd,
@@ -312,14 +312,14 @@ impl UploadQueue {
             &self.post_barriers,
         );
         self.post_barriers.clear();
-    }
+    }}
 
-    pub unsafe fn cleanup(&mut self, device: &ash::Device) {
+    pub unsafe fn cleanup(&mut self, device: &ash::Device) { unsafe {
         self.phase.cleanup(device);
         while let Some(mut phase) = self.in_flight.pop_front() {
             phase.cleanup(device);
         }
-    }
+    }}
 }
 
 #[derive(Default)]
@@ -329,16 +329,16 @@ struct UploadPhase {
 }
 
 impl UploadPhase {
-    unsafe fn cleanup(&mut self, device: &ash::Device) {
+    unsafe fn cleanup(&mut self, device: &ash::Device) { unsafe {
         for (buffer, _) in &self.buffers {
             buffer.cleanup(device);
         }
         for texture in &self.graveyard {
             texture.cleanup(device);
         }
-    }
+    }}
 
-    unsafe fn push(&mut self, vulkan_context: &VulkanContext, data: &[u8]) -> (vk::Buffer, usize) {
+    unsafe fn push(&mut self, vulkan_context: &VulkanContext, data: &[u8]) -> (vk::Buffer, usize) { unsafe {
         if self
             .buffers
             .last()
@@ -358,5 +358,5 @@ impl UploadPhase {
         *offset += data.len();
         buffer.write(vulkan_context, start, data);
         (buffer.handle, start)
-    }
+    }}
 }

@@ -72,7 +72,7 @@ impl Descriptors {
         image_view: vk::ImageView,
         sampler: vk::Sampler,
         vulkan_context: &VulkanContext,
-    ) -> u32 {
+    ) -> u32 { unsafe {
         let texture_id = self.texture_count;
         vulkan_context.device.update_descriptor_sets(
             std::slice::from_ref(
@@ -92,12 +92,12 @@ impl Descriptors {
 
         self.texture_count += 1;
         texture_id
-    }
+    }}
 
     /// ## Safety
     /// Descriptors will be unusable after this function has been called.
-    pub unsafe fn cleanup(&self, device: &ash::Device) {
+    pub unsafe fn cleanup(&self, device: &ash::Device) { unsafe {
         device.destroy_descriptor_set_layout(self.layout, None);
         device.destroy_descriptor_pool(self.pool, None);
-    }
+    }}
 }

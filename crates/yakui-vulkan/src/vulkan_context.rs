@@ -42,7 +42,7 @@ impl<'a> VulkanContext<'a> {
         &self,
         extent: vk::Extent2D,
         format: vk::Format,
-    ) -> (vk::Image, vk::DeviceMemory) {
+    ) -> (vk::Image, vk::DeviceMemory) { unsafe {
         let device = self.device;
 
         let image = device
@@ -74,13 +74,13 @@ impl<'a> VulkanContext<'a> {
         device.bind_image_memory(image, image_memory, 0).unwrap();
 
         (image, image_memory)
-    }
+    }}
 
     unsafe fn allocate_memory(
         &self,
         allocation_size: vk::DeviceSize,
         memory_type_index: u32,
-    ) -> vk::DeviceMemory {
+    ) -> vk::DeviceMemory { unsafe {
         self.device
             .allocate_memory(
                 &vk::MemoryAllocateInfo {
@@ -91,13 +91,13 @@ impl<'a> VulkanContext<'a> {
                 None,
             )
             .unwrap()
-    }
+    }}
 
     pub(crate) unsafe fn create_image_view(
         &self,
         image: vk::Image,
         format: vk::Format,
-    ) -> vk::ImageView {
+    ) -> vk::ImageView { unsafe {
         self.device
             .create_image_view(
                 &vk::ImageViewCreateInfo {
@@ -115,5 +115,5 @@ impl<'a> VulkanContext<'a> {
                 None,
             )
             .unwrap()
-    }
+    }}
 }

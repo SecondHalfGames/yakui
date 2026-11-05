@@ -81,7 +81,7 @@ impl<T: Copy> Buffer<T> {
         result
     }
 
-    pub unsafe fn write(&mut self, _vulkan_context: &VulkanContext, offset: usize, new_data: &[T]) {
+    pub unsafe fn write(&mut self, _vulkan_context: &VulkanContext, offset: usize, new_data: &[T]) { unsafe {
         let new_data_size = std::mem::size_of_val(new_data);
         if std::mem::size_of::<T>() * offset + new_data_size > self.size as usize {
             todo!("Support resizing buffers");
@@ -91,15 +91,15 @@ impl<T: Copy> Buffer<T> {
             .as_ptr()
             .add(offset)
             .copy_from_nonoverlapping(new_data.as_ptr(), new_data.len());
-    }
+    }}
 
     /// ## Safety
     /// Buffer will be unusable after this function has been called.
-    pub unsafe fn cleanup(&self, device: &ash::Device) {
+    pub unsafe fn cleanup(&self, device: &ash::Device) { unsafe {
         device.unmap_memory(self.memory);
         device.free_memory(self.memory, None);
         device.destroy_buffer(self.handle, None);
-    }
+    }}
 
     pub fn capacity(&self) -> usize {
         self.len
