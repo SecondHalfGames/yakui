@@ -4,7 +4,7 @@
 #![allow(clippy::collapsible_if)]
 
 use yakui::widgets::Layer;
-use yakui::{align, button, column, reflow, use_state, widgets::Pad, Alignment, Dim2};
+use yakui::{Alignment, Dim2, align, button, column, reflow, use_state, widgets::Pad};
 use yakui_core::Pivot;
 
 pub fn run() {

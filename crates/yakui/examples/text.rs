@@ -1,6 +1,6 @@
 use yakui::style::TextStyle;
 use yakui::widgets::Text;
-use yakui::{column, label, row, text, Color};
+use yakui::{Color, column, label, row, text};
 
 pub fn run() {
     column(|| {

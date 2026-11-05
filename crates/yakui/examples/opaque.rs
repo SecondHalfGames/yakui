@@ -1,5 +1,5 @@
 use yakui::widgets::{List, Pad};
-use yakui::{button, center, colored_box_container, column, label, opaque, Color};
+use yakui::{Color, button, center, colored_box_container, column, label, opaque};
 
 pub fn run() {
     frame(|| {

@@ -1,4 +1,4 @@
-use yakui::{center, column, row, spacer, text, Color, Vec2};
+use yakui::{Color, Vec2, center, column, row, spacer, text};
 
 use bootstrap::ExampleState;
 use yakui_widgets::border::{Border, BorderRadius};

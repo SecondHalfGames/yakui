@@ -1,7 +1,7 @@
 use yakui_core::{
+    Response, WidgetId,
     navigation::{NavDirection, NavDirections},
     widget::{NavigateContext, Widget},
-    Response, WidgetId,
 };
 
 use crate::util::widget_children;

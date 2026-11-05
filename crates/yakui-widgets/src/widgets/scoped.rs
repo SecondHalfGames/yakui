@@ -1,7 +1,7 @@
 use std::fmt;
 
 use yakui_core::widget::Widget;
-use yakui_core::{context, Response};
+use yakui_core::{Response, context};
 
 #[must_use = "yakui widgets do nothing if you don't `show` them"]
 pub struct Scope<T> {

@@ -1,5 +1,5 @@
 use yakui::widgets::{List, Panel};
-use yakui::{button, center, column, expanded, label, row, textbox, use_state, CrossAxisAlignment};
+use yakui::{CrossAxisAlignment, button, center, column, expanded, label, row, textbox, use_state};
 
 pub fn run() {
     column(|| {

@@ -1,6 +1,6 @@
 //! Defines traits for building widgets.
 
-use std::any::{type_name, Any};
+use std::any::{Any, type_name};
 use std::collections::VecDeque;
 use std::fmt;
 

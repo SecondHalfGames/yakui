@@ -1,6 +1,6 @@
 use bootstrap::ExampleState;
 use yakui::widgets::CutOut;
-use yakui::{draggable, image, offset, text, use_state, Color, Constraints, Vec2};
+use yakui::{Color, Constraints, Vec2, draggable, image, offset, text, use_state};
 use yakui_core::CrossAxisAlignment;
 use yakui_widgets::constrained;
 use yakui_widgets::widgets::{List, Pad};

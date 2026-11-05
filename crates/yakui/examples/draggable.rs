@@ -1,4 +1,4 @@
-use yakui::{colored_box, draggable, offset, use_state, Color, Vec2};
+use yakui::{Color, Vec2, colored_box, draggable, offset, use_state};
 
 pub fn run() {
     let pos = use_state(|| Vec2::ZERO);

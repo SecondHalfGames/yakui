@@ -1,5 +1,5 @@
-use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 use wgpu::CurrentSurfaceTexture;
+use wgpu::rwh::{HasDisplayHandle, HasWindowHandle};
 
 use yakui::UVec2;
 

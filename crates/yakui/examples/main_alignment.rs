@@ -1,5 +1,5 @@
 use yakui::widgets::List;
-use yakui::{colored_box, label, Color, CrossAxisAlignment, MainAxisAlignment};
+use yakui::{Color, CrossAxisAlignment, MainAxisAlignment, colored_box, label};
 
 use bootstrap::ExampleState;
 

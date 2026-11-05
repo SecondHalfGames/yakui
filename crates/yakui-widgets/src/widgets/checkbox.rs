@@ -1,8 +1,8 @@
+use yakui_core::Response;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::input::{KeyCode, MouseButton};
 use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::border::Border;
 use crate::shapes::RoundedRectangle;

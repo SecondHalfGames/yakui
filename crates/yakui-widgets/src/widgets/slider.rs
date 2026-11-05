@@ -1,10 +1,10 @@
 use std::cell::Cell;
 
+use yakui_core::Response;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::input::KeyCode;
 use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::{auto_builders, colored_circle, colors, draggable, util};
 

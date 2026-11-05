@@ -1,6 +1,6 @@
 use std::mem::size_of;
 
-use bytemuck::{bytes_of, NoUninit};
+use bytemuck::{NoUninit, bytes_of};
 
 pub struct Buffer {
     len: usize,

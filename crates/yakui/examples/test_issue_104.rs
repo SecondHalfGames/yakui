@@ -1,4 +1,4 @@
-use yakui::{constrained, row, text, Constraints, Vec2};
+use yakui::{Constraints, Vec2, constrained, row, text};
 
 // Demonstrates bug https://github.com/SecondHalfGames/yakui/issues/104
 pub fn run() {

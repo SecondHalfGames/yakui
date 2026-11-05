@@ -363,21 +363,22 @@ impl Widget for RenderTextWidget {
                     // this is probably a bug on cosmic's part...
                     // the code below is copied from how cosmic text calculates text alignment
                     if run.glyphs.is_empty()
-                        && let Some(align) = buffer.lines[run.line_i].align() {
-                            use cosmic_text::Align;
+                        && let Some(align) = buffer.lines[run.line_i].align()
+                    {
+                        use cosmic_text::Align;
 
-                            let alignment_correction = match (align, run.rtl) {
-                                (Align::Left, true) => (line_width - run.line_w).max(0.),
-                                (Align::Left, false) => 0.,
-                                (Align::Right, true) => 0.,
-                                (Align::Right, false) => (line_width - run.line_w).max(0.),
-                                (Align::Center, _) => (line_width - run.line_w).max(0.) / 2.0,
-                                (Align::End, _) => (line_width - run.line_w).max(0.),
-                                (Align::Justified, _) => 0.,
-                            };
+                        let alignment_correction = match (align, run.rtl) {
+                            (Align::Left, true) => (line_width - run.line_w).max(0.),
+                            (Align::Left, false) => 0.,
+                            (Align::Right, true) => 0.,
+                            (Align::Right, false) => (line_width - run.line_w).max(0.),
+                            (Align::Center, _) => (line_width - run.line_w).max(0.) / 2.0,
+                            (Align::End, _) => (line_width - run.line_w).max(0.),
+                            (Align::Justified, _) => 0.,
+                        };
 
-                            x += alignment_correction;
-                        }
+                        x += alignment_correction;
+                    }
 
                     Some(((x, y), (w, h)))
                 });

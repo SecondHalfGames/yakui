@@ -1,6 +1,6 @@
 use yakui::widgets::Image;
-use yakui::{center, Color};
-use yakui::{nineslice, widgets::Pad, Vec2};
+use yakui::{Color, center};
+use yakui::{Vec2, nineslice, widgets::Pad};
 
 use bootstrap::ExampleState;
 

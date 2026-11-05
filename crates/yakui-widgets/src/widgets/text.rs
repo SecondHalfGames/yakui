@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
-use yakui_core::widget::Widget;
 use yakui_core::Response;
+use yakui_core::widget::Widget;
 
 use crate::style::TextStyle;
 use crate::util::widget;

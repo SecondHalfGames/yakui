@@ -1,6 +1,6 @@
 use yakui::style::TextAlignment;
 use yakui::widgets::{Button, List};
-use yakui::{constrained, Constraints, CrossAxisAlignment, Vec2};
+use yakui::{Constraints, CrossAxisAlignment, Vec2, constrained};
 
 pub fn run() {
     const ALIGNMENTS: &[TextAlignment] = &[

@@ -7,7 +7,7 @@
 use std::f32::consts::TAU;
 
 use lyon_tessellation::geometry_builder::simple_builder;
-use lyon_tessellation::math::{point, Point};
+use lyon_tessellation::math::{Point, point};
 use lyon_tessellation::path::Path;
 use lyon_tessellation::{
     FillOptions, FillTessellator, LineJoin, StrokeOptions, StrokeTessellator, VertexBuffers,

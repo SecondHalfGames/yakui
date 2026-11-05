@@ -10,15 +10,15 @@ mod vulkan_texture;
 use ash::util::read_spv;
 pub use ash::vk;
 use buffer::Buffer;
-use bytemuck::{bytes_of, Pod, Zeroable};
+use bytemuck::{Pod, Zeroable, bytes_of};
 pub use descriptors::Descriptors;
 use std::{collections::HashMap, io::Cursor};
 pub use vulkan_context::VulkanContext;
-use vulkan_texture::{UploadQueue, NO_TEXTURE_ID};
+use vulkan_texture::{NO_TEXTURE_ID, UploadQueue};
 pub use vulkan_texture::{VulkanTexture, VulkanTextureCreateInfo};
 use yakui_core::geometry::UVec2;
 use yakui_core::paint::PaintLimits;
-use yakui_core::{paint::Vertex as YakuiVertex, ManagedTextureId};
+use yakui_core::{ManagedTextureId, paint::Vertex as YakuiVertex};
 
 /// A struct wrapping everything needed to render yakui on Vulkan. This will be your main entry point.
 ///
@@ -348,10 +348,12 @@ impl YakuiVulkan {
         paint: &yakui_core::paint::PaintDom,
         vulkan_context: &VulkanContext,
         cmd: vk::CommandBuffer,
-    ) { unsafe {
-        self.update_textures(vulkan_context, paint);
-        self.uploads.record(vulkan_context, cmd);
-    }}
+    ) {
+        unsafe {
+            self.update_textures(vulkan_context, paint);
+            self.uploads.record(vulkan_context, cmd);
+        }
+    }
 
     /// Call when commands recorded by zero or more successive `transfer` calls have been submitted to
     /// a queue
@@ -367,9 +369,11 @@ impl YakuiVulkan {
     ///
     /// Those commands recorded prior to the oldest call to `transfers_submitted` not yet associated
     /// with a call to `transfers_finished` must not be executing.
-    pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) { unsafe {
-        self.uploads.phase_executed(vulkan_context);
-    }}
+    pub unsafe fn transfers_finished(&mut self, vulkan_context: &VulkanContext) {
+        unsafe {
+            self.uploads.phase_executed(vulkan_context);
+        }
+    }
 
     /// Establish limits for yakui's painting logic from the Vulkan context
     /// limits.
@@ -545,21 +549,23 @@ impl YakuiVulkan {
     /// - After calling this function, this instance will be **unusable**. You **must not** make any further calls on this instance
     ///   or you will have a terrible time.
     /// - `device` must be the same [`ash::Device`] used to create this instance.
-    pub unsafe fn cleanup(&mut self, device: &ash::Device) { unsafe {
-        device.device_wait_idle().unwrap();
-        self.descriptors.cleanup(device);
-        for (_, texture) in self.yakui_managed_textures.drain() {
-            texture.cleanup(device);
+    pub unsafe fn cleanup(&mut self, device: &ash::Device) {
+        unsafe {
+            device.device_wait_idle().unwrap();
+            self.descriptors.cleanup(device);
+            for (_, texture) in self.yakui_managed_textures.drain() {
+                texture.cleanup(device);
+            }
+            for (_, texture) in self.user_textures.drain() {
+                texture.cleanup(device);
+            }
+            device.destroy_pipeline_layout(self.pipeline_layout, None);
+            device.destroy_pipeline(self.graphics_pipeline, None);
+            self.index_buffer.cleanup(device);
+            self.vertex_buffer.cleanup(device);
+            self.uploads.cleanup(device);
         }
-        for (_, texture) in self.user_textures.drain() {
-            texture.cleanup(device);
-        }
-        device.destroy_pipeline_layout(self.pipeline_layout, None);
-        device.destroy_pipeline(self.graphics_pipeline, None);
-        self.index_buffer.cleanup(device);
-        self.vertex_buffer.cleanup(device);
-        self.uploads.cleanup(device);
-    }}
+    }
 
     /// Provides access to the descriptors used by `YakuiVulkan` to manage textures.
     /// Only useful for creating a [`crate::VulkanTexture`] from a pre-existing [`ash::vk::Image`]

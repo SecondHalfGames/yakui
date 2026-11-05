@@ -1,5 +1,5 @@
 use yakui::widgets::Pad;
-use yakui::{colored_box, colored_box_container, pad, Color};
+use yakui::{Color, colored_box, colored_box_container, pad};
 
 fn run() {
     colored_box_container(Color::rgba(255, 0, 0, 127), || {

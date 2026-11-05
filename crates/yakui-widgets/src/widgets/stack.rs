@@ -1,4 +1,4 @@
-use yakui_core::{widget::Widget, Response};
+use yakui_core::{Response, widget::Widget};
 
 use crate::util::widget_children;
 

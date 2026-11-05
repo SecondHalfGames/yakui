@@ -1,5 +1,5 @@
 use yakui::widgets::List;
-use yakui::{button, row, CrossAxisAlignment};
+use yakui::{CrossAxisAlignment, button, row};
 
 pub fn run() {
     row(|| {

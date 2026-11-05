@@ -1,5 +1,5 @@
 use yakui::widgets::{List, Pad};
-use yakui::{align, colored_box_container, label, pad, Alignment, Color, MainAxisSize};
+use yakui::{Alignment, Color, MainAxisSize, align, colored_box_container, label, pad};
 
 struct Entry {
     name: &'static str,

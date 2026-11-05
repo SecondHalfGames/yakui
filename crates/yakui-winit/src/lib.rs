@@ -142,11 +142,12 @@ impl YakuiWinit {
             }
             WindowEvent::KeyboardInput { event, .. } => {
                 if event.state == ElementState::Pressed
-                    && let Some(text) = event.text.as_ref() {
-                        for c in text.chars() {
-                            state.handle_event(Event::TextInput(c));
-                        }
+                    && let Some(text) = event.text.as_ref()
+                {
+                    for c in text.chars() {
+                        state.handle_event(Event::TextInput(c));
                     }
+                }
                 let key = match event.physical_key {
                     winit::keyboard::PhysicalKey::Code(k) => from_winit_key(k),
                     winit::keyboard::PhysicalKey::Unidentified(_) => None,

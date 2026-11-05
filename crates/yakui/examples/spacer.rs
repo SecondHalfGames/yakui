@@ -1,4 +1,4 @@
-use yakui::{colored_box, row, Color};
+use yakui::{Color, colored_box, row};
 use yakui_widgets::spacer;
 
 pub fn run() {
