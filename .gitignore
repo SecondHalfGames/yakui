@@ -6,3 +6,6 @@
 
 ## IDE specific files
 /vscode
+
+# Trunk build output
+/dist
