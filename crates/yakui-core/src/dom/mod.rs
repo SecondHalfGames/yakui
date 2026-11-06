@@ -13,7 +13,7 @@ use std::mem::replace;
 use std::panic::Location;
 use std::rc::Rc;
 
-use anymap::AnyMap;
+use anymap3::AnyMap;
 use thunderdome::Arena;
 
 use crate::id::WidgetId;
