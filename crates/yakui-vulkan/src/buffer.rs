@@ -9,7 +9,7 @@ const MIN_BUFFER_SIZE: vk::DeviceSize = 1_048_576; // 1MB
 ///
 /// May be slightly slow on desktop, but future work could be done to use DEVICE_LOCAL memory if
 /// need be.
-pub(crate) struct Buffer<T> {
+pub struct Buffer<T> {
     pub handle: vk::Buffer,
     pub memory: vk::DeviceMemory,
     pub _usage: vk::BufferUsageFlags,
