@@ -2,6 +2,7 @@ mod common;
 mod custom_texture;
 mod graphics;
 mod multisampling;
+#[cfg(not(target_arch = "wasm32"))]
 mod with_sdl3;
 mod with_winit;
 
@@ -76,7 +77,11 @@ fn run(body: impl ExampleBody) {
         }
 
         BootstrapBackend::Sdl3 => {
+            #[cfg(not(target_arch = "wasm32"))]
             crate::with_sdl3::run(yak, state, title, body);
+
+            #[cfg(target_arch = "wasm32")]
+            panic!("SDL3 backend is not supported on wasm target!")
         }
     }
 }

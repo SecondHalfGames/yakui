@@ -95,6 +95,8 @@ Example setup code for yakui is available in [`crates/bootstrap`](crates/bootstr
 
 You can run examples with `cargo run --example <example name>`. Check out [`crates/yakui/examples`](crates/yakui/examples) to get a list of available examples.
 
+You can also run examples on the web with [Trunk](https://github.com/trunk-rs/trunk): `trunk serve --example <example name>`.
+
 Many of the examples look like this:
 
 ```rust
@@ -202,13 +204,6 @@ The `yakui-vulkan` crate is a yakui renderer that uses Vulkan via [ash]
 
 [`yakui-vulkan`]: https://crates.io/crates/yakui-vulkan
 [ash]: https://crates.io/crates/ash
-
-### [`yakui-app`]
-The `yakui-app` crate is a wrapper around `yakui-winit` and `yakui-wgpu` intended to make getting started with yakui easier.
-
-If you are writing your own integration for yakui, this crate is a good learning resource to reference.
-
-[`yakui-app`]: https://crates.io/crates/yakui-app
 
 ## Games Using yakui
 There are a handful of games already using yakui for their UI. Here are a couple:

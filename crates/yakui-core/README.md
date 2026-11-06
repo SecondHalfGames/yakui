@@ -5,4 +5,3 @@ This entire crate is also re-exported from the [`yakui`](https://docs.rs/yakui) 
 You might also be interested in:
 * [`yakui`](https://docs.rs/yakui)
 * [`yakui_widgets`](https://docs.rs/yakui-widgets)
-* [`yakui_app`](https://docs.rs/yakui-app)
