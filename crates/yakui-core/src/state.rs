@@ -5,7 +5,7 @@ use crate::id::ManagedTextureId;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::paint::{PaintDom, PaintLimits, Texture};
-use crate::{context, WidgetId};
+use crate::{WidgetId, context};
 
 /// The entrypoint for yakui.
 #[derive(Debug)]

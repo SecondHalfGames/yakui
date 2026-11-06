@@ -1,11 +1,11 @@
 //! Types and utilities for handling UI navigation with mice, keyboards, and
 //! gamepads.
 
+use crate::WidgetId;
 use crate::dom::Dom;
 use crate::input::InputState;
 use crate::layout::LayoutDom;
 use crate::widget::NavigateContext;
-use crate::WidgetId;
 
 /// Possible directions that a user can navigate in when using a gamepad or
 /// keyboard in a UI.

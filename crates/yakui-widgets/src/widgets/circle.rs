@@ -1,6 +1,6 @@
+use yakui_core::Response;
 use yakui_core::geometry::{Color, Constraints, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::util::{widget, widget_children};
 use crate::{auto_builders, shapes};

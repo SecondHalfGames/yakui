@@ -1,6 +1,6 @@
+use yakui_core::Response;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::widget::{EventContext, Widget};
-use yakui_core::Response;
 
 use crate::util::widget_children;
 

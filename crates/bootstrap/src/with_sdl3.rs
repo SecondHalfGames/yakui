@@ -5,7 +5,7 @@ use yakui::{UVec2, Yakui};
 use yakui_sdl3::YakuiSdl3;
 
 use crate::graphics::Graphics;
-use crate::{get_sample_count, ExampleBody, ExampleState};
+use crate::{ExampleBody, ExampleState, get_sample_count};
 
 pub fn run<T: ExampleBody>(mut yak: Yakui, mut state: ExampleState, title: String, body: T) {
     let start = Instant::now();

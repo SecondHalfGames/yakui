@@ -171,10 +171,12 @@ impl VulkanTexture {
     }
 
     pub(crate) unsafe fn cleanup(&self, device: &ash::Device) {
-        device.destroy_sampler(self.sampler, None);
-        device.destroy_image_view(self.view, None);
-        device.destroy_image(self.image, None);
-        device.free_memory(self.memory, None);
+        unsafe {
+            device.destroy_sampler(self.sampler, None);
+            device.destroy_image_view(self.view, None);
+            device.destroy_image(self.image, None);
+            device.free_memory(self.memory, None);
+        }
     }
 }
 
@@ -222,9 +224,11 @@ impl UploadQueue {
 
     /// Call whenever a draw command buffer has completed execution
     pub unsafe fn phase_executed(&mut self, vulkan_context: &VulkanContext) {
-        let mut finished = self.in_flight.pop_front().expect("no commands in flight");
-        // TODO: Reuse
-        finished.cleanup(vulkan_context.device);
+        unsafe {
+            let mut finished = self.in_flight.pop_front().expect("no commands in flight");
+            // TODO: Reuse
+            finished.cleanup(vulkan_context.device);
+        }
     }
 
     /// Schedule `texture` to be disposed of after the previous phase completes
@@ -240,84 +244,90 @@ impl UploadQueue {
         extent: vk::Extent2D,
         data: &[u8],
     ) {
-        self.pre_barriers.push(vk::ImageMemoryBarrier {
-            dst_access_mask: vk::AccessFlags::TRANSFER_WRITE,
-            new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            image,
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: vk::ImageAspectFlags::COLOR,
-                level_count: 1,
-                layer_count: 1,
+        unsafe {
+            self.pre_barriers.push(vk::ImageMemoryBarrier {
+                dst_access_mask: vk::AccessFlags::TRANSFER_WRITE,
+                new_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+                image,
+                subresource_range: vk::ImageSubresourceRange {
+                    aspect_mask: vk::ImageAspectFlags::COLOR,
+                    level_count: 1,
+                    layer_count: 1,
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        });
-        let (buffer, offset) = self.phase.push(vulkan_context, data);
-        self.textures.push((image, extent, buffer, offset));
-        self.post_barriers.push(vk::ImageMemoryBarrier {
-            src_access_mask: vk::AccessFlags::TRANSFER_WRITE,
-            dst_access_mask: vk::AccessFlags::SHADER_READ,
-            old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            image,
-            subresource_range: vk::ImageSubresourceRange {
-                aspect_mask: vk::ImageAspectFlags::COLOR,
-                level_count: 1,
-                layer_count: 1,
+            });
+            let (buffer, offset) = self.phase.push(vulkan_context, data);
+            self.textures.push((image, extent, buffer, offset));
+            self.post_barriers.push(vk::ImageMemoryBarrier {
+                src_access_mask: vk::AccessFlags::TRANSFER_WRITE,
+                dst_access_mask: vk::AccessFlags::SHADER_READ,
+                old_layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+                new_layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                image,
+                subresource_range: vk::ImageSubresourceRange {
+                    aspect_mask: vk::ImageAspectFlags::COLOR,
+                    level_count: 1,
+                    layer_count: 1,
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        });
+            });
+        }
     }
 
     pub unsafe fn record(&mut self, vulkan_context: &VulkanContext, cmd: vk::CommandBuffer) {
-        let device = vulkan_context.device;
-        device.cmd_pipeline_barrier(
-            cmd,
-            vk::PipelineStageFlags::TOP_OF_PIPE,
-            vk::PipelineStageFlags::TRANSFER,
-            vk::DependencyFlags::empty(),
-            &[],
-            &[],
-            &self.pre_barriers,
-        );
-        self.pre_barriers.clear();
-
-        for (image, extent, buffer, offset) in self.textures.drain(..) {
-            device.cmd_copy_buffer_to_image(
+        unsafe {
+            let device = vulkan_context.device;
+            device.cmd_pipeline_barrier(
                 cmd,
-                buffer,
-                image,
-                vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-                &[vk::BufferImageCopy {
-                    image_subresource: vk::ImageSubresourceLayers {
-                        aspect_mask: vk::ImageAspectFlags::COLOR,
-                        layer_count: 1,
-                        ..Default::default()
-                    },
-                    image_extent: extent.into(),
-                    buffer_offset: offset as vk::DeviceSize,
-                    ..Default::default()
-                }],
+                vk::PipelineStageFlags::TOP_OF_PIPE,
+                vk::PipelineStageFlags::TRANSFER,
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &self.pre_barriers,
             );
-        }
+            self.pre_barriers.clear();
 
-        device.cmd_pipeline_barrier(
-            cmd,
-            vk::PipelineStageFlags::TRANSFER,
-            vk::PipelineStageFlags::FRAGMENT_SHADER,
-            vk::DependencyFlags::empty(),
-            &[],
-            &[],
-            &self.post_barriers,
-        );
-        self.post_barriers.clear();
+            for (image, extent, buffer, offset) in self.textures.drain(..) {
+                device.cmd_copy_buffer_to_image(
+                    cmd,
+                    buffer,
+                    image,
+                    vk::ImageLayout::TRANSFER_DST_OPTIMAL,
+                    &[vk::BufferImageCopy {
+                        image_subresource: vk::ImageSubresourceLayers {
+                            aspect_mask: vk::ImageAspectFlags::COLOR,
+                            layer_count: 1,
+                            ..Default::default()
+                        },
+                        image_extent: extent.into(),
+                        buffer_offset: offset as vk::DeviceSize,
+                        ..Default::default()
+                    }],
+                );
+            }
+
+            device.cmd_pipeline_barrier(
+                cmd,
+                vk::PipelineStageFlags::TRANSFER,
+                vk::PipelineStageFlags::FRAGMENT_SHADER,
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &self.post_barriers,
+            );
+            self.post_barriers.clear();
+        }
     }
 
     pub unsafe fn cleanup(&mut self, device: &ash::Device) {
-        self.phase.cleanup(device);
-        while let Some(mut phase) = self.in_flight.pop_front() {
-            phase.cleanup(device);
+        unsafe {
+            self.phase.cleanup(device);
+            while let Some(mut phase) = self.in_flight.pop_front() {
+                phase.cleanup(device);
+            }
         }
     }
 }
@@ -330,33 +340,37 @@ struct UploadPhase {
 
 impl UploadPhase {
     unsafe fn cleanup(&mut self, device: &ash::Device) {
-        for (buffer, _) in &self.buffers {
-            buffer.cleanup(device);
-        }
-        for texture in &self.graveyard {
-            texture.cleanup(device);
+        unsafe {
+            for (buffer, _) in &self.buffers {
+                buffer.cleanup(device);
+            }
+            for texture in &self.graveyard {
+                texture.cleanup(device);
+            }
         }
     }
 
     unsafe fn push(&mut self, vulkan_context: &VulkanContext, data: &[u8]) -> (vk::Buffer, usize) {
-        if self
-            .buffers
-            .last()
-            .is_none_or(|(buffer, fill)| fill + data.len() > buffer.capacity())
-        {
-            self.buffers.push((
-                Buffer::with_capacity(
-                    vulkan_context,
-                    vk::BufferUsageFlags::TRANSFER_SRC,
-                    data.len().max(1024 * 1024),
-                ),
-                0,
-            ));
+        unsafe {
+            if self
+                .buffers
+                .last()
+                .is_none_or(|(buffer, fill)| fill + data.len() > buffer.capacity())
+            {
+                self.buffers.push((
+                    Buffer::with_capacity(
+                        vulkan_context,
+                        vk::BufferUsageFlags::TRANSFER_SRC,
+                        data.len().max(1024 * 1024),
+                    ),
+                    0,
+                ));
+            }
+            let (buffer, offset) = self.buffers.last_mut().unwrap();
+            let start = *offset;
+            *offset += data.len();
+            buffer.write(vulkan_context, start, data);
+            (buffer.handle, start)
         }
-        let (buffer, offset) = self.buffers.last_mut().unwrap();
-        let start = *offset;
-        *offset += data.len();
-        buffer.write(vulkan_context, start, data);
-        (buffer.handle, start)
     }
 }

@@ -43,37 +43,39 @@ impl<'a> VulkanContext<'a> {
         extent: vk::Extent2D,
         format: vk::Format,
     ) -> (vk::Image, vk::DeviceMemory) {
-        let device = self.device;
+        unsafe {
+            let device = self.device;
 
-        let image = device
-            .create_image(
-                &vk::ImageCreateInfo {
-                    image_type: vk::ImageType::TYPE_2D,
-                    format,
-                    extent: extent.into(),
-                    mip_levels: 1,
-                    array_layers: 1,
-                    samples: vk::SampleCountFlags::TYPE_1,
-                    tiling: vk::ImageTiling::OPTIMAL,
-                    usage: vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
-                    sharing_mode: vk::SharingMode::EXCLUSIVE,
-                    ..Default::default()
-                },
-                None,
+            let image = device
+                .create_image(
+                    &vk::ImageCreateInfo {
+                        image_type: vk::ImageType::TYPE_2D,
+                        format,
+                        extent: extent.into(),
+                        mip_levels: 1,
+                        array_layers: 1,
+                        samples: vk::SampleCountFlags::TYPE_1,
+                        tiling: vk::ImageTiling::OPTIMAL,
+                        usage: vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+                        sharing_mode: vk::SharingMode::EXCLUSIVE,
+                        ..Default::default()
+                    },
+                    None,
+                )
+                .unwrap();
+
+            let memory_requirements = device.get_image_memory_requirements(image);
+            let memory_index = find_memorytype_index(
+                &memory_requirements,
+                &self.memory_properties,
+                vk::MemoryPropertyFlags::DEVICE_LOCAL,
             )
-            .unwrap();
+            .expect("Unable to find suitable memory type for image");
+            let image_memory = self.allocate_memory(memory_requirements.size, memory_index);
+            device.bind_image_memory(image, image_memory, 0).unwrap();
 
-        let memory_requirements = device.get_image_memory_requirements(image);
-        let memory_index = find_memorytype_index(
-            &memory_requirements,
-            &self.memory_properties,
-            vk::MemoryPropertyFlags::DEVICE_LOCAL,
-        )
-        .expect("Unable to find suitable memory type for image");
-        let image_memory = self.allocate_memory(memory_requirements.size, memory_index);
-        device.bind_image_memory(image, image_memory, 0).unwrap();
-
-        (image, image_memory)
+            (image, image_memory)
+        }
     }
 
     unsafe fn allocate_memory(
@@ -81,16 +83,18 @@ impl<'a> VulkanContext<'a> {
         allocation_size: vk::DeviceSize,
         memory_type_index: u32,
     ) -> vk::DeviceMemory {
-        self.device
-            .allocate_memory(
-                &vk::MemoryAllocateInfo {
-                    allocation_size,
-                    memory_type_index,
-                    ..Default::default()
-                },
-                None,
-            )
-            .unwrap()
+        unsafe {
+            self.device
+                .allocate_memory(
+                    &vk::MemoryAllocateInfo {
+                        allocation_size,
+                        memory_type_index,
+                        ..Default::default()
+                    },
+                    None,
+                )
+                .unwrap()
+        }
     }
 
     pub(crate) unsafe fn create_image_view(
@@ -98,22 +102,24 @@ impl<'a> VulkanContext<'a> {
         image: vk::Image,
         format: vk::Format,
     ) -> vk::ImageView {
-        self.device
-            .create_image_view(
-                &vk::ImageViewCreateInfo {
-                    image,
-                    format,
-                    subresource_range: vk::ImageSubresourceRange {
-                        aspect_mask: vk::ImageAspectFlags::COLOR,
-                        level_count: 1,
-                        layer_count: 1,
+        unsafe {
+            self.device
+                .create_image_view(
+                    &vk::ImageViewCreateInfo {
+                        image,
+                        format,
+                        subresource_range: vk::ImageSubresourceRange {
+                            aspect_mask: vk::ImageAspectFlags::COLOR,
+                            level_count: 1,
+                            layer_count: 1,
+                            ..Default::default()
+                        },
+                        view_type: vk::ImageViewType::TYPE_2D,
                         ..Default::default()
                     },
-                    view_type: vk::ImageViewType::TYPE_2D,
-                    ..Default::default()
-                },
-                None,
-            )
-            .unwrap()
+                    None,
+                )
+                .unwrap()
+        }
     }
 }

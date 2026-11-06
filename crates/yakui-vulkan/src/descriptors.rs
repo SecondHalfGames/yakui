@@ -73,31 +73,35 @@ impl Descriptors {
         sampler: vk::Sampler,
         vulkan_context: &VulkanContext,
     ) -> u32 {
-        let texture_id = self.texture_count;
-        vulkan_context.device.update_descriptor_sets(
-            std::slice::from_ref(
-                &vk::WriteDescriptorSet::default()
-                    .image_info(std::slice::from_ref(
-                        &vk::DescriptorImageInfo::default()
-                            .sampler(sampler)
-                            .image_view(image_view)
-                            .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL),
-                    ))
-                    .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
-                    .dst_array_element(texture_id as _)
-                    .dst_set(self.set),
-            ),
-            &[],
-        );
+        unsafe {
+            let texture_id = self.texture_count;
+            vulkan_context.device.update_descriptor_sets(
+                std::slice::from_ref(
+                    &vk::WriteDescriptorSet::default()
+                        .image_info(std::slice::from_ref(
+                            &vk::DescriptorImageInfo::default()
+                                .sampler(sampler)
+                                .image_view(image_view)
+                                .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL),
+                        ))
+                        .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+                        .dst_array_element(texture_id as _)
+                        .dst_set(self.set),
+                ),
+                &[],
+            );
 
-        self.texture_count += 1;
-        texture_id
+            self.texture_count += 1;
+            texture_id
+        }
     }
 
     /// ## Safety
     /// Descriptors will be unusable after this function has been called.
     pub unsafe fn cleanup(&self, device: &ash::Device) {
-        device.destroy_descriptor_set_layout(self.layout, None);
-        device.destroy_descriptor_pool(self.pool, None);
+        unsafe {
+            device.destroy_descriptor_set_layout(self.layout, None);
+            device.destroy_descriptor_pool(self.pool, None);
+        }
     }
 }

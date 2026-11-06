@@ -1,5 +1,5 @@
 use yakui::widgets::{Button, Pad};
-use yakui::{button, column, pad, row, Color};
+use yakui::{Color, button, column, pad, row};
 
 pub fn run() {
     column(|| {

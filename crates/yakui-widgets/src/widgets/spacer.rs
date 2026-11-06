@@ -1,6 +1,6 @@
+use yakui_core::Response;
 use yakui_core::geometry::{Constraints, FlexFit, Vec2};
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::util::widget;
 

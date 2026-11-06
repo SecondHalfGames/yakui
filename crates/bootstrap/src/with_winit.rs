@@ -10,8 +10,8 @@ use yakui::{Rect, UVec2, Vec2, Yakui};
 use yakui_winit::YakuiWinit;
 
 use crate::{
-    custom_texture, get_inset_override, get_sample_count, get_scale_override, graphics::Graphics,
-    ExampleBody, ExampleState,
+    ExampleBody, ExampleState, custom_texture, get_inset_override, get_sample_count,
+    get_scale_override, graphics::Graphics,
 };
 
 pub fn run<T: ExampleBody>(yak: Yakui, state: ExampleState, title: String, body: T) {

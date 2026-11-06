@@ -1,7 +1,7 @@
 use yakui::widgets::Scrollable;
 use yakui::{
-    button, column, constrained, label, reflow, row, use_state, Alignment, Constraints, Dim2,
-    Pivot, Vec2,
+    Alignment, Constraints, Dim2, Pivot, Vec2, button, column, constrained, label, reflow, row,
+    use_state,
 };
 
 // Demonstrates bug https://github.com/SecondHalfGames/yakui/issues/149

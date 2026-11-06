@@ -1,8 +1,8 @@
 use std::f32::consts::TAU;
 
+use yakui_core::TextureId;
 use yakui_core::geometry::{Color, Rect, Vec2};
 use yakui_core::paint::{PaintDom, PaintMesh, PaintRect, Vertex};
-use yakui_core::TextureId;
 
 use crate::auto_builders;
 use crate::border::{Border, BorderRadius};

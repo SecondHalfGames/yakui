@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
+use yakui_core::Response;
 use yakui_core::context;
 use yakui_core::widget::Widget;
-use yakui_core::Response;
 
 /// Show a widget with the given children and props.
 #[track_caller]

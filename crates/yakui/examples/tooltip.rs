@@ -5,8 +5,8 @@ use yakui::util::widget_children;
 use yakui::widget::{LayoutContext, Widget};
 use yakui::widgets::List;
 use yakui::{
-    button, colored_box_container, column, constrained, label, row, Alignment, Color, Constraints,
-    CrossAxisAlignment, Dim2, Flow, MainAxisSize, Pivot, Rect, Response, Vec2,
+    Alignment, Color, Constraints, CrossAxisAlignment, Dim2, Flow, MainAxisSize, Pivot, Rect,
+    Response, Vec2, button, colored_box_container, column, constrained, label, row,
 };
 
 #[derive(Debug)]

@@ -4,7 +4,7 @@
 //! Eventually, this API will likely be replaced with a much friendlier API.
 
 use yakui::paint::PaintRect;
-use yakui::{canvas, center, constrained, Color, Constraints, Rect, Vec2, Vec4};
+use yakui::{Color, Constraints, Rect, Vec2, Vec4, canvas, center, constrained};
 
 const RES: usize = 100;
 

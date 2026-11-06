@@ -1,10 +1,10 @@
 use std::cell::RefCell;
 
+use yakui_core::Response;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::{Constraints, Vec2};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{EventContext, LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::colors;
 use crate::util::widget_children;

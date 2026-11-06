@@ -1,4 +1,4 @@
-use yakui::{colored_box, column, row, Color};
+use yakui::{Color, colored_box, column, row};
 
 pub fn run() {
     column(|| {

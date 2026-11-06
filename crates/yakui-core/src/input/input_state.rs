@@ -9,7 +9,7 @@ use crate::event::{Event, EventInterest, EventResponse, WidgetEvent};
 use crate::geometry::Rect;
 use crate::id::WidgetId;
 use crate::layout::LayoutDom;
-use crate::navigation::{navigate, NavDirection};
+use crate::navigation::{NavDirection, navigate};
 use crate::widget::{EventContext, FocusPolicy};
 
 use super::mouse::MouseButton;

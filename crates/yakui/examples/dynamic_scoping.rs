@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
+use yakui::Color;
 use yakui::util::read_scope;
 use yakui::widgets::{Button, List, Pad, Scope};
-use yakui::Color;
 
 pub fn run() {
     List::column().item_spacing(16.0).show(|| {

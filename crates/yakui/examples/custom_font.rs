@@ -1,6 +1,6 @@
 use yakui::style::FontFamily;
 use yakui::widgets::Text;
-use yakui::{column, text, Color};
+use yakui::{Color, column, text};
 
 pub fn run() {
     column(|| {

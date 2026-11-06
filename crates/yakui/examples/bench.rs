@@ -1,4 +1,4 @@
-use yakui::{colored_box, column, row, Color};
+use yakui::{Color, colored_box, column, row};
 
 pub fn run() {
     let colors = [Color::hex(0x3a2c32), Color::hex(0x222a29)];

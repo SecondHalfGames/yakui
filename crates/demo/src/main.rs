@@ -3,7 +3,7 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
-use yakui::{button, row, widgets::List, CrossAxisAlignment, Yakui};
+use yakui::{CrossAxisAlignment, Yakui, button, row, widgets::List};
 use yakui_app::Graphics;
 
 fn app() {

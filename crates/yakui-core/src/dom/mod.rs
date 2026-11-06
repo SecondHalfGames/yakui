@@ -6,7 +6,7 @@ mod dummy;
 mod dynamic_scope;
 mod root;
 
-use std::any::{type_name, TypeId};
+use std::any::{TypeId, type_name};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::VecDeque;
 use std::mem::replace;

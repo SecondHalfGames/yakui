@@ -1,7 +1,7 @@
+use yakui_core::Response;
 use yakui_core::geometry::{Color, Constraints, Rect, Vec2};
 use yakui_core::paint::PaintRect;
 use yakui_core::widget::{LayoutContext, PaintContext, Widget};
-use yakui_core::Response;
 
 use crate::auto_builders;
 

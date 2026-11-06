@@ -1,8 +1,8 @@
+use yakui_core::Response;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Vec2;
 use yakui_core::input::MouseButton;
 use yakui_core::widget::{EventContext, Widget};
-use yakui_core::Response;
 
 use crate::util::widget_children;
 

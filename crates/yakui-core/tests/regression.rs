@@ -2,10 +2,10 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use glam::Vec2;
+use yakui_core::Yakui;
 use yakui_core::event::{EventInterest, EventResponse, WidgetEvent};
 use yakui_core::geometry::Constraints;
 use yakui_core::widget::{EventContext, LayoutContext, Widget};
-use yakui_core::Yakui;
 
 #[derive(Debug)]
 struct TestWidget;

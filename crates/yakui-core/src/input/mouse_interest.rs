@@ -1,5 +1,5 @@
-use crate::event::EventInterest;
 use crate::WidgetId;
+use crate::event::EventInterest;
 
 /// Tracks all widgets interested in pointer events, organized by layer and
 /// sorted according to the other that should be used for hit testing.

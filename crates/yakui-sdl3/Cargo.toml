@@ -4,7 +4,7 @@ description = "sdl3 bindings for yakui"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/SecondHalfGames/yakui"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 yakui-core = { path = "../yakui-core", version = "0.3.0" }

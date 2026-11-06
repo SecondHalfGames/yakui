@@ -3,8 +3,8 @@ use yakui::colors::BACKGROUND_2;
 use yakui::navigation::NavDirections;
 use yakui::widgets::{List, Pad, Slider, TextBox, Trap};
 use yakui::{
-    button, checkbox, colored_box_container, label, pad, scroll_vertical, use_state,
-    MainAxisAlignment, MainAxisSize,
+    MainAxisAlignment, MainAxisSize, button, checkbox, colored_box_container, label, pad,
+    scroll_vertical, use_state,
 };
 
 pub fn run(_state: &mut ExampleState) {

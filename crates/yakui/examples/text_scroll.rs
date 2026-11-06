@@ -1,7 +1,7 @@
 use yakui::cosmic_text::Scroll;
 use yakui::style::TextStyle;
 use yakui::widgets::RenderText;
-use yakui::{button, column, constrained, row, use_state, Constraints};
+use yakui::{Constraints, button, column, constrained, row, use_state};
 
 pub fn run() {
     let style = use_state(TextStyle::label);

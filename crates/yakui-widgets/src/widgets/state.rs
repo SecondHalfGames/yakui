@@ -2,8 +2,8 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::fmt;
 use std::rc::Rc;
 
-use yakui_core::widget::Widget;
 use yakui_core::Response;
+use yakui_core::widget::Widget;
 
 use crate::util;
 

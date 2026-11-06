@@ -1,7 +1,7 @@
 use yakui::{Constraints, CrossAxisAlignment, Dim2, MainAxisAlignment, MainAxisSize, Vec2};
 use yakui_core::geometry::Color;
 use yakui_core::{Alignment, Pivot};
-use yakui_test::{run, Test};
+use yakui_test::{Test, run};
 use yakui_widgets::widgets::{Button, List, Pad, UnconstrainedBox};
 use yakui_widgets::{
     align, button, center, checkbox, colored_box, colored_box_container, column, constrained,

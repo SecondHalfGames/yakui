@@ -1,10 +1,10 @@
 mod keys;
 
+use sdl3::VideoSubsystem;
 use sdl3::event::{Event as SdlEvent, WindowEvent};
 use sdl3::keyboard::TextInputUtil;
 use sdl3::mouse::MouseButton as SdlMouseButton;
 use sdl3::video::Window;
-use sdl3::VideoSubsystem;
 use yakui_core::event::Event;
 use yakui_core::geometry::{Rect, UVec2, Vec2};
 use yakui_core::input::MouseButton;
@@ -47,17 +47,15 @@ impl YakuiSdl3 {
             _ => {}
         }
 
-        if new_value {
-            if let Some((rect, cursor)) = state.get_text_cursor() {
-                let pos = rect.pos();
-                let size = rect.size();
+        if new_value && let Some((rect, cursor)) = state.get_text_cursor() {
+            let pos = rect.pos();
+            let size = rect.size();
 
-                self.text_input.set_rect(
-                    window,
-                    sdl3::rect::Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
-                    cursor,
-                );
-            }
+            self.text_input.set_rect(
+                window,
+                sdl3::rect::Rect::new(pos.x as i32, pos.y as i32, size.x as u32, size.y as u32),
+                cursor,
+            );
         }
     }
 

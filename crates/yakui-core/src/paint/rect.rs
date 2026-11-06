@@ -1,7 +1,7 @@
 use glam::Vec2;
 
-use crate::geometry::{Color, Rect};
 use crate::TextureId;
+use crate::geometry::{Color, Rect};
 
 use super::{PaintDom, PaintMesh, Pipeline, Vertex};
 

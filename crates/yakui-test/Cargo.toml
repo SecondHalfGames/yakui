@@ -2,7 +2,7 @@
 name = "yakui-test"
 description = "Testing utilities for yakui widgets"
 publish = false
-edition = "2021"
+edition = "2024"
 
 [features]
 images = ["yakui-to-image"]

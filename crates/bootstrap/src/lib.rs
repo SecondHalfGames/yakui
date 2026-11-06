@@ -40,7 +40,8 @@ fn run(body: impl ExampleBody) {
     let monkey = yak.add_texture(load_texture(MONKEY_PNG, TextureFilter::Linear));
     let monkey_transparent = yak.add_texture({
         let mut texture = load_texture(MONKEY_PNG, TextureFilter::Linear);
-        for pixel in texture.data_mut().chunks_exact_mut(4) {
+        let (pixels, _) = texture.data_mut().as_chunks_mut::<4>();
+        for pixel in pixels {
             pixel[3] = 64;
         }
         texture

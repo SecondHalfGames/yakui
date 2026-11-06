@@ -1,5 +1,5 @@
-use yakui_core::widget::{PaintContext, Widget};
 use yakui_core::Response;
+use yakui_core::widget::{PaintContext, Widget};
 
 use crate::ignore_debug::IgnoreDebug;
 use crate::util::{widget, widget_children};

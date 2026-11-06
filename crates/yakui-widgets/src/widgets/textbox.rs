@@ -9,7 +9,7 @@ use yakui_core::geometry::{Color, Constraints, FlexFit, Vec2};
 use yakui_core::input::{KeyCode, Modifiers, MouseButton};
 use yakui_core::navigation::NavDirection;
 use yakui_core::widget::{EventContext, FocusPolicy, LayoutContext, PaintContext, Widget};
-use yakui_core::{context, Response};
+use yakui_core::{Response, context};
 
 use crate::clipboard::ClipboardHolder;
 use crate::font::Fonts;
@@ -733,79 +733,72 @@ impl Widget for TextBoxWidget {
                             editor.set_selection(cosmic_text::Selection::None);
                         }
                         Select::DeselectPrevAffinity => {
-                            if bound_start != bound_end {
-                                if let Some(cosmic_text::Action::Motion(
+                            if bound_start != bound_end
+                                && let Some(cosmic_text::Action::Motion(
                                     cosmic_text::Motion::Previous,
                                 )) = action
-                                {
-                                    action = None;
+                            {
+                                action = None;
 
-                                    fonts.with_inner(|fonts| {
-                                        editor.action(
-                                            &mut fonts.font_system,
-                                            cosmic_text::Action::Motion(
-                                                cosmic_text::Motion::BufferStart,
-                                            ),
-                                        );
-                                        let buffer_start_cursor = editor.cursor();
-                                        editor.action(
-                                            &mut fonts.font_system,
-                                            cosmic_text::Action::Motion(
-                                                cosmic_text::Motion::PreviousWord,
-                                            ),
-                                        );
-                                        let prev_word_cursor = editor.cursor();
+                                fonts.with_inner(|fonts| {
+                                    editor.action(
+                                        &mut fonts.font_system,
+                                        cosmic_text::Action::Motion(
+                                            cosmic_text::Motion::BufferStart,
+                                        ),
+                                    );
+                                    let buffer_start_cursor = editor.cursor();
+                                    editor.action(
+                                        &mut fonts.font_system,
+                                        cosmic_text::Action::Motion(
+                                            cosmic_text::Motion::PreviousWord,
+                                        ),
+                                    );
+                                    let prev_word_cursor = editor.cursor();
 
-                                        editor.set_cursor(cursor);
+                                    editor.set_cursor(cursor);
 
-                                        if bound_start == buffer_start_cursor {
-                                            editor.set_cursor(buffer_start_cursor);
-                                        }
+                                    if bound_start == buffer_start_cursor {
+                                        editor.set_cursor(buffer_start_cursor);
+                                    }
 
-                                        if bound_start == prev_word_cursor {
-                                            editor.set_cursor(prev_word_cursor);
-                                        }
-                                    });
-                                }
+                                    if bound_start == prev_word_cursor {
+                                        editor.set_cursor(prev_word_cursor);
+                                    }
+                                });
                             }
 
                             editor.set_selection(cosmic_text::Selection::None);
                         }
                         Select::DeselectNextAffinity => {
-                            if bound_start != bound_end {
-                                if let Some(cosmic_text::Action::Motion(
-                                    cosmic_text::Motion::Next,
-                                )) = action
-                                {
-                                    action = None;
+                            if bound_start != bound_end
+                                && let Some(cosmic_text::Action::Motion(cosmic_text::Motion::Next)) =
+                                    action
+                            {
+                                action = None;
 
-                                    fonts.with_inner(|fonts| {
-                                        editor.action(
-                                            &mut fonts.font_system,
-                                            cosmic_text::Action::Motion(
-                                                cosmic_text::Motion::BufferEnd,
-                                            ),
-                                        );
-                                        let buffer_end_cursor = editor.cursor();
-                                        editor.action(
-                                            &mut fonts.font_system,
-                                            cosmic_text::Action::Motion(
-                                                cosmic_text::Motion::NextWord,
-                                            ),
-                                        );
-                                        let next_word_cursor = editor.cursor();
+                                fonts.with_inner(|fonts| {
+                                    editor.action(
+                                        &mut fonts.font_system,
+                                        cosmic_text::Action::Motion(cosmic_text::Motion::BufferEnd),
+                                    );
+                                    let buffer_end_cursor = editor.cursor();
+                                    editor.action(
+                                        &mut fonts.font_system,
+                                        cosmic_text::Action::Motion(cosmic_text::Motion::NextWord),
+                                    );
+                                    let next_word_cursor = editor.cursor();
 
-                                        editor.set_cursor(cursor);
+                                    editor.set_cursor(cursor);
 
-                                        if bound_end == buffer_end_cursor {
-                                            editor.set_cursor(buffer_end_cursor);
-                                        }
+                                    if bound_end == buffer_end_cursor {
+                                        editor.set_cursor(buffer_end_cursor);
+                                    }
 
-                                        if bound_end == next_word_cursor {
-                                            editor.set_cursor(next_word_cursor);
-                                        }
-                                    });
-                                }
+                                    if bound_end == next_word_cursor {
+                                        editor.set_cursor(next_word_cursor);
+                                    }
+                                });
                             }
 
                             editor.set_selection(cosmic_text::Selection::None);
@@ -831,10 +824,10 @@ impl Widget for TextBoxWidget {
                     self.preedit_text = String::new();
                     let preedit_cursor = self.preedit_cursor.take().unwrap();
 
-                    if let Some(preedit_cursor_end) = self.preedit_cursor_end.take() {
-                        if preedit_cursor < preedit_cursor_end {
-                            editor.delete_range(preedit_cursor, preedit_cursor_end);
-                        }
+                    if let Some(preedit_cursor_end) = self.preedit_cursor_end.take()
+                        && preedit_cursor < preedit_cursor_end
+                    {
+                        editor.delete_range(preedit_cursor, preedit_cursor_end);
                     }
                     editor.set_cursor(preedit_cursor);
 
@@ -847,11 +840,11 @@ impl Widget for TextBoxWidget {
                     let preedit_cursor = self.preedit_cursor.unwrap();
 
                     editor.set_selection(cosmic_text::Selection::None);
-                    if let Some(preedit_cursor_end) = self.preedit_cursor_end {
-                        if preedit_cursor < preedit_cursor_end {
-                            editor.delete_range(preedit_cursor, preedit_cursor_end);
-                            editor.set_cursor(preedit_cursor);
-                        }
+                    if let Some(preedit_cursor_end) = self.preedit_cursor_end
+                        && preedit_cursor < preedit_cursor_end
+                    {
+                        editor.delete_range(preedit_cursor, preedit_cursor_end);
+                        editor.set_cursor(preedit_cursor);
                     }
                     editor.insert_string(text, None);
                     self.preedit_cursor_end = Some(editor.cursor());
@@ -861,13 +854,13 @@ impl Widget for TextBoxWidget {
                     self.text_changed_by_cosmic = true;
                 }
 
-                if let Some(cursor) = self.preedit_cursor {
-                    if let &Some((_start, end)) = position {
-                        editor.set_cursor(cosmic_text::Cursor {
-                            index: cursor.index + end,
-                            ..cursor
-                        });
-                    }
+                if let Some(cursor) = self.preedit_cursor
+                    && let &Some((_start, end)) = position
+                {
+                    editor.set_cursor(cosmic_text::Cursor {
+                        index: cursor.index + end,
+                        ..cursor
+                    });
                 }
 
                 EventResponse::Sink
