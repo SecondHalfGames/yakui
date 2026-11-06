@@ -95,6 +95,8 @@ Example setup code for yakui is available in [`crates/bootstrap`](crates/bootstr
 
 You can run examples with `cargo run --example <example name>`. Check out [`crates/yakui/examples`](crates/yakui/examples) to get a list of available examples.
 
+You can also run examples on the web with [Trunk](https://github.com/trunk-rs/trunk): `trunk serve --example <example name>`.
+
 Many of the examples look like this:
 
 ```rust
