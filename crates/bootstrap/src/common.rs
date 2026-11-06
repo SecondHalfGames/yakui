@@ -70,12 +70,20 @@ pub fn load_texture(bytes: &[u8], filter: TextureFilter) -> Texture {
 /// Initialize our logging, adjusting the default log levels of some of our
 /// noisier dependencies.
 pub fn init_logging() {
-    env_logger::builder()
-        .filter_module("wgpu_hal::auxil::dxgi", log::LevelFilter::Off)
-        .filter_module("wgpu_core", log::LevelFilter::Warn)
-        .filter_module("wgpu_hal", log::LevelFilter::Warn)
-        .filter_level(log::LevelFilter::Info)
-        .init();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        env_logger::builder()
+            .filter_module("wgpu_hal::auxil::dxgi", log::LevelFilter::Off)
+            .filter_module("wgpu_core", log::LevelFilter::Warn)
+            .filter_module("wgpu_hal", log::LevelFilter::Warn)
+            .filter_level(log::LevelFilter::Info)
+            .init();
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+        console_log::init().expect("could not initialize logger");
+    }
 }
 
 /// Enables the user to override the scaling of the demo app by setting an

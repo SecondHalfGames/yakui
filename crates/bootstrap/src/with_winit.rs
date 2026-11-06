@@ -1,4 +1,7 @@
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 use winit::{
     application::ApplicationHandler,
@@ -55,6 +58,21 @@ impl<T: ExampleBody> ApplicationHandler for App<T> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop.create_window(self.attributes.clone()).unwrap();
         window.set_ime_allowed(true);
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            use winit::platform::web::WindowExtWebSys;
+
+            // On wasm, append the canvas to the document body
+            web_sys::window()
+                .and_then(|win| win.document())
+                .and_then(|doc| doc.body())
+                .and_then(|body| {
+                    body.append_child(&web_sys::Element::from(window.canvas().unwrap()))
+                        .ok()
+                })
+                .expect("couldn't append canvas to document body");
+        }
 
         let size = window.inner_size();
         let size = UVec2::new(size.width, size.height);
