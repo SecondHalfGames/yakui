@@ -435,6 +435,12 @@ impl Widget for TextBoxWidget {
                 delta,
                 modifiers: _,
             } => {
+                let text_res = self.render_text_response;
+                let area = text_res.measured_size.y - text_res.physical_size.y;
+                if area <= 0.0 {
+                    return EventResponse::Bubble;
+                }
+
                 fonts.with_inner(|fonts| {
                     editor.action(
                         &mut fonts.font_system,
